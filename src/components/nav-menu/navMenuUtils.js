@@ -44,7 +44,13 @@ export function sanitizeLayout(
     const normalizedHiddenKeys = normalizeHiddenKeys(hiddenKeys, definitionMap);
     const hiddenSet = new Set(normalizedHiddenKeys);
     const normalized = [];
-    const chartsKeys = ['charts-instance', 'charts-mutual', 'charts-hot-worlds', 'charts-two-person', 'charts-timeline'];
+    const chartsKeys = [
+        'charts-instance',
+        'charts-mutual',
+        'charts-hot-worlds',
+        'charts-two-person',
+        'charts-timeline'
+    ];
 
     const appendItemEntry = (key, target = normalized) => {
         if (!key || usedKeys.has(key) || !definitionMap.has(key)) {
@@ -114,7 +120,16 @@ export function sanitizeLayout(
     allDefinitions.forEach((item) => {
         if (!usedKeys.has(item.key) && !hiddenSet.has(item.key)) {
             if (chartsKeys.includes(item.key)) {
-                return;
+                const chartsFolder = normalized.find(
+                    (entry) =>
+                        entry.type === 'folder' &&
+                        entry.id === 'default-folder-charts'
+                );
+                if (chartsFolder && Array.isArray(chartsFolder.items)) {
+                    chartsFolder.items.push(item.key);
+                    usedKeys.add(item.key);
+                    return;
+                }
             }
             appendItemEntry(item.key);
         }

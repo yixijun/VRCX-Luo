@@ -350,7 +350,7 @@
             return displayRows.value;
         },
         columns: columns.value,
-        getRowId: (row) => row?.id ?? row?.userId ?? row?.displayName ?? JSON.stringify(row ?? {}),
+        getRowId: (row) => JSON.stringify(row ?? {}),
         initialSorting: sortBy.value,
         initialPagination: {
             pageIndex: pageIndex.value,
