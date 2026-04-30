@@ -13,7 +13,8 @@
  */
 
 import { reactive } from 'vue';
-import { parseLocation, sanitizeUserJson, createDefaultUserRef } from '../shared/utils';
+// TODO: import utils as needed when location overlay is implemented
+// import { parseLocation } from '../shared/utils/locationParser';
 import { AppDebug } from './appConfig';
 import sqliteService from './sqlite.js';
 import webApiService from './webapi.js';
@@ -241,13 +242,13 @@ export class AccountSession {
 
     async _loadFriends() {
         try {
-            const online = await this._requestRaw('auth/friends', { params: { n: 100, offset: 0 } });
+            const online = await this._requestRaw('auth/user/friends', { params: { n: 100, offset: 0 } });
             if (Array.isArray(online)) {
                 for (const user of online) {
                     this._applyFriendUser(user, 'online');
                 }
             }
-            const offline = await this._requestRaw('auth/friends', { params: { n: 100, offset: 0, offline: true } });
+            const offline = await this._requestRaw('auth/user/friends', { params: { n: 100, offset: 0, offline: true } });
             if (Array.isArray(offline)) {
                 for (const user of offline) {
                     this._applyFriendUser(user, 'offline');
