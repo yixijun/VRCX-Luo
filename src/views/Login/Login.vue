@@ -121,13 +121,19 @@
                                 :key="user.user.id"
                                 class="cursor-pointer hover:bg-muted p-2 border-0"
                                 @click="clickSavedLogin(user)">
-                                <ItemMedia variant="image">
-                                    <Avatar class="rounded-full">
-                                        <AvatarImage :src="userImage(user.user)" />
-                                        <AvatarFallback>
-                                            <User class="size-5 text-muted-foreground" />
-                                        </AvatarFallback>
-                                    </Avatar>
+                                <ItemMedia variant="image" @click.stop>
+                                    <label class="flex items-center cursor-pointer" @click.stop>
+                                        <Checkbox
+                                            :model-value="selectedAccountIds.has(user.user.id)"
+                                            class="mr-2"
+                                            @update:model-value="toggleAccountSelection(user.user.id)" />
+                                        <Avatar class="rounded-full">
+                                            <AvatarImage :src="userImage(user.user)" />
+                                            <AvatarFallback>
+                                                <User class="size-5 text-muted-foreground" />
+                                            </AvatarFallback>
+                                        </Avatar>
+                                    </label>
                                 </ItemMedia>
                                 <ItemContent class="min-w-0">
                                     <ItemTitle class="truncate max-w-full">{{ user.user.displayName }}</ItemTitle>
@@ -150,6 +156,15 @@
                             </Item>
                         </div>
                     </div>
+                    <Button
+                        v-if="selectedAccountIds.size >= 2"
+                        variant="outline"
+                        size="sm"
+                        class="w-full mt-2"
+                        :disabled="multiLoginLoading"
+                        @click="clickMultiLogin">
+                        {{ t('view.login.loginSelected', { count: selectedAccountIds.size }) }}
+                    </Button>
                 </div>
             </div>
 
@@ -188,7 +203,7 @@
         DropdownMenuContent,
         DropdownMenuTrigger
     } from '@/components/ui/dropdown-menu';
-    import { onBeforeMount, onBeforeUnmount, ref, watch } from 'vue';
+    import { onBeforeMount, onBeforeUnmount, reactive, ref, watch } from 'vue';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item';
     import { ArrowBigDownDash, Languages, Trash2, TriangleAlert, User } from 'lucide-vue-next';
@@ -216,6 +231,7 @@
     import configRepository from '../../services/config';
     import { useUserDisplay } from '../../composables/useUserDisplay';
     import { watchState } from '../../services/watchState';
+    import { accountHub } from '../../services/accountHub.js';
 
     import LoginSettingsDialog from './Dialog/LoginSettingsDialog.vue';
 
@@ -238,6 +254,8 @@
 
     const savedCredentials = ref({});
     const requiredMessage = 'Required';
+    const selectedAccountIds = reactive(new Set());
+    const multiLoginLoading = ref(false);
 
     const formSchema = toTypedSchema(
         z.object({
@@ -274,6 +292,54 @@
             // relogin already handles user-facing error display (toast)
         }
         await updateSavedCredentials();
+    }
+
+    /**
+     * Toggle selection of an account for multi-login.
+     * @param {string} userId
+     */
+    function toggleAccountSelection(userId) {
+        if (selectedAccountIds.has(userId)) {
+            selectedAccountIds.delete(userId);
+        } else {
+            selectedAccountIds.add(userId);
+        }
+    }
+
+    /**
+     * Log in the first selected account normally, then add the rest as secondary sessions.
+     */
+    async function clickMultiLogin() {
+        if (selectedAccountIds.size < 2) return;
+        multiLoginLoading.value = true;
+        try {
+            const creds = Object.values(savedCredentials.value);
+            const selected = [...selectedAccountIds];
+            const [primaryId, ...secondaryIds] = selected;
+            const primaryEntry = creds.find((c) => c.user.id === primaryId);
+            if (!primaryEntry) return;
+
+            // Login primary account the normal way
+            await relogin(primaryEntry);
+
+            // Login secondary accounts via accountHub
+            for (const secId of secondaryIds) {
+                const secEntry = creds.find((c) => c.user.id === secId);
+                if (secEntry) {
+                    try {
+                        await accountHub.addSession(secEntry);
+                    } catch (e) {
+                        console.warn('[MultiLogin] Failed to add secondary session:', secId, e);
+                    }
+                }
+            }
+
+            if (accountHub.hasSecondarySessions) {
+                accountHub.switchToMerged();
+            }
+        } finally {
+            multiLoginLoading.value = false;
+        }
     }
 
     const onSubmit = handleSubmit(async (formValues) => {

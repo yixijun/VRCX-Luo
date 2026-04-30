@@ -22,7 +22,7 @@
                     <SidebarGroup>
                         <SidebarGroupContent>
                             <SidebarMenu v-if="navLayoutReady">
-                                <template v-for="item in menuItems" :key="item.index">
+                                <template v-for="item in filteredMenuItems" :key="item.index">
                                     <SidebarMenuItem v-if="!item.children?.length">
                                         <ContextMenu>
                                             <ContextMenuTrigger as-child>
@@ -206,6 +206,7 @@
     import NavMenuFooter from './NavMenuFooter.vue';
 
     import CustomNavDialog from '../dialogs/CustomNavDialog.vue';
+    import { accountHub } from '../../services/accountHub.js';
 
     const { t, locale } = useI18n();
     const router = useRouter();
@@ -338,6 +339,22 @@
 
     const isDashboardItem = (item) => item?.index?.startsWith(DASHBOARD_NAV_KEY_PREFIX);
     const isToolItem = (item) => item?.index?.startsWith('tool-');
+
+    // Items hidden in the merged view (they are per-account pages)
+    const MERGED_VIEW_HIDDEN_KEYS = new Set(['my-avatars', 'moderation']);
+
+    const filteredMenuItems = computed(() => {
+        if (!accountHub.isMergedView || !accountHub.hasSecondarySessions) {
+            return menuItems.value;
+        }
+        return menuItems.value
+            .filter((item) => !MERGED_VIEW_HIDDEN_KEYS.has(item.index))
+            .map((item) => {
+                if (!item.children?.length) return item;
+                const children = item.children.filter((c) => !MERGED_VIEW_HIDDEN_KEYS.has(c.key ?? c.index));
+                return { ...item, children };
+            });
+    });
 
     const handleUnpinToolItem = async (item) => {
         if (!isToolItem(item)) {

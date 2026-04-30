@@ -246,6 +246,7 @@
             "proxy_settings": "Proxy Settings",
             "settings": "Settings",
             "language": "Language",
+            "loginSelected": "Login {count} selected accounts",
             "field": {
                 "username": "Username or Email",
                 "password": "Password",
@@ -3278,6 +3279,9 @@
         "clocks_none": "None",
         "timezone": "Timezone",
         "now_playing": "Now Playing",
-        "info_sync": "Sync"
+        "info_sync": "Sync",
+        "view_mode": "View Mode",
+        "view_merged": "Merged View",
+        "view_primary": "Primary Account"
     }
 }

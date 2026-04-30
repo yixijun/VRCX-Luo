@@ -258,6 +258,8 @@
     import Location from '../../../components/Location.vue';
     import configRepository from '../../../services/config';
     import { useStatusPresets } from '../../../components/dialogs/UserDialog/composables/useStatusPresets';
+    import { accountHub } from '../../../services/accountHub.js';
+    import { mergeFriends } from '../../../services/aggregatedView.js';
 
     import '@/styles/status-icon.css';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
@@ -282,7 +284,8 @@
         onlineFriends,
         activeFriends,
         offlineFriends,
-        friendsInSameInstance
+        friendsInSameInstance,
+        sortedFriends
     } = storeToRefs(friendStore);
     const appearanceSettingsStore = useAppearanceSettingsStore();
     const {
@@ -536,7 +539,95 @@
         }
     }
 
+    function buildMergedRows() {
+        const rows = [];
+
+        rows.push(
+            buildToggleRow({
+                key: 'me-header',
+                label: t('side_panel.me'),
+                expanded: isFriendsGroupMe.value,
+                headerPadding: '0 0 5px',
+                onClick: toggleFriendsGroupMe
+            })
+        );
+
+        if (isFriendsGroupMe.value) {
+            rows.push({ type: 'me-item', key: `me:${currentUser.value?.id ?? 'me'}` });
+        }
+
+        const mergedMap = mergeFriends(sortedFriends.value);
+        const online = [];
+        const active = [];
+        const offline = [];
+
+        for (const ctx of mergedMap.values()) {
+            const state = ctx.state || 'offline';
+            if (state === 'online') online.push(ctx);
+            else if (state === 'active') active.push(ctx);
+            else offline.push(ctx);
+        }
+
+        if (online.length) {
+            rows.push(
+                buildToggleRow({
+                    key: 'merged-online-header',
+                    label: t('side_panel.online'),
+                    count: online.length,
+                    expanded: isOnlineFriends.value,
+                    onClick: toggleOnlineFriends
+                })
+            );
+            if (isOnlineFriends.value) {
+                online.forEach((friend, idx) => {
+                    rows.push(buildFriendRow(friend, `merged-online:${friend?.id ?? idx}`));
+                });
+            }
+        }
+
+        if (active.length) {
+            rows.push(
+                buildToggleRow({
+                    key: 'merged-active-header',
+                    label: t('side_panel.active'),
+                    count: active.length,
+                    expanded: isActiveFriends.value,
+                    onClick: toggleActiveFriends
+                })
+            );
+            if (isActiveFriends.value) {
+                active.forEach((friend, idx) => {
+                    rows.push(buildFriendRow(friend, `merged-active:${friend?.id ?? idx}`));
+                });
+            }
+        }
+
+        if (offline.length) {
+            rows.push(
+                buildToggleRow({
+                    key: 'merged-offline-header',
+                    label: t('side_panel.offline'),
+                    count: offline.length,
+                    expanded: isOfflineFriends.value,
+                    onClick: toggleOfflineFriends
+                })
+            );
+            if (isOfflineFriends.value) {
+                offline.forEach((friend, idx) => {
+                    rows.push(buildFriendRow(friend, `merged-offline:${friend?.id ?? idx}`));
+                });
+            }
+        }
+
+        return rows;
+    }
+
     const virtualRows = computed(() => {
+        // In merged view, show aggregated friends from all accounts
+        if (accountHub.isMergedView && accountHub.hasSecondarySessions) {
+            return buildMergedRows();
+        }
+
         const rows = [];
 
         rows.push(
