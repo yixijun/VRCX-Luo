@@ -1406,6 +1406,7 @@ export const useFriendStore = defineStore('Friend', () => {
         state,
 
         friends,
+        sortedFriends,
 
         vipFriends,
         onlineFriends,
@@ -1439,6 +1440,7 @@ export const useFriendStore = defineStore('Friend', () => {
         tryApplyFriendOrder,
         resetFriendLog,
         reindexSortedFriend,
+        rebuildSortedFriends,
         resetDerivedDebugCounters,
         getDerivedDebugCounters,
         initFriendLogHistoryTable,

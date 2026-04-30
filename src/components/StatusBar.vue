@@ -6,6 +6,42 @@
         <ContextMenu>
             <ContextMenuTrigger as-child>
                 <div class="flex items-center w-full h-full px-2">
+                    <!-- Multi-account view mode switcher (only when secondary sessions are active) -->
+                    <template v-if="hasSecondarySessions">
+                        <Popover v-model:open="viewModePopoverOpen">
+                            <PopoverTrigger as-child>
+                                <div
+                                    class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent shrink-0"
+                                    :title="t('status_bar.view_mode')">
+                                    <span
+                                        class="inline-block size-2 rounded-full shrink-0"
+                                        :style="{ background: viewModeColor }" />
+                                    <span class="text-[11px] text-foreground">{{ viewModeLabel }}</span>
+                                </div>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" class="w-48 p-1">
+                                <div
+                                    class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-xs"
+                                    :class="{ 'bg-accent': isMergedView }"
+                                    @click="selectViewMode('merged')">
+                                    <span class="inline-block size-2 rounded-full bg-foreground/40" />
+                                    {{ t('status_bar.view_merged') }}
+                                </div>
+                                <div
+                                    v-for="[id, session] in allSessions"
+                                    :key="id"
+                                    class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-xs"
+                                    :class="{ 'bg-accent': currentViewMode === `account:${id}` || (id === primaryId && currentViewMode === 'primary') }"
+                                    @click="selectViewMode(id)">
+                                    <span
+                                        class="inline-block size-2 rounded-full shrink-0"
+                                        :style="{ background: getAccountColor(id) }" />
+                                    {{ session.label || session.userInfo?.displayName || id }}
+                                    <span v-if="id === primaryId" class="text-muted-foreground ml-auto text-[10px]">★</span>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </template>
                     <!-- Left section -->
                     <div
                         class="flex items-center flex-1 min-w-0 overflow-hidden [&>*:first-child]:pl-0.5"
@@ -475,11 +511,53 @@
     } from './statusBarUtils';
 
     import configRepository from '../services/config';
+    import { accountHub } from '../services/accountHub.js';
 
     dayjs.extend(utc);
     dayjs.extend(timezone);
 
     const { t } = useI18n();
+
+    // ── Multi-account view mode switcher ────────────────────────────────────────
+    const viewModePopoverOpen = ref(false);
+
+    const hasSecondarySessions = computed(() => accountHub.hasSecondarySessions);
+    const isMergedView = computed(() => accountHub.isMergedView);
+    const currentViewMode = computed(() => accountHub.viewMode);
+    const primaryId = computed(() => accountHub.primaryId);
+    const allSessions = computed(() => [...accountHub.sessions.entries()]);
+
+    function getAccountColor(userId) {
+        return accountHub.getAccountColor(userId);
+    }
+
+    const viewModeLabel = computed(() => {
+        const mode = accountHub.viewMode;
+        if (mode === 'merged') return t('status_bar.view_merged');
+        if (mode === 'primary') {
+            const s = accountHub.sessions.get(accountHub.primaryId);
+            return s?.label || t('status_bar.view_primary');
+        }
+        const id = mode.replace('account:', '');
+        const s = accountHub.sessions.get(id);
+        return s?.label || id.slice(0, 6);
+    });
+
+    const viewModeColor = computed(() => {
+        const mode = accountHub.viewMode;
+        if (mode === 'merged') return 'var(--color-foreground, #888)';
+        const id = mode === 'primary' ? accountHub.primaryId : mode.replace('account:', '');
+        return accountHub.getAccountColor(id);
+    });
+
+    function selectViewMode(idOrMerged) {
+        if (idOrMerged === 'merged') {
+            accountHub.switchToMerged();
+        } else {
+            accountHub.switchToAccount(idOrMerged);
+        }
+        viewModePopoverOpen.value = false;
+    }
 
     const isMacOS = computed(() => navigator.platform.includes('Mac'));
 
