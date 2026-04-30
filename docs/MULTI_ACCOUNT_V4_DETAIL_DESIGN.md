@@ -607,18 +607,28 @@ _restorePrimarySnapshot() {
 
 ### 9.1 Login.vue
 
-**改动：** 已保存账号列表加 checkbox，新增"一键登录选中账号"按钮。
+**改动：** 已保存账号列表引入“多账号序号勾选”机制，新增“一键登录选中账号”按钮。
+
+**序号勾选逻辑：**
+- 勾选框不显示传统对勾，而是显示其在登录队列中的序号。
+- **第一个勾选的账号**：显示 **“主”**（即 Primary Account）。
+- **后续勾选的账号**：显示 **“1”**, **“2”**, **“3”**... (即 Secondary Sessions)。
+- **递补逻辑**：如果中间某个账号被取消勾选，后续账号的序号自动向前递补（例如取消了“主”，原来的“1”自动变成新的“主”）。
 
 ```
   已保存账号:
-  ☑ Account A (usr_aaaa)    [登录]  [删除]
-  ☑ Account B (usr_bbbb)    [登录]  [删除]
-  ☐ Account C (usr_cccc)    [登录]  [删除]
+  主 [头像] Account A (usr_aaaa)    [登录]  [删除]
+  1  [头像] Account B (usr_bbbb)    [登录]  [删除]
+  ☐  [头像] Account C (usr_cccc)    [登录]  [删除]
 
   [ 登录选中账号 (2) ]       <-- 新按钮
 ```
 
-流程：点击"登录选中账号" -> `accountHub.loginAll(selected)` -> 第一个为主号走正常 `authLogin()`，后续走 `accountHub.addSession()`。
+流程：点击“登录选中账号” -> `accountHub.loginAll(selected)` -> 第一个账号（标“主”的）走正常 `relogin()`，后续账号（标“1, 2...”的）按顺序走 `accountHub.addSession()`。
+
+**自动登录适配：**
+- 多账号登录成功后，登录队列的 ID 数组将被保存至配置项 `VRCX_lastMultiUsersLoggedIn`。
+- 下次软件启动时，`autoLoginAfterMounted` 会检测该配置项，并按顺序自动恢复所有账号的会话。
 
 ### 9.2 StatusBar.vue
 
