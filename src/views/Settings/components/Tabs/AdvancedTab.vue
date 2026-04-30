@@ -24,6 +24,10 @@
                 :description="t('view.settings.advanced.advanced.self_invite.description')">
                 <Switch :model-value="selfInviteOverride" @update:modelValue="setSelfInviteOverride" />
             </SettingsItem>
+            
+            <SettingsItem :label="t('view.settings.advanced.advanced.auto_join_group_certification.header')">
+                <Switch :model-value="autoJoinGroupCertification" @update:modelValue="setAutoJoinGroupCertification" />
+            </SettingsItem>
         </SettingsGroup>
 
         <SettingsGroup :title="t('view.settings.advanced_groups.security.header')">
@@ -460,7 +464,8 @@
         sqliteTableSizes,
         avatarAutoCleanup,
         purgeInProgress,
-        sentryErrorReporting
+        sentryErrorReporting,
+        autoJoinGroupCertification
     } = storeToRefs(advancedSettingsStore);
 
     const {
@@ -476,7 +481,8 @@
         setAvatarAutoCleanup,
         purgeAvatarFeedData,
         promptAutoClearVRCXCacheFrequency,
-        setSentryErrorReporting
+        setSentryErrorReporting,
+        setAutoJoinGroupCertification
     } = advancedSettingsStore;
 
     const configTreeData = ref({});

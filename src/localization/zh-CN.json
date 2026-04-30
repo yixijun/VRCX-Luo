@@ -1224,6 +1224,9 @@
                         "header": "独立密码",
                         "description": "使用独立密码加密 VRCX 数据（将停用自动登录）"
                     },
+                    "auto_join_group_certification": {
+                        "header": "认证"
+                    },
                     "relaunch_vrchat": {
                         "header": "崩溃后重启",
                         "description": "重新加入崩溃前的房间"

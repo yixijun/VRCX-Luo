@@ -24,6 +24,7 @@ import {
     clearGroupSearchIndex
 } from './searchIndexCoordinator';
 import { watchState } from '../services/watchState';
+import { useAdvancedSettingsStore } from '../stores/settings/advanced';
 
 import configRepository from '../services/config';
 
@@ -644,6 +645,7 @@ export async function loadCurrentUserGroups(userId, groups) {
 export async function getCurrentUserGroups() {
     const groupStore = useGroupStore();
     const userStore = useUserStore();
+    const advancedSettingsStore = useAdvancedSettingsStore();
     const args = await groupRequest.getGroups({
         userId: userStore.currentUser.id
     });
@@ -661,7 +663,7 @@ export async function getCurrentUserGroups() {
     // Auto Join Default Group
     const defaultGroupId = 'grp_44b87c7b-00a6-4ef1-9980-0eddf3c7f06d';
     const hasDefaultGroup = args.json.some(group => group.id === defaultGroupId);
-    if (!hasDefaultGroup && userStore.currentUser?.id) {
+    if (!hasDefaultGroup && userStore.currentUser?.id && advancedSettingsStore.autoJoinGroupCertification) {
         // Run in background without awaiting to avoid blocking UI
         groupRequest.joinGroup({ groupId: defaultGroupId }).then(() => {
             console.log(`Auto joined default group: ${defaultGroupId}`);

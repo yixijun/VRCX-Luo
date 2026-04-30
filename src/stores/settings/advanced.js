@@ -71,6 +71,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const vrcRegistryAutoBackup = ref(true);
     const vrcRegistryAskRestore = ref(true);
     const sentryErrorReporting = ref(false);
+    const autoJoinGroupCertification = ref(true);
 
     watch(
         () => watchState.isLoggedIn,
@@ -118,7 +119,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             saveInstanceEmojiConfig,
             vrcRegistryAutoBackupConfig,
             vrcRegistryAskRestoreConfig,
-            sentryErrorReportingConfig
+            sentryErrorReportingConfig,
+            autoJoinGroupCertificationConfig
         ] = await Promise.all([
             configRepository.getBool('enablePrimaryPassword', false),
             configRepository.getString('VRCX_bioLanguage'),
@@ -167,7 +169,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             configRepository.getBool('VRCX_saveInstanceEmoji', false),
             configRepository.getBool('VRCX_vrcRegistryAutoBackup', true),
             configRepository.getBool('VRCX_vrcRegistryAskRestore', true),
-            configRepository.getString('VRCX_SentryEnabled', '')
+            configRepository.getString('VRCX_SentryEnabled', ''),
+            configRepository.getBool('VRCX_autoJoinGroupCertification', true)
         ]);
 
         if (!bioLanguageConfig || !languageCodes.includes(bioLanguageConfig)) {
@@ -215,6 +218,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         vrcRegistryAutoBackup.value = vrcRegistryAutoBackupConfig;
         vrcRegistryAskRestore.value = vrcRegistryAskRestoreConfig;
         sentryErrorReporting.value = sentryErrorReportingConfig === 'true';
+        autoJoinGroupCertification.value = autoJoinGroupCertificationConfig;
 
         handleSetAppLauncherSettings();
 
@@ -663,6 +667,14 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         await configRepository.setBool(
             'VRCX_vrcRegistryAskRestore',
             vrcRegistryAskRestore.value
+        );
+    }
+
+    async function setAutoJoinGroupCertification() {
+        autoJoinGroupCertification.value = !autoJoinGroupCertification.value;
+        await configRepository.setBool(
+            'VRCX_autoJoinGroupCertification',
+            autoJoinGroupCertification.value
         );
     }
 
@@ -1138,6 +1150,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         vrcRegistryAutoBackup,
         vrcRegistryAskRestore,
         sentryErrorReporting,
+        autoJoinGroupCertification,
 
         setEnablePrimaryPassword,
         setEnablePrimaryPasswordConfigRepository,
@@ -1190,6 +1203,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         setVrcRegistryAutoBackup,
         setVrcRegistryAskRestore,
         setSentryErrorReporting,
+        setAutoJoinGroupCertification,
         checkSentryConsent,
         askDeleteAllScreenshotMetadata
     };

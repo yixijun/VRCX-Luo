@@ -1207,6 +1207,9 @@
                         "header": "Primary Password",
                         "description": "Encrypt Password (Disables Auto Login)"
                     },
+                    "auto_join_group_certification": {
+                        "header": "Certification"
+                    },
                     "relaunch_vrchat": {
                         "header": "Auto Relaunch VRChat After Crash",
                         "description": "Automatically relaunch and rejoin the last instance after a crash."
