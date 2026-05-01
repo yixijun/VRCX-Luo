@@ -91,17 +91,27 @@ export const useAuthStore = defineStore('Auth', () => {
 
     watch(
         [() => watchState.isLoggedIn, () => userStore.currentUser],
-        ([isLoggedIn, currentUser]) => {
+        ([isLoggedIn, currentUser], [oldIsLoggedIn, oldCurrentUser]) => {
             twoFactorAuthDialogVisible.value = false;
             if (isLoggedIn) {
+                // Ignore watcher if we are in a hot-swapped secondary account context.
+                const { accountHub } = require('../services/accountHub.js');
+                if (accountHub.primaryId && currentUser.id && currentUser.id !== accountHub.primaryId) {
+                    return;
+                }
+
                 resetLoginNetworkIssueHintState();
                 updateStoredUser(currentUser);
-                new Noty({
-                    type: 'success',
-                    text: t('message.auth.login_greeting', {
-                        name: `<strong>${escapeTag(currentUser.displayName)}</strong>`
-                    })
-                }).show();
+
+                // Only show greeting on actual login (transition from logged out, or initial hydration)
+                if (!oldIsLoggedIn || !oldCurrentUser || !oldCurrentUser.id) {
+                    new Noty({
+                        type: 'success',
+                        text: t('message.auth.login_greeting', {
+                            name: `<strong>${escapeTag(currentUser.displayName)}</strong>`
+                        })
+                    }).show();
+                }
             }
         },
         { flush: 'sync' }
@@ -596,9 +606,19 @@ export const useAuthStore = defineStore('Auth', () => {
         user,
         { shouldTrackLoginNetworkIssueHint = !attemptingAutoLogin.value } = {}
     ) {
+        await webApiService.clearCookies();
         const { loginParams } = user;
         if (user.cookies) {
             await webApiService.setCookies(user.cookies);
+            try {
+                const checkUser = await request('auth/user');
+                if (checkUser && !checkUser.error && checkUser.id !== user.user.id) {
+                    console.warn(`[auth] Corrupted cookie for ${user.user.id}, clearing.`);
+                    await webApiService.clearCookies();
+                }
+            } catch (e) {
+                // Assume expired or network issue, authLogin will handle it
+            }
         }
         loginForm.value.lastUserLoggedIn = user.user.id; // for resend email 2fa
         if (loginParams.endpoint) {

@@ -121,19 +121,26 @@
                                 :key="user.user.id"
                                 class="cursor-pointer hover:bg-muted p-2 border-0"
                                 @click="clickSavedLogin(user)">
-                                <ItemMedia variant="image" @click.stop>
-                                    <label class="flex items-center cursor-pointer" @click.stop>
-                                        <Checkbox
-                                            :model-value="selectedAccountIds.has(user.user.id)"
-                                            class="mr-2"
-                                            @update:model-value="toggleAccountSelection(user.user.id)" />
-                                        <Avatar class="rounded-full">
+                                <ItemMedia @click.stop>
+                                    <div class="flex items-center cursor-pointer" @click.stop>
+                                        <button
+                                            class="relative flex items-center justify-center size-5 mr-2 rounded-full border text-[10px] font-bold transition-all shrink-0"
+                                            :class="getAccountOrderIndex(user.user.id) >= 0
+                                                ? 'border-transparent text-white'
+                                                : 'border-muted-foreground/40 text-muted-foreground hover:border-foreground'"
+                                            :style="getAccountOrderIndex(user.user.id) >= 0
+                                                ? { background: getAccountBadgeColor(user.user.id) }
+                                                : {}"
+                                            @click="toggleAccountSelection(user.user.id)">
+                                            {{ getAccountBadgeLabel(user.user.id) }}
+                                        </button>
+                                        <Avatar class="rounded-full size-10">
                                             <AvatarImage :src="userImage(user.user)" />
                                             <AvatarFallback>
                                                 <User class="size-5 text-muted-foreground" />
                                             </AvatarFallback>
                                         </Avatar>
-                                    </label>
+                                    </div>
                                 </ItemMedia>
                                 <ItemContent class="min-w-0">
                                     <ItemTitle class="truncate max-w-full">{{ user.user.displayName }}</ItemTitle>
@@ -157,13 +164,13 @@
                         </div>
                     </div>
                     <Button
-                        v-if="selectedAccountIds.size >= 2"
+                        v-if="selectedAccountOrder.length >= 2"
                         variant="outline"
                         size="sm"
                         class="w-full mt-2"
                         :disabled="multiLoginLoading"
                         @click="clickMultiLogin">
-                        {{ t('view.login.loginSelected', { count: selectedAccountIds.size }) }}
+                        {{ t('view.login.loginSelected', { count: selectedAccountOrder.length }) }}
                     </Button>
                 </div>
             </div>
@@ -254,7 +261,8 @@
 
     const savedCredentials = ref({});
     const requiredMessage = 'Required';
-    const selectedAccountIds = reactive(new Set());
+    /** Ordered list of selected account user IDs. Index 0 = primary. */
+    const selectedAccountOrder = ref([]);
     const multiLoginLoading = ref(false);
 
     const formSchema = toTypedSchema(
@@ -294,28 +302,53 @@
         await updateSavedCredentials();
     }
 
+    // ── Multi-account ordered selection ──────────────────────────────────────────
+
+    const BADGE_COLOURS = [
+        '#4ade80', '#60a5fa', '#fb923c', '#f472b6',
+        '#a78bfa', '#34d399', '#fbbf24', '#f87171'
+    ];
+
     /**
      * Toggle selection of an account for multi-login.
+     * Maintains insertion order — first selected = primary.
      * @param {string} userId
      */
     function toggleAccountSelection(userId) {
-        if (selectedAccountIds.has(userId)) {
-            selectedAccountIds.delete(userId);
+        const idx = selectedAccountOrder.value.indexOf(userId);
+        if (idx >= 0) {
+            selectedAccountOrder.value = selectedAccountOrder.value.filter((id) => id !== userId);
         } else {
-            selectedAccountIds.add(userId);
+            selectedAccountOrder.value = [...selectedAccountOrder.value, userId];
         }
+    }
+
+    function getAccountOrderIndex(userId) {
+        return selectedAccountOrder.value.indexOf(userId);
+    }
+
+    function getAccountBadgeLabel(userId) {
+        const idx = getAccountOrderIndex(userId);
+        if (idx < 0) return '';
+        if (idx === 0) return '主';
+        return String(idx);
+    }
+
+    function getAccountBadgeColor(userId) {
+        const idx = getAccountOrderIndex(userId);
+        if (idx < 0) return '#888';
+        return BADGE_COLOURS[idx % BADGE_COLOURS.length];
     }
 
     /**
      * Log in the first selected account normally, then add the rest as secondary sessions.
      */
     async function clickMultiLogin() {
-        if (selectedAccountIds.size < 2) return;
+        if (selectedAccountOrder.value.length < 2) return;
         multiLoginLoading.value = true;
         try {
             const creds = Object.values(savedCredentials.value);
-            const selected = [...selectedAccountIds];
-            const [primaryId, ...secondaryIds] = selected;
+            const [primaryId, ...secondaryIds] = selectedAccountOrder.value;
             const primaryEntry = creds.find((c) => c.user.id === primaryId);
             if (!primaryEntry) return;
 

@@ -32,6 +32,7 @@ import { useGroupStore } from './group';
 import { useLocationStore } from './location';
 import { useUserStore } from './user';
 import { watchState } from '../services/watchState';
+import { accountHub } from '../services/accountHub';
 
 import configRepository from '../services/config';
 
@@ -397,6 +398,19 @@ export const useFriendStore = defineStore('Friend', () => {
             }
         },
         { flush: 'sync' }
+    );
+
+    watch(
+        () => accountHub.viewMode,
+        () => {
+            if (watchState.isLoggedIn) {
+                if (router.currentRoute.value.name === 'friend-log') {
+                    initFriendLogHistoryTable();
+                } else {
+                    friendLogTable.value.data = [];
+                }
+            }
+        }
     );
 
     watch(
@@ -1438,12 +1452,17 @@ export const useFriendStore = defineStore('Friend', () => {
         migrateFriendLog,
         getFriendLog,
         tryApplyFriendOrder,
+        parseFriendOrderBackup,
+        applyFriendOrderBackup,
+        getFriendLogFriendOrder,
+        applyFriendLogFriendOrder,
         resetFriendLog,
         reindexSortedFriend,
         rebuildSortedFriends,
         resetDerivedDebugCounters,
         getDerivedDebugCounters,
         initFriendLogHistoryTable,
-        setIsRefreshFriendsLoading
+        setIsRefreshFriendsLoading,
+        updateSidebarFavorites
     };
 });

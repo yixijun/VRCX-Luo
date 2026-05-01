@@ -67,7 +67,7 @@ export function mergeFriends(primarySortedFriends) {
 // ── Aggregated feed ────────────────────────────────────────────────────────────
 
 const BASE_COLUMNS = [
-    'id', 'created_at', 'user_id', 'display_name', 'type',
+    '_prefix', 'id', 'created_at', 'user_id', 'display_name', 'type',
     'location', 'world_name', 'previous_location', 'time', 'group_name',
     'status', 'status_description', 'previous_status', 'previous_status_description',
     'bio', 'previous_bio',
@@ -96,22 +96,22 @@ function buildUnionSelectsForPrefix(prefix, filters) {
 
     if (gps) {
         selects.push(
-            `SELECT * FROM (SELECT id, created_at, user_id, display_name, 'GPS' AS type, location, world_name, previous_location, time, group_name, NULL AS status, NULL AS status_description, NULL AS previous_status, NULL AS previous_status_description, NULL AS bio, NULL AS previous_bio, NULL AS owner_id, NULL AS avatar_name, NULL AS current_avatar_image_url, NULL AS current_avatar_thumbnail_image_url, NULL AS previous_current_avatar_image_url, NULL AS previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_gps WHERE 1=1 ORDER BY id DESC LIMIT ${N})`
+            `SELECT * FROM (SELECT '${prefix}' AS _prefix, id, created_at, user_id, display_name, 'GPS' AS type, location, world_name, previous_location, time, group_name, NULL AS status, NULL AS status_description, NULL AS previous_status, NULL AS previous_status_description, NULL AS bio, NULL AS previous_bio, NULL AS owner_id, NULL AS avatar_name, NULL AS current_avatar_image_url, NULL AS current_avatar_thumbnail_image_url, NULL AS previous_current_avatar_image_url, NULL AS previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_gps WHERE 1=1 ORDER BY id DESC LIMIT ${N})`
         );
     }
     if (status) {
         selects.push(
-            `SELECT * FROM (SELECT id, created_at, user_id, display_name, 'Status' AS type, NULL AS location, NULL AS world_name, NULL AS previous_location, NULL AS time, NULL AS group_name, status, status_description, previous_status, previous_status_description, NULL AS bio, NULL AS previous_bio, NULL AS owner_id, NULL AS avatar_name, NULL AS current_avatar_image_url, NULL AS current_avatar_thumbnail_image_url, NULL AS previous_current_avatar_image_url, NULL AS previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_status WHERE 1=1 ORDER BY id DESC LIMIT ${N})`
+            `SELECT * FROM (SELECT '${prefix}' AS _prefix, id, created_at, user_id, display_name, 'Status' AS type, NULL AS location, NULL AS world_name, NULL AS previous_location, NULL AS time, NULL AS group_name, status, status_description, previous_status, previous_status_description, NULL AS bio, NULL AS previous_bio, NULL AS owner_id, NULL AS avatar_name, NULL AS current_avatar_image_url, NULL AS current_avatar_thumbnail_image_url, NULL AS previous_current_avatar_image_url, NULL AS previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_status WHERE 1=1 ORDER BY id DESC LIMIT ${N})`
         );
     }
     if (bio) {
         selects.push(
-            `SELECT * FROM (SELECT id, created_at, user_id, display_name, 'Bio' AS type, NULL AS location, NULL AS world_name, NULL AS previous_location, NULL AS time, NULL AS group_name, NULL AS status, NULL AS status_description, NULL AS previous_status, NULL AS previous_status_description, bio, previous_bio, NULL AS owner_id, NULL AS avatar_name, NULL AS current_avatar_image_url, NULL AS current_avatar_thumbnail_image_url, NULL AS previous_current_avatar_image_url, NULL AS previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_bio WHERE 1=1 ORDER BY id DESC LIMIT ${N})`
+            `SELECT * FROM (SELECT '${prefix}' AS _prefix, id, created_at, user_id, display_name, 'Bio' AS type, NULL AS location, NULL AS world_name, NULL AS previous_location, NULL AS time, NULL AS group_name, NULL AS status, NULL AS status_description, NULL AS previous_status, NULL AS previous_status_description, bio, previous_bio, NULL AS owner_id, NULL AS avatar_name, NULL AS current_avatar_image_url, NULL AS current_avatar_thumbnail_image_url, NULL AS previous_current_avatar_image_url, NULL AS previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_bio WHERE 1=1 ORDER BY id DESC LIMIT ${N})`
         );
     }
     if (avatar) {
         selects.push(
-            `SELECT * FROM (SELECT id, created_at, user_id, display_name, 'Avatar' AS type, NULL AS location, NULL AS world_name, NULL AS previous_location, NULL AS time, NULL AS group_name, NULL AS status, NULL AS status_description, NULL AS previous_status, NULL AS previous_status_description, NULL AS bio, NULL AS previous_bio, owner_id, avatar_name, current_avatar_image_url, current_avatar_thumbnail_image_url, previous_current_avatar_image_url, previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_avatar WHERE 1=1 ORDER BY id DESC LIMIT ${N})`
+            `SELECT * FROM (SELECT '${prefix}' AS _prefix, id, created_at, user_id, display_name, 'Avatar' AS type, NULL AS location, NULL AS world_name, NULL AS previous_location, NULL AS time, NULL AS group_name, NULL AS status, NULL AS status_description, NULL AS previous_status, NULL AS previous_status_description, NULL AS bio, NULL AS previous_bio, owner_id, avatar_name, current_avatar_image_url, current_avatar_thumbnail_image_url, previous_current_avatar_image_url, previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_avatar WHERE 1=1 ORDER BY id DESC LIMIT ${N})`
         );
     }
     if (online || offline) {
@@ -119,7 +119,7 @@ function buildUnionSelectsForPrefix(prefix, filters) {
         if (online && !offline) typeFilter = "AND type = 'Online'";
         else if (offline && !online) typeFilter = "AND type = 'Offline'";
         selects.push(
-            `SELECT * FROM (SELECT id, created_at, user_id, display_name, type, location, world_name, NULL AS previous_location, time, group_name, NULL AS status, NULL AS status_description, NULL AS previous_status, NULL AS previous_status_description, NULL AS bio, NULL AS previous_bio, NULL AS owner_id, NULL AS avatar_name, NULL AS current_avatar_image_url, NULL AS current_avatar_thumbnail_image_url, NULL AS previous_current_avatar_image_url, NULL AS previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_online_offline WHERE 1=1 ${typeFilter} ORDER BY id DESC LIMIT ${N})`
+            `SELECT * FROM (SELECT '${prefix}' AS _prefix, id, created_at, user_id, display_name, type, location, world_name, NULL AS previous_location, time, group_name, NULL AS status, NULL AS status_description, NULL AS previous_status, NULL AS previous_status_description, NULL AS bio, NULL AS previous_bio, NULL AS owner_id, NULL AS avatar_name, NULL AS current_avatar_image_url, NULL AS current_avatar_thumbnail_image_url, NULL AS previous_current_avatar_image_url, NULL AS previous_current_avatar_thumbnail_image_url FROM ${prefix}_feed_online_offline WHERE 1=1 ${typeFilter} ORDER BY id DESC LIMIT ${N})`
         );
     }
 
@@ -127,46 +127,64 @@ function buildUnionSelectsForPrefix(prefix, filters) {
 }
 
 function parseDbRow(dbRow) {
-    const type = dbRow[4];
+    const prefix = dbRow[0];
+    const type = dbRow[5];
     const row = {
-        rowId: dbRow[0],
-        created_at: dbRow[1],
-        userId: dbRow[2],
-        displayName: dbRow[3],
+        _prefix: prefix,
+        rowId: dbRow[1],
+        created_at: dbRow[2],
+        userId: dbRow[3],
+        displayName: dbRow[4],
         type
     };
+
+    // Attempt to map prefix to an accountId if it belongs to one of our sessions
+    row.$accountId = null;
+    row.$accountColor = null;
+    row.$accountLabel = null;
+    const session = accountHub.allSessions.find(s => s.dbPrefix === prefix);
+    if (session) {
+        row.$accountId = session.userId;
+        row.$accountColor = accountHub.getAccountColor(session.userId);
+        row.$accountLabel = session.label || session.userInfo?.displayName || session.userId;
+    } else if (prefix === accountHub.primaryPrefix) {
+        row.$accountId = accountHub.primaryId;
+        row.$accountColor = accountHub.getAccountColor(accountHub.primaryId);
+        row.$accountLabel = 'Primary';
+    }
+
     switch (type) {
         case 'GPS':
-            row.location = dbRow[5];
-            row.worldName = dbRow[6];
-            row.previousLocation = dbRow[7];
-            row.time = dbRow[8];
-            row.groupName = dbRow[9];
+            row.location = dbRow[6];
+            row.worldName = dbRow[7];
+            row.previousLocation = dbRow[8];
+            row.time = dbRow[9];
+            row.groupName = dbRow[10];
             break;
         case 'Status':
-            row.status = dbRow[10];
-            row.statusDescription = dbRow[11];
-            row.previousStatus = dbRow[12];
-            row.previousStatusDescription = dbRow[13];
+            row.status = dbRow[11];
+            row.statusDescription = dbRow[12];
+            row.previousStatus = dbRow[13];
+            row.previousStatusDescription = dbRow[14];
             break;
         case 'Bio':
-            row.bio = dbRow[14];
-            row.previousBio = dbRow[15];
+            row.bio = dbRow[15];
+            row.previousBio = dbRow[16];
             break;
         case 'Avatar':
-            row.ownerId = dbRow[16];
-            row.avatarName = dbRow[17];
-            row.currentAvatarImageUrl = dbRow[18];
-            row.currentAvatarThumbnailImageUrl = dbRow[19];
-            row.previousCurrentAvatarImageUrl = dbRow[20];
-            row.previousCurrentAvatarThumbnailImageUrl = dbRow[21];
+            row.ownerId = dbRow[17];
+            row.avatarName = dbRow[18];
+            row.currentAvatarImageUrl = dbRow[19];
+            row.currentAvatarThumbnailImageUrl = dbRow[20];
+            row.previousCurrentAvatarImageUrl = dbRow[21];
+            row.previousCurrentAvatarThumbnailImageUrl = dbRow[22];
             break;
         case 'Online':
         case 'Offline':
-            row.location = dbRow[5];
-            row.worldName = dbRow[6];
-            row.time = dbRow[8];
-            row.groupName = dbRow[9];
+            row.location = dbRow[6];
+            row.worldName = dbRow[7];
+            row.time = dbRow[9];
+            row.groupName = dbRow[10];
             break;
     }
     return row;

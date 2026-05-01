@@ -38,6 +38,16 @@ export const useFeedStore = defineStore('Feed', () => {
     );
 
     watch(
+        () => accountHub.viewMode,
+        () => {
+            if (watchState.isLoggedIn) {
+                feedTableData.value = [];
+                initFeedTable();
+            }
+        }
+    );
+
+    watch(
         () => watchState.isFavoritesLoaded,
         (isFavoritesLoaded) => {
             if (isFavoritesLoaded && feedTable.value.vip) {

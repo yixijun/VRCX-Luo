@@ -13,8 +13,7 @@
  */
 
 import { reactive } from 'vue';
-// TODO: import utils as needed when location overlay is implemented
-// import { parseLocation } from '../shared/utils/locationParser';
+import { parseLocation } from '../shared/utils';
 import { AppDebug } from './appConfig';
 import sqliteService from './sqlite.js';
 import webApiService from './webapi.js';
@@ -75,6 +74,15 @@ export class AccountSession {
         let currentUser = null;
         try {
             currentUser = await this._requestRaw('auth/user');
+            // Ensure the cookie actually belongs to this secondary account
+            if (currentUser && !currentUser.error && currentUser.id !== this.userId) {
+                console.warn(`[accountSession] Cookie mismatch for ${this.userId}, forcing fresh login.`);
+                currentUser = null;
+                // We should clear the bad cookies from the secondary client
+                try {
+                    webApiService.setSecondaryCookies(this.userId, '');
+                } catch {}
+            }
         } catch {
             currentUser = null;
         }
@@ -88,9 +96,12 @@ export class AccountSession {
             const endpointToUse = endpoint || AppDebug.endpointDomainVrchat;
             const wsToUse = websocket || AppDebug.websocketDomainVrchat;
 
+            const auth = btoa(
+                `${encodeURIComponent(username)}:${encodeURIComponent(password)}`
+            );
             currentUser = await this._requestRaw('auth/user', {
-                method: 'POST',
-                params: { username, password }
+                method: 'GET',
+                headers: { Authorization: `Basic ${auth}` }
             });
 
             this._wsEndpoint = wsToUse;
@@ -104,8 +115,9 @@ export class AccountSession {
             throw new Error(`Secondary account ${this.userId}: login failed`);
         }
 
-        Object.assign(this.userInfo, currentUser);
-        this.label = (currentUser.displayName || this.userId).slice(0, 2).toUpperCase();
+        this.userInfo = currentUser;
+        this.label = currentUser.displayName || this.userId;
+        this._initialized = true;
 
         // Initialise DB tables for this account
         await this._initTables();
@@ -272,7 +284,11 @@ export class AccountSession {
                 name: user.displayName,
                 state,
                 ref: reactive({ ...user }),
-                $accountIds: [this.userId]
+                $accountIds: [this.userId],
+                isVIP: false,
+                memo: '',
+                pendingOffline: false,
+                $nickName: ''
             });
         }
     }

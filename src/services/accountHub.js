@@ -8,8 +8,9 @@
  *  - Add / remove secondary sessions at any time without disturbing the primary
  */
 
-import { reactive, watch } from 'vue';
+import { reactive, toRaw, watch } from 'vue';
 import { AccountSession } from './accountSession.js';
+import { dbVars } from './database/index.js';
 import { watchState } from './watchState.js';
 
 // ── Colour palette for account badges ──────────────────────────────────────────
@@ -46,6 +47,21 @@ const _state = reactive({
 
     _colorIndex: 0
 });
+
+/**
+ * Snapshot of the primary account's global state.
+ * Taken the first time we switch away from the primary view,
+ * and restored when we switch back.
+ *
+ * @type {{
+ *   dbUserId: string,
+ *   dbUserPrefix: string,
+ *   currentUser: object,
+ *   friends: Map<string, object>,
+ *   sortedFriends: object[]
+ * } | null}
+ */
+let _primarySnapshot = null;
 
 // ── Public reactive accessors ──────────────────────────────────────────────────
 
@@ -112,9 +128,9 @@ export const accountHub = {
      */
     updatePrimaryInfo(userInfo) {
         const session = _state.sessions.get(_state.primaryId);
-        if (session) {
-            Object.assign(session.userInfo, userInfo);
-            session.label = (userInfo.displayName || _state.primaryId).slice(0, 2).toUpperCase();
+        if (session && userInfo) {
+            session.userInfo = userInfo;
+            session.label = userInfo.displayName || _state.primaryId;
         }
     },
 
@@ -168,28 +184,85 @@ export const accountHub = {
 
     /**
      * Switch to the aggregated merged view.
+     * Restores the primary context first so the merged view
+     * can overlay secondary data on top of the primary Store.
      */
     switchToMerged() {
+        _restorePrimary();
         _state.viewMode = 'merged';
     },
 
     /**
      * Switch to the scoped view for a specific account.
-     * Pass the primary userId to go back to the normal primary view.
+     * If the target is the primary account, restores from snapshot.
+     * If the target is a secondary account, snapshots the primary and
+     * hot-swaps dbVars / userStore / friendStore.
      * @param {string} userId
      */
     switchToAccount(userId) {
         if (!userId || userId === _state.primaryId) {
+            _restorePrimary();
             _state.viewMode = 'primary';
-        } else {
-            _state.viewMode = `account:${userId}`;
+            return;
         }
+
+        const session = _state.sessions.get(userId);
+        if (!session || !(session instanceof AccountSession)) {
+            console.warn('[accountHub] switchToAccount: session not found', userId);
+            return;
+        }
+
+        // Snapshot primary state once (idempotent)
+        _snapshotPrimary();
+
+        // Hot-swap dbVars so all SQL queries hit the secondary tables
+        dbVars.userId = session.userId;
+        dbVars.userPrefix = session.userPrefix;
+
+        // Hot-swap global stores
+        try {
+            const { useUserStore } = require('../stores/user.js');
+            const { useFriendStore } = require('../stores/friend.js');
+            const userStore = useUserStore();
+            const friendStore = useFriendStore();
+
+            // Overwrite currentUser with the secondary's userInfo
+            userStore.setCurrentUser({
+                ...toRaw(userStore.currentUser),
+                ...toRaw(session.userInfo),
+                id: session.userId
+            });
+
+            friendStore.friends.clear();
+            for (const [id, ctx] of session.friendsCache) {
+                friendStore.friends.set(id, reactive({ ...ctx }));
+            }
+            if (typeof friendStore.updateSidebarFavorites === 'function') {
+                friendStore.updateSidebarFavorites();
+            }
+            friendStore.rebuildSortedFriends();
+            if (typeof friendStore.updateOnlineFriendCounter === 'function') {
+                friendStore.updateOnlineFriendCounter();
+            }
+
+            try {
+                const { useTrackedNonFriendsStore } = require('../stores/trackedNonFriends.js');
+                useTrackedNonFriendsStore().loadTrackedNonFriends();
+            } catch (e) {
+                console.error('[accountHub] failed to swap trackedNonFriends', e);
+            }
+        } catch (e) {
+            console.error('[accountHub] switchToAccount: store swap failed', e);
+        }
+
+        _state.viewMode = `account:${userId}`;
     },
 
     /**
      * Switch back to primary account view.
      */
     switchToPrimary() {
+        _restorePrimary();
         _state.viewMode = 'primary';
     },
 
@@ -212,6 +285,7 @@ export const accountHub = {
         _state.viewMode = 'primary';
         _state.accountColors.clear();
         _state._colorIndex = 0;
+        _primarySnapshot = null;
     }
 };
 
@@ -230,6 +304,81 @@ function _computeUserPrefix(userId) {
         prefix = '_' + prefix;
     }
     return prefix;
+}
+
+/**
+ * Take a snapshot of the primary account's global state.
+ * Safe to call multiple times – only the first call actually captures.
+ */
+function _snapshotPrimary() {
+    if (_primarySnapshot) return; // already captured
+
+    try {
+        const { useUserStore } = require('../stores/user.js');
+        const { useFriendStore } = require('../stores/friend.js');
+        const userStore = useUserStore();
+        const friendStore = useFriendStore();
+
+        _primarySnapshot = {
+            dbUserId: dbVars.userId,
+            dbUserPrefix: dbVars.userPrefix,
+            currentUser: JSON.parse(JSON.stringify(toRaw(userStore.currentUser))),
+            friends: new Map(),
+            sortedFriends: friendStore.sortedFriends.slice()
+        };
+
+        for (const [id, ctx] of friendStore.friends) {
+            _primarySnapshot.friends.set(id, toRaw(ctx));
+        }
+    } catch (e) {
+        console.error('[accountHub] _snapshotPrimary failed', e);
+    }
+}
+
+/**
+ * Restore the primary account's global state from the snapshot.
+ * No-op if we are already in the primary state (no snapshot exists).
+ */
+function _restorePrimary() {
+    if (!_primarySnapshot) return;
+
+    try {
+        const { useUserStore } = require('../stores/user.js');
+        const { useFriendStore } = require('../stores/friend.js');
+        const userStore = useUserStore();
+        const friendStore = useFriendStore();
+
+        // Restore dbVars
+        dbVars.userId = _primarySnapshot.dbUserId;
+        dbVars.userPrefix = _primarySnapshot.dbUserPrefix;
+
+        // Restore currentUser
+        userStore.setCurrentUser(_primarySnapshot.currentUser);
+
+        // Restore friends
+        friendStore.friends.clear();
+        for (const [id, ctx] of _primarySnapshot.friends) {
+            friendStore.friends.set(id, reactive({ ...ctx }));
+        }
+        if (typeof friendStore.updateSidebarFavorites === 'function') {
+            friendStore.updateSidebarFavorites();
+        }
+        friendStore.rebuildSortedFriends();
+        if (typeof friendStore.updateOnlineFriendCounter === 'function') {
+            friendStore.updateOnlineFriendCounter();
+        }
+
+        try {
+            const { useTrackedNonFriendsStore } = require('../stores/trackedNonFriends.js');
+            useTrackedNonFriendsStore().loadTrackedNonFriends();
+        } catch (e) {
+            console.error('[accountHub] failed to restore trackedNonFriends', e);
+        }
+    } catch (e) {
+        console.error('[accountHub] _restorePrimary failed', e);
+    }
+
+    _primarySnapshot = null;
 }
 
 /**
