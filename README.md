@@ -1,27 +1,21 @@
 <div align="center">
 
-# <img src="./images/VRCX.png" width="64" height="64"> VRCX 优化版 - 地雷Edition
+# <img src="./images/VRCX.png" width="64" height="64"> VRCX - 地雷Edition
 
 [![GitHub Workflow Status](https://github.com/FuLuTang/VRCX-jirai/actions/workflows/github_actions.yml/badge.svg)](https://github.com/FuLuTang/VRCX-jirai/actions/workflows/github_actions.yml)
-
-### **专为"地雷人"打造的视奸神器**
 
 </div>
 
 这是 [VRCX](https://github.com/vrcx-team/VRCX) 的魔改分支，旨在优化体验，修复漏洞，补全功能。
 
-> 虽然原版 VRCX 已经很好用了，但要想成为一名合格的 **地雷男/女**，光知道朋友在不在线怎么够？<br>
-你还需要知道 TA 和谁在一起 ~~、去了哪里、待了多久、为什么不陪你玩~~ 👁️...
-
-于是就有了这个版本。
+## 此版本不再维护
+> 因上游 VRCX 主要开发者已不再维护，且部分开发者对此项目表示反对，会影响社区环境。我也不想再花时间去维护一个可能会引发争议的分支了。
 
 | 目标平台 | 下载链接 / 安装说明 |
 | :--- | :--- |
 | **Windows** | [最新发布版本 (Releases)](https://github.com/FuLuTang/VRCX-jirai/releases/latest) |
 | 💡 **避坑指路** | **若启动后看不到新功能**，请在侧边栏 `右键 - 自定义导航栏 - 恢复默认` |
 | **MacOS / Linux** | 需要手动构建，请参考下文 [从源码构建](#从源码构建) |
-| **Beta 测试版** | [GitHub Actions (获取最新自动构建)](https://github.com/FuLuTang/VRCX-jirai/actions/workflows/github_actions.yml) |
-
 
 <div align="center">
 
@@ -42,7 +36,7 @@
 
 <div align="left">
 
-- :couple: **双人关系查询 (TwoPersonRelationship)**
+- :couple: **共同实例查询 (TwoPersonRelationship)**
     - 从你的好友列表中任选两人，一键查询他们**共同在一个房间待过的所有记录**。
     - **极限细节**：不仅记录共存时间，还能看到当时“房主是谁”、“最高达到过多少人数”。
     - **双向奔赴识别**：独家时延算法！自动计算两人进入房间的先后逻辑。如果两人在 3 分钟内（防抖时间）先后进入同一个房间，会标记为“**双向奔赴**”（即：约好了一起进房）；否则会清晰展示谁是先到的。
@@ -54,12 +48,12 @@
     - **追踪非好友显示**：可以将你手动追踪的非好友（或开了“发现共同好友”的陌生人）也加入到关系网中，完整还原你的社交宇宙。
 
 
-- :detective: **像查代码一样查签名记录 (Bio Diff View)**
+- :detective: **个人简介Diff视图 (Bio Diff View)**
     - 去掉了原版干巴巴的简介历史，新增了一个类似 `Git Diff` 的界面。
     - 朋友改了简介，**红字**代表删掉的话，**绿字**代表加进来的话。偷偷升级了配置，或暗戳戳加了谁的名字，一眼定真！
     - **24小时智能合并**：一天之内哪怕改了 10 次简介，也会自动合并成一条精简的差异记录。不再满屏垃圾信息。
 
-- :hourglass_flowing_sand: **关系时间轴 (Relationship Timeline)**
+- :hourglass_flowing_sand: **交流密度时间轴 (Relationship Timeline)**
     - 以时间流的形式，直观地列出你的时间分配都花在谁身上了。
     - 或者，发现你“最熟悉的陌生人”。
 
@@ -75,7 +69,7 @@
         - 状态（灯色）变更
     - 可通过直接输入玩家UID，或点进任意玩家的个人主页，在“···”中点击“追踪”按钮来追踪非好友。
 
-- ~~:footprints: **自动跟随 (Auto Follow)**~~*（暂未实现）*
+- ~~:footprints: **自动跟随 (Auto Follow)**~~*（暂未实现，且不再计划）*
     - 在好友的个人信息卡片上，新增了一个“一键跟随”按钮。
     - 点击后，软件会自动检测该好友当前所在的实例类型：
         - 如果是**公共实例**，软件会直接尝试启动游戏并加入该实例。
@@ -86,9 +80,6 @@
 </div>
 
 # 原版体验优化
-
-- :fire: 解锁了 ~~不知为何原版做了但没开放的~~ **热门世界 (HotWorlds)** 功能
-    - 统计你在一段时间内（7 天 / 30 天 / 90 天）去得最多的世界，顺便反省一下自己的 VRC 人生。
 
 - :mag: **搜索功能增强 (Quick Search)**
     - 在右侧的快捷搜索下拉列表中，额外展示了 "最近遇到的人" 和 "最近加入的世界"。
@@ -115,10 +106,6 @@
 # 从源码构建
 
 请参考上游仓库的 [Building from source](https://github.com/vrcx-team/VRCX/wiki/Building-from-source) 说明进行构建。
-
-# Contact 社群
-- `QQ群号`: ██████████
-- `Discord`: [福禄器](https://discord.gg/gDDCWqvKUw)
 
 ---
 
