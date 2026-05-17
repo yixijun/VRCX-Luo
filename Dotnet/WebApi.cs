@@ -39,6 +39,9 @@ namespace VRCX
         private HttpClient _httpClient;
         private SocketsHttpHandler _httpHandler;
 
+        // Secondary account clients: Map<accountId, (client, cookies)>
+        private readonly Dictionary<string, (HttpClient client, CookieContainer cookies)> _secondaryClients = new();
+
         static WebApi()
         {
             Instance = new WebApi();
@@ -383,6 +386,136 @@ namespace VRCX
 
         public async Task<Tuple<int, string>> Execute(IDictionary<string, object> options)
         {
+            var result = await ExecuteWithClient(_httpClient, options);
+            // Track cookie dirty flag for default client
+            if (result.Item1 >= 200)
+                _cookieDirty = true;
+            return result;
+        }
+
+        // ── Secondary account client management ──────────────────────────────
+
+        public void CreateSecondaryClient(string accountId)
+        {
+            if (_secondaryClients.ContainsKey(accountId))
+                return;
+
+            var cookies = new CookieContainer();
+            var handler = new SocketsHttpHandler
+            {
+                CookieContainer = cookies,
+                UseCookies = true,
+                AutomaticDecompression = DecompressionMethods.All,
+                PooledConnectionLifetime = TimeSpan.FromMinutes(5),
+                MaxConnectionsPerServer = 10
+            };
+            if (ProxySet)
+            {
+                handler.Proxy = Proxy;
+                handler.UseProxy = true;
+            }
+            var client = new HttpClient(handler);
+            client.DefaultRequestHeaders.Add("User-Agent", Program.Version);
+            _secondaryClients[accountId] = (client, cookies);
+        }
+
+        public void DestroySecondaryClient(string accountId)
+        {
+            if (_secondaryClients.TryGetValue(accountId, out var entry))
+            {
+                entry.client.Dispose();
+                _secondaryClients.Remove(accountId);
+            }
+        }
+
+        public string GetSecondaryCookies(string accountId)
+        {
+            if (!_secondaryClients.TryGetValue(accountId, out var entry))
+                return string.Empty;
+
+            var cookies = GetAllCookiesFrom(entry.cookies);
+            using var memoryStream = new MemoryStream();
+            System.Text.Json.JsonSerializer.Serialize(memoryStream, cookies);
+            return Convert.ToBase64String(memoryStream.ToArray());
+        }
+
+        public void SetSecondaryCookies(string accountId, string cookies)
+        {
+            if (!_secondaryClients.TryGetValue(accountId, out var entry))
+                return;
+
+            try
+            {
+                using var stream = new MemoryStream(Convert.FromBase64String(cookies));
+                var data = System.Text.Json.JsonSerializer.Deserialize<CookieCollection>(stream);
+                entry.cookies.Add(data);
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"Failed to set secondary cookies for {accountId}: {e.Message}");
+            }
+        }
+
+        public async Task<string> ExecuteAsJson(string accountId, string options)
+        {
+            var data = JsonConvert.DeserializeObject<Dictionary<string, object>>(options);
+            var result = await ExecuteAs(accountId, data);
+            return System.Text.Json.JsonSerializer.Serialize(new
+            {
+                status = result.Item1,
+                message = result.Item2
+            });
+        }
+
+        public async Task<Tuple<int, string>> ExecuteAs(string accountId, IDictionary<string, object> options)
+        {
+            if (!_secondaryClients.TryGetValue(accountId, out var entry))
+                return new Tuple<int, string>(-1, $"No secondary client for {accountId}");
+
+            return await ExecuteWithClient(entry.client, options);
+        }
+
+        private List<Cookie> GetAllCookiesFrom(CookieContainer container)
+        {
+            var cookieTable = (Hashtable)container.GetType().InvokeMember("m_domainTable",
+                BindingFlags.NonPublic |
+                BindingFlags.GetField |
+                BindingFlags.Instance,
+                null,
+                container,
+                new object[] { });
+
+            var uniqueCookies = new Dictionary<string, Cookie>();
+            foreach (var item in cookieTable.Keys)
+            {
+                var domain = (string)item;
+                if (string.IsNullOrEmpty(domain))
+                    continue;
+
+                if (domain.StartsWith('.'))
+                    domain = domain[1..];
+
+                var address = $"http://{domain}/";
+                if (!Uri.TryCreate(address, UriKind.Absolute, out var uri))
+                    continue;
+
+                foreach (Cookie cookie in container.GetCookies(uri))
+                {
+                    var key = $"{domain}.{cookie.Name}";
+                    if (!uniqueCookies.TryGetValue(key, out var value) ||
+                        cookie.TimeStamp > value.TimeStamp)
+                    {
+                        cookie.Expires = DateTime.MaxValue;
+                        uniqueCookies[key] = cookie;
+                    }
+                }
+            }
+
+            return uniqueCookies.Values.ToList();
+        }
+
+        private async Task<Tuple<int, string>> ExecuteWithClient(HttpClient httpClient, IDictionary<string, object> options)
+        {
             try
             {
                 var url = (string)options["url"];
@@ -407,7 +540,6 @@ namespace VRCX
                 }
                 else
                 {
-                    // Standard request
                     var httpMethod = HttpMethod.Get;
                     if (options.TryGetValue("method", out var methodObj))
                     {
@@ -416,57 +548,40 @@ namespace VRCX
 
                     request = new HttpRequestMessage(httpMethod, url);
 
-                    // Handle body for non-GET requests
                     if (httpMethod != HttpMethod.Get && options.TryGetValue("body", out var body))
                     {
                         var bodyContent = new StringContent((string)body, Encoding.UTF8);
-
-                        // Set content type if specified in headers
-                        if (options.TryGetValue("headers", out var headersObj))
+                        if (options.TryGetValue("headers", out var hdrs))
                         {
-                            var headersDict = ParseHeaders(headersObj);
-                            if (headersDict.TryGetValue("Content-Type", out var contentType))
-                            {
-                                bodyContent.Headers.ContentType = MediaTypeHeaderValue.Parse(contentType);
-                            }
+                            var hd = ParseHeaders(hdrs);
+                            if (hd.TryGetValue("Content-Type", out var ct))
+                                bodyContent.Headers.ContentType = MediaTypeHeaderValue.Parse(ct);
                         }
-
                         request.Content = bodyContent;
                     }
                 }
 
-                // Apply headers
                 if (options.TryGetValue("headers", out var headers))
                 {
                     var headersDict = ParseHeaders(headers);
                     foreach (var (key, value) in headersDict)
                     {
-                        // Skip Content-Type as it's set on content
                         if (string.Equals(key, "Content-Type", StringComparison.OrdinalIgnoreCase))
                             continue;
 
                         if (string.Equals(key, "Referer", StringComparison.OrdinalIgnoreCase))
-                        {
                             request.Headers.Referrer = new Uri(value);
-                        }
                         else
-                        {
                             request.Headers.TryAddWithoutValidation(key, value);
-                        }
                     }
                 }
 
-                using var response = await _httpClient.SendAsync(request);
-
-                // Check if cookies were modified
-                if (response.Headers.Contains("Set-Cookie"))
-                    _cookieDirty = true;
+                using var response = await httpClient.SendAsync(request);
 
                 var contentTypeResponse = response.Content.Headers.ContentType?.MediaType ?? string.Empty;
 
                 if (contentTypeResponse.Contains("image/") || contentTypeResponse.Contains("application/octet-stream"))
                 {
-                    // Base64 response data for image
                     var imageBytes = await response.Content.ReadAsByteArrayAsync();
                     return new Tuple<int, string>(
                         (int)response.StatusCode,
@@ -475,35 +590,26 @@ namespace VRCX
                 }
 
                 var responseBody = await response.Content.ReadAsStringAsync();
-                return new Tuple<int, string>(
-                    (int)response.StatusCode,
-                    responseBody
-                );
+                return new Tuple<int, string>((int)response.StatusCode, responseBody);
             }
             catch (HttpRequestException httpException)
             {
                 if (httpException.InnerException != null)
                     Logger.Error($"{httpException.Message} | {httpException.InnerException}");
 
-                // Try to get status code if available
                 var statusCode = httpException.StatusCode.HasValue ? (int)httpException.StatusCode.Value : -1;
-
-                return new Tuple<int, string>(
-                    statusCode,
-                    httpException.Message
-                );
+                return new Tuple<int, string>(statusCode, httpException.Message);
             }
             catch (Exception e)
             {
                 if (e.InnerException != null)
                     Logger.Error($"{e.Message} | {e.InnerException}");
 
-                return new Tuple<int, string>(
-                    -1,
-                    e.Message
-                );
+                return new Tuple<int, string>(-1, e.Message);
             }
         }
+
+        // ── End secondary account client management ───────────────────────────
 
         private static Dictionary<string, string> ParseHeaders(object headers)
         {

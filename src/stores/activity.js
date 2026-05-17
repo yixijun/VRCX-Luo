@@ -1,11 +1,29 @@
 import { defineStore } from 'pinia';
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 
 import { database } from '../services/database';
 import { mergeSessions } from '../shared/utils/activityEngine.js';
 import { runActivityWorkerTask } from '../workers/activityWorkerRunner.js';
+import { accountHub } from '../services/accountHub';
+import { watchState } from '../services/watchState';
 
 const snapshotMap = new Map();
+
+watch(
+    () => accountHub.viewMode,
+    () => {
+        snapshotMap.clear();
+    }
+);
+
+watch(
+    () => watchState.isLoggedIn,
+    (isLoggedIn) => {
+        if (!isLoggedIn) {
+            snapshotMap.clear();
+        }
+    }
+);
 const inFlightJobs = new Map();
 const workerCall = runActivityWorkerTask;
 const MAX_SNAPSHOT_ENTRIES = 12;

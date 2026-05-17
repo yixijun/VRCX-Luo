@@ -5,6 +5,8 @@ import { database } from '../services/database';
 import { useFriendStore } from './friend';
 import { useVrcxStore } from './vrcx';
 import { watchState } from '../services/watchState';
+import { accountHub } from '../services/accountHub.js';
+import { lookupAggregatedFeed } from '../services/aggregatedView.js';
 
 import configRepository from '../services/config';
 
@@ -33,6 +35,16 @@ export const useFeedStore = defineStore('Feed', () => {
             }
         },
         { flush: 'sync' }
+    );
+
+    watch(
+        () => accountHub.viewMode,
+        () => {
+            if (watchState.isLoggedIn) {
+                feedTableData.value = [];
+                initFeedTable();
+            }
+        }
     );
 
     watch(
@@ -145,20 +157,31 @@ export const useFeedStore = defineStore('Feed', () => {
             }
             const search = feedTable.value.search.trim();
             const { dateFrom, dateTo } = feedTable.value;
-            const rows =
-                search || dateFrom || dateTo
-                    ? await database.searchFeedDatabase(
-                          search,
-                          feedTable.value.filter,
-                          vipList,
-                          vrcxStore.searchLimit,
-                          dateFrom,
-                          dateTo
-                      )
-                    : await database.lookupFeedDatabase(
-                          feedTable.value.filter,
-                          vipList
-                      );
+
+            let rows;
+            if (accountHub.isMergedView && accountHub.allUserPrefixes.length > 1) {
+                // Merged mode: aggregate across all account prefixes
+                rows = await lookupAggregatedFeed(
+                    accountHub.allUserPrefixes,
+                    feedTable.value.filter,
+                    vrcxStore.maxTableSize
+                );
+            } else {
+                rows =
+                    search || dateFrom || dateTo
+                        ? await database.searchFeedDatabase(
+                              search,
+                              feedTable.value.filter,
+                              vipList,
+                              vrcxStore.searchLimit,
+                              dateFrom,
+                              dateTo
+                          )
+                        : await database.lookupFeedDatabase(
+                              feedTable.value.filter,
+                              vipList
+                          );
+            }
             feedTableData.value = [];
             feedTableData.value = [...feedTableData.value, ...rows];
         } finally {

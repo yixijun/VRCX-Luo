@@ -22,6 +22,7 @@ import { useUserStore } from '../user';
 import { useVrStore } from '../vr';
 import { useVrcxStore } from '../vrcx';
 import { watchState } from '../../services/watchState';
+import { accountHub } from '../../services/accountHub';
 
 import configRepository from '../../services/config';
 
@@ -121,6 +122,27 @@ export const useGameLogStore = defineStore('GameLog', () => {
             sessionsHasMore.value = true;
         },
         { flush: 'sync' }
+    );
+
+    watch(
+        () => accountHub.viewMode,
+        () => {
+            if (watchState.isLoggedIn) {
+                gameLogTableData.value = [];
+                sessionsSegments.value = [];
+                sessionsRawLocations.value = [];
+                sessionsRawEvents.value = [];
+                sessionsCursor.value = null;
+                sessionsHasMore.value = true;
+                if (router.currentRoute.value.name === 'game-log') {
+                    if (sessionsViewMode.value === 'sessions') {
+                        loadSessionsSegments();
+                    } else {
+                        initGameLogTable();
+                    }
+                }
+            }
+        }
     );
 
     watch(
