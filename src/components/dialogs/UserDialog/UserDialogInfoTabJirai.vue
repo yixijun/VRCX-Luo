@@ -495,7 +495,7 @@
     <Dialog v-model:open="bioArchiveVisible">
         <DialogContent class="sm:max-w-2xl">
             <DialogHeader>
-                <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center justify-between gap-3 pr-8">
                     <DialogTitle>{{ t('dialog.user.info.bio_archive') }}</DialogTitle>
                     <label class="flex items-center gap-2 text-sm text-muted-foreground">
                         <span>{{ t('dialog.user.info.bio_diff_toggle') }}</span>

@@ -3,6 +3,7 @@ import { i18n } from '@/plugins';
 import { formatDateFilter } from '@/shared/utils';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-vue-next';
+import UserIdentityInline from '@/components/UserIdentityInline.vue';
 
 const { t } = i18n.global;
 
@@ -29,8 +30,6 @@ export const createColumns = ({
     randomUserColours,
     rolesText,
     userImage,
-    userImageFull,
-    onShowFullscreenImage,
     onShowUser,
     onSelectionChange
 }) => [
@@ -58,31 +57,6 @@ export const createColumns = ({
         }
     },
     {
-        id: 'avatar',
-        header: () => t('dialog.group_member_moderation.avatar'),
-        size: 70,
-        enableSorting: false,
-        cell: ({ row }) => {
-            const original = row.original;
-            const thumb = userImage?.(original?.user);
-            const full = userImageFull?.(original?.user);
-
-            return (
-                <img
-                    src={thumb}
-                    class="friends-list-avatar"
-                    loading="lazy"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (full) {
-                            onShowFullscreenImage?.(full);
-                        }
-                    }}
-                />
-            );
-        }
-    },
-    {
         id: 'displayName',
         accessorFn: (row) => row?.user?.displayName ?? row?.$displayName ?? '',
         header: ({ column }) =>
@@ -106,9 +80,13 @@ export const createColumns = ({
                         onShowUser?.(original?.userId);
                     }}
                 >
-                    <span style={colorStyle}>
-                        {original?.user?.displayName}
-                    </span>
+                    <UserIdentityInline
+                        user={original?.user}
+                        userId={original?.userId}
+                        displayName={original?.$displayName}
+                        imageResolver={userImage}
+                        nameStyle={colorStyle}
+                    />
                 </span>
             );
         }

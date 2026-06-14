@@ -2,6 +2,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { i18n } from '@/plugins';
 import { ArrowUpDown } from 'lucide-vue-next';
 import { Button } from '@/components/ui/button';
+import UserIdentityInline from '@/components/UserIdentityInline.vue';
 
 const { t } = i18n.global;
 
@@ -27,8 +28,6 @@ const sortButton = ({ column, label, descFirst = false }) => (
 export const createColumns = ({
     randomUserColours,
     userImage,
-    userImageFull,
-    onShowFullscreenImage,
     onShowUser,
     onSelectionChange
 }) => [
@@ -56,31 +55,6 @@ export const createColumns = ({
         }
     },
     {
-        id: 'avatar',
-        header: () => t('dialog.group_member_moderation.avatar'),
-        size: 70,
-        enableSorting: false,
-        cell: ({ row }) => {
-            const original = row.original;
-            const thumb = userImage?.(original?.user);
-            const full = userImageFull?.(original?.user);
-
-            return (
-                <img
-                    src={thumb}
-                    class="friends-list-avatar"
-                    loading="lazy"
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (full) {
-                            onShowFullscreenImage?.(full);
-                        }
-                    }}
-                />
-            );
-        }
-    },
-    {
         id: 'displayName',
         accessorFn: (row) => row?.user?.displayName ?? row?.$displayName ?? '',
         header: ({ column }) =>
@@ -104,9 +78,13 @@ export const createColumns = ({
                         onShowUser?.(original?.userId);
                     }}
                 >
-                    <span style={colorStyle}>
-                        {original?.user?.displayName}
-                    </span>
+                    <UserIdentityInline
+                        user={original?.user}
+                        userId={original?.userId}
+                        displayName={original?.$displayName}
+                        imageResolver={userImage}
+                        nameStyle={colorStyle}
+                    />
                 </span>
             );
         }

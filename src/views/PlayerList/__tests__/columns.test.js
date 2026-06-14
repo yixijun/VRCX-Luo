@@ -139,11 +139,7 @@ describe('views/PlayerList/columns.jsx', () => {
         const displayNameCol = cols.find((c) => c.id === 'displayName');
         const cell = displayNameCol.cell({ row: makeRow() });
 
-        expect(mocks.userImage).toHaveBeenCalledWith(
-            expect.objectContaining({ id: 'usr_1' }),
-            true,
-            '64'
-        );
+        expect(findNode(cell, (n) => n.props?.imageResolver === mocks.userImage)).toBeTruthy();
         expect(cell).toBeTruthy();
     });
 

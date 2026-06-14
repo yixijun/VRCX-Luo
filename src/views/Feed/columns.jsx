@@ -1,5 +1,6 @@
 import AvatarInfo from '../../components/AvatarInfo.vue';
 import Location from '../../components/Location.vue';
+import UserIdentityInline from '../../components/UserIdentityInline.vue';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import {
@@ -16,18 +17,26 @@ import {
 } from 'lucide-vue-next';
 import { formatDateFilter, statusClass, timeToText } from '../../shared/utils';
 import { i18n } from '../../plugins/i18n';
-import { useGalleryStore, useFriendStore } from '../../stores';
+import { useGalleryStore, useFriendStore, useUserStore } from '../../stores';
 import { showUserDialog } from '../../coordinators/userCoordinator';
 import UserContextMenu from '../../components/UserContextMenu.vue';
 
 const { t } = i18n.global;
 let friendStore;
+let userStore;
 
 const getFriendStore = () => {
     if (!friendStore) {
         friendStore = useFriendStore();
     }
     return friendStore;
+};
+
+const getUserStore = () => {
+    if (!userStore) {
+        userStore = useUserStore();
+    }
+    return userStore;
 };
 
 const expandedRow = ({ row }) => {
@@ -293,6 +302,7 @@ export const columns = [
         cell: ({ row }) => {
             const original = row.original;
             const friend = getFriendStore().friends.get(original.userId);
+            const userRef = getUserStore().cachedUsers.get(original.userId) || friend?.ref || null;
             return (
                 <UserContextMenu
                     userId={original.userId}
@@ -303,7 +313,11 @@ export const columns = [
                         class="cursor-pointer pr-2.5"
                         onClick={() => showUserDialog(original.userId)}
                     >
-                        {original.displayName}
+                        <UserIdentityInline
+                            user={userRef}
+                            userId={original.userId}
+                            displayName={original.displayName}
+                        />
                     </span>
                 </UserContextMenu>
             );

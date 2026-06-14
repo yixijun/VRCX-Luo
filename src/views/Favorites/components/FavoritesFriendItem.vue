@@ -24,7 +24,14 @@
                     </Avatar>
                 </ItemMedia>
                 <ItemContent class="min-w-0">
-                    <ItemTitle class="truncate max-w-full" :style="displayNameStyle">{{ displayName }}</ItemTitle>
+                    <ItemTitle class="truncate max-w-full">
+                        <UserIdentityInline
+                            :user="favorite.ref"
+                            :display-name="displayName"
+                            :image-resolver="userImage"
+                            :name-style="displayNameStyle"
+                            avatar-class="hidden" />
+                    </ItemTitle>
                     <ItemDescription class="truncate line-clamp-1 text-xs!">
                         <template v-if="favorite.ref.location !== 'offline'">
                             <Location
@@ -139,6 +146,7 @@
 
     import Location from '../../../components/Location.vue';
     import UserContextMenu from '../../../components/UserContextMenu.vue';
+    import UserIdentityInline from '../../../components/UserIdentityInline.vue';
 
     const { userImage } = useUserDisplay();
     const props = defineProps({

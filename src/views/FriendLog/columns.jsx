@@ -1,5 +1,6 @@
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
+import UserIdentityInline from '../../components/UserIdentityInline.vue';
 import {
     Tooltip,
     TooltipContent,
@@ -10,10 +11,26 @@ import { storeToRefs } from 'pinia';
 
 import { formatDateFilter } from '../../shared/utils';
 import { i18n } from '../../plugins';
-import { useUiStore } from '../../stores';
+import { useFriendStore, useUiStore, useUserStore } from '../../stores';
 import { showUserDialog } from '../../coordinators/userCoordinator';
 
 const { t } = i18n.global;
+
+let friendStore;
+let userStore;
+
+const resolveCachedUser = (userId) => {
+    if (!userId) {
+        return null;
+    }
+    if (!friendStore) {
+        friendStore = useFriendStore();
+    }
+    if (!userStore) {
+        userStore = useUserStore();
+    }
+    return userStore.cachedUsers.get(userId) || friendStore.friends.get(userId)?.ref || null;
+};
 
 export const createColumns = ({ onDelete, onDeletePrompt }) => {
     const { shiftHeld } = storeToRefs(useUiStore());
@@ -88,6 +105,7 @@ export const createColumns = ({ onDelete, onDeletePrompt }) => {
                 const original = row.original;
                 const displayName =
                     original.displayName || original.userId || '';
+                const userRef = resolveCachedUser(original.userId);
                 return (
                     <span class="block w-full whitespace-normal wrap-break-word cursor-pointer">
                         {original.type === 'DisplayName' ? (
@@ -97,10 +115,14 @@ export const createColumns = ({ onDelete, onDeletePrompt }) => {
                             </span>
                         ) : null}
                         <span
-                            class="cursor-pointer pr-2.5"
+                            class="inline-flex cursor-pointer pr-2.5"
                             onClick={() => showUserDialog(original.userId)}
                         >
-                            {displayName}
+                            <UserIdentityInline
+                                user={userRef}
+                                userId={original.userId}
+                                displayName={displayName}
+                            />
                         </span>
                         {original.type === 'TrustLevel' ? (
                             <span class="text-muted-foreground">

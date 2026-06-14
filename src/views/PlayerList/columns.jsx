@@ -1,17 +1,11 @@
 import Timer from '../../components/Timer.vue';
-import { getUserIdentity } from '../../composables/useUserIdentityDisplay';
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage
-} from '../../components/ui/avatar';
+import UserIdentityInline from '../../components/UserIdentityInline.vue';
 import { Button } from '../../components/ui/button';
 import { TooltipWrapper } from '../../components/ui/tooltip';
 import {
     Apple,
     ArrowUpDown,
     IdCard,
-    User,
     Monitor,
     Smartphone
 } from 'lucide-vue-next';
@@ -105,27 +99,13 @@ export const createColumns = ({
                 const style = randomUserColours?.value
                     ? { color: userRef?.$userColour }
                     : null;
-                const identity = getUserIdentity({
-                    user: userRef,
-                    displayName: row.original?.displayName,
-                    imageResolver: userImage
-                });
                 return (
-                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                        <Avatar class="size-5 shrink-0">
-                            <AvatarImage
-                                src={identity.imageUrl}
-                                class="object-cover"
-                                loading="lazy"
-                            />
-                            <AvatarFallback>
-                                <User class="size-3 text-muted-foreground" />
-                            </AvatarFallback>
-                        </Avatar>
-                        <span class="min-w-0 truncate" style={style}>
-                            {identity.displayName}
-                        </span>
-                    </span>
+                    <UserIdentityInline
+                        user={userRef}
+                        displayName={row.original?.displayName}
+                        imageResolver={userImage}
+                        nameStyle={style}
+                    />
                 );
             }
         },

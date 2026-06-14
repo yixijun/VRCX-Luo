@@ -1,10 +1,5 @@
 import { ArrowUpDown, EyeOff, User, UserMinus } from 'lucide-vue-next';
-import { getUserIdentity } from '../../composables/useUserIdentityDisplay';
-import {
-    Avatar,
-    AvatarFallback,
-    AvatarImage
-} from '../../components/ui/avatar';
+import UserIdentityInline from '../../components/UserIdentityInline.vue';
 
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
@@ -175,26 +170,13 @@ export const createColumns = ({
                 const style = randomUserColours?.value
                     ? { color: row.original?.$userColour }
                     : null;
-                const identity = getUserIdentity({
-                    user: row.original,
-                    imageResolver: userImage
-                });
                 return (
-                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                        <Avatar class="size-5 shrink-0 rounded-full">
-                            <AvatarImage
-                                src={identity.imageUrl}
-                                class="friends-list-avatar object-cover"
-                                loading="lazy"
-                            />
-                            <AvatarFallback>
-                                <User class="size-3 text-muted-foreground" />
-                            </AvatarFallback>
-                        </Avatar>
-                        <span class="name min-w-0 truncate" style={style}>
-                            {identity.displayName}
-                        </span>
-                    </span>
+                    <UserIdentityInline
+                        user={row.original}
+                        imageResolver={userImage}
+                        nameClass="name"
+                        nameStyle={style}
+                    />
                 );
             }
         },

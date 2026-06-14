@@ -1,4 +1,5 @@
 import Location from '../../components/Location.vue';
+import UserIdentityInline from '../../components/UserIdentityInline.vue';
 import { Badge } from '../../components/ui/badge';
 import { Button } from '../../components/ui/button';
 import {
@@ -25,7 +26,7 @@ import {
     openExternalLink
 } from '../../shared/utils';
 import { i18n } from '../../plugins';
-import { useInstanceStore, useUiStore } from '../../stores';
+import { useFriendStore, useInstanceStore, useUiStore, useUserStore } from '../../stores';
 import { lookupUser } from '../../coordinators/userCoordinator';
 import { showWorldDialog } from '../../coordinators/worldCoordinator';
 
@@ -37,6 +38,22 @@ const UNACTIONABLE_TYPES = new Set([
     'Location',
     'PortalSpawn'
 ]);
+
+let friendStore;
+let userStore;
+
+const resolveCachedUser = (userId) => {
+    if (!userId) {
+        return null;
+    }
+    if (!friendStore) {
+        friendStore = useFriendStore();
+    }
+    if (!userStore) {
+        userStore = useUserStore();
+    }
+    return userStore.cachedUsers.get(userId) || friendStore.friends.get(userId)?.ref || null;
+};
 
 export const createColumns = ({ getCreatedAt, onDelete, onDeletePrompt }) => {
     const { showPreviousInstancesInfoDialog } = useInstanceStore();
@@ -115,14 +132,20 @@ export const createColumns = ({ getCreatedAt, onDelete, onDeletePrompt }) => {
                 const original = row.original;
                 const isFriend = original.isFriend;
                 const isFavorite = original.isFavorite;
+                const userRef = resolveCachedUser(original.userId);
                 return (
-                    <span class="cursor-pointer">
+                    <span class="inline-flex min-w-0 max-w-full items-center gap-1 cursor-pointer">
                         {original.displayName ? (
                             <span
-                                class="cursor-pointer table-user mr-1"
+                                class="cursor-pointer table-user min-w-0"
                                 onClick={() => lookupUser(original)}
                             >
-                                {original.displayName}
+                                <UserIdentityInline
+                                    user={userRef}
+                                    userId={original.userId}
+                                    displayName={original.displayName}
+                                    nameClass="table-user"
+                                />
                             </span>
                         ) : null}
                         {isFriend ? (

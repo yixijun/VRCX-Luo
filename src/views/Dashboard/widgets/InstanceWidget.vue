@@ -50,18 +50,7 @@
                             </TableCell>
 
                             <TableCell class="font-medium" :class="player.ref?.$trustClass">
-                                <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
-                                    <Avatar class="size-5 shrink-0 rounded-full">
-                                        <AvatarImage
-                                            :src="player.$identity.imageUrl"
-                                            class="object-cover"
-                                            loading="lazy" />
-                                        <AvatarFallback>
-                                            <User class="size-3 text-muted-foreground" />
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <span class="min-w-0 truncate">{{ player.$identity.displayName }}</span>
-                                </span>
+                                <UserIdentityInline :user="player.ref" :display-name="player.displayName" />
                             </TableCell>
 
                             <TableCell
@@ -115,13 +104,11 @@
 
 <script setup>
     import { computed, onActivated, onMounted } from 'vue';
-    import { Apple, IdCard, Monitor, Settings, Smartphone, User } from 'lucide-vue-next';
+    import { Apple, IdCard, Monitor, Settings, Smartphone } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
     import { useInstanceStore, useLocationStore } from '@/stores';
-    import { useUserDisplay } from '@/composables/useUserDisplay';
-    import { getUserIdentity } from '@/composables/useUserIdentityDisplay';
     import { languageClass, statusClass } from '@/shared/utils/user';
     import { showUserDialog, lookupUser } from '@/coordinators/userCoordinator';
     import { displayLocation } from '@/shared/utils/locationParser';
@@ -136,7 +123,7 @@
     import Timer from '@/components/Timer.vue';
     import WidgetHeader from './WidgetHeader.vue';
     import { Table, TableBody, TableRow, TableCell } from '@/components/ui/table';
-    import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+    import UserIdentityInline from '@/components/UserIdentityInline.vue';
 
     const ALL_COLUMNS = ['icon', 'displayName', 'rank', 'timer', 'platform', 'language', 'status'];
     const DEFAULT_COLUMNS = ['icon', 'displayName', 'timer'];
@@ -154,7 +141,6 @@
 
     const { t } = useI18n();
     const instanceStore = useInstanceStore();
-    const { userImage } = useUserDisplay();
     const { currentInstanceUsersData, currentInstanceWorld } = storeToRefs(instanceStore);
     const { lastLocation } = storeToRefs(useLocationStore());
 
@@ -186,10 +172,7 @@
     });
 
     const playersData = computed(() => {
-        return (currentInstanceUsersData.value || []).map((player) => ({
-            ...player,
-            $identity: getPlayerIdentity(player)
-        }));
+        return currentInstanceUsersData.value || [];
     });
 
     const worldName = computed(() => {
@@ -213,14 +196,6 @@
         } else if (ref) {
             lookupUser(ref);
         }
-    }
-
-    function getPlayerIdentity(player) {
-        return getUserIdentity({
-            user: player?.ref,
-            displayName: player?.displayName,
-            imageResolver: userImage
-        });
     }
 
     onMounted(() => {

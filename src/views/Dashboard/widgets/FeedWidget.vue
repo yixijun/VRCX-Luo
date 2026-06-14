@@ -51,9 +51,12 @@
                                         :user-id="item.userId"
                                         :state="getFriendState(item.userId)"
                                         :location="getFriendLocation(item.userId)">
-                                        <span class="shrink-0 cursor-pointer" @click="openUser(item.userId)">{{
-                                            item.displayName
-                                        }}</span>
+                                        <UserIdentityInline
+                                            class="shrink-0 cursor-pointer"
+                                            :user="getFriendRef(item.userId)"
+                                            :user-id="item.userId"
+                                            :display-name="item.displayName"
+                                            @click="openUser(item.userId)" />
                                     </UserContextMenu>
                                     <span class="shrink-0 text-muted-foreground mx-1"> → </span>
                                     <div class="min-w-0 flex-1 truncate">
@@ -73,9 +76,12 @@
                                         :user-id="item.userId"
                                         :state="getFriendState(item.userId)"
                                         :location="getFriendLocation(item.userId)">
-                                        <span class="shrink-0 cursor-pointer" @click="openUser(item.userId)">{{
-                                            item.displayName
-                                        }}</span>
+                                    <UserIdentityInline
+                                        class="shrink-0 cursor-pointer"
+                                        :user="getFriendRef(item.userId)"
+                                        :user-id="item.userId"
+                                        :display-name="item.displayName"
+                                        @click="openUser(item.userId)" />
                                     </UserContextMenu>
                                     <template v-if="item.location">
                                         <span class="shrink-0 text-muted-foreground"> → </span>
@@ -96,9 +102,12 @@
                                     :user-id="item.userId"
                                     :state="getFriendState(item.userId)"
                                     :location="getFriendLocation(item.userId)">
-                                    <span class="cursor-pointer" @click="openUser(item.userId)">{{
-                                        item.displayName
-                                    }}</span>
+                                    <UserIdentityInline
+                                        class="cursor-pointer"
+                                        :user="getFriendRef(item.userId)"
+                                        :user-id="item.userId"
+                                        :display-name="item.displayName"
+                                        @click="openUser(item.userId)" />
                                 </UserContextMenu>
                             </template>
                             <template v-else-if="item.type === 'Status'">
@@ -107,9 +116,12 @@
                                     :user-id="item.userId"
                                     :state="getFriendState(item.userId)"
                                     :location="getFriendLocation(item.userId)">
-                                    <span class="cursor-pointer" @click="openUser(item.userId)">{{
-                                        item.displayName
-                                    }}</span>
+                                    <UserIdentityInline
+                                        class="cursor-pointer"
+                                        :user="getFriendRef(item.userId)"
+                                        :user-id="item.userId"
+                                        :display-name="item.displayName"
+                                        @click="openUser(item.userId)" />
                                 </UserContextMenu>
                                 <span class="text-muted-foreground ml-1"> {{ item.statusDescription }}</span>
                             </template>
@@ -119,9 +131,12 @@
                                     :user-id="item.userId"
                                     :state="getFriendState(item.userId)"
                                     :location="getFriendLocation(item.userId)">
-                                    <span class="cursor-pointer" @click="openUser(item.userId)">{{
-                                        item.displayName
-                                    }}</span>
+                                    <UserIdentityInline
+                                        class="cursor-pointer"
+                                        :user="getFriendRef(item.userId)"
+                                        :user-id="item.userId"
+                                        :display-name="item.displayName"
+                                        @click="openUser(item.userId)" />
                                 </UserContextMenu>
                                 <span class="text-muted-foreground"> → {{ item.avatarName }}</span>
                             </template>
@@ -131,9 +146,12 @@
                                     :user-id="item.userId"
                                     :state="getFriendState(item.userId)"
                                     :location="getFriendLocation(item.userId)">
-                                    <span class="cursor-pointer" @click="openUser(item.userId)">{{
-                                        item.displayName
-                                    }}</span>
+                                    <UserIdentityInline
+                                        class="cursor-pointer"
+                                        :user="getFriendRef(item.userId)"
+                                        :user-id="item.userId"
+                                        :display-name="item.displayName"
+                                        @click="openUser(item.userId)" />
                                 </UserContextMenu>
                                 <span class="ml-1 text-muted-foreground">{{ t('dashboard.widget.feed_bio') }}</span>
                             </template>
@@ -142,9 +160,12 @@
                                     :user-id="item.userId"
                                     :state="getFriendState(item.userId)"
                                     :location="getFriendLocation(item.userId)">
-                                    <span class="cursor-pointer" @click="openUser(item.userId)">{{
-                                        item.displayName
-                                    }}</span>
+                                    <UserIdentityInline
+                                        class="cursor-pointer"
+                                        :user="getFriendRef(item.userId)"
+                                        :user-id="item.userId"
+                                        :display-name="item.displayName"
+                                        @click="openUser(item.userId)" />
                                 </UserContextMenu>
                                 <span class="text-muted-foreground"> {{ item.type }}</span>
                             </template>
@@ -178,6 +199,7 @@
         DropdownMenuTrigger
     } from '@/components/ui/dropdown-menu';
     import Location from '@/components/Location.vue';
+    import UserIdentityInline from '@/components/UserIdentityInline.vue';
     import UserContextMenu from '@/components/UserContextMenu.vue';
     import { TooltipWrapper } from '@/components/ui/tooltip';
     import WidgetHeader from './WidgetHeader.vue';
@@ -266,6 +288,10 @@
     function getFriendLocation(userId) {
         const friend = friendStore.friends.get(userId);
         return friend?.ref?.location ?? '';
+    }
+
+    function getFriendRef(userId) {
+        return friendStore.friends.get(userId)?.ref ?? null;
     }
 
     defineExpose({ FEED_TYPES });

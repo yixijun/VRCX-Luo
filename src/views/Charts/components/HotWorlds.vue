@@ -185,7 +185,12 @@
                             type="button"
                             class="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-accent cursor-pointer"
                             @click="openUserDialog(friend.userId)">
-                            <span class="min-w-0 flex-1 truncate">{{ friend.displayName }}</span>
+                            <UserIdentityInline
+                                class="min-w-0 flex-1"
+                                :user="resolveUser(friend.userId)"
+                                :user-id="friend.userId"
+                                :display-name="friend.displayName"
+                                avatar-class="size-5" />
                             <span
                                 class="shrink-0 rounded-md bg-muted px-1.5 py-0.5 text-[11px] tabular-nums text-muted-foreground">
                                 {{ friend.visitCount }}×
@@ -207,6 +212,7 @@
     import { useI18n } from 'vue-i18n';
 
     import BackToTop from '@/components/BackToTop.vue';
+    import UserIdentityInline from '@/components/UserIdentityInline.vue';
 
     import { DataTableEmpty } from '@/components/ui/data-table';
     import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
@@ -217,10 +223,12 @@
     import { showUserDialog } from '@/coordinators/userCoordinator';
     import { showWorldDialog } from '@/coordinators/worldCoordinator';
     import { database } from '@/services/database';
-    import { useAppearanceSettingsStore } from '@/stores';
+    import { useAppearanceSettingsStore, useFriendStore, useUserStore } from '@/stores';
 
     const { t } = useI18n();
     const { isDarkMode } = storeToRefs(useAppearanceSettingsStore());
+    const friendStore = useFriendStore();
+    const userStore = useUserStore();
 
     const hotWorldsRef = ref(null);
     const isLoading = ref(true);
@@ -311,6 +319,11 @@
 
     function openUserDialog(userId) {
         showUserDialog(userId);
+    }
+
+    function resolveUser(userId) {
+        if (!userId) return null;
+        return userStore.cachedUsers.get(userId) || friendStore.friends.get(userId)?.ref || null;
     }
 
     onMounted(() => {

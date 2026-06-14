@@ -30,7 +30,11 @@
                             :key="idx"
                             class="px-2 py-px text-[0.8125rem] rounded hover:bg-muted/30 flex items-center gap-1">
                             <span class="cursor-pointer" @click="lookupUser(member)">
-                                {{ member.displayName }}
+                                <UserIdentityInline
+                                    :user="resolveUser(member.userId)"
+                                    :user-id="member.userId"
+                                    :display-name="member.displayName"
+                                    avatar-class="size-4" />
                             </span>
                             <span v-if="member.isFriend">{{ member.isFavorite ? '⭐' : '💚' }}</span>
                         </div>
@@ -69,7 +73,11 @@
                             :key="idx"
                             class="px-2 py-px text-[0.8125rem] text-muted-foreground rounded hover:bg-muted/30 flex items-center gap-1">
                             <span class="cursor-pointer" @click="lookupUser(member)">
-                                {{ member.displayName }}
+                                <UserIdentityInline
+                                    :user="resolveUser(member.userId)"
+                                    :user-id="member.userId"
+                                    :display-name="member.displayName"
+                                    avatar-class="size-4" />
                             </span>
                             <span v-if="member.isFriend">{{ member.isFavorite ? '⭐' : '💚' }}</span>
                         </div>
@@ -184,8 +192,12 @@
     } from '../../../components/ui/context-menu';
     import { copyToClipboard, formatDateFilter, openExternalLink } from '../../../shared/utils';
     import { lookupUser } from '../../../coordinators/userCoordinator';
+    import { useFriendStore, useUserStore } from '../../../stores';
+    import UserIdentityInline from '../../../components/UserIdentityInline.vue';
 
     const { t } = useI18n();
+    const friendStore = useFriendStore();
+    const userStore = useUserStore();
 
     const props = defineProps({
         event: {
@@ -208,5 +220,10 @@
 
     function formatTime(dateStr) {
         return formatDateFilter(dateStr, 'short');
+    }
+
+    function resolveUser(userId) {
+        if (!userId) return null;
+        return userStore.cachedUsers.get(userId) || friendStore.friends.get(userId)?.ref || null;
     }
 </script>

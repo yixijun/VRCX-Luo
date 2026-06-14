@@ -56,22 +56,24 @@
                             </template>
                             <template v-else-if="item.type === 'OnPlayerJoined'">
                                 <LogIn class="mr-1 inline-block h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                <span
+                                <UserIdentityInline
                                     class="cursor-pointer"
-                                    :style="item.tagColour ? { color: item.tagColour } : null"
-                                    @click="openUser(item.userId)"
-                                    >{{ item.displayName }}</span
-                                >
+                                    :user="getFriendRef(item.userId)"
+                                    :user-id="item.userId"
+                                    :display-name="item.displayName"
+                                    :name-style="item.tagColour ? { color: item.tagColour } : null"
+                                    @click="openUser(item.userId)" />
                                 <span v-if="item.isFriend">{{ item.isFavorite ? '⭐' : '💚' }}</span>
                             </template>
                             <template v-else-if="item.type === 'OnPlayerLeft'">
                                 <LogOut class="mr-1 inline-block h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                <span
+                                <UserIdentityInline
                                     class="cursor-pointer text-muted-foreground/70 hover:underline"
-                                    :style="item.tagColour ? { color: item.tagColour } : null"
-                                    @click="openUser(item.userId)"
-                                    >{{ item.displayName }}</span
-                                >
+                                    :user="getFriendRef(item.userId)"
+                                    :user-id="item.userId"
+                                    :display-name="item.displayName"
+                                    :name-style="item.tagColour ? { color: item.tagColour } : null"
+                                    @click="openUser(item.userId)" />
                                 <span v-if="item.isFriend">{{ item.isFavorite ? '⭐' : '💚' }}</span>
                             </template>
                             <template v-else-if="item.type === 'VideoPlay'">
@@ -99,9 +101,12 @@
                             </template>
                             <template v-else-if="item.type === 'PortalSpawn'">
                                 <Waypoints class="mr-1 inline-block h-3.5 w-3.5 shrink-0 text-muted-foreground" />
-                                <span class="cursor-pointer hover:underline" @click="openUser(item.userId)">{{
-                                    item.displayName
-                                }}</span>
+                                <UserIdentityInline
+                                    class="cursor-pointer hover:underline"
+                                    :user="getFriendRef(item.userId)"
+                                    :user-id="item.userId"
+                                    :display-name="item.displayName"
+                                    @click="openUser(item.userId)" />
                                 <span class="text-muted-foreground"> → </span>
                                 <div v-if="item.location" class="min-w-0 flex-1 truncate">
                                     <Location
@@ -118,12 +123,18 @@
                                     :content="item.data || item.message || ''"
                                     side="top">
                                     <span>
-                                        <span>{{ item.displayName }}</span>
+                                        <UserIdentityInline
+                                            :user="getFriendRef(item.userId)"
+                                            :user-id="item.userId"
+                                            :display-name="item.displayName" />
                                         <span class="text-muted-foreground"> {{ item.type }}</span>
                                     </span>
                                 </TooltipWrapper>
                                 <template v-else>
-                                    <span>{{ item.displayName }}</span>
+                                    <UserIdentityInline
+                                        :user="getFriendRef(item.userId)"
+                                        :user-id="item.userId"
+                                        :display-name="item.displayName" />
                                     <span class="text-muted-foreground"> {{ item.type }}</span>
                                     <span v-if="item.data || item.message" class="ml-1 text-muted-foreground"
                                         >— {{ item.data || item.message }}</span
@@ -161,6 +172,7 @@
         DropdownMenuTrigger
     } from '@/components/ui/dropdown-menu';
     import Location from '@/components/Location.vue';
+    import UserIdentityInline from '@/components/UserIdentityInline.vue';
     import { TooltipWrapper } from '@/components/ui/tooltip';
     import WidgetHeader from './WidgetHeader.vue';
     import { Table, TableBody, TableRow, TableCell } from '@/components/ui/table';
@@ -293,6 +305,10 @@
         if (userId) {
             showUserDialog(userId);
         }
+    }
+
+    function getFriendRef(userId) {
+        return friendStore.friends.get(userId)?.ref ?? null;
     }
 
     defineExpose({ GAMELOG_TYPES });

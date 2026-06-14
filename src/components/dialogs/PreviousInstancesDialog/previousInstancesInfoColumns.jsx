@@ -1,6 +1,7 @@
 import { ArrowUpDown } from 'lucide-vue-next';
 
 import { Button } from '../../ui/button';
+import UserIdentityInline from '../../UserIdentityInline.vue';
 import { i18n } from '../../../plugins';
 import { formatDateFilter } from '../../../shared/utils';
 
@@ -79,13 +80,16 @@ export const createColumns = ({ onLookupUser }) => [
             const original = row.original;
             return (
                 <span
-                    class=" cursor-pointer"
+                    class="cursor-pointer"
                     onClick={(event) => {
                         event.stopPropagation();
                         onLookupUser?.(original);
                     }}
                 >
-                    {original?.displayName ?? ''}
+                    <UserIdentityInline
+                        userId={original?.userId}
+                        displayName={original?.displayName ?? ''}
+                    />
                 </span>
             );
         }

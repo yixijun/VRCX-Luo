@@ -59,7 +59,11 @@
                                 </ItemMedia>
                                 <ItemContent class="min-w-0">
                                     <ItemTitle class="flex items-center gap-1.5 max-w-full">
-                                        <span class="truncate">{{ user.displayName }}</span>
+                                        <UserIdentityInline
+                                            :user="user"
+                                            :image-resolver="userImage"
+                                            :name-style="randomUserColours ? null : { color: user.$userColour }"
+                                            avatar-class="hidden" />
                                         <span
                                             v-if="randomUserColours"
                                             class="shrink-0 text-xs font-normal"
@@ -328,6 +332,7 @@
     import { useAppearanceSettingsStore, useAuthStore, useAvatarProviderStore, useSearchStore } from '../../stores';
     import { convertFileUrlToImageUrl, languageClass } from '../../shared/utils';
     import { useUserDisplay } from '../../composables/useUserDisplay';
+    import UserIdentityInline from '../../components/UserIdentityInline.vue';
     import { showAvatarDialog } from '../../coordinators/avatarCoordinator';
     import { showGroupDialog } from '../../coordinators/groupCoordinator';
     import { showUserDialog } from '../../coordinators/userCoordinator';

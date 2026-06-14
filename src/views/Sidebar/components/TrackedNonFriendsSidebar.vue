@@ -33,7 +33,12 @@
                             <span
                                 class="block truncate font-medium leading-[18px]"
                                 :style="entry.ref ? { color: entry.ref.$userColour } : undefined">
-                                {{ entry.ref ? entry.ref.displayName : entry.displayName || entry.userId }}
+                                <UserIdentityInline
+                                    :user="entry.ref"
+                                    :user-id="entry.userId"
+                                    :display-name="entry.displayName"
+                                    :image-resolver="userImage"
+                                    avatar-class="hidden" />
                             </span>
                             <span class="block truncate text-xs text-muted-foreground">
                                 {{ entry.ref ? entry.ref.statusDescription : '' }}
@@ -131,6 +136,7 @@
     import { useUserDisplay } from '../../../composables/useUserDisplay';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
     import { userRequest } from '../../../api';
+    import UserIdentityInline from '../../../components/UserIdentityInline.vue';
 
     const { t } = useI18n();
     const { userImage, userStatusClass } = useUserDisplay();

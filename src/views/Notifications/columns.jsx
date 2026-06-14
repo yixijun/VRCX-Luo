@@ -1,4 +1,5 @@
 import Location from '../../components/Location.vue';
+import UserIdentityInline from '../../components/UserIdentityInline.vue';
 import {
     Avatar,
     AvatarFallback,
@@ -48,6 +49,16 @@ const { t, te } = i18n.global;
 
 const isGroupId = (id) => typeof id === 'string' && id.startsWith('grp_');
 
+const resolveCachedUser = (userStore, userId) => {
+    if (!userId) {
+        return null;
+    }
+    if (userStore.currentUser?.id === userId) {
+        return userStore.currentUser;
+    }
+    return userStore.cachedUsers.get(userId) || null;
+};
+
 export const createColumns = ({
     getNotificationCreatedAt,
     getNotificationCreatedAtTs,
@@ -64,7 +75,8 @@ export const createColumns = ({
     deleteNotificationLog,
     deleteNotificationLogPrompt
 }) => {
-    const { showSendBoopDialog } = useUserStore();
+    const userStore = useUserStore();
+    const { showSendBoopDialog } = userStore;
 
     const { shiftHeld } = storeToRefs(useUiStore());
     const { currentUser } = storeToRefs(useUserStore());
@@ -261,6 +273,7 @@ export const createColumns = ({
                     original.senderUserId &&
                     !isGroupId(original.senderUserId)
                 ) {
+                    const userRef = resolveCachedUser(userStore, original.senderUserId);
                     return (
                         <span class="table-user-text block w-full min-w-0 truncate">
                             <span
@@ -269,13 +282,19 @@ export const createColumns = ({
                                     showUserDialog(original.senderUserId)
                                 }
                             >
-                                {original.senderUsername}
+                                <UserIdentityInline
+                                    user={userRef}
+                                    userId={original.senderUserId}
+                                    displayName={original.senderUsername}
+                                />
                             </span>
                         </span>
                     );
                 }
 
                 if (original.link?.startsWith('user:')) {
+                    const linkedUserId = original.link.slice(5);
+                    const userRef = resolveCachedUser(userStore, linkedUserId);
                     return (
                         <span class="table-user-text block w-full min-w-0 truncate">
                             <span
@@ -284,7 +303,11 @@ export const createColumns = ({
                                     openNotificationLink(original.link)
                                 }
                             >
-                                {original.linkText || original.senderUsername}
+                                <UserIdentityInline
+                                    user={userRef}
+                                    userId={linkedUserId}
+                                    displayName={original.linkText || original.senderUsername}
+                                />
                             </span>
                         </span>
                     );
@@ -294,9 +317,14 @@ export const createColumns = ({
                     original.senderUsername &&
                     !isGroupId(original.senderUserId)
                 ) {
+                    const userRef = resolveCachedUser(userStore, original.senderUserId);
                     return (
                         <span class="table-user-text block w-full min-w-0 truncate">
-                            {original.senderUsername}
+                            <UserIdentityInline
+                                user={userRef}
+                                userId={original.senderUserId}
+                                displayName={original.senderUsername}
+                            />
                         </span>
                     );
                 }

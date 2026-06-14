@@ -6,11 +6,9 @@
     import { useI18n } from 'vue-i18n';
 
     import { useQuickSearchStore } from '../stores/quickSearch';
-    import { useUserDisplay } from '../composables/useUserDisplay';
-
     import QuickSearchSync from './QuickSearchSync.vue';
+    import UserIdentityInline from './UserIdentityInline.vue';
 
-    const { userImage } = useUserDisplay();
     const quickSearchStore = useQuickSearchStore();
     const {
         isOpen,
@@ -57,7 +55,11 @@
                                 class="gap-3"
                                 @select="handleSelect({ id: user.userId, type: 'recentlyMet' })">
                                 <Clock class="size-4 text-muted-foreground" />
-                                <span class="truncate">{{ user.displayName }}</span>
+                                <UserIdentityInline
+                                    :user-id="user.userId"
+                                    :display-name="user.displayName"
+                                    :image-url="user.imageUrl"
+                                    avatar-class="size-5" />
                             </CommandItem>
                         </CommandGroup>
 
@@ -115,16 +117,14 @@
                                 :value="[item.name, item.memo, item.note, item.bio, item.id].filter(Boolean).join(' ')"
                                 class="gap-3"
                                 @select="handleSelect(item)">
-                                <img
-                                    v-if="item.ref"
-                                    :src="userImage(item.ref)"
-                                    class="size-6 rounded-full object-cover"
-                                    loading="lazy" />
-                                <Users v-else class="size-4" />
                                 <div class="flex flex-col min-w-0">
-                                    <span class="truncate" :style="{ color: item.ref?.$userColour }">
-                                        {{ item.name }}
-                                    </span>
+                                    <UserIdentityInline
+                                        :user="item.ref"
+                                        :user-id="item.id"
+                                        :display-name="item.name"
+                                        :image-url="item.imageUrl"
+                                        :name-style="{ color: item.ref?.$userColour }"
+                                        avatar-class="size-5" />
                                     <span
                                         v-if="item.matchedField !== 'name' && item.memo"
                                         class="truncate text-xs text-muted-foreground">
@@ -154,7 +154,11 @@
                                 class="gap-3"
                                 @select="handleSelect({ id: user.userId, type: 'recentlyMet' })">
                                 <Clock class="size-4 text-muted-foreground" />
-                                <span class="truncate">{{ user.displayName }}</span>
+                                <UserIdentityInline
+                                    :user-id="user.userId"
+                                    :display-name="user.displayName"
+                                    :image-url="user.imageUrl"
+                                    avatar-class="size-5" />
                             </CommandItem>
                         </CommandGroup>
 
