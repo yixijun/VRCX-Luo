@@ -74,8 +74,8 @@
             <SettingsItem v-if="!isLinux" :label="t('view.settings.appearance.appearance.zoom')">
                 <NumberField
                     v-model="zoomLevel"
-                    :step="1"
-                    :format-options="{ maximumFractionDigits: 0 }"
+                    :step="0.01"
+                    :format-options="{ minimumFractionDigits: 0, maximumFractionDigits: 2 }"
                     class="w-32"
                     @update:modelValue="setZoomLevel">
                     <NumberFieldContent>
@@ -695,13 +695,14 @@
      *
      */
     async function getZoomLevel() {
-        zoomLevel.value = ((await AppApi.GetZoom()) + 10) * 10;
+        zoomLevel.value = Number((((await AppApi.GetZoom()) + 10) * 10).toFixed(2));
     }
 
     /**
      *
      */
     function setZoomLevel() {
+        zoomLevel.value = Number(Number(zoomLevel.value || 0).toFixed(2));
         AppApi.SetZoom(zoomLevel.value / 10 - 10);
     }
 </script>

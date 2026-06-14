@@ -3,9 +3,15 @@ import { mount } from '@vue/test-utils';
 
 const mocks = vi.hoisted(() => ({
     fetch: vi.fn(() =>
-        Promise.resolve({ json: { displayName: 'Fetched User' } })
+        Promise.resolve({
+            json: {
+                displayName: 'Fetched User',
+                profilePicOverrideThumbnail: 'https://example.com/profile.png'
+            }
+        })
     ),
-    showUserDialog: vi.fn()
+    showUserDialog: vi.fn(),
+    userImage: vi.fn((user) => user?.profilePicOverrideThumbnail || '')
 }));
 
 vi.mock('../../api', () => ({
@@ -16,6 +22,12 @@ vi.mock('../../api', () => ({
 
 vi.mock('../../coordinators/userCoordinator', () => ({
     showUserDialog: (...args) => mocks.showUserDialog(...args)
+}));
+
+vi.mock('../../composables/useUserDisplay', () => ({
+    useUserDisplay: () => ({
+        userImage: (...args) => mocks.userImage(...args)
+    })
 }));
 
 import DisplayName from '../DisplayName.vue';
@@ -29,6 +41,7 @@ describe('DisplayName.vue', () => {
     beforeEach(() => {
         mocks.fetch.mockClear();
         mocks.showUserDialog.mockClear();
+        mocks.userImage.mockClear();
     });
 
     it('uses hint directly and skips user query', async () => {
@@ -58,6 +71,9 @@ describe('DisplayName.vue', () => {
             userId: 'usr_2'
         });
         expect(wrapper.text()).toBe('Fetched User');
+        expect(wrapper.find('img').attributes('src')).toBe(
+            'https://example.com/profile.png'
+        );
     });
 
     it('opens user dialog when clicked', async () => {

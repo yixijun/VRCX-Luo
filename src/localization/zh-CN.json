@@ -1546,7 +1546,8 @@
                 "open_previous_instance": "打开之前加入的房间的列表",
                 "show_mutual_friends": "是否允许查看共同好友",
                 "show_discord_connections": "是否允许查看绑定的 Discord 账号信息",
-                "bio_diff_toggle": "切换简介对比"
+                "bio_diff_toggle": "切换简介对比",
+                "bio_archive": "简介归档"
             },
             "groups": {
                 "header": "群组",

@@ -293,8 +293,8 @@
                                     <span class="text-[10px] text-foreground">{{ t('status_bar.zoom') }}</span>
                                     <NumberField
                                         v-model="zoomLevel"
-                                        :step="1"
-                                        :format-options="{ maximumFractionDigits: 0 }"
+                                        :step="0.01"
+                                        :format-options="{ minimumFractionDigits: 0, maximumFractionDigits: 2 }"
                                         class="w-20"
                                         @click.stop
                                         @update:modelValue="setZoomLevel">
@@ -312,7 +312,7 @@
                                 </template>
                                 <template v-else>
                                     <span class="text-[10px] text-foreground">{{ t('status_bar.zoom') }}</span>
-                                    <span class="text-[10px] text-foreground">{{ zoomLevel }}%</span>
+                                    <span class="text-[10px] text-foreground">{{ formattedZoomLevel }}%</span>
                                 </template>
                             </div>
                         </TooltipWrapper>
@@ -877,6 +877,7 @@
     );
 
     const zoomLevel = ref(100);
+    const formattedZoomLevel = computed(() => Number(zoomLevel.value || 0).toFixed(2));
     const zoomEditing = ref(false);
     const zoomInputRef = ref(null);
 
@@ -889,7 +890,7 @@
      */
     async function initZoom() {
         try {
-            zoomLevel.value = ((await AppApi.GetZoom()) + 10) * 10;
+            zoomLevel.value = Number((((await AppApi.GetZoom()) + 10) * 10).toFixed(2));
         } catch {
             // AppApi not available
         }
@@ -900,6 +901,7 @@
      */
     function setZoomLevel() {
         try {
+            zoomLevel.value = Number(Number(zoomLevel.value || 0).toFixed(2));
             AppApi.SetZoom(zoomLevel.value / 10 - 10);
         } catch {
             // AppApi not available

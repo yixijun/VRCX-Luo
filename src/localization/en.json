@@ -1527,7 +1527,8 @@
                 "show_mutual_friends": "Show Mutual Friends",
                 "show_discord_connections": "Show Discord Connections",
                 "instance_minimum_avatar_performance": "Minimum Avatar Performance",
-                "bio_diff_toggle": "Toggle bio diff"
+                "bio_diff_toggle": "Toggle bio diff",
+                "bio_archive": "Bio Archive"
             },
             "groups": {
                 "header": "Groups",

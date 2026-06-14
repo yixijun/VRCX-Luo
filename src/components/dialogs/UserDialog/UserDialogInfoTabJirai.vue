@@ -197,6 +197,15 @@
                         <Languages v-else class="h-3 w-3" />
                     </Button>
                     <Button
+                        v-if="userDialog.id"
+                        class="w-3 h-6 text-xs mr-0.5"
+                        size="icon-sm"
+                        variant="ghost"
+                        :aria-label="t('dialog.user.info.bio_archive')"
+                        @click="showBioArchive">
+                        <Archive class="h-3 w-3" />
+                    </Button>
+                    <Button
                         v-if="currentUser.id !== userDialog.id"
                         class="w-3 h-6 text-xs mr-0.5"
                         size="icon-sm"
@@ -483,10 +492,34 @@
         </div>
     </div>
     <EditNoteAndMemoDialog v-model:visible="isEditNoteAndMemoDialogVisible" />
+    <Dialog v-model:open="bioArchiveVisible">
+        <DialogContent class="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>{{ t('dialog.user.info.bio_archive') }}</DialogTitle>
+            </DialogHeader>
+            <div class="max-h-[60vh] overflow-y-auto space-y-3 pr-1">
+                <div v-if="bioArchiveLoading" class="text-sm text-muted-foreground">...</div>
+                <div v-else-if="bioArchiveRecords.length === 0" class="text-sm text-muted-foreground">-</div>
+                <div
+                    v-for="(record, index) in bioArchiveRecords"
+                    :key="`${record.createdAt}-${index}`"
+                    class="rounded-md border border-border p-3">
+                    <div class="mb-2 text-xs text-muted-foreground">
+                        {{ formatDateFilter(record.createdAt, 'long') }}
+                    </div>
+                    <pre
+                        class="text-xs leading-5.5 font-[inherit]"
+                        style="white-space: pre-wrap; margin: 0"
+                        v-html="bioArchiveDiff(record)"></pre>
+                </div>
+            </div>
+        </DialogContent>
+    </Dialog>
 </template>
 
 <script setup>
-    import { Copy, History, Image, Info, Languages, MoreHorizontal, Pencil, Trash2, User } from 'lucide-vue-next';
+    import { Archive, Copy, History, Image, Info, Languages, MoreHorizontal, Pencil, Trash2, User } from 'lucide-vue-next';
+    import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import {
         DropdownMenu,
         DropdownMenuContent,
@@ -562,6 +595,9 @@
 
     const bioDiffEnabled = ref(true);
     const bioDiffHtml = ref('');
+    const bioArchiveVisible = ref(false);
+    const bioArchiveLoading = ref(false);
+    const bioArchiveRecords = ref([]);
 
     async function loadBioDiff() {
         const dialogUserId = userDialog.value.id;
@@ -604,6 +640,20 @@
         if (bioDiffEnabled.value) {
             loadBioDiff();
         }
+    }
+
+    async function showBioArchive() {
+        bioArchiveVisible.value = true;
+        bioArchiveLoading.value = true;
+        try {
+            bioArchiveRecords.value = await database.getRecentBioChangesForUser(userDialog.value.id, 100);
+        } finally {
+            bioArchiveLoading.value = false;
+        }
+    }
+
+    function bioArchiveDiff(record) {
+        return formatDifference(record.previousBio || '', record.bio || '');
     }
 
     watch(

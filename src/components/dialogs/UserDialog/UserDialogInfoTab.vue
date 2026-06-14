@@ -1,3 +1,4 @@
+<template>
     <template v-if="isFriendOnline(userDialog.friend) || currentUser.id === userDialog.id">
         <div
             class="mb-2 pb-2 border-b border-border"
@@ -84,10 +85,8 @@
                 <pre
                     v-if="userDialog.note"
                     class="text-xs font-[inherit]"
-                    style="white-space: pre-wrap; margin: 0 0.5em 0 0; max-height: 210px; overflow-y: auto"
-                    >{{ userDialog.note }}</pre
-                >
-                <pre class="text-xs font-[inherit] text-muted-foreground" v-else>—</pre>
+                    style="white-space: pre-wrap; margin: 0 0.5em 0 0; max-height: 210px; overflow-y: auto">{{ userDialog.note }}</pre>
+                <pre class="text-xs font-[inherit] text-muted-foreground" v-else>-</pre>
             </div>
         </div>
         <div v-if="!hideUserMemos" class="box-border flex items-center p-1.5 text-[13px] w-full cursor-pointer">
@@ -96,10 +95,8 @@
                 <pre
                     v-if="userDialog.memo"
                     class="text-xs font-[inherit]"
-                    style="white-space: pre-wrap; margin: 0 0.5em 0 0; max-height: 210px; overflow-y: auto"
-                    >{{ userDialog.memo }}</pre
-                >
-                <pre class="text-xs font-[inherit] text-muted-foreground" v-else>—</pre>
+                    style="white-space: pre-wrap; margin: 0 0.5em 0 0; max-height: 210px; overflow-y: auto">{{ userDialog.memo }}</pre>
+                <pre class="text-xs font-[inherit] text-muted-foreground" v-else>-</pre>
             </div>
         </div>
         <div class="box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
@@ -187,6 +184,15 @@
                         @click="translateBio">
                         <Spinner v-if="translateLoading" class="size-1" />
                         <Languages v-else class="h-3 w-3" />
+                    </Button>
+                    <Button
+                        v-if="userDialog.id"
+                        class="w-3 h-6 text-xs mr-0.5"
+                        size="icon-sm"
+                        variant="ghost"
+                        :aria-label="t('dialog.user.info.bio_archive')"
+                        @click="showBioArchive">
+                        <Archive class="h-3 w-3" />
                     </Button>
                     <Button
                         class="w-3 h-6 text-xs"
@@ -466,10 +472,34 @@
         </div>
     </div>
     <EditNoteAndMemoDialog v-model:visible="isEditNoteAndMemoDialogVisible" />
+    <Dialog v-model:open="bioArchiveVisible">
+        <DialogContent class="sm:max-w-2xl">
+            <DialogHeader>
+                <DialogTitle>{{ t('dialog.user.info.bio_archive') }}</DialogTitle>
+            </DialogHeader>
+            <div class="max-h-[60vh] overflow-y-auto space-y-3 pr-1">
+                <div v-if="bioArchiveLoading" class="text-sm text-muted-foreground">...</div>
+                <div v-else-if="bioArchiveRecords.length === 0" class="text-sm text-muted-foreground">-</div>
+                <div
+                    v-for="(record, index) in bioArchiveRecords"
+                    :key="`${record.createdAt}-${index}`"
+                    class="rounded-md border border-border p-3">
+                    <div class="mb-2 text-xs text-muted-foreground">
+                        {{ formatDateFilter(record.createdAt, 'long') }}
+                    </div>
+                    <pre
+                        class="text-xs leading-5.5 font-[inherit]"
+                        style="white-space: pre-wrap; margin: 0"
+                        v-html="bioArchiveDiff(record)"></pre>
+                </div>
+            </div>
+        </DialogContent>
+    </Dialog>
 </template>
 
 <script setup>
-    import { Copy, Image, Info, Languages, MoreHorizontal, Pencil, Trash2, User } from 'lucide-vue-next';
+    import { Archive, Copy, Image, Info, Languages, MoreHorizontal, Pencil, Trash2, User } from 'lucide-vue-next';
+    import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import {
         DropdownMenu,
         DropdownMenuContent,
@@ -514,6 +544,8 @@
     import { showGroupDialog } from '../../../coordinators/groupCoordinator';
 
     import EditNoteAndMemoDialog from './EditNoteAndMemoDialog.vue';
+    import { database } from '../../../services/database';
+    import { formatDifference } from '../../../views/Feed/columns.jsx';
 
     defineEmits(['showBioDialog']);
 
@@ -540,6 +572,9 @@
     const isEditNoteAndMemoDialogVisible = ref(false);
     const vrchatCredit = ref(null);
     const translateLoading = ref(false);
+    const bioArchiveVisible = ref(false);
+    const bioArchiveLoading = ref(false);
+    const bioArchiveRecords = ref([]);
 
     watch(
         () => userDialog.value.loading,
@@ -609,6 +644,20 @@
         } finally {
             translateLoading.value = false;
         }
+    }
+
+    async function showBioArchive() {
+        bioArchiveVisible.value = true;
+        bioArchiveLoading.value = true;
+        try {
+            bioArchiveRecords.value = await database.getRecentBioChangesForUser(userDialog.value.id, 100);
+        } finally {
+            bioArchiveLoading.value = false;
+        }
+    }
+
+    function bioArchiveDiff(record) {
+        return formatDifference(record.previousBio || '', record.bio || '');
     }
 
     /**
