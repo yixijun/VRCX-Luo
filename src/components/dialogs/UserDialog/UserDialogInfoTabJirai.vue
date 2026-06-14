@@ -497,12 +497,10 @@
             <DialogHeader>
                 <div class="flex items-center justify-between gap-3">
                     <DialogTitle>{{ t('dialog.user.info.bio_archive') }}</DialogTitle>
-                    <Button
-                        size="sm"
-                        :variant="bioArchiveDiffEnabled ? 'secondary' : 'outline'"
-                        @click="bioArchiveDiffEnabled = !bioArchiveDiffEnabled">
-                        {{ t('dialog.user.info.bio_diff_toggle') }}
-                    </Button>
+                    <label class="flex items-center gap-2 text-sm text-muted-foreground">
+                        <span>{{ t('dialog.user.info.bio_diff_toggle') }}</span>
+                        <Switch v-model="bioArchiveDiffEnabled" />
+                    </label>
                 </div>
             </DialogHeader>
             <div class="max-h-[60vh] overflow-y-auto space-y-3 pr-1">
@@ -539,6 +537,7 @@
         DropdownMenuTrigger
     } from '@/components/ui/dropdown-menu';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+    import { Switch } from '@/components/ui/switch';
     import { ref, watch } from 'vue';
     import { Button } from '@/components/ui/button';
     import { Spinner } from '@/components/ui/spinner';
