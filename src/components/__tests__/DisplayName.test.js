@@ -58,6 +58,27 @@ describe('DisplayName.vue', () => {
         expect(mocks.fetch).not.toHaveBeenCalled();
     });
 
+    it('uses provided user image without querying when hint is present', async () => {
+        const wrapper = mount(DisplayName, {
+            props: {
+                userid: 'usr_1',
+                hint: 'Hint Name',
+                user: {
+                    displayName: 'Provided User',
+                    profilePicOverrideThumbnail: 'https://example.com/provided.png'
+                }
+            }
+        });
+
+        await flush();
+
+        expect(wrapper.text()).toBe('Hint Name');
+        expect(mocks.fetch).not.toHaveBeenCalled();
+        expect(wrapper.find('img').attributes('src')).toBe(
+            'https://example.com/provided.png'
+        );
+    });
+
     it('fetches and renders display name when hint is missing', async () => {
         const wrapper = mount(DisplayName, {
             props: {

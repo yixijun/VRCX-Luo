@@ -17,12 +17,21 @@
     import { queryRequest } from '../api';
     import { showUserDialog } from '../coordinators/userCoordinator';
     import { useUserDisplay } from '../composables/useUserDisplay';
+    import { getUserIdentity } from '../composables/useUserIdentityDisplay';
     import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
     const props = defineProps({
         userid: String,
         location: String,
         forceUpdateKey: Number,
+        user: {
+            type: Object,
+            default: null
+        },
+        image: {
+            type: String,
+            default: ''
+        },
         hint: {
             type: String,
             default: ''
@@ -37,16 +46,29 @@
      *
      */
     async function parse() {
-        username.value = props.userid;
-        userImageUrl.value = '';
-        if (props.hint) {
-            username.value = props.hint;
+        const identity = getUserIdentity({
+            user: props.user,
+            userId: props.userid,
+            displayName: props.hint,
+            imageUrl: props.image,
+            imageResolver: userImage
+        });
+
+        username.value = identity.displayName;
+        userImageUrl.value = identity.imageUrl;
+
+        if (props.hint || props.user?.displayName) {
+            return;
         } else if (props.userid) {
             const args = await queryRequest.fetch('user.dialog', { userId: props.userid });
-            if (args?.json?.displayName) {
-                username.value = args.json.displayName;
-            }
-            userImageUrl.value = userImage(args?.json, true, '64');
+            const fetchedIdentity = getUserIdentity({
+                user: args?.json,
+                userId: props.userid,
+                imageUrl: userImageUrl.value,
+                imageResolver: userImage
+            });
+            username.value = fetchedIdentity.displayName;
+            userImageUrl.value = fetchedIdentity.imageUrl;
         }
     }
 
@@ -57,5 +79,5 @@
         showUserDialog(props.userid);
     }
 
-    watch([() => props.userid, () => props.location, () => props.forceUpdateKey], parse, { immediate: true });
+    watch([() => props.userid, () => props.location, () => props.forceUpdateKey, () => props.user, () => props.image], parse, { immediate: true });
 </script>

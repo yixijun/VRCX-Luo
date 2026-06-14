@@ -475,7 +475,15 @@
     <Dialog v-model:open="bioArchiveVisible">
         <DialogContent class="sm:max-w-2xl">
             <DialogHeader>
-                <DialogTitle>{{ t('dialog.user.info.bio_archive') }}</DialogTitle>
+                <div class="flex items-center justify-between gap-3">
+                    <DialogTitle>{{ t('dialog.user.info.bio_archive') }}</DialogTitle>
+                    <Button
+                        size="sm"
+                        :variant="bioArchiveDiffEnabled ? 'secondary' : 'outline'"
+                        @click="bioArchiveDiffEnabled = !bioArchiveDiffEnabled">
+                        {{ t('dialog.user.info.bio_diff_toggle') }}
+                    </Button>
+                </div>
             </DialogHeader>
             <div class="max-h-[60vh] overflow-y-auto space-y-3 pr-1">
                 <div v-if="bioArchiveLoading" class="text-sm text-muted-foreground">...</div>
@@ -488,9 +496,13 @@
                         {{ formatDateFilter(record.createdAt, 'long') }}
                     </div>
                     <pre
+                        v-if="bioArchiveDiffEnabled"
                         class="text-xs leading-5.5 font-[inherit]"
                         style="white-space: pre-wrap; margin: 0"
                         v-html="bioArchiveDiff(record)"></pre>
+                    <pre v-else class="text-xs leading-5.5 font-[inherit]" style="white-space: pre-wrap; margin: 0">{{
+                        record.bio || '-'
+                    }}</pre>
                 </div>
             </div>
         </DialogContent>
@@ -574,6 +586,7 @@
     const translateLoading = ref(false);
     const bioArchiveVisible = ref(false);
     const bioArchiveLoading = ref(false);
+    const bioArchiveDiffEnabled = ref(true);
     const bioArchiveRecords = ref([]);
 
     watch(

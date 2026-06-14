@@ -1,4 +1,10 @@
 import Timer from '../../components/Timer.vue';
+import { getUserIdentity } from '../../composables/useUserIdentityDisplay';
+import {
+    Avatar,
+    AvatarFallback,
+    AvatarImage
+} from '../../components/ui/avatar';
 import { Button } from '../../components/ui/button';
 import { TooltipWrapper } from '../../components/ui/tooltip';
 import {
@@ -69,38 +75,6 @@ export const createColumns = ({
 }) => {
     const cols = [
         {
-            id: 'avatar',
-            accessorFn: (row) => row?.photo,
-            header: () => t('table.playerList.avatar'),
-            size: 70,
-            enableSorting: false,
-            meta: { label: () => t('table.playerList.avatar') },
-            cell: ({ row }) => {
-                const userRef = row.original?.ref;
-                const src = userImage(userRef);
-                if (!src) return null;
-                return (
-                    <div class="flex items-center pl-2">
-                        <img
-                            src={src}
-                            class="h-4 w-4 rounded-sm object-cover"
-                            loading="lazy"
-                            onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextElementSibling.style.display = '';
-                            }}
-                        />
-                        <div
-                            class="h-4 w-4 rounded-sm bg-muted flex items-center justify-center"
-                            style="display: none"
-                        >
-                            <User class="h-3 w-3 text-muted-foreground" />
-                        </div>
-                    </div>
-                );
-            }
-        },
-        {
             id: 'timer',
             accessorFn: (row) => row?.timer,
             header: ({ column }) =>
@@ -131,7 +105,28 @@ export const createColumns = ({
                 const style = randomUserColours?.value
                     ? { color: userRef?.$userColour }
                     : null;
-                return <span style={style}>{userRef?.displayName ?? ''}</span>;
+                const identity = getUserIdentity({
+                    user: userRef,
+                    displayName: row.original?.displayName,
+                    imageResolver: userImage
+                });
+                return (
+                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                        <Avatar class="size-5 shrink-0">
+                            <AvatarImage
+                                src={identity.imageUrl}
+                                class="object-cover"
+                                loading="lazy"
+                            />
+                            <AvatarFallback>
+                                <User class="size-3 text-muted-foreground" />
+                            </AvatarFallback>
+                        </Avatar>
+                        <span class="min-w-0 truncate" style={style}>
+                            {identity.displayName}
+                        </span>
+                    </span>
+                );
             }
         },
         {

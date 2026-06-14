@@ -1,4 +1,5 @@
 import { ArrowUpDown, EyeOff, User, UserMinus } from 'lucide-vue-next';
+import { getUserIdentity } from '../../composables/useUserIdentityDisplay';
 import {
     Avatar,
     AvatarFallback,
@@ -160,31 +161,6 @@ export const createColumns = ({
             cell: ({ row }) => <span>{row.original?.$friendNumber || ''}</span>
         },
         {
-            id: 'avatar',
-            accessorFn: (row) => row?.photo,
-            header: () => t('table.friendList.avatar'),
-            size: 90,
-            enableSorting: false,
-            meta: { label: () => t('table.friendList.avatar') },
-            cell: ({ row }) => {
-                const src = userImage(row.original, true);
-                return (
-                    <div class="flex items-center">
-                        <Avatar class="size-6 rounded-full">
-                            <AvatarImage
-                                src={src}
-                                class="friends-list-avatar object-cover"
-                                loading="lazy"
-                            />
-                            <AvatarFallback>
-                                <User class="size-3 text-muted-foreground" />
-                            </AvatarFallback>
-                        </Avatar>
-                    </div>
-                );
-            }
-        },
-        {
             id: 'displayName',
             accessorFn: (row) => row?.displayName,
             header: ({ column }) =>
@@ -199,9 +175,25 @@ export const createColumns = ({
                 const style = randomUserColours?.value
                     ? { color: row.original?.$userColour }
                     : null;
+                const identity = getUserIdentity({
+                    user: row.original,
+                    imageResolver: userImage
+                });
                 return (
-                    <span class="name" style={style}>
-                        {row.original?.displayName ?? ''}
+                    <span class="inline-flex min-w-0 max-w-full items-center gap-1.5">
+                        <Avatar class="size-5 shrink-0 rounded-full">
+                            <AvatarImage
+                                src={identity.imageUrl}
+                                class="friends-list-avatar object-cover"
+                                loading="lazy"
+                            />
+                            <AvatarFallback>
+                                <User class="size-3 text-muted-foreground" />
+                            </AvatarFallback>
+                        </Avatar>
+                        <span class="name min-w-0 truncate" style={style}>
+                            {identity.displayName}
+                        </span>
                     </span>
                 );
             }

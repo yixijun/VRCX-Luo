@@ -32,6 +32,7 @@ vi.mock('../../../components/ui/tooltip', () => ({
 }));
 vi.mock('lucide-vue-next', () => ({
     ArrowUpDown: 'ArrowUpDown',
+    User: 'User',
     Monitor: 'Monitor',
     Smartphone: 'Smartphone',
     Apple: 'Apple',
@@ -120,6 +121,30 @@ describe('views/PlayerList/columns.jsx', () => {
             { displayName: 'Bob' },
             'displayName'
         );
+    });
+
+    test('displayName cell includes user image and no separate avatar column exists', () => {
+        mocks.userImage.mockReturnValue('https://example.com/user.png');
+        const cols = createColumns({
+            randomUserColours: { value: false, __v_isRef: true },
+            chatboxUserBlacklist: { value: new Map(), __v_isRef: true },
+            onBlockChatbox: mocks.onBlockChatbox,
+            onUnblockChatbox: mocks.onUnblockChatbox,
+            sortAlphabetically: mocks.sortAlphabetically,
+            userImage: mocks.userImage
+        });
+
+        expect(cols.find((c) => c.id === 'avatar')).toBeUndefined();
+
+        const displayNameCol = cols.find((c) => c.id === 'displayName');
+        const cell = displayNameCol.cell({ row: makeRow() });
+
+        expect(mocks.userImage).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'usr_1' }),
+            true,
+            '64'
+        );
+        expect(cell).toBeTruthy();
     });
 
     test('photonId cell triggers block and unblock actions', () => {
