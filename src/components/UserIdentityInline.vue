@@ -18,6 +18,8 @@
     import { User } from 'lucide-vue-next';
 
     import { getUserIdentity } from '../composables/useUserIdentityDisplay';
+    import { useUserDisplay } from '../composables/useUserDisplay';
+    import { useFriendStore, useUserStore } from '../stores';
     import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
     const props = defineProps({
@@ -59,13 +61,41 @@
         }
     });
 
+    const userStore = useUserStore();
+    const friendStore = useFriendStore();
+    const { userImage } = useUserDisplay();
+
+    const resolvedUser = computed(() => {
+        if (props.user) {
+            return props.user;
+        }
+        if (props.userId) {
+            return userStore.cachedUsers.get(props.userId) || friendStore.friends.get(props.userId)?.ref || null;
+        }
+        if (props.displayName) {
+            const userIds = userStore.cachedUserIdsByDisplayName?.get(props.displayName);
+            const firstUserId = userIds?.values?.().next?.().value;
+            if (firstUserId) {
+                return userStore.cachedUsers.get(firstUserId) || friendStore.friends.get(firstUserId)?.ref || null;
+            }
+            for (const friend of friendStore.friends.values()) {
+                if (friend?.ref?.displayName === props.displayName || friend?.name === props.displayName) {
+                    return friend.ref || null;
+                }
+            }
+        }
+        return null;
+    });
+
+    const resolvedImageResolver = computed(() => props.imageResolver || userImage);
+
     const identity = computed(() =>
         getUserIdentity({
-            user: props.user,
+            user: resolvedUser.value,
             userId: props.userId,
             displayName: props.displayName,
             imageUrl: props.imageUrl,
-            imageResolver: props.imageResolver
+            imageResolver: resolvedImageResolver.value
         })
     );
 </script>
