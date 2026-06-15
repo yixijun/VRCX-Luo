@@ -150,6 +150,21 @@
                             </HoverCardContent>
                         </HoverCard>
 
+                        <TooltipWrapper v-if="autoFollowStore.isActive" :content="autoFollowTooltip" side="top">
+                            <div
+                                data-testid="auto-follow-status"
+                                class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
+                                @click="cancelAutoFollow">
+                                <span
+                                    class="inline-block size-2 rounded-full shrink-0"
+                                    :class="autoFollowStore.isJoining ? 'bg-status-askme' : 'bg-status-online'" />
+                                <span class="text-foreground text-[11px]">自动跟随</span>
+                                <span class="text-[10px] text-foreground max-w-[120px] truncate">{{
+                                    autoFollowStore.targetFriendName
+                                }}</span>
+                            </div>
+                        </TooltipWrapper>
+
                         <HoverCard v-if="visibility.servers" v-model:open="serversHoverOpen">
                             <HoverCardTrigger as-child>
                                 <TooltipWrapper
@@ -483,6 +498,7 @@
         useGameLogStore,
         useGameStore,
         useGeneralSettingsStore,
+        useAutoFollowStore,
         useUserStore,
         useVrcStatusStore,
         useVrcxStore
@@ -567,6 +583,7 @@
     const vrcxStore = useVrcxStore();
     const vrcStatusStore = useVrcStatusStore();
     const generalSettingsStore = useGeneralSettingsStore();
+    const autoFollowStore = useAutoFollowStore();
 
     const { nowPlaying } = storeToRefs(gameLogStore);
 
@@ -618,6 +635,16 @@
         if (gameStore.lastOfflineAt <= 0) return '-';
         return dayjs(gameStore.lastOfflineAt).format('MM/DD HH:mm');
     });
+
+    const autoFollowTooltip = computed(() =>
+        autoFollowStore.statusText
+            ? `自动跟随：${autoFollowStore.statusText}`
+            : `自动跟随：${autoFollowStore.targetFriendName || '跟随中'}`
+    );
+
+    async function cancelAutoFollow() {
+        await autoFollowStore.stopFollow({ confirm: true });
+    }
 
     // --- Servers status HoverCard ---
     const serversHoverOpen = ref(false);

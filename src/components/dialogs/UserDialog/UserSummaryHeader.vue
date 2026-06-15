@@ -256,22 +256,45 @@
                 </div>
             </div>
 
-            <UserActionDropdown class="ml-2 mt-12" :user-dialog-command="userDialogCommand" />
+            <div class="ml-2 mt-12 flex items-center">
+                <TooltipWrapper v-if="canShowAutoFollow" side="top" :content="autoFollowTooltip">
+                    <Button
+                        class="rounded-full"
+                        :variant="isCurrentUserAutoFollowTarget ? 'secondary' : 'outline'"
+                        size="icon-lg"
+                        @click="toggleAutoFollow">
+                        <Navigation class="size-5" :class="{ 'text-primary': isCurrentUserAutoFollowTarget }" />
+                    </Button>
+                </TooltipWrapper>
+                <UserActionDropdown :class="{ 'ml-2': canShowAutoFollow }" :user-dialog-command="userDialogCommand" />
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
-    import { Apple, ChevronDown, IdCard, Image, Monitor, Shield, Smartphone, UserPlus, Users } from 'lucide-vue-next';
+    import {
+        Apple,
+        ChevronDown,
+        IdCard,
+        Image,
+        Monitor,
+        Navigation,
+        Shield,
+        Smartphone,
+        UserPlus,
+        Users
+    } from 'lucide-vue-next';
     import { computed, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
-    import { formatDateFilter, languageClass, openDiscordProfile } from '../../../shared/utils';
+    import { formatDateFilter, isFriendOnline, isRealInstance, languageClass, openDiscordProfile } from '../../../shared/utils';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
     import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
-    import { useGalleryStore, useUserStore } from '../../../stores';
+    import { useAutoFollowStore, useGalleryStore, useUserStore } from '../../../stores';
     import { Badge } from '../../ui/badge';
+    import { Button } from '../../ui/button';
     import { Checkbox } from '../../ui/checkbox';
 
     import UserActionDropdown from './UserActionDropdown.vue';
@@ -306,9 +329,24 @@
 
     const { showFullscreenImageDialog } = useGalleryStore();
     const { userImage, userStatusClass } = useUserDisplay();
+    const autoFollowStore = useAutoFollowStore();
 
     const profileImageError = ref(false);
     const userIconError = ref(false);
+
+    const isCurrentUserAutoFollowTarget = computed(
+        () => autoFollowStore.isActive && autoFollowStore.targetFriendId === userDialog.value.id
+    );
+    const canShowAutoFollow = computed(
+        () =>
+            currentUser.value.id !== userDialog.value.id &&
+            userDialog.value.isFriend &&
+            isFriendOnline(userDialog.value.friend) &&
+            isRealInstance(userDialog.value.ref?.travelingToLocation || userDialog.value.ref?.location)
+    );
+    const autoFollowTooltip = computed(() =>
+        isCurrentUserAutoFollowTarget.value ? autoFollowStore.statusText || '跟随中' : '自动跟随'
+    );
 
     watch(
         () => userDialog.value.id,
@@ -323,4 +361,8 @@
     const toggleBadgeVisibility = props.toggleBadgeVisibility;
     const toggleBadgeShowcased = props.toggleBadgeShowcased;
     const userDialogCommand = props.userDialogCommand;
+
+    async function toggleAutoFollow() {
+        await autoFollowStore.toggleFollow(userDialog.value.ref);
+    }
 </script>

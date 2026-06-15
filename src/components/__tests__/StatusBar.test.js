@@ -6,6 +6,7 @@ import { nextTick, ref } from 'vue';
 
 import StatusBar from '../StatusBar.vue';
 import en from '../../localization/en.json';
+import { useAutoFollowStore } from '../../stores/autoFollow';
 
 // --- Mocks ---
 
@@ -212,6 +213,13 @@ function mountStatusBar(storeOverrides = {}) {
                         },
                         GeneralSettings: {
                             ...storeOverrides.GeneralSettings
+                        },
+                        AutoFollow: {
+                            isActive: false,
+                            targetFriendName: '',
+                            statusText: '',
+                            isJoining: false,
+                            ...storeOverrides.AutoFollow
                         }
                     }
                 })
@@ -289,5 +297,24 @@ describe('StatusBar.vue - Servers indicator', () => {
 
         expect(wrapper.text()).toContain('Last Session');
         expect(wrapper.text()).toContain('Offline Since');
+    });
+
+    test('shows auto follow status and confirms stop on click', async () => {
+        const wrapper = mountStatusBar({
+            AutoFollow: {
+                isActive: true,
+                targetFriendName: 'Test Friend',
+                statusText: '跟随中'
+            }
+        });
+        const autoFollowStore = useAutoFollowStore();
+
+        expect(wrapper.text()).toContain('自动跟随');
+        expect(wrapper.text()).toContain('Test Friend');
+
+        const statusItem = wrapper.find('[data-testid="auto-follow-status"]');
+        await statusItem.trigger('click');
+
+        expect(autoFollowStore.stopFollow).toHaveBeenCalledWith({ confirm: true });
     });
 });
