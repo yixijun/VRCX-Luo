@@ -39,7 +39,7 @@ namespace VRCX
                 WindowlessRenderingEnabled = true,
                 PersistSessionCookies = true,
                 UserAgent = Program.Version,
-                BrowserSubprocessPath = Environment.ProcessPath,
+                BrowserSubprocessPath = GetBrowserSubprocessPath(),
                 BackgroundColor = 0xFF0A0A0A
             };
             if (isOverlay)
@@ -126,9 +126,19 @@ namespace VRCX
 
             if (!Cef.Initialize(cefSettings, false))
             {
-                logger.Error("Cef failed to initialize");
+                logger.Error("Cef failed to initialize, subprocess path: {0}", cefSettings.BrowserSubprocessPath);
                 throw new Exception("Cef.Initialize()");
             }
+        }
+
+        private static string GetBrowserSubprocessPath()
+        {
+            var subprocessPath = Path.Join(Program.BaseDirectory, "CefSharp.BrowserSubprocess.exe");
+            if (File.Exists(subprocessPath))
+                return subprocessPath;
+
+            logger.Warn("CefSharp.BrowserSubprocess.exe was not found, falling back to process path: {0}", Environment.ProcessPath);
+            return Environment.ProcessPath ?? string.Empty;
         }
 
         private void CheckCefVersion(string userDataDir)
