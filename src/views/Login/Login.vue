@@ -135,7 +135,7 @@
                                             {{ getAccountBadgeLabel(user.user.id) }}
                                         </button>
                                         <Avatar class="rounded-full size-10">
-                                            <AvatarImage :src="userImage(user.user)" />
+                                            <AvatarImage :src="savedAccountImage(user.user)" />
                                             <AvatarFallback>
                                                 <User class="size-5 text-muted-foreground" />
                                             </AvatarFallback>
@@ -340,6 +340,19 @@
         return BADGE_COLOURS[idx % BADGE_COLOURS.length];
     }
 
+    function savedAccountImage(user) {
+        if (!user) return '';
+        return (
+            user.userIcon ||
+            user.profilePicOverrideThumbnail ||
+            user.profilePicOverride ||
+            user.thumbnailUrl ||
+            user.currentAvatarThumbnailImageUrl ||
+            user.currentAvatarImageUrl ||
+            ''
+        );
+    }
+
     /**
      * Log in the first selected account normally, then add the rest as secondary sessions.
      */
@@ -386,9 +399,6 @@
      *
      */
     async function updateSavedCredentials() {
-        if (watchState.isLoggedIn) {
-            return;
-        }
         savedCredentials.value = await getAllSavedCredentials();
     }
 
@@ -475,7 +485,7 @@
     }
 
     onBeforeMount(async () => {
-        updateSavedCredentials();
+        await updateSavedCredentials();
         detectAndPromptLanguage();
     });
 
