@@ -5,16 +5,16 @@
             v-if="userDialog.ref.location"
             style="display: flex; flex-direction: column">
             <div style="flex: none">
-                <template v-if="isRealInstance(userDialog.$location.tag)">
+                <template v-if="isRealInstance(userDialog.$location?.tag)">
                     <InstanceActionBar
                         class="mb-1"
-                        :location="userDialog.$location.tag"
-                        :shortname="userDialog.$location.shortName"
+                        :location="userDialog.$location?.tag"
+                        :shortname="userDialog.$location?.shortName"
                         :currentlocation="lastLocation.location"
-                        :instance="userDialog.instance.ref"
-                        :friendcount="userDialog.instance.friendCount"
+                        :instance="userDialog.instance?.ref"
+                        :friendcount="userDialog.instance?.friendCount || 0"
                         :refresh-tooltip="t('dialog.user.info.refresh_instance_info')"
-                        :on-refresh="() => refreshInstancePlayerCount(userDialog.$location.tag)" />
+                        :on-refresh="() => refreshInstancePlayerCount(userDialog.$location?.tag)" />
                 </template>
                 <Location
                     class="text-sm"
@@ -23,10 +23,10 @@
             </div>
             <div class="flex flex-wrap items-start" style="flex: 1; margin-top: 8px; max-height: 150px; overflow: auto">
                 <div
-                    v-if="userDialog.$location.userId"
+                    v-if="userDialog.$location?.userId"
                     class="box-border flex items-center p-1.5 text-[13px] cursor-pointer w-[167px] hover:rounded-[25px_5px_5px_25px]"
                     @click="showUserDialog(userDialog.$location.userId)">
-                    <template v-if="userDialog.$location.user">
+                    <template v-if="userDialog.$location?.user">
                         <div
                             class="relative inline-block flex-none size-9 mr-2.5"
                             :class="userStatusClass(userDialog.$location.user)">
@@ -48,7 +48,7 @@
                     <span v-else v-text="userDialog.$location.userId"></span>
                 </div>
                 <div
-                    v-for="user in userDialog.users"
+                    v-for="user in userDialog.users || []"
                     :key="user.id"
                     class="box-border flex items-center p-1.5 text-[13px] cursor-pointer w-[167px] hover:rounded-[25px_5px_5px_25px]"
                     @click="showUserDialog(user.id)">
@@ -228,7 +228,7 @@
                     </Button>
                 </div>
                 <div style="margin-top: 6px" class="flex items-center">
-                    <TooltipWrapper v-for="(link, index) in userDialog.ref.bioLinks" :key="index">
+                    <TooltipWrapper v-for="(link, index) in userDialog.ref.bioLinks || []" :key="index">
                         <template #content>
                             <span v-text="link"></span>
                         </template>
@@ -357,9 +357,9 @@
         <div
             v-if="currentUser.id !== userDialog.id"
             class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <TooltipWrapper side="top" :disabled="userDialog.dateFriendedInfo.length < 2">
+            <TooltipWrapper side="top" :disabled="(userDialog.dateFriendedInfo || []).length < 2">
                 <template #content>
-                    <template v-for="ref in userDialog.dateFriendedInfo" :key="ref.type">
+                    <template v-for="ref in userDialog.dateFriendedInfo || []" :key="ref.type">
                         <span>{{ ref.type }}: {{ formatDateFilter(ref.created_at, 'long') }}</span
                         ><br />
                     </template>
@@ -563,6 +563,7 @@
         copyToClipboard,
         formatDateFilter,
         getFaviconUrl,
+        isFriendOnline,
         isRealInstance,
         openExternalLink,
         timeToText,

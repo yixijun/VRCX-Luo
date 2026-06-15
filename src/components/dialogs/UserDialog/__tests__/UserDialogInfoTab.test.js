@@ -90,7 +90,7 @@ vi.mock('../../../../services/request', () => ({
     failedGetRequests: new Map()
 }));
 
-import UserDialogInfoTab from '../UserDialogInfoTab.vue';
+import UserDialogInfoTab from '../UserDialogInfoTabJirai.vue';
 import { miscRequest } from '../../../../api';
 import {
     useAdvancedSettingsStore,
@@ -247,6 +247,20 @@ describe('UserDialogInfoTab.vue', () => {
                 true
             );
             expect(wrapper.find('spinner-stub').exists()).toBe(true);
+        });
+
+        test('renders info body when instance details are still missing', () => {
+            const wrapper = mountComponent({
+                userDialog: {
+                    $location: null,
+                    instance: null,
+                    users: null,
+                    dateFriendedInfo: null
+                }
+            });
+
+            expect(wrapper.text()).toContain('dialog.user.info.bio');
+            expect(wrapper.text()).toContain('dialog.user.info.date_joined');
         });
     });
 });
