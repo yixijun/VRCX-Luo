@@ -127,7 +127,11 @@ vi.mock('lucide-vue-next', () => ({
     LogIn: { template: '<i data-testid="icon-login" />' },
     Mail: { template: '<i data-testid="icon-mail" />' },
     MapPin: { template: '<i data-testid="icon-map" />' },
+    PowerIcon: { template: '<i data-testid="icon-power" />' },
     RefreshCw: { template: '<i data-testid="icon-refresh" />' },
+    IdCard: { template: '<i data-testid="icon-id-card" />' },
+    SquareStack: { template: '<i data-testid="icon-square-stack" />' },
+    UserPlus2: { template: '<i data-testid="icon-user-plus" />' },
     UsersRound: { template: '<i data-testid="icon-users" />' }
 }));
 
@@ -331,9 +335,7 @@ describe('InstanceActionBar.vue', () => {
 
         const closeBtn = wrapper
             .findAll('button')
-            .find((btn) =>
-                btn.text().includes('dialog.user.info.close_instance')
-            );
+            .find((btn) => btn.find('[data-testid="icon-power"]').exists());
         expect(closeBtn).toBeTruthy();
 
         await closeBtn.trigger('click');

@@ -284,6 +284,20 @@
                     <span v-else class="block truncate text-xs">{{ timeToText(userDialog.timeSpent) }}</span>
                 </div>
             </div>
+            <div
+                v-if="canShowAutoFollow"
+                class="box-border flex items-center p-1.5 text-[13px] cursor-pointer w-[167px]"
+                @click="toggleAutoFollow">
+                <div class="flex-none mr-2">
+                    <Navigation class="size-4" :class="{ 'text-primary': isCurrentUserAutoFollowTarget }" />
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">自动跟随</span>
+                    <span class="block truncate text-xs">
+                        {{ isCurrentUserAutoFollowTarget ? autoFollowStore.statusText || '跟随中' : '点击开启' }}
+                    </span>
+                </div>
+            </div>
         </template>
         <template v-else>
             <TooltipWrapper
@@ -528,7 +542,19 @@
 </template>
 
 <script setup>
-    import { Archive, Copy, History, Image, Info, Languages, MoreHorizontal, Pencil, Trash2, User } from 'lucide-vue-next';
+    import {
+        Archive,
+        Copy,
+        History,
+        Image,
+        Info,
+        Languages,
+        MoreHorizontal,
+        Navigation,
+        Pencil,
+        Trash2,
+        User
+    } from 'lucide-vue-next';
     import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import {
         DropdownMenu,
@@ -538,7 +564,7 @@
     } from '@/components/ui/dropdown-menu';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import { Switch } from '@/components/ui/switch';
-    import { ref, watch } from 'vue';
+    import { computed, ref, watch } from 'vue';
     import { Button } from '@/components/ui/button';
     import { Spinner } from '@/components/ui/spinner';
     import { storeToRefs } from 'pinia';
@@ -561,6 +587,7 @@
     import {
         useAdvancedSettingsStore,
         useAppearanceSettingsStore,
+        useAutoFollowStore,
         useGalleryStore,
         useInstanceStore,
         useLocationStore,
@@ -584,6 +611,7 @@
 
     const modalStore = useModalStore();
     const instanceStore = useInstanceStore();
+    const autoFollowStore = useAutoFollowStore();
 
     const { hideUserNotes, hideUserMemos } = storeToRefs(useAppearanceSettingsStore());
     const { bioLanguage, translationApi, translationApiType } = storeToRefs(useAdvancedSettingsStore());
@@ -594,6 +622,17 @@
     const { lastLocation } = storeToRefs(useLocationStore());
     const { showFullscreenImageDialog } = useGalleryStore();
     const { userImage, userStatusClass } = useUserDisplay();
+
+    const isCurrentUserAutoFollowTarget = computed(
+        () => autoFollowStore.isActive && autoFollowStore.targetFriendId === userDialog.value.id
+    );
+    const canShowAutoFollow = computed(
+        () =>
+            currentUser.value.id !== userDialog.value.id &&
+            userDialog.value.isFriend &&
+            isFriendOnline(userDialog.value.friend) &&
+            isRealInstance(userDialog.value.ref?.travelingToLocation || userDialog.value.ref?.location)
+    );
 
     const bioCache = ref({
         userId: null,
@@ -748,6 +787,10 @@
      */
     function showPreviousInstancesListDialog(userRef) {
         instanceStore.showPreviousInstancesListDialog('user', userRef);
+    }
+
+    async function toggleAutoFollow() {
+        await autoFollowStore.toggleFollow(userDialog.value.ref);
     }
 
     /**

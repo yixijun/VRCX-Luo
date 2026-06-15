@@ -19,6 +19,9 @@ const mocks = vi.hoisted(() => ({
     isGameRunning: { value: true },
     lastLocation: { value: { location: 'wrld_here:123~private' } },
     lastLocationDestination: { value: 'wrld_destination:456~private' },
+    cachedUsers: new Map(),
+    cachedUserIdsByDisplayName: new Map(),
+    friends: new Map(),
     toastSuccess: vi.fn()
 }));
 
@@ -48,7 +51,12 @@ vi.mock('../../../../stores', () => ({
     }),
     useUserStore: () => ({
         showSendBoopDialog: (...args) => mocks.showSendBoopDialog(...args),
-        currentUser: mocks.currentUser
+        currentUser: mocks.currentUser,
+        cachedUsers: mocks.cachedUsers,
+        cachedUserIdsByDisplayName: mocks.cachedUserIdsByDisplayName
+    }),
+    useFriendStore: () => ({
+        friends: mocks.friends
     }),
     useGameStore: () => ({
         isGameRunning: mocks.isGameRunning
@@ -100,6 +108,11 @@ vi.mock('../../../../composables/useUserDisplay', () => ({
     })
 }));
 
+vi.mock('../../../../composables/useRecentActions', () => ({
+    isActionRecent: vi.fn(() => false),
+    recordRecentAction: vi.fn()
+}));
+
 vi.mock('../../../../shared/utils', () => ({
     parseLocation: () => ({
         worldId: 'wrld_123',
@@ -129,6 +142,12 @@ vi.mock('@/components/ui/item', () => ({
 }));
 
 vi.mock('@/components/ui/avatar', () => ({
+    Avatar: { template: '<div><slot /></div>' },
+    AvatarImage: { template: '<img />' },
+    AvatarFallback: { template: '<span><slot /></span>' }
+}));
+
+vi.mock('../../../../components/ui/avatar', () => ({
     Avatar: { template: '<div><slot /></div>' },
     AvatarImage: { template: '<img />' },
     AvatarFallback: { template: '<span><slot /></span>' }
@@ -176,7 +195,13 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
 }));
 
 vi.mock('lucide-vue-next', () => ({
+    Clock: { template: '<i />' },
+    ExternalLink: { template: '<i />' },
+    LogIn: { template: '<i />' },
+    Mail: { template: '<i />' },
+    MessageSquare: { template: '<i />' },
     MoreHorizontal: { template: '<i />' },
+    MousePointer: { template: '<i />' },
     Trash2: { template: '<i />' },
     User: { template: '<i />' }
 }));
@@ -240,6 +265,9 @@ describe('FavoritesFriendItem.vue', () => {
         mocks.isGameRunning.value = true;
         mocks.lastLocation.value = { location: 'wrld_here:123~private' };
         mocks.lastLocationDestination.value = 'wrld_destination:456~private';
+        mocks.cachedUsers.clear();
+        mocks.cachedUserIdsByDisplayName.clear();
+        mocks.friends.clear();
     });
 
     it('opens user dialog when item is clicked', async () => {
