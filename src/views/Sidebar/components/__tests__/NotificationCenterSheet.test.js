@@ -73,6 +73,13 @@ vi.mock('@/components/ui/tabs', () => ({
     }
 }));
 
+vi.mock('@/components/ui/button', () => ({
+    Button: {
+        emits: ['click'],
+        template: '<button data-testid="clear-center" @click="$emit(\'click\')"><slot /></button>'
+    }
+}));
+
 vi.mock('../NotificationList.vue', () => ({
     default: {
         props: ['notifications', 'recentNotifications'],
@@ -124,7 +131,8 @@ describe('NotificationCenterSheet.vue', () => {
             unseenOtherNotifications: ref([]),
             recentFriendNotifications: ref([]),
             recentGroupNotifications: ref([]),
-            recentOtherNotifications: ref([])
+            recentOtherNotifications: ref([]),
+            clearNotificationCenter: vi.fn()
         };
     });
 
@@ -153,6 +161,17 @@ describe('NotificationCenterSheet.vue', () => {
             name: 'notification',
             query: { fromCenter: '1' }
         });
+    });
+
+    test('clear button only calls notification center clear action', async () => {
+        mocks.notificationStore.recentFriendNotifications.value = [{ id: 'r1' }];
+        const wrapper = mount(NotificationCenterSheet);
+
+        await wrapper.get('[data-testid="clear-center"]').trigger('click');
+
+        expect(
+            mocks.notificationStore.clearNotificationCenter
+        ).toHaveBeenCalledTimes(1);
     });
 
     test('show invite response/request dialogs trigger side effects', async () => {

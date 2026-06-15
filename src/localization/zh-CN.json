@@ -226,7 +226,8 @@
             "tab_other": "其他",
             "past_notifications": "最近 24 小时内的通知",
             "no_new_notifications": "最近 24 小时内没有新通知",
-            "no_unseen_notifications": "没有未读通知"
+            "no_unseen_notifications": "没有未读通知",
+            "clear": "清除"
         },
         "search_recently_met": "最近遇到的人",
         "search_recently_joined": "最近加入的世界",

@@ -2,8 +2,16 @@
     <Sheet v-model:open="isNotificationCenterOpen">
         <SheetContent side="right" class="flex flex-col p-0 sm:max-w-md px-1" @open-auto-focus.prevent>
             <SheetHeader class="border-b px-4 pt-4 pb-3">
-                <div class="flex items-center pr-6">
+                <div class="flex items-center gap-2 pr-6">
                     <SheetTitle>{{ t('side_panel.notification_center.title') }}</SheetTitle>
+                    <Button
+                        v-if="hasNotificationCenterRows"
+                        variant="ghost"
+                        size="sm"
+                        class="ml-auto h-7 px-2 text-xs"
+                        @click="clearNotificationCenter">
+                        {{ t('side_panel.notification_center.clear') }}
+                    </Button>
                 </div>
             </SheetHeader>
             <Tabs v-model="activeTab" class="flex min-h-0 flex-1 flex-col">
@@ -65,7 +73,8 @@
 <script setup>
     import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
     import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-    import { ref, watch } from 'vue';
+    import { Button } from '@/components/ui/button';
+    import { computed, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
     import { useRouter } from 'vue-router';
@@ -90,8 +99,19 @@
         recentGroupNotifications,
         recentOtherNotifications
     } = storeToRefs(useNotificationStore());
+    const { clearNotificationCenter } = useNotificationStore();
 
     const activeTab = ref('friend');
+    const hasNotificationCenterRows = computed(
+        () =>
+            unseenFriendNotifications.value.length +
+                unseenGroupNotifications.value.length +
+                unseenOtherNotifications.value.length +
+                recentFriendNotifications.value.length +
+                recentGroupNotifications.value.length +
+                recentOtherNotifications.value.length >
+            0
+    );
 
     watch(isNotificationCenterOpen, (open) => {
         if (open) {

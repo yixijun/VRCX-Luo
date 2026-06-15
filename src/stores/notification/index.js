@@ -97,6 +97,7 @@ export const useNotificationStore = defineStore('Notification', () => {
     const unseenNotifications = ref([]);
     const isNotificationsLoading = ref(false);
     const isNotificationCenterOpen = ref(false);
+    const notificationCenterHiddenIds = ref([]);
 
     const friendNotifications = computed(() =>
         notificationTable.value.data.filter(
@@ -114,20 +115,36 @@ export const useNotificationStore = defineStore('Notification', () => {
         )
     );
     const unseenSet = computed(() => new Set(unseenNotifications.value));
+    const notificationCenterHiddenSet = computed(
+        () => new Set(notificationCenterHiddenIds.value)
+    );
     const unseenFriendNotifications = computed(() =>
-        friendNotifications.value.filter((n) => unseenSet.value.has(n.id))
+        friendNotifications.value.filter(
+            (n) =>
+                unseenSet.value.has(n.id) &&
+                !notificationCenterHiddenSet.value.has(n.id)
+        )
     );
     const unseenGroupNotifications = computed(() =>
-        groupNotifications.value.filter((n) => unseenSet.value.has(n.id))
+        groupNotifications.value.filter(
+            (n) =>
+                unseenSet.value.has(n.id) &&
+                !notificationCenterHiddenSet.value.has(n.id)
+        )
     );
     const unseenOtherNotifications = computed(() =>
-        otherNotifications.value.filter((n) => unseenSet.value.has(n.id))
+        otherNotifications.value.filter(
+            (n) =>
+                unseenSet.value.has(n.id) &&
+                !notificationCenterHiddenSet.value.has(n.id)
+        )
     );
     const recentCutoff = computed(() => dayjs().subtract(24, 'hour').valueOf());
     const recentFriendNotifications = computed(() =>
         friendNotifications.value.filter(
             (n) =>
                 !unseenSet.value.has(n.id) &&
+                !notificationCenterHiddenSet.value.has(n.id) &&
                 n.seen !== false &&
                 getNotificationTs(n) > recentCutoff.value
         )
@@ -136,6 +153,7 @@ export const useNotificationStore = defineStore('Notification', () => {
         groupNotifications.value.filter(
             (n) =>
                 !unseenSet.value.has(n.id) &&
+                !notificationCenterHiddenSet.value.has(n.id) &&
                 n.seen !== false &&
                 getNotificationTs(n) > recentCutoff.value
         )
@@ -144,6 +162,7 @@ export const useNotificationStore = defineStore('Notification', () => {
         otherNotifications.value.filter(
             (n) =>
                 !unseenSet.value.has(n.id) &&
+                !notificationCenterHiddenSet.value.has(n.id) &&
                 n.seen !== false &&
                 getNotificationTs(n) > recentCutoff.value
         )
@@ -507,6 +526,33 @@ export const useNotificationStore = defineStore('Notification', () => {
         }
         unseenNotifications.value = [];
         uiStore.removeNotify('notification');
+    }
+
+    /**
+     * Hide the current notification center cards without deleting notification logs.
+     */
+    function clearNotificationCenter() {
+        const visibleNotifications = [
+            ...unseenFriendNotifications.value,
+            ...unseenGroupNotifications.value,
+            ...unseenOtherNotifications.value,
+            ...recentFriendNotifications.value,
+            ...recentGroupNotifications.value,
+            ...recentOtherNotifications.value
+        ];
+        if (visibleNotifications.length === 0) {
+            return;
+        }
+        const ids = new Set(notificationCenterHiddenIds.value);
+        for (const noty of visibleNotifications) {
+            if (!noty?.id) continue;
+            ids.add(noty.id);
+            removeFromArray(unseenNotifications.value, noty.id);
+        }
+        notificationCenterHiddenIds.value = [...ids];
+        if (unseenNotifications.value.length === 0) {
+            uiStore.removeNotify('notification');
+        }
     }
 
     /**
@@ -1491,6 +1537,7 @@ export const useNotificationStore = defineStore('Notification', () => {
         openNotificationLink,
         queueMarkAsSeen,
         markAllAsSeen,
+        clearNotificationCenter,
         appendNotificationTableEntry,
         setNotificationInitStatus,
         clearUnseenNotifications
