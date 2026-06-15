@@ -31,9 +31,12 @@ cd ..\..\
 Write-Host "Creating Installer..." -ForegroundColor Green
 $version = Get-Content -Path "Version" -Raw
 cd "Installer"
-Out-File -FilePath "version_define.nsh" -Encoding UTF8 -InputObject "!define PRODUCT_VERSION_FROM_FILE `"$version.0`""
+@(
+    "!pragma codepage UTF8",
+    "!define PRODUCT_VERSION_FROM_FILE `"$version.0`""
+) | Out-File -FilePath "version_define.nsh" -Encoding UTF8
 $nsisPath = "C:\Program Files (x86)\NSIS\makensis.exe"
-&$nsisPath installer.nsi
+&$nsisPath /INPUTCHARSET UTF8 installer.nsi
 Start-Sleep -Seconds 1
 Move-Item VRCX-Luo_Setup.exe ..\$SetupName -Force
 cd ..

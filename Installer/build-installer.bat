@@ -8,9 +8,12 @@ set "VERSION=%VERSION%.0"
 :: Append ".0" to the version. This converts 'X.X.X' to 'X.X.X.0',
 :: satisfying NSIS's strict four-part version format (e.g., for VIProductVersion).
 :: Winget will treat 'X.X.X.0' as equal to 'X.X.X', so it won't trigger an unnecessary update.
-echo !define PRODUCT_VERSION_FROM_FILE "%VERSION%" > version_define.nsh
+> version_define.nsh (
+    echo !pragma codepage UTF8
+    echo !define PRODUCT_VERSION_FROM_FILE "%VERSION%"
+)
 
 :: Compile the NSIS installer.
-"C:\Program Files (x86)\NSIS\makensis.exe" installer.nsi
+"C:\Program Files (x86)\NSIS\makensis.exe" /INPUTCHARSET UTF8 installer.nsi
 
 pause

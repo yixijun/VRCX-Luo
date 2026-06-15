@@ -1,4 +1,9 @@
 ;--------------------------------
+; NSIS input encoding
+
+    !pragma codepage UTF8
+
+;--------------------------------
 ;Plugins
 ;https://nsis.sourceforge.io/ApplicationID_plug-in
 ;https://nsis.sourceforge.io/ShellExecAsUser_plug-in

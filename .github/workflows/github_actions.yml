@@ -69,7 +69,10 @@ jobs:
             - name: Set version
               run: |
                   echo "${{ needs.set_version.outputs.version }}" > Version
-                  echo "!define PRODUCT_VERSION_FROM_FILE \"${{ needs.set_version.outputs.date }}.0\"" > Installer/version_define.nsh
+                  {
+                    echo "!pragma codepage UTF8"
+                    echo "!define PRODUCT_VERSION_FROM_FILE \"${{ needs.set_version.outputs.date }}.0\""
+                  } > Installer/version_define.nsh
                   cat Version
             - uses: actions/cache@v5
               with:
@@ -126,10 +129,8 @@ jobs:
             - name: Install NSIS
               run: choco install nsis -y
             - name: Create NSIS installer
-              uses: joncloud/makensis-action@v5.0
-              with:
-                  script-file: Installer/installer.nsi
-                  additional-plugin-paths: Installer/Plugins
+              working-directory: Installer
+              run: makensis /INPUTCHARSET UTF8 installer.nsi
             - name: Rename setup
               run: |
                   file_name="VRCX-Luo_${{ needs.set_version.outputs.version }}_Setup.exe"
