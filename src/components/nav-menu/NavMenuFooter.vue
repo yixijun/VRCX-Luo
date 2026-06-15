@@ -23,9 +23,6 @@
                         <DropdownMenuItem @click="emit('support-link', 'github')">
                             <span>{{ t('nav_menu.github') }}</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem @click="emit('support-link', 'discord')">
-                            <span>{{ t('nav_menu.discord') }}</span>
-                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
             </SidebarMenuItem>

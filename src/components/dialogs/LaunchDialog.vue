@@ -410,9 +410,9 @@
     async function copyInstanceMessage(input) {
         try {
             await navigator.clipboard.writeText(input);
-            toast.success('Instance copied to clipboard');
+            toast.success(t('message.instance.copied'));
         } catch (error) {
-            toast.error('Instance copied failed');
+            toast.error(t('message.instance.copy_failed'));
             console.error(error.message);
         }
     }

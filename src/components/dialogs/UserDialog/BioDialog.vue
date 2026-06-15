@@ -93,7 +93,7 @@
             })
             .then((args) => {
                 D.visible = false;
-                toast.success('Bio updated');
+                toast.success(t('message.user.bio_updated'));
                 return args;
             });
     }

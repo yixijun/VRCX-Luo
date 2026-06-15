@@ -26,12 +26,14 @@ const whatsNewReleases = Object.freeze({
  * @returns {string}
  */
 function normalizeReleaseVersion(version) {
-    const normalizedVersion = String(version || '')
-        .replace(/^VRCX\s+/, '')
-        .trim();
-    return /^\d{4}\.\d{2}\.\d{2}$/.test(normalizedVersion)
-        ? normalizedVersion
-        : '';
+    const versionMatch = String(version || '')
+        .replace(/^VRCX(?:-Luo)?(?:\s+Nightly)?\s+/, '')
+        .match(/(\d{4})\.(\d{1,2})\.(\d{1,2})/);
+    if (!versionMatch) {
+        return '';
+    }
+    const [, year, month, day] = versionMatch;
+    return `${year}.${month.padStart(2, '0')}.${day.padStart(2, '0')}`;
 }
 
 /**

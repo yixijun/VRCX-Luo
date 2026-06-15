@@ -59,6 +59,7 @@
                             side="top">
                             <div
                                 class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
+                                :style="statusBarItemStyle('proxy')"
                                 @click="handleProxyClick">
                                 <span
                                     class="inline-block size-2 rounded-full shrink-0"
@@ -77,7 +78,9 @@
                                     : t('status_bar.steamvr_stopped')
                             "
                             side="top">
-                            <div class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border">
+                            <div
+                                class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border"
+                                :style="statusBarItemStyle('steamvr')">
                                 <span
                                     class="inline-block size-2 rounded-full shrink-0"
                                     :class="
@@ -94,7 +97,8 @@
                             :close-delay="50">
                             <HoverCardTrigger as-child>
                                 <div
-                                    class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border">
+                                    class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border"
+                                    :style="statusBarItemStyle('vrchat')">
                                     <span
                                         class="inline-block size-2 rounded-full shrink-0"
                                         :class="
@@ -150,16 +154,17 @@
                             </HoverCardContent>
                         </HoverCard>
 
-                        <TooltipWrapper :content="autoFollowTooltip" side="top">
+                        <TooltipWrapper v-if="visibility.autoFollow" :content="autoFollowTooltip" side="top">
                             <div
                                 data-testid="auto-follow-status"
                                 class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border"
                                 :class="{ 'cursor-pointer hover:bg-accent': autoFollowStore.isActive }"
+                                :style="statusBarItemStyle('autoFollow')"
                                 @click="cancelAutoFollow">
                                 <span
                                     class="inline-block size-2 rounded-full shrink-0"
                                     :class="autoFollowStatusClass" />
-                                <span class="text-foreground text-[11px]">自动跟随</span>
+                                <span class="text-foreground text-[11px]">{{ t('status_bar.auto_follow') }}</span>
                                 <span
                                     v-if="autoFollowStore.isActive && autoFollowStore.targetFriendName"
                                     class="text-[10px] text-foreground max-w-[120px] truncate">{{
@@ -176,6 +181,7 @@
                                     side="top">
                                     <div
                                         class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
+                                        :style="statusBarItemStyle('servers')"
                                         @click="vrcStatusStore.openStatusPage()">
                                         <span class="inline-block size-2 rounded-full shrink-0 bg-status-online" />
                                         <span class="text-foreground text-[11px]">{{ t('status_bar.servers') }}</span>
@@ -184,6 +190,7 @@
                                 <div
                                     v-else
                                     class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
+                                    :style="statusBarItemStyle('servers')"
                                     @click="vrcStatusStore.openStatusPage()">
                                     <span
                                         class="inline-block size-2 rounded-full shrink-0"
@@ -212,7 +219,9 @@
                         </HoverCard>
 
                         <TooltipWrapper v-if="visibility.ws" :content="wsTooltip" side="top">
-                            <div class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border">
+                            <div
+                                class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border"
+                                :style="statusBarItemStyle('ws')">
                                 <span
                                     class="inline-block size-2 rounded-full shrink-0"
                                     :class="wsState.connected ? 'bg-status-online' : 'bg-status-offline-alt'" />
@@ -226,7 +235,8 @@
 
                         <div
                             v-if="visibility.nowPlaying && nowPlaying.url"
-                            class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border min-w-0 max-w-[400px]">
+                            class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border min-w-0 max-w-[400px]"
+                            :style="statusBarItemStyle('nowPlaying')">
                             <i v-if="!isYouTubeNowPlaying" class="ri-play-fill text-[10px] shrink-0" />
                             <i v-if="isYouTubeNowPlaying" class="ri-youtube-fill text-[#FF0000] shrink-0 text-[12px]" />
                             <TooltipWrapper v-else :content="nowPlaying.url" side="top">
@@ -268,7 +278,8 @@
                                 v-model:open="clockPopoverOpen[idx]">
                                 <PopoverTrigger as-child>
                                     <div
-                                        class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent">
+                                        class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
+                                        :style="statusBarItemStyle('clocks')">
                                         <span class="text-[10px] text-foreground">{{ formatClock(clock) }}</span>
                                     </div>
                                 </PopoverTrigger>
@@ -306,6 +317,7 @@
                             :disabled="zoomEditing">
                             <div
                                 class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
+                                :style="statusBarItemStyle('zoom')"
                                 @click="toggleZoomEdit">
                                 <template v-if="zoomEditing">
                                     <span class="text-[10px] text-foreground">{{ t('status_bar.zoom') }}</span>
@@ -341,6 +353,7 @@
                             side="top">
                             <div
                                 class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
+                                :style="statusBarItemStyle('profileInfoSync')"
                                 @click="runSilentInfoFetch">
                                 <!-- Running: yellow spinner -->
                                 <svg
@@ -374,7 +387,9 @@
                         </TooltipWrapper>
 
                         <TooltipWrapper v-if="visibility.uptime" :content="t('status_bar.app_uptime')" side="top">
-                            <div class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border">
+                            <div
+                                class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border"
+                                :style="statusBarItemStyle('uptime')">
                                 <span class="text-[10px] text-foreground">{{ t('status_bar.app_uptime_short') }}</span>
                                 <span class="text-[10px] text-foreground">{{ appUptimeText }}</span>
                             </div>
@@ -390,6 +405,12 @@
                     @select.prevent
                     @update:model-value="toggleVisibility('vrchat')">
                     {{ t('status_bar.game') }}
+                </ContextMenuCheckboxItem>
+                <ContextMenuCheckboxItem
+                    :model-value="visibility.autoFollow"
+                    @select.prevent
+                    @update:model-value="toggleVisibility('autoFollow')">
+                    {{ t('status_bar.auto_follow') }}
                 </ContextMenuCheckboxItem>
                 <ContextMenuCheckboxItem
                     :model-value="visibility.servers"
@@ -471,6 +492,28 @@
                         </ContextMenuCheckboxItem>
                     </ContextMenuSubContent>
                 </ContextMenuSub>
+                <ContextMenuSub>
+                    <ContextMenuSubTrigger>{{ t('status_bar.reorder') }}</ContextMenuSubTrigger>
+                    <ContextMenuSubContent>
+                        <template v-for="item in orderMenuItems" :key="item.key">
+                            <ContextMenuSub>
+                                <ContextMenuSubTrigger>{{ item.label }}</ContextMenuSubTrigger>
+                                <ContextMenuSubContent>
+                                    <ContextMenuItem
+                                        :disabled="item.index === 0"
+                                        @select.prevent="moveStatusBarItem(item.key, -1)">
+                                        {{ t('status_bar.move_up') }}
+                                    </ContextMenuItem>
+                                    <ContextMenuItem
+                                        :disabled="item.index === statusBarOrder.length - 1"
+                                        @select.prevent="moveStatusBarItem(item.key, 1)">
+                                        {{ t('status_bar.move_down') }}
+                                    </ContextMenuItem>
+                                </ContextMenuSubContent>
+                            </ContextMenuSub>
+                        </template>
+                    </ContextMenuSubContent>
+                </ContextMenuSub>
             </ContextMenuContent>
         </ContextMenu>
     </div>
@@ -481,6 +524,7 @@
         ContextMenu,
         ContextMenuCheckboxItem,
         ContextMenuContent,
+        ContextMenuItem,
         ContextMenuSeparator,
         ContextMenuSub,
         ContextMenuSubContent,
@@ -522,8 +566,10 @@
 
     import {
         defaultVisibility,
+        defaultOrder,
         formatAppUptime,
         formatUtcHour,
+        normalizeOrder,
         normalizeClock,
         normalizeUtcHour,
         parseClockOffset
@@ -641,10 +687,10 @@
 
     const autoFollowTooltip = computed(() =>
         !autoFollowStore.isActive
-            ? '自动跟随：未开启'
+            ? `${t('status_bar.auto_follow')}：${t('status_bar.auto_follow_inactive')}`
             : autoFollowStore.statusText
-              ? `自动跟随：${autoFollowStore.statusText}`
-              : `自动跟随：${autoFollowStore.targetFriendName || '跟随中'}`
+              ? `${t('status_bar.auto_follow')}：${autoFollowStore.statusText}`
+              : `${t('status_bar.auto_follow')}：${autoFollowStore.targetFriendName || t('status_bar.auto_follow_active')}`
     );
 
     const autoFollowStatusClass = computed(() => {
@@ -682,8 +728,68 @@
     );
 
     const VISIBILITY_KEY = 'VRCX_statusBarVisibility';
+    const ORDER_KEY = 'VRCX_statusBarOrder';
 
     const visibility = reactive({ ...defaultVisibility });
+    const statusBarOrder = ref([...defaultOrder]);
+
+    const statusBarLabels = computed(() => ({
+        proxy: t('status_bar.proxy'),
+        steamvr: t('status_bar.steamvr'),
+        vrchat: t('status_bar.game'),
+        autoFollow: t('status_bar.auto_follow'),
+        servers: t('status_bar.servers'),
+        ws: 'WebSocket',
+        profileInfoSync: t('view.tools.system_tools.info_completion'),
+        nowPlaying: t('status_bar.now_playing'),
+        uptime: t('status_bar.app_uptime_short'),
+        clocks: t('status_bar.clocks'),
+        zoom: t('status_bar.zoom')
+    }));
+
+    const orderMenuItems = computed(() =>
+        statusBarOrder.value
+            .map((key, index) => ({
+                key,
+                index,
+                label: statusBarLabels.value[key] ?? key
+            }))
+            .filter((item) => (item.key !== 'vrchat' && item.key !== 'steamvr' && item.key !== 'zoom') || !isMacOS.value)
+    );
+
+    /**
+     *
+     * @param key
+     * @returns {{ order: number }}
+     */
+    function statusBarItemStyle(key) {
+        const index = statusBarOrder.value.indexOf(key);
+        return { order: index >= 0 ? index : statusBarOrder.value.length };
+    }
+
+    /**
+     *
+     */
+    function saveStatusBarOrder() {
+        configRepository.setString(ORDER_KEY, JSON.stringify(statusBarOrder.value));
+    }
+
+    /**
+     *
+     * @param key
+     * @param direction
+     */
+    function moveStatusBarItem(key, direction) {
+        const order = [...statusBarOrder.value];
+        const index = order.indexOf(key);
+        const nextIndex = index + direction;
+        if (index < 0 || nextIndex < 0 || nextIndex >= order.length) {
+            return;
+        }
+        [order[index], order[nextIndex]] = [order[nextIndex], order[index]];
+        statusBarOrder.value = order;
+        saveStatusBarOrder();
+    }
 
     /**
      *
@@ -873,10 +979,11 @@
     });
 
     onMounted(async () => {
-        const [savedVis, savedClocks, savedClockCount] = await Promise.all([
+        const [savedVis, savedClocks, savedClockCount, savedOrder] = await Promise.all([
             configRepository.getString(VISIBILITY_KEY, null),
             configRepository.getString(CLOCKS_KEY, null),
-            configRepository.getString(CLOCK_COUNT_KEY, null)
+            configRepository.getString(CLOCK_COUNT_KEY, null),
+            configRepository.getString(ORDER_KEY, null)
         ]);
         if (savedVis) {
             try {
@@ -898,6 +1005,13 @@
         if (savedClockCount !== null) {
             const n = Number(savedClockCount);
             if (n >= 0 && n <= 3) clockCount.value = n;
+        }
+        if (savedOrder) {
+            try {
+                statusBarOrder.value = normalizeOrder(JSON.parse(savedOrder));
+            } catch {
+                statusBarOrder.value = [...defaultOrder];
+            }
         }
 
         drawSparkline();

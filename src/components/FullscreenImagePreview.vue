@@ -301,7 +301,7 @@
             toast.success(t('message.image.copied_to_clipboard'));
         } catch (error) {
             console.error('Error downloading image:', error);
-            toast.error(`Failed to download image. ${url}`);
+            toast.error(t('message.image.download_failed', { url }));
         } finally {
             toast.dismiss(msg);
         }
@@ -331,7 +331,7 @@
             document.body.removeChild(link);
         } catch (error) {
             console.error('Error downloading image:', error);
-            toast.error(`Failed to download image. ${url}`);
+            toast.error(t('message.image.download_failed', { url }));
         } finally {
             toast.dismiss(msg);
         }

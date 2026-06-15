@@ -304,7 +304,7 @@
                 }
                 // not allowed to invite
                 inviteGroupDialog.value.groupId = '';
-                toast.error('You are not allowed to invite to this group');
+                toast.error(t('message.group.invite_not_allowed'));
                 return args;
             })
             .finally(() => {

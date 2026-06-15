@@ -4,7 +4,8 @@ import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 
 import { logWebRequest } from '../services/appConfig';
-import { branches } from '../shared/constants';
+import webApiService from '../services/webapi';
+import { branches, GITHUB_RELEASES_URL } from '../shared/constants';
 import {
     getLatestWhatsNewRelease,
     getWhatsNewRelease,
@@ -46,7 +47,8 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
     const changeLogDialog = ref({
         visible: false,
         buildName: '',
-        changeLog: ''
+        changeLog: '',
+        releaseUrl: GITHUB_RELEASES_URL
     });
     const whatsNewDialog = ref(emptyWhatsNewDialog());
     const pendingVRCXUpdate = ref(false);
@@ -360,6 +362,7 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
         D.releases = releases;
         const latestRelease = releases.length > 0 ? releases[0] : (json.length > 0 ? json[0] : null);
         D.release = latestRelease ? (latestRelease.tag_name || latestRelease.name) : '';
+        updateChangeLogFromReleases(json);
         VRCXUpdateDialog.value.updatePendingIsLatest = false;
         if (D.release === pendingVRCXInstall.value) {
             // update already downloaded and latest version
@@ -435,7 +438,49 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
         ) {
             return true;
         }
-        return checkForVRCXUpdate();
+        const checked = await checkForVRCXUpdate();
+        return Boolean(
+            checked &&
+                changeLogDialog.value.buildName &&
+                changeLogDialog.value.changeLog
+        );
+    }
+
+    /**
+     * @param {Array<object>} releases
+     */
+    function updateChangeLogFromReleases(releases) {
+        if (!Array.isArray(releases) || releases.length === 0) {
+            return;
+        }
+        const release = findReleaseForCurrentVersion(releases) || releases[0];
+        if (!release || typeof release !== 'object') {
+            return;
+        }
+        changeLogDialog.value.buildName =
+            release.name || release.tag_name || VRCXUpdateDialog.value.release;
+        changeLogDialog.value.changeLog =
+            changeLogRemoveLinks(release.body || t('dialog.change_log.empty'));
+        changeLogDialog.value.releaseUrl =
+            release.html_url || GITHUB_RELEASES_URL;
+    }
+
+    /**
+     * @param {Array<object>} releases
+     * @returns {object | null}
+     */
+    function findReleaseForCurrentVersion(releases) {
+        const version = normalizeReleaseVersion(currentVersion.value);
+        if (!version) {
+            return null;
+        }
+        return (
+            releases.find((release) => {
+                const tagName = String(release.tag_name || '').replace(/^v/, '');
+                const releaseName = String(release.name || '').replace(/^v/, '');
+                return tagName.includes(version) || releaseName.includes(version);
+            }) || null
+        );
     }
     function restartVRCX(isUpgrade) {
         if (!LINUX) {

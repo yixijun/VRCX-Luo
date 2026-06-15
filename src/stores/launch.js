@@ -154,25 +154,21 @@ export const useLaunchStore = defineStore('Launch', () => {
                     args.join(' ')
                 );
                 if (!result) {
-                    toast.error(
-                        'Failed to launch VRChat, invalid custom path set'
-                    );
+                    toast.error(t('message.launch.invalid_custom_path'));
                 } else {
-                    toast.success('VRChat launched');
+                    toast.success(t('message.launch.launched'));
                 }
             } else {
                 const result = await AppApi.StartGame(args.join(' '));
                 if (!result) {
-                    toast.error(
-                        'Failed to find VRChat, set a custom path in launch options'
-                    );
+                    toast.error(t('message.launch.vrchat_not_found'));
                 } else {
-                    toast.success('VRChat launched');
+                    toast.success(t('message.launch.launched'));
                 }
             }
         } catch (e) {
             console.error(e);
-            toast.error(`Failed to launch VRChat: ${e.message}`);
+            toast.error(t('message.launch.failed', { error: e.message }));
         }
         console.log('Launch Game', args.join(' '), desktopMode);
     }

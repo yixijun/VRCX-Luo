@@ -300,7 +300,7 @@
             })
             .then((args) => {
                 if (message) {
-                    toast.success('Friend added to favorites');
+                    toast.success(t('message.favorite.friend_added'));
                 }
                 return args;
             });

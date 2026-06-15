@@ -386,7 +386,7 @@
             })
             .then((args) => {
                 if (message) {
-                    toast.success('World added to favorites');
+                    toast.success(t('message.favorite.world_added'));
                 }
                 return args;
             });

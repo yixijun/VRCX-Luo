@@ -55,7 +55,7 @@
             })
             .then((args) => {
                 D.visible = false;
-                toast.success('Pronouns updated');
+                toast.success(t('message.user.pronouns_updated'));
                 return args;
             });
     }

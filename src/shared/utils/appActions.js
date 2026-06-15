@@ -25,7 +25,7 @@ function downloadAndSaveJson(fileName, data) {
         link.click();
         document.body.removeChild(link);
     } catch {
-        toast.error(escapeTag('Failed to download JSON.'));
+        toast.error(escapeTag(i18n.global.t('message.json_download_failed')));
     }
 }
 
@@ -34,7 +34,7 @@ function downloadAndSaveJson(fileName, data) {
  * @param {string} text
  * @param {string} message
  */
-function copyToClipboard(text, message = 'Copied successfully!') {
+function copyToClipboard(text, message = i18n.global.t('message.copied_successfully')) {
     navigator.clipboard
         .writeText(text)
         .then(() => {
@@ -60,13 +60,13 @@ function openExternalLink(link) {
     modalStore
         .confirm({
             description: `${link}`,
-            title: 'Open External Link',
-            confirmText: 'Open',
-            cancelText: 'Copy'
+            title: i18n.global.t('message.external_link.title'),
+            confirmText: i18n.global.t('message.external_link.open'),
+            cancelText: i18n.global.t('message.external_link.copy')
         })
         .then(({ ok, reason }) => {
             if (reason === 'cancel') {
-                copyToClipboard(link, 'Link copied to clipboard!');
+                copyToClipboard(link, i18n.global.t('message.link_copied'));
                 return;
             }
             if (ok) {
@@ -78,12 +78,12 @@ function openExternalLink(link) {
 
 function openDiscordProfile(discordId) {
     if (!discordId) {
-        toast.error('No Discord ID provided!');
+        toast.error(i18n.global.t('message.discord_profile.no_id'));
         return;
     }
     AppApi.OpenDiscordProfile(discordId).catch((err) => {
         console.error('Failed to open Discord profile:', err);
-        toast.error('Failed to open Discord profile!');
+        toast.error(i18n.global.t('message.discord_profile.open_failed'));
     });
 }
 

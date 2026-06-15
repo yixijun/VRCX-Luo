@@ -341,7 +341,7 @@
             })
             .then((args) => {
                 if (message) {
-                    toast.success('Avatar added to favorites');
+                    toast.success(t('message.favorite.avatar_added'));
                 }
                 return args;
             });

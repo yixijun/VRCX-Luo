@@ -129,6 +129,10 @@ const stubs = {
     ContextMenu: { template: '<div><slot /></div>' },
     ContextMenuTrigger: { template: '<div><slot /></div>' },
     ContextMenuContent: { template: '<div><slot /></div>' },
+    ContextMenuItem: {
+        template: '<div><slot /></div>',
+        props: ['disabled']
+    },
     ContextMenuCheckboxItem: {
         template: '<div><slot /></div>',
         props: ['modelValue']
@@ -303,7 +307,7 @@ describe('StatusBar.vue - Servers indicator', () => {
         const wrapper = mountStatusBar();
         const autoFollowStore = useAutoFollowStore();
 
-        expect(wrapper.text()).toContain('自动跟随');
+        expect(wrapper.text()).toContain('Auto Follow');
         expect(wrapper.find('[data-testid="auto-follow-status"]').exists()).toBe(true);
 
         await wrapper.find('[data-testid="auto-follow-status"]').trigger('click');
@@ -321,12 +325,21 @@ describe('StatusBar.vue - Servers indicator', () => {
         });
         const autoFollowStore = useAutoFollowStore();
 
-        expect(wrapper.text()).toContain('自动跟随');
+        expect(wrapper.text()).toContain('Auto Follow');
         expect(wrapper.text()).toContain('Test Friend');
 
         const statusItem = wrapper.find('[data-testid="auto-follow-status"]');
         await statusItem.trigger('click');
 
         expect(autoFollowStore.stopFollow).toHaveBeenCalledWith({ confirm: true });
+    });
+
+    test('shows auto follow and reorder controls in context menu', () => {
+        const wrapper = mountStatusBar();
+
+        expect(wrapper.text()).toContain('Auto Follow');
+        expect(wrapper.text()).toContain('Reorder');
+        expect(wrapper.text()).toContain('Move Up');
+        expect(wrapper.text()).toContain('Move Down');
     });
 });

@@ -7,6 +7,7 @@ export const defaultVisibility = {
     vrchat: true,
     steamvr: true,
     proxy: true,
+    autoFollow: true,
     ws: true,
     profileInfoSync: true,
     nowPlaying: true,
@@ -15,6 +16,20 @@ export const defaultVisibility = {
     zoom: true,
     servers: true
 };
+
+export const defaultOrder = [
+    'proxy',
+    'steamvr',
+    'vrchat',
+    'autoFollow',
+    'servers',
+    'ws',
+    'nowPlaying',
+    'clocks',
+    'zoom',
+    'profileInfoSync',
+    'uptime'
+];
 
 /**
  * Clamp and round a numeric value to a valid UTC offset range [-12, 14].
@@ -107,6 +122,47 @@ export function loadVisibility(storage) {
         // ignore
     }
     return { ...defaultVisibility };
+}
+
+/**
+ * Load status bar item order from a Storage-like object.
+ * @param {Storage} storage
+ * @returns {string[]}
+ */
+export function loadOrder(storage) {
+    try {
+        const saved = storage.getItem('VRCX_statusBarOrder');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed)) {
+                return normalizeOrder(parsed);
+            }
+        }
+    } catch {
+        // ignore
+    }
+    return [...defaultOrder];
+}
+
+/**
+ * Merge a saved order with current known keys.
+ * @param {string[]} order
+ * @returns {string[]}
+ */
+export function normalizeOrder(order) {
+    const known = new Set(defaultOrder);
+    const next = [];
+    for (const key of order) {
+        if (known.has(key) && !next.includes(key)) {
+            next.push(key);
+        }
+    }
+    for (const key of defaultOrder) {
+        if (!next.includes(key)) {
+            next.push(key);
+        }
+    }
+    return next;
 }
 
 /**

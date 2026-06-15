@@ -119,7 +119,7 @@
                 tags: groupAPI.name
             })
             .then((args) => {
-                toast.success('Avatar added to favorites');
+                toast.success(t('message.favorite.avatar_added'));
                 return args;
             });
     }
@@ -136,7 +136,7 @@
                 tags: groupAPI.name
             })
             .then((args) => {
-                toast.success('World added to favorites');
+                toast.success(t('message.favorite.world_added'));
                 return args;
             });
     }

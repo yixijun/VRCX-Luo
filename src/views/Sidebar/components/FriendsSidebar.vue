@@ -866,7 +866,7 @@
      */
     function changeStatus(value) {
         userRequest.saveCurrentUser({ status: value }).then(() => {
-            toast.success('Status updated');
+            toast.success(t('message.status_updated'));
         });
     }
 
@@ -876,7 +876,7 @@
      */
     function setStatusFromHistory(status) {
         userRequest.saveCurrentUser({ statusDescription: status }).then(() => {
-            toast.success('Status updated');
+            toast.success(t('message.status_updated'));
         });
     }
 
@@ -893,7 +893,7 @@
                 statusDescription: preset.statusDescription
             })
             .then(() => {
-                toast.success('Status updated');
+                toast.success(t('message.status_updated'));
             });
     }
 
@@ -924,7 +924,7 @@
     function friendRequestInvite(friend) {
         notificationRequest.sendRequestInvite({ platform: 'standalonewindows' }, friend.id).then(() => {
             recordRecentAction(friend.id, 'Request Invite');
-            toast.success('Request invite sent');
+            toast.success(t('message.user.request_invite_sent'));
         });
     }
 

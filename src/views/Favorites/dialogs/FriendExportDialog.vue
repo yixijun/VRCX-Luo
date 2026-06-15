@@ -158,11 +158,11 @@
         navigator.clipboard
             .writeText(friendExportContent.value)
             .then(() => {
-                toast.success('Copied successfully!', { duration: 2000 });
+                toast.success(t('message.copied_successfully'), { duration: 2000 });
             })
             .catch((err) => {
                 console.error('Copy failed:', err);
-                toast.error('Copy failed!');
+                toast.error(t('message.copy_failed'));
             });
     }
 

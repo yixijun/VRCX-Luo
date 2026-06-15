@@ -117,7 +117,7 @@
             return;
         }
         configRepository.setString('vrcLaunchPathOverride', D.vrcLaunchPathOverride);
-        toast.success('Updated launch options');
+        toast.success(t('message.launch.options_updated'));
         closeDialog();
     }
 

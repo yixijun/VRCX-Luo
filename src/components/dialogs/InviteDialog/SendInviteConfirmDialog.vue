@@ -118,7 +118,7 @@
                 } else {
                     J.loading = false;
                     J.visible = false;
-                    toast.success('Invite message sent');
+                    toast.success(t('message.invite.message_sent'));
                 }
             };
             inviteLoop();
@@ -132,7 +132,7 @@
                         throw err;
                     })
                     .then((args) => {
-                        toast.success('Invite photo message sent');
+                        toast.success(t('message.invite.photo_message_sent'));
                         return args;
                     });
             } else {
@@ -142,7 +142,7 @@
                         throw err;
                     })
                     .then((args) => {
-                        toast.success('Invite message sent');
+                        toast.success(t('message.invite.message_sent'));
                         return args;
                     });
             }
@@ -156,7 +156,7 @@
                         throw err;
                     })
                     .then((args) => {
-                        toast.success('Request invite photo message sent');
+                        toast.success(t('message.invite.request_photo_message_sent'));
                         return args;
                     });
             } else {
@@ -166,7 +166,7 @@
                         throw err;
                     })
                     .then((args) => {
-                        toast.success('Request invite message sent');
+                        toast.success(t('message.invite.request_message_sent'));
                         return args;
                     });
             }

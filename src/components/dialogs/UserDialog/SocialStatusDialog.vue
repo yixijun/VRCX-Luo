@@ -220,7 +220,7 @@
             })
             .then((args) => {
                 D.visible = false;
-                toast.success('Status updated');
+                toast.success(t('message.status_updated'));
                 return args;
             });
     }

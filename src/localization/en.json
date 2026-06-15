@@ -2511,10 +2511,11 @@
         },
         "change_log": {
             "header": "Change Log",
-            "description": "Consider donating to support future development of VRCX",
+            "description": "This changelog is loaded from the VRCX-Luo GitHub release.",
             "close": "Close",
             "donate": "Donate",
-            "github": "GitHub"
+            "github": "View Release",
+            "empty": "This release has no changelog body. Open GitHub to view the full release."
         },
         "open_source": {
             "header": "Open Source Software Notice",
@@ -2818,6 +2819,8 @@
         },
         "instance": {
             "closed": "Instance closed",
+            "copied": "Instance copied to clipboard",
+            "copy_failed": "Instance copy failed",
             "removed_form_queue": "Removed instance {worldName} from queue",
             "not_allowed": "You're not allowed to access this instance",
             "create_failed": "Failed to create instance"
@@ -2863,19 +2866,29 @@
             "joined": "Group joined",
             "join_request_sent": "Group join request sent",
             "visibility_updated": "Group visibility updated",
-            "subscription_updated": "Group subscription updated"
+            "subscription_updated": "Group subscription updated",
+            "invite_not_allowed": "You are not allowed to invite to this group"
         },
         "invite": {
             "self_sent": "Self invite sent",
             "open_instance_failed_self_invite": "Failed to open instance in VRChat, falling back to self invite",
             "sent": "Invite sent",
+            "message_sent": "Invite message sent",
+            "photo_message_sent": "Invite photo message sent",
+            "request_message_sent": "Request invite message sent",
+            "request_photo_message_sent": "Request invite photo message sent",
             "message_update_failed": "VRChat API didn't update message, try again",
             "message_updated": "Invite message updated",
             "response_sent": "Invite response message sent",
             "response_photo_sent": "Invite response photo message sent"
         },
         "launch": {
-            "invalid_path": "Invalid path, you must enter VRChat folder or launch.exe"
+            "invalid_path": "Invalid path, you must enter VRChat folder or launch.exe",
+            "invalid_custom_path": "Failed to launch VRChat, invalid custom path set",
+            "vrchat_not_found": "Failed to find VRChat, set a custom path in launch options",
+            "launched": "VRChat launched",
+            "failed": "Failed to launch VRChat: {error}",
+            "options_updated": "Launch options updated"
         },
         "gallery": {
             "uploaded": "Gallery image uploaded",
@@ -2908,6 +2921,8 @@
             "display_name_copied": "User DisplayName copied to clipboard",
             "home_reset": "Home world has been reset",
             "request_invite_sent": "Request invite sent",
+            "bio_updated": "Bio updated",
+            "pronouns_updated": "Pronouns updated",
             "no_fallback_avatar": "No fallback avatar set"
         },
         "friend": {
@@ -2925,7 +2940,18 @@
         },
         "image": {
             "downloading": "Downloading image...",
-            "copied_to_clipboard": "Image copied to clipboard"
+            "copied_to_clipboard": "Image copied to clipboard",
+            "download_failed": "Failed to download image. {url}"
+        },
+        "favorite": {
+            "avatar_added": "Avatar added to favorites",
+            "friend_added": "Friend added to favorites",
+            "world_added": "World added to favorites"
+        },
+        "youtube_api": {
+            "key_removed": "YouTube API key removed",
+            "invalid_key": "Invalid YouTube API key",
+            "key_valid": "YouTube API key valid!"
         },
         "registry": {
             "restored": "VRC registry settings restored",
@@ -2942,6 +2968,19 @@
             "vrchat_must_be_closed": "VRChat needs to be closed before this option can be changed",
             "recommended_pair": "💡 {nameA} and {nameB} may be friends (Score: {score})."
         },
+        "json_download_failed": "Failed to download JSON.",
+        "copied_successfully": "Copied successfully!",
+        "link_copied": "Link copied to clipboard!",
+        "external_link": {
+            "title": "Open External Link",
+            "open": "Open",
+            "copy": "Copy"
+        },
+        "discord_profile": {
+            "no_id": "No Discord ID provided!",
+            "open_failed": "Failed to open Discord profile!"
+        },
+        "status_updated": "Status updated",
         "copy_failed": "Copy failed",
         "error": "Error"
     },
@@ -3299,6 +3338,12 @@
         "timezone": "Timezone",
         "now_playing": "Now Playing",
         "info_sync": "Sync",
+        "auto_follow": "Auto Follow",
+        "auto_follow_inactive": "Inactive",
+        "auto_follow_active": "Following",
+        "reorder": "Reorder",
+        "move_up": "Move Up",
+        "move_down": "Move Down",
         "view_mode": "View Mode",
         "view_merged": "Merged View",
         "view_primary": "Primary Account"

@@ -57,17 +57,17 @@
     async function testYouTubeApiKey() {
         const previousKey = youTubeApiKey.value;
         if (!youTubeApiKey.value) {
-            toast.success('YouTube API key removed');
+            toast.success(t('message.youtube_api.key_removed'));
             closeDialog();
             return;
         }
         const data = await lookupYouTubeVideo('dQw4w9WgXcQ');
         if (!data) {
             setYouTubeApiKey(previousKey);
-            toast.error('Invalid YouTube API key');
+            toast.error(t('message.youtube_api.invalid_key'));
         } else {
             setYouTubeApiKey(youTubeApiKey.value);
-            toast.success('YouTube API key valid!');
+            toast.success(t('message.youtube_api.key_valid'));
             closeDialog();
         }
     }

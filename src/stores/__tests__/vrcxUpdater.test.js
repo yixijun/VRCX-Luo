@@ -11,6 +11,9 @@ const mocks = vi.hoisted(() => ({
         error: vi.fn(),
         success: vi.fn(),
         warning: vi.fn()
+    },
+    webApiService: {
+        execute: vi.fn()
     }
 }));
 
@@ -24,6 +27,10 @@ vi.mock('../../shared/utils', () => ({
 
 vi.mock('vue-sonner', () => ({
     toast: mocks.toast
+}));
+
+vi.mock('../../services/webapi', () => ({
+    default: mocks.webApiService
 }));
 
 vi.mock('vue-i18n', () => ({
@@ -56,6 +63,10 @@ describe('useVRCXUpdaterStore.setAutoUpdateVRCX', () => {
             }
         );
         mocks.configRepository.setString.mockResolvedValue(undefined);
+        mocks.webApiService.execute.mockResolvedValue({
+            status: 200,
+            data: '[]'
+        });
 
         globalThis.AppApi = {
             GetVersion: vi.fn().mockResolvedValue('2026.1.0')
@@ -92,6 +103,37 @@ describe('useVRCXUpdaterStore.setAutoUpdateVRCX', () => {
         expect(mocks.configRepository.setString).toHaveBeenCalledWith(
             'VRCX_autoUpdateVRCX',
             'Notify'
+        );
+    });
+
+    test('loads changelog from matching GitHub release', async () => {
+        globalThis.AppApi.GetVersion.mockResolvedValue('VRCX-Luo 2026.6.15');
+        mocks.webApiService.execute.mockResolvedValue({
+            status: 200,
+            data: JSON.stringify([
+                {
+                    tag_name: 'beta-2026.6.15',
+                    name: 'Beta 2026.6.15',
+                    body: '## Release body\n[Full notes](https://example.com)',
+                    html_url:
+                        'https://github.com/yixijun/VRCX-Luo/releases/tag/beta-2026.6.15',
+                    prerelease: true,
+                    assets: []
+                }
+            ])
+        });
+
+        setActivePinia(createPinia());
+        const store = useVRCXUpdaterStore();
+        await flushPromises();
+        await store.showChangeLogDialog({ prefetch: true });
+
+        expect(store.changeLogDialog.buildName).toBe('Beta 2026.6.15');
+        expect(store.changeLogDialog.changeLog).toBe(
+            '## Release body\n[Full notes](https://example.com)'
+        );
+        expect(store.changeLogDialog.releaseUrl).toBe(
+            'https://github.com/yixijun/VRCX-Luo/releases/tag/beta-2026.6.15'
         );
     });
 });

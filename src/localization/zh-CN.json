@@ -2563,10 +2563,11 @@
         },
         "change_log": {
             "header": "更新日志",
-            "description": "考虑捐赠一下，以支持 VRCX 的未来发展",
+            "description": "更新日志来自 VRCX-Luo 仓库的 GitHub Release。",
             "close": "关闭",
             "donate": "捐赠支持",
-            "github": "在 GitHub 上查看"
+            "github": "查看 Release",
+            "empty": "该 Release 暂无更新说明，请在 GitHub 上查看完整发布信息。"
         },
         "open_source": {
             "header": "开放源代码许可条款",
@@ -2870,6 +2871,8 @@
         },
         "instance": {
             "closed": "房间已关闭",
+            "copied": "房间信息已复制到剪贴板",
+            "copy_failed": "房间信息复制失败",
             "removed_form_queue": "已从等待队列中移除 {worldName}",
             "not_allowed": "你无权访问此房间",
             "create_failed": "房间创建失败"
@@ -2915,19 +2918,29 @@
             "joined": "加入群组成功",
             "join_request_sent": "已发送加入申请",
             "visibility_updated": "群组可见性已更新",
-            "subscription_updated": "群组通知订阅状态已更新"
+            "subscription_updated": "群组通知订阅状态已更新",
+            "invite_not_allowed": "你没有权限邀请玩家加入这个群组"
         },
         "invite": {
             "self_sent": "已发送自我邀请",
             "open_instance_failed_self_invite": "在 VRChat 中打开实例失败，正在改用自我邀请",
             "sent": "已发送邀请",
+            "message_sent": "邀请消息已发送",
+            "photo_message_sent": "图片邀请消息已发送",
+            "request_message_sent": "请求邀请消息已发送",
+            "request_photo_message_sent": "图片请求邀请消息已发送",
             "message_update_failed": "VRChat API 未能更新消息，请重试",
             "message_updated": "邀请消息已更新",
             "response_sent": "已发送邀请回复消息",
             "response_photo_sent": "已发送回复消息"
         },
         "launch": {
-            "invalid_path": "无效路径，你必须输入 VRChat 文件夹所在的路径或 “launch.exe” 所在的路径"
+            "invalid_path": "无效路径，你必须输入 VRChat 文件夹所在的路径或 “launch.exe” 所在的路径",
+            "invalid_custom_path": "启动 VRChat 失败：自定义路径无效",
+            "vrchat_not_found": "未找到 VRChat，请在启动选项中设置自定义路径",
+            "launched": "VRChat 已启动",
+            "failed": "启动 VRChat 失败：{error}",
+            "options_updated": "启动选项已更新"
         },
         "gallery": {
             "uploaded": "图片已成功上传到相册",
@@ -2960,6 +2973,8 @@
             "display_name_copied": "用户昵称已复制到剪贴板",
             "home_reset": "出生点已重置",
             "request_invite_sent": "加入申请已发送",
+            "bio_updated": "个人简介已更新",
+            "pronouns_updated": "人称代词已更新",
             "no_fallback_avatar": "未设置后备模型"
         },
         "friend": {
@@ -2977,7 +2992,18 @@
         },
         "image": {
             "downloading": "正在下载图片...",
-            "copied_to_clipboard": "图片已复制到剪贴板"
+            "copied_to_clipboard": "图片已复制到剪贴板",
+            "download_failed": "图片下载失败：{url}"
+        },
+        "favorite": {
+            "avatar_added": "模型已添加到收藏",
+            "friend_added": "好友已添加到收藏",
+            "world_added": "世界已添加到收藏"
+        },
+        "youtube_api": {
+            "key_removed": "YouTube API 密钥已移除",
+            "invalid_key": "YouTube API 密钥无效",
+            "key_valid": "YouTube API 密钥有效！"
         },
         "registry": {
             "restored": "VRC 设置数据已恢复",
@@ -2994,6 +3020,19 @@
             "vrchat_must_be_closed": "必须关闭 VRChat 客户端后才能修改日志设置",
             "recommended_pair": "💡 {nameA} 和 {nameB} 可能是好友（判定得分: {score}）。"
         },
+        "json_download_failed": "下载 JSON 失败。",
+        "copied_successfully": "复制成功！",
+        "link_copied": "链接已复制到剪贴板！",
+        "external_link": {
+            "title": "打开外部链接",
+            "open": "打开",
+            "copy": "复制"
+        },
+        "discord_profile": {
+            "no_id": "未提供 Discord ID！",
+            "open_failed": "打开 Discord 资料失败！"
+        },
+        "status_updated": "状态已更新",
         "copy_failed": "复制失败",
         "error": "错误"
     },
@@ -3350,6 +3389,12 @@
         "clocks_none": "无",
         "timezone": "时区",
         "now_playing": "正在游玩",
-        "info_sync": "同步"
+        "info_sync": "同步",
+        "auto_follow": "自动跟随",
+        "auto_follow_inactive": "未开启",
+        "auto_follow_active": "跟随中",
+        "reorder": "调整顺序",
+        "move_up": "上移",
+        "move_down": "下移"
     }
 }

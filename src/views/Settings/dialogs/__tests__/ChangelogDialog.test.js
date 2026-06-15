@@ -7,7 +7,8 @@ import { ref } from 'vue';
 const changeLogDialog = ref({
     visible: true,
     buildName: 'VRCX 2025.1.0',
-    changeLog: '## New Features\n- Feature A\n- Feature B'
+    changeLog: '## New Features\n- Feature A\n- Feature B',
+    releaseUrl: 'https://github.com/yixijun/VRCX-Luo/releases/tag/2025.1.0'
 });
 
 const openExternalLinkFn = vi.fn();
@@ -82,7 +83,9 @@ describe('ChangelogDialog.vue', () => {
         changeLogDialog.value = {
             visible: true,
             buildName: 'VRCX 2025.1.0',
-            changeLog: '## New Features\n- Feature A\n- Feature B'
+            changeLog: '## New Features\n- Feature A\n- Feature B',
+            releaseUrl:
+                'https://github.com/yixijun/VRCX-Luo/releases/tag/2025.1.0'
         };
         vi.clearAllMocks();
     });
@@ -133,7 +136,8 @@ describe('ChangelogDialog.vue', () => {
             expect(changeLogDialog.value.visible).toBe(false);
         });
 
-        test('clicking GitHub button opens external link', async () => {
+        test('clicking GitHub button falls back to releases page', async () => {
+            changeLogDialog.value.releaseUrl = '';
             const wrapper = mountComponent();
             const buttons = wrapper.findAll('button');
             const githubBtn = buttons.find((b) =>
@@ -147,15 +151,17 @@ describe('ChangelogDialog.vue', () => {
             );
         });
 
-        test('clicking Ko-fi link opens external link', async () => {
+        test('clicking GitHub button opens release link from dialog state', async () => {
             const wrapper = mountComponent();
-            const links = wrapper.findAll('a');
-            const kofiLink = links.find((l) => l.text().includes('Ko-fi'));
-            expect(kofiLink).toBeTruthy();
+            const buttons = wrapper.findAll('button');
+            const githubBtn = buttons.find((b) =>
+                b.text().includes('dialog.change_log.github')
+            );
+            expect(githubBtn).toBeTruthy();
 
-            await kofiLink.trigger('click');
+            await githubBtn.trigger('click');
             expect(openExternalLinkFn).toHaveBeenCalledWith(
-                'https://ko-fi.com/map1en_'
+                'https://github.com/yixijun/VRCX-Luo/releases/tag/2025.1.0'
             );
         });
     });
