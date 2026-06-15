@@ -150,16 +150,19 @@
                             </HoverCardContent>
                         </HoverCard>
 
-                        <TooltipWrapper v-if="autoFollowStore.isActive" :content="autoFollowTooltip" side="top">
+                        <TooltipWrapper :content="autoFollowTooltip" side="top">
                             <div
                                 data-testid="auto-follow-status"
-                                class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
+                                class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border"
+                                :class="{ 'cursor-pointer hover:bg-accent': autoFollowStore.isActive }"
                                 @click="cancelAutoFollow">
                                 <span
                                     class="inline-block size-2 rounded-full shrink-0"
-                                    :class="autoFollowStore.isJoining ? 'bg-status-askme' : 'bg-status-online'" />
+                                    :class="autoFollowStatusClass" />
                                 <span class="text-foreground text-[11px]">自动跟随</span>
-                                <span class="text-[10px] text-foreground max-w-[120px] truncate">{{
+                                <span
+                                    v-if="autoFollowStore.isActive && autoFollowStore.targetFriendName"
+                                    class="text-[10px] text-foreground max-w-[120px] truncate">{{
                                     autoFollowStore.targetFriendName
                                 }}</span>
                             </div>
@@ -637,12 +640,24 @@
     });
 
     const autoFollowTooltip = computed(() =>
-        autoFollowStore.statusText
-            ? `自动跟随：${autoFollowStore.statusText}`
-            : `自动跟随：${autoFollowStore.targetFriendName || '跟随中'}`
+        !autoFollowStore.isActive
+            ? '自动跟随：未开启'
+            : autoFollowStore.statusText
+              ? `自动跟随：${autoFollowStore.statusText}`
+              : `自动跟随：${autoFollowStore.targetFriendName || '跟随中'}`
     );
 
+    const autoFollowStatusClass = computed(() => {
+        if (!autoFollowStore.isActive) {
+            return 'bg-status-offline-alt';
+        }
+        return autoFollowStore.isJoining ? 'bg-status-askme' : 'bg-status-online';
+    });
+
     async function cancelAutoFollow() {
+        if (!autoFollowStore.isActive) {
+            return;
+        }
         await autoFollowStore.stopFollow({ confirm: true });
     }
 

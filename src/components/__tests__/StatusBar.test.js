@@ -299,6 +299,18 @@ describe('StatusBar.vue - Servers indicator', () => {
         expect(wrapper.text()).toContain('Offline Since');
     });
 
+    test('always shows auto follow status when inactive', async () => {
+        const wrapper = mountStatusBar();
+        const autoFollowStore = useAutoFollowStore();
+
+        expect(wrapper.text()).toContain('自动跟随');
+        expect(wrapper.find('[data-testid="auto-follow-status"]').exists()).toBe(true);
+
+        await wrapper.find('[data-testid="auto-follow-status"]').trigger('click');
+
+        expect(autoFollowStore.stopFollow).not.toHaveBeenCalled();
+    });
+
     test('shows auto follow status and confirms stop on click', async () => {
         const wrapper = mountStatusBar({
             AutoFollow: {
