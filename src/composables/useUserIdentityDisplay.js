@@ -1,5 +1,7 @@
 const identityCache = new Map();
 const MAX_IDENTITY_CACHE_SIZE = 2000;
+const USER_ID_RE =
+    /^usr_[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 function trimCache() {
     if (identityCache.size <= MAX_IDENTITY_CACHE_SIZE) {
@@ -15,8 +17,15 @@ function getUserId(user, userId) {
     return userId || user?.id || user?.userId || '';
 }
 
+function isUserId(value) {
+    return typeof value === 'string' && USER_ID_RE.test(value);
+}
+
 function getDisplayName(user, displayName, userId) {
-    return displayName || user?.displayName || user?.name || userId || '';
+    if (displayName && !isUserId(displayName)) {
+        return displayName;
+    }
+    return user?.displayName || user?.name || displayName || userId || '';
 }
 
 export function getUserIdentitySignature(identity) {

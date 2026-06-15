@@ -20,6 +20,18 @@ export let failedGetRequests = new Map();
 
 const t = i18n.global.t;
 
+function isLoggedOutRequestAllowed(endpoint) {
+    return endpoint === 'config' || endpoint === 'auth/user' || endpoint.startsWith('auth/');
+}
+
+function createLoggedOutRequestError(endpoint) {
+    const err = new Error(`API request blocked while logged out: ${endpoint}`);
+    err.status = -1;
+    err.endpoint = endpoint;
+    err.loggedOut = true;
+    return err;
+}
+
 /**
  * @param {string} endpoint
  * @param {object} [options]
@@ -89,12 +101,8 @@ export function request(endpoint, options) {
     const modalStore = useModalStore();
     const notificationStore = useNotificationStore();
     const updateLoopStore = useUpdateLoopStore();
-    if (
-        !watchState.isLoggedIn &&
-        endpoint.startsWith('/auth') &&
-        endpoint !== 'config'
-    ) {
-        throw `API request blocked while logged out: ${endpoint}`;
+    if (!watchState.isLoggedIn && !isLoggedOutRequestAllowed(endpoint)) {
+        return Promise.reject(createLoggedOutRequestError(endpoint));
     }
     let req;
     const init = buildRequestInit(endpoint, options);
@@ -130,10 +138,9 @@ export function request(endpoint, options) {
         .then((response) => {
             if (
                 !watchState.isLoggedIn &&
-                endpoint.startsWith('/auth') &&
-                endpoint !== 'config'
+                !isLoggedOutRequestAllowed(endpoint)
             ) {
-                throw `API request blocked while logged out: ${endpoint}`;
+                throw createLoggedOutRequestError(endpoint);
             }
             const parsed = parseResponse(response);
             if (!isApiLogSuppressed()) {

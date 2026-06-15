@@ -88,6 +88,21 @@ describe('UserIdentityInline.vue', () => {
         );
     });
 
+    it('prefers cached display name when displayName is a user id placeholder', () => {
+        const wrapper = mount(UserIdentityInline, {
+            props: {
+                userId: 'usr_1',
+                displayName:
+                    'usr_11111111-1111-4111-8111-111111111111'
+            }
+        });
+
+        expect(wrapper.text()).toContain('Cached User');
+        expect(wrapper.text()).not.toContain(
+            'usr_11111111-1111-4111-8111-111111111111'
+        );
+    });
+
     it('hydrates an unknown user once when a valid userId has no cached avatar', async () => {
         vi.useFakeTimers();
 

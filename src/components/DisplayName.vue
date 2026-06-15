@@ -18,6 +18,7 @@
     import { showUserDialog } from '../coordinators/userCoordinator';
     import { useUserDisplay } from '../composables/useUserDisplay';
     import { getUserIdentity } from '../composables/useUserIdentityDisplay';
+    import { useFriendStore, useUserStore } from '../stores';
     import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
     const props = defineProps({
@@ -41,13 +42,20 @@
     const username = ref(props.userid);
     const userImageUrl = ref('');
     const { userImage } = useUserDisplay();
+    const userStore = useUserStore();
+    const friendStore = useFriendStore();
 
     /**
      *
      */
     async function parse() {
+        const cachedUser =
+            props.user ||
+            userStore.cachedUsers.get(props.userid) ||
+            friendStore.friends.get(props.userid)?.ref ||
+            null;
         const identity = getUserIdentity({
-            user: props.user,
+            user: cachedUser,
             userId: props.userid,
             displayName: props.hint,
             imageUrl: props.image,
@@ -57,7 +65,7 @@
         username.value = identity.displayName;
         userImageUrl.value = identity.imageUrl;
 
-        if (props.hint || props.user?.displayName) {
+        if (props.hint || cachedUser?.displayName) {
             return;
         } else if (props.userid) {
             const args = await queryRequest.fetch('user.dialog', { userId: props.userid });

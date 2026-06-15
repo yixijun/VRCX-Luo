@@ -11,6 +11,7 @@ import { useUpdateLoopStore } from '../stores/updateLoop';
 import { useUserStore } from '../stores/user';
 import { applyCurrentUser } from './userCoordinator';
 import { watchState } from '../services/watchState';
+import { accountHub } from '../services/accountHub';
 
 import configRepository from '../services/config';
 import webApiService from '../services/webapi';
@@ -34,18 +35,24 @@ export async function runLogoutFlow() {
     }
 
     userStore.setUserDialogVisible(false);
+    accountHub.reset();
     watchState.isLoggedIn = false;
     watchState.isFriendsLoaded = false;
     watchState.isFavoritesLoaded = false;
     notificationStore.setNotificationInitStatus(false);
     await authStore.updateStoredUser(userStore.currentUser);
+    await queryClient.cancelQueries();
+    queryClient.clear();
     webApiService.clearCookies();
     authStore.loginForm.lastUserLoggedIn = '';
     await configRepository.remove('lastUserLoggedIn');
     authStore.setAttemptingAutoLogin(false);
     authStore.state.autoLoginAttempts.clear();
     closeWebSocket();
-    queryClient.clear();
+    const { router } = await import('../plugins/router');
+    if (router.currentRoute.value.name !== 'login') {
+        router.replace({ name: 'login' }).catch(() => {});
+    }
 }
 
 /**
