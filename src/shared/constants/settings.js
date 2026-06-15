@@ -1,7 +1,7 @@
-const REPOSITORY = 'FuLuTang/VRCX-jirai';
-const GITHU_API_URL = 'https://api.github.com/repos/FuLuTang/VRCX-jirai';
+const REPOSITORY = 'yixijun/VRCX-Luo';
+const GITHU_API_URL = 'https://api.github.com/repos/yixijun/VRCX-Luo';
 const GITHUB_RELEASES_URL =
-    'https://github.com/FuLuTang/VRCX-jirai/releases/latest';
+    'https://github.com/yixijun/VRCX-Luo/releases/latest';
 
 const VRChatScreenshotResolutions = [
     { name: '1280x720 (720p)', width: 1280, height: 720 },

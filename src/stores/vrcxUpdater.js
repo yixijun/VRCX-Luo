@@ -140,7 +140,7 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
         if (!appVersion.value) {
             return;
         }
-        if (currentVersion.value.includes('VRCX-Jirai Nightly')) {
+        if (currentVersion.value.includes('VRCX-Luo Nightly')) {
             branch.value = 'Nightly';
         } else {
             branch.value = 'Stable';
@@ -287,9 +287,9 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
         const latestVersionName = VRCXUpdateDialog.value.release;
         if (latestVersionName) {
             latestAppVersion.value = latestVersionName;
-            // Strip "VRCX-Jirai " or "VRCX-Jirai Nightly " prefix for comparison
+            // Strip "VRCX-Luo " or "VRCX-Luo Nightly " prefix for comparison
             const currentVersionStripped = currentVersion.value
-                .replace(/^VRCX-Jirai(?:\s+Nightly)?\s+/, '')
+                .replace(/^VRCX-Luo(?:\s+Nightly)?\s+/, '')
                 .replace(/^v/, '')
                 .trim();
             const latestVersionStripped = latestVersionName

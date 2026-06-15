@@ -600,7 +600,8 @@
                                     <span class="extra flex items-center">
                                         <span class="time">{{ formatDate(feed.created_at) }}</span>
                                         <template v-if="feed.isTraveling">
-                                            <span class="name" v-text="feed.displayName"></span> is traveling to
+                                            <span class="name" v-text="feed.displayName"></span>
+                                            {{ t('vr.feed.is_traveling_to') }}
                                             <VrLocation
                                                 :location="feed.location"
                                                 :hint="feed.worldName"
@@ -608,7 +609,8 @@
                                                 :instancedisplayname="feed.instanceDisplayName"></VrLocation>
                                         </template>
                                         <template v-else>
-                                            <span class="name" v-text="feed.displayName"></span> is in
+                                            <span class="name" v-text="feed.displayName"></span>
+                                            {{ t('vr.feed.is_in') }}
                                             <VrLocation
                                                 :location="feed.location"
                                                 :hint="feed.worldName"
@@ -1887,64 +1889,72 @@
         }
         switch (noty.type) {
             case 'OnPlayerJoined':
-                text = `<strong>${noty.displayName}</strong> has joined`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.has_joined')}`;
                 break;
             case 'OnPlayerLeft':
-                text = `<strong>${noty.displayName}</strong> has left`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.has_left')}`;
                 break;
             case 'OnPlayerJoining':
-                text = `<strong>${noty.displayName}</strong> is joining`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.is_joining')}`;
                 break;
             case 'GPS':
-                text = `<strong>${noty.displayName}</strong> is in ${displayLocation(
-                    noty.location,
-                    noty.worldName,
-                    noty.groupName
-                )}`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.gps', {
+                    location: displayLocation(noty.location, noty.worldName, noty.groupName)
+                })}`;
                 break;
             case 'Online':
-                let locationName = '';
                 if (noty.worldName) {
-                    locationName = ` to ${displayLocation(noty.location, noty.worldName, noty.groupName)}`;
+                    text = `<strong>${noty.displayName}</strong> ${t('notifications.online_location', {
+                        location: displayLocation(noty.location, noty.worldName, noty.groupName)
+                    })}`;
+                } else {
+                    text = `<strong>${noty.displayName}</strong> ${t('notifications.online')}`;
                 }
-                text = `<strong>${noty.displayName}</strong> has logged in${locationName}`;
                 break;
             case 'Offline':
-                text = `<strong>${noty.displayName}</strong> has logged out`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.offline')}`;
                 break;
             case 'Status':
-                text = `<strong>${noty.displayName}</strong> status is now <i>${noty.status}</i> ${noty.statusDescription}`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.status_update', {
+                    status: noty.status,
+                    description: noty.statusDescription
+                })}`;
                 break;
             case 'invite':
-                text = `<strong>${noty.senderUsername}</strong> has invited you to ${displayLocation(
-                    noty.details.worldId,
-                    noty.details.worldName,
-                    ''
-                )}${message}`;
+                text = `<strong>${noty.senderUsername}</strong> ${t('notifications.invite', {
+                    location: displayLocation(noty.details.worldId, noty.details.worldName, ''),
+                    message
+                })}`;
                 break;
             case 'requestInvite':
-                text = `<strong>${noty.senderUsername}</strong> has requested an invite ${message}`;
+                text = `<strong>${noty.senderUsername}</strong> ${t('notifications.request_invite', { message })}`;
                 break;
             case 'inviteResponse':
-                text = `<strong>${noty.senderUsername}</strong> has responded to your invite ${message}`;
+                text = `<strong>${noty.senderUsername}</strong> ${t('notifications.invite_response', { message })}`;
                 break;
             case 'requestInviteResponse':
-                text = `<strong>${noty.senderUsername}</strong> has responded to your invite request ${message}`;
+                text = `<strong>${noty.senderUsername}</strong> ${t('notifications.request_invite_response', {
+                    message
+                })}`;
                 break;
             case 'friendRequest':
-                text = `<strong>${noty.senderUsername}</strong> has sent you a friend request`;
+                text = `<strong>${noty.senderUsername}</strong> ${t('notifications.friend_request')}`;
                 break;
             case 'Friend':
-                text = `<strong>${noty.displayName}</strong> is now your friend`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.friend')}`;
                 break;
             case 'Unfriend':
-                text = `<strong>${noty.displayName}</strong> is no longer your friend`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.unfriend')}`;
                 break;
             case 'TrustLevel':
-                text = `<strong>${noty.displayName}</strong> trust level is now ${noty.trustLevel}`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.trust_level', {
+                    trustLevel: noty.trustLevel
+                })}`;
                 break;
             case 'DisplayName':
-                text = `<strong>${noty.previousDisplayName}</strong> changed their name to ${noty.displayName}`;
+                text = `<strong>${noty.previousDisplayName}</strong> ${t('notifications.display_name', {
+                    displayName: noty.displayName
+                })}`;
                 break;
             case 'boop':
                 text = noty.message;
@@ -1953,42 +1963,30 @@
                 text = `<strong>${noty.senderUsername}</strong> ${noty.message}`;
                 break;
             case 'group.announcement':
-                text = noty.message;
-                break;
             case 'group.informative':
-                text = noty.message;
-                break;
             case 'group.invite':
-                text = noty.message;
-                break;
             case 'group.joinRequest':
-                text = noty.message;
-                break;
             case 'group.transfer':
-                text = noty.message;
-                break;
             case 'group.queueReady':
-                text = noty.message;
-                break;
             case 'instance.closed':
                 text = noty.message;
                 break;
             case 'PortalSpawn':
                 if (noty.displayName) {
-                    text = `<strong>${noty.displayName}</strong> has spawned a portal to ${displayLocation(
-                        noty.instanceId,
-                        noty.worldName,
-                        noty.groupName
-                    )}`;
+                    text = `<strong>${noty.displayName}</strong> ${t('notifications.portal_spawn_name', {
+                        location: displayLocation(noty.instanceId, noty.worldName, noty.groupName)
+                    })}`;
                 } else {
-                    text = 'User has spawned a portal';
+                    text = t('notifications.portal_spawn');
                 }
                 break;
             case 'AvatarChange':
-                text = `<strong>${noty.displayName}</strong> changed into avatar ${noty.name}`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.avatar_change', { avatar: noty.name })}`;
                 break;
             case 'ChatBoxMessage':
-                text = `<strong>${noty.displayName}</strong> said ${noty.text}`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.chat_message', {
+                    message: noty.text
+                })}`;
                 break;
             case 'Event':
                 text = noty.data;
@@ -1997,31 +1995,31 @@
                 text = noty.message;
                 break;
             case 'VideoPlay':
-                text = `<strong>Now playing:</strong> ${noty.notyName}`;
+                text = `<strong>${t('notifications.now_playing_title')}:</strong> ${noty.notyName}`;
                 break;
             case 'BlockedOnPlayerJoined':
-                text = `Blocked user <strong>${noty.displayName}</strong> has joined`;
+                text = `${t('notifications.blocked_player_joined')}: <strong>${noty.displayName}</strong>`;
                 break;
             case 'BlockedOnPlayerLeft':
-                text = `Blocked user <strong>${noty.displayName}</strong> has left`;
+                text = `${t('notifications.blocked_player_left')}: <strong>${noty.displayName}</strong>`;
                 break;
             case 'MutedOnPlayerJoined':
-                text = `Muted user <strong>${noty.displayName}</strong> has joined`;
+                text = `${t('notifications.muted_player_joined')}: <strong>${noty.displayName}</strong>`;
                 break;
             case 'MutedOnPlayerLeft':
-                text = `Muted user <strong>${noty.displayName}</strong> has left`;
+                text = `${t('notifications.muted_player_left')}: <strong>${noty.displayName}</strong>`;
                 break;
             case 'Blocked':
-                text = `<strong>${noty.displayName}</strong> has blocked you`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.blocked')}`;
                 break;
             case 'Unblocked':
-                text = `<strong>${noty.displayName}</strong> has unblocked you`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.unblocked')}`;
                 break;
             case 'Muted':
-                text = `<strong>${noty.displayName}</strong> has muted you`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.muted')}`;
                 break;
             case 'Unmuted':
-                text = `<strong>${noty.displayName}</strong> has unmuted you`;
+                text = `<strong>${noty.displayName}</strong> ${t('notifications.unmuted')}`;
                 break;
             default:
                 break;

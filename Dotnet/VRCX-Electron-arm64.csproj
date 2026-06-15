@@ -12,15 +12,15 @@
     <PlatformTarget>ARM64</PlatformTarget>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <AssemblyTitle>VRCX-Jirai</AssemblyTitle>
-    <Product>VRCX-Jirai</Product>
+    <AssemblyTitle>VRCX-Luo</AssemblyTitle>
+    <Product>VRCX-Luo</Product>
     <Copyright>vrcx-team, pypy, natsumi</Copyright>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Title>VRCX-Jirai</Title>
-    <Description>VRCX Jirai Edition</Description>
+    <Title>VRCX-Luo</Title>
+    <Description>VRCX Luo Edition</Description>
     <PackageIcon>..\images\VRCX.png</PackageIcon>
-    <RepositoryUrl>https://github.com/FuLuTang/VRCX-jirai</RepositoryUrl>
+    <RepositoryUrl>https://github.com/yixijun/VRCX-Luo</RepositoryUrl>
     <ResourceLanguages>en</ResourceLanguages>
     <SatelliteResourceLanguages>en-US;en</SatelliteResourceLanguages>
     <Nullable>enable</Nullable>
@@ -43,7 +43,7 @@
     <DebugType>pdbonly</DebugType>
   </PropertyGroup>
   <PropertyGroup>
-    <AssemblyName>VRCX-Jirai</AssemblyName>
+    <AssemblyName>VRCX-Luo</AssemblyName>
   </PropertyGroup>
 
   <PropertyGroup>

@@ -11,22 +11,22 @@
     <UseWindowsForms>true</UseWindowsForms>
     <ApplicationRevision>0</ApplicationRevision>
     <ApplicationVersion>1.0.0.%2a</ApplicationVersion>
-    <AssemblyTitle>VRCX-Jirai</AssemblyTitle>
-    <Product>VRCX-Jirai</Product>
+    <AssemblyTitle>VRCX-Luo</AssemblyTitle>
+    <Product>VRCX-Luo</Product>
     <Copyright>vrcx-team, pypy, natsumi</Copyright>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
-    <Title>VRCX-Jirai</Title>
-    <Description>VRCX Jirai Edition</Description>
+    <Title>VRCX-Luo</Title>
+    <Description>VRCX Luo Edition</Description>
     <PackageIcon>..\images\VRCX.png</PackageIcon>
-    <RepositoryUrl>https://github.com/FuLuTang/VRCX-jirai</RepositoryUrl>
+    <RepositoryUrl>https://github.com/yixijun/VRCX-Luo</RepositoryUrl>
     <ResourceLanguages>en</ResourceLanguages>
     <SatelliteResourceLanguages>en-US;en</SatelliteResourceLanguages>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
-    <AssemblyName>VRCX-Jirai</AssemblyName>
+    <AssemblyName>VRCX-Luo</AssemblyName>
     <RootNamespace>VRCX</RootNamespace>
-    <PackageId>VRCX-Jirai</PackageId>
-    <Company>FuLuTang</Company>
+    <PackageId>VRCX-Luo</PackageId>
+    <Company>yixijun</Company>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <!-- Fix fail fast exception -->
@@ -116,7 +116,7 @@
   </Target>
   
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="&quot;$(ProjectDir)..\Dotnet\build-tools\Topten.nvpatch.exe&quot; --enable &quot;$(ProjectDir)..\build\Cef\VRCX-Jirai.exe&quot;" />
+    <Exec Command="&quot;$(ProjectDir)..\Dotnet\build-tools\Topten.nvpatch.exe&quot; --enable &quot;$(ProjectDir)..\build\Cef\VRCX-Luo.exe&quot;" />
   </Target>
 
   <ItemGroup>

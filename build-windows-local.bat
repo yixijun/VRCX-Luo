@@ -2,7 +2,7 @@
 setlocal
 
 echo ===================================================
-echo   VRCX-Jirai Local Windows Portable Build Script
+echo   VRCX-Luo Local Windows Portable Build Script
 echo ===================================================
 echo.
 
@@ -67,7 +67,7 @@ echo.
 :: --- [4/4] Building Backend ---
 echo [INFO] Building Backend...
 :: Kill any running instances
-taskkill /F /IM VRCX-Jirai.exe /T >nul 2>&1
+taskkill /F /IM VRCX-Luo.exe /T >nul 2>&1
 
 call dotnet build Dotnet\VRCX-Cef.csproj -p:Configuration=Release -p:Platform=x64
 if %errorlevel% neq 0 (
@@ -92,6 +92,6 @@ echo ===================================================
 echo [SUCCESS] Local build completed successfully!
 echo.
 echo You can run the portable executable here:
-echo %~dp0build\Cef\VRCX-Jirai.exe
+echo %~dp0build\Cef\VRCX-Luo.exe
 echo ===================================================
 pause

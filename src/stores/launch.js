@@ -106,7 +106,7 @@ export const useLaunchStore = defineStore('Launch', () => {
         console.log('Attach Game', launchUrl, result);
         if (!result) {
             toast.warning(
-                'Failed open instance in VRChat, falling back to self invite'
+                t('message.invite.open_instance_failed_self_invite')
             );
             // self invite fallback
             try {

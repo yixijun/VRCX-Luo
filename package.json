@@ -1,20 +1,20 @@
 {
-    "name": "vrcx-jirai",
+    "name": "vrcx-luo",
     "version": "2026.03.28",
     "private": true,
     "description": "Friendship management tool for VRChat",
     "keywords": [
         "vrchat"
     ],
-    "homepage": "https://github.com/FuLuTang/VRCX-jirai#readme",
+    "homepage": "https://github.com/yixijun/VRCX-Luo#readme",
     "bugs": {
-        "url": "https://github.com/FuLuTang/VRCX-jirai/issues"
+        "url": "https://github.com/yixijun/VRCX-Luo/issues"
     },
     "license": "MIT",
     "author": "VRCX Team",
     "repository": {
         "type": "git",
-        "url": "git+https://github.com/FuLuTang/VRCX-jirai.git"
+        "url": "git+https://github.com/yixijun/VRCX-Luo.git"
     },
     "main": "src-electron/main.js",
     "scripts": {
@@ -120,7 +120,7 @@
     },
     "build": {
         "appId": "app.vrcx",
-        "productName": "VRCX-Jirai",
+        "productName": "VRCX-Luo",
         "icon": "images/VRCX.png",
         "files": [
             "build/html/**/*",
@@ -171,7 +171,7 @@
             "output": "build"
         },
         "linux": {
-            "artifactName": "VRCX_Version.${ext}",
+            "artifactName": "VRCX-Luo_Version.${ext}",
             "target": [
                 "AppImage"
             ],
@@ -192,7 +192,7 @@
             "description": "Friendship management tool for VRChat"
         },
         "mac": {
-            "artifactName": "VRCX_Version.${ext}",
+            "artifactName": "VRCX-Luo_Version.${ext}",
             "target": [
                 "dmg"
             ],

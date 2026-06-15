@@ -306,7 +306,7 @@ describe('getNotificationMessage', () => {
         );
         expect(result).toEqual({
             title: 'Dave',
-            body: 'trust level is now Known'
+            body: 'Trust level is now Known'
         });
     });
 
@@ -326,7 +326,7 @@ describe('getNotificationMessage', () => {
             { type: 'ChatBoxMessage', displayName: 'Bob', text: 'hello!' },
             ''
         );
-        expect(result).toEqual({ title: 'Bob', body: 'said hello!' });
+        expect(result).toEqual({ title: 'Bob', body: 'said: hello!' });
     });
 
     test('Blocked', () => {

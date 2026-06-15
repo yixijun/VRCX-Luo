@@ -7,7 +7,7 @@
             <div class="text-[15px] h-[75vh] overflow-y-auto">
                 <div v-for="setting in currentOptions" :key="setting.key" class="mb-[5px] flex items-center">
                     <span class="inline-block min-w-[190px] pr-2.5 text-right"
-                        >{{ setting.name
+                        >{{ feedFilterLabel(setting)
                         }}<TooltipWrapper class="ml-1.5" v-if="setting.tooltip" side="top" :content="setting.tooltip">
                             <AlertTriangle class="inline-block" v-if="setting.tooltipWarning" />
                             <Info class="inline-block" v-else />
@@ -43,7 +43,7 @@
                         v-for="setting in photonFeedFiltersOptions"
                         :key="setting.key"
                         class="mb-[5px] flex items-center">
-                        <span class="inline-block min-w-[190px] pr-2.5 text-right">{{ setting.name }}</span>
+                        <span class="inline-block min-w-[190px] pr-2.5 text-right">{{ feedFilterLabel(setting) }}</span>
                         <ToggleGroup
                             type="single"
                             required
@@ -133,6 +133,12 @@
     function saveSharedFeedFilters() {
         configRepository.setString('sharedFeedFilters', JSON.stringify(sharedFeedFilters.value));
         loadSharedFeed();
+    }
+
+    function feedFilterLabel(setting) {
+        const key = `dialog.shared_feed_filters.items.${setting.key}`;
+        const translated = t(key);
+        return translated === key ? setting.name : translated;
     }
 
     function resetNotyFeedFilters() {

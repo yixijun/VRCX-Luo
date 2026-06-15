@@ -1,10 +1,10 @@
-# VRCX-jirai 数据库架构 (Database Schema)
+# VRCX-Luo 数据库架构 (Database Schema)
 
-本文档描述了 VRCX-jirai 分支相对于原版 VRCX 的数据库扩展及核心关系。
+本文档描述了 VRCX-Luo 分支相对于原版 VRCX 的数据库扩展及核心关系。
 
 ## 1. 概念模型 (MCD - Conceptual Data Model)
 
-以下模型展示了核心实体及其关联，特别包含了 Jirai 版特有的历史追踪表。
+以下模型展示了核心实体及其关联，特别包含了 Luo 版特有的历史追踪表。
 
 ```mocodo
 :
@@ -40,11 +40,11 @@ GAMELOG_LOCATION: id [INTEGER], created_at [TEXT], location [TEXT], world_id [TE
 - **MUTUAL_GRAPH_META** (<u>#friend_id</u>, last_fetched_at, opted_out)
     - *[New from Upstream]* 记录上游同步元数据，用于处理隐私选项和同步频率优化。
 
-### Jirai 特色：历史追踪 (Time Machine)
+### Luo 特色：历史追踪 (Time Machine)
 - **MUTUAL_GRAPH_FRIENDS_OLD** (<u>#friend_id</u>, last_updated)
-    - *[Jirai Exclusive]* 记录 Jirai 版最后一次“深度扫描”该好友共同好友的时间。
+    - *[Luo Exclusive]* 记录 Luo 版最后一次“深度扫描”该好友共同好友的时间。
 - **MUTUAL_GRAPH_LINKS_OLD** (<u>#friend_id</u>, <u>#mutual_id</u>, date)
-    - *[Jirai Exclusive]* 存储被扫描到的历史关系链接。`date` 字段允许我们在图表中回溯关系建立的时间点。
+    - *[Luo Exclusive]* 存储被扫描到的历史关系链接。`date` 字段允许我们在图表中回溯关系建立的时间点。
 
 ### 日志与足迹
 - **GAMELOG_LOCATION** (<u>id</u>, created_at, <u>location</u>, world_id, world_name, time, group_name)

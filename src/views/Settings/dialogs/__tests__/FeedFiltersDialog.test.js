@@ -15,7 +15,14 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
-vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k) => k }) }));
+vi.mock('vue-i18n', () => ({
+    useI18n: () => ({
+        t: (k) =>
+            k === 'dialog.shared_feed_filters.items.status'
+                ? 'Translated Status'
+                : k
+    })
+}));
 
 vi.mock('../../../../stores', () => ({
     usePhotonStore: () => ({
@@ -48,6 +55,11 @@ vi.mock('../../../../shared/constants', () => ({
             {
                 key: 'status',
                 name: 'Wrist Status',
+                options: [{ label: 'none', textKey: 'none' }]
+            },
+            {
+                key: 'fallback',
+                name: 'Fallback Name',
                 options: [{ label: 'none', textKey: 'none' }]
             }
         ],
@@ -120,6 +132,8 @@ describe('FeedFiltersDialog.vue', () => {
         expect(wrapper.get('[data-testid="dialog-title"]').text()).toBe(
             'dialog.shared_feed_filters.wrist'
         );
+        expect(wrapper.text()).toContain('Translated Status');
+        expect(wrapper.text()).toContain('Fallback Name');
 
         await wrapper.get('[data-testid="toggle-update"]').trigger('click');
         expect(mocks.sharedFeedFilters.value.wrist.status).toBe('all');

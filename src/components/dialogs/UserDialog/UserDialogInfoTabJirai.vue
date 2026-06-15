@@ -590,6 +590,7 @@
 
     import EditNoteAndMemoDialog from './EditNoteAndMemoDialog.vue';
     import { database } from '../../../services/database';
+    import { formatBioArchiveDiff } from '../../../shared/utils/bioArchiveDiff';
     import { formatDifference } from '../../../views/Feed/columns.jsx';
 
     defineEmits(['showBioDialog']);
@@ -680,7 +681,15 @@
     function bioArchiveDiff(record, index) {
         const previousArchiveRecord = bioArchiveRecords.value[index + 1];
         const previousBio = previousArchiveRecord?.bio ?? record.previousBio ?? '';
-        return formatDifference(previousBio, record.bio || '');
+        const currentBio = record.bio || '';
+        return formatBioArchiveDiff(previousBio, currentBio, formatDifference, {
+            component: 'UserDialogInfoTabJirai',
+            area: 'archive',
+            index,
+            recordCreatedAt: record.createdAt,
+            previousArchiveCreatedAt: previousArchiveRecord?.createdAt || null,
+            source: previousArchiveRecord ? 'previous archive record' : 'record.previousBio fallback'
+        });
     }
 
     watch(

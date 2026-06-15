@@ -229,7 +229,7 @@
             "remove_tooltip": "Remove from tracking",
             "add_button": "Add +",
             "add_dialog_title": "Track a User",
-            "add_dialog_hint": "Enter the user ID manually (usr_xxx...), or open any user's profile in VRCX-jirai and use the \"⋯\" → \"Track\" option.",
+            "add_dialog_hint": "Enter the user ID manually (usr_xxx...), or open any user's profile in VRCX-Luo and use the \"⋯\" → \"Track\" option.",
             "add_input_placeholder": "usr_xxx...",
             "add_verify_error": "Could not retrieve user data. Please check the ID and try again.",
             "add_confirm_question": "Is this user \"{name}\"?",
@@ -2866,6 +2866,7 @@
         },
         "invite": {
             "self_sent": "Self invite sent",
+            "open_instance_failed_self_invite": "Failed to open instance in VRChat, falling back to self invite",
             "sent": "Invite sent",
             "message_update_failed": "VRChat API didn't update message, try again",
             "message_updated": "Invite message updated",
@@ -2979,7 +2980,10 @@
         "blocked": "has blocked you",
         "unblocked": "has unblocked you",
         "muted": "has muted you",
-        "unmuted": "has unmuted you"
+        "unmuted": "has unmuted you",
+        "event_title": "Event",
+        "external_title": "External",
+        "now_playing_title": "Now playing"
     },
     "status": {
         "title": "VRChat Status"
@@ -3107,6 +3111,10 @@
             "players": "Players:",
             "cpu": "CPU:",
             "online": "Online:"
+        },
+        "feed": {
+            "is_traveling_to": "is traveling to",
+            "is_in": "is in"
         }
     },
     "api": {

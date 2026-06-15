@@ -497,7 +497,7 @@
                         v-if="bioArchiveDiffEnabled"
                         class="text-xs leading-5.5 font-[inherit]"
                         style="white-space: pre-wrap; margin: 0"
-                        v-html="bioArchiveDiff(record)"></pre>
+                        v-html="bioArchiveDiff(record, index)"></pre>
                     <pre v-else class="text-xs leading-5.5 font-[inherit]" style="white-space: pre-wrap; margin: 0">{{
                         record.bio || '-'
                     }}</pre>
@@ -556,6 +556,7 @@
 
     import EditNoteAndMemoDialog from './EditNoteAndMemoDialog.vue';
     import { database } from '../../../services/database';
+    import { formatBioArchiveDiff } from '../../../shared/utils/bioArchiveDiff';
     import { formatDifference } from '../../../views/Feed/columns.jsx';
 
     defineEmits(['showBioDialog']);
@@ -668,8 +669,17 @@
         }
     }
 
-    function bioArchiveDiff(record) {
-        return formatDifference(record.previousBio || '', record.bio || '');
+    function bioArchiveDiff(record, index) {
+        const previousArchiveRecord = bioArchiveRecords.value[index + 1];
+        const previousBio = previousArchiveRecord?.bio ?? record.previousBio ?? '';
+        const currentBio = record.bio || '';
+        return formatBioArchiveDiff(previousBio, currentBio, formatDifference, {
+            component: 'UserDialogInfoTab',
+            index,
+            recordCreatedAt: record.createdAt,
+            previousArchiveCreatedAt: previousArchiveRecord?.createdAt || null,
+            source: previousArchiveRecord ? 'previous archive record' : 'record.previousBio fallback'
+        });
     }
 
     /**

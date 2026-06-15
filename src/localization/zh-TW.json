@@ -2221,7 +2221,49 @@
             "friends": "好友",
             "everyone": "所有人",
             "reset": "重設",
-            "close": "關閉"
+            "close": "關閉",
+            "items": {
+                "Location": "自身位置",
+                "OnPlayerJoining": "玩家正在加入",
+                "OnPlayerJoined": "玩家已加入",
+                "OnPlayerLeft": "玩家已離開",
+                "Online": "上線",
+                "Offline": "離線",
+                "GPS": "位置變更",
+                "Status": "狀態變更",
+                "invite": "邀請",
+                "requestInvite": "請求邀請",
+                "inviteResponse": "邀請回應",
+                "requestInviteResponse": "請求邀請回應",
+                "boop": "Boop 互動",
+                "friendRequest": "好友請求",
+                "Friend": "新增好友",
+                "Unfriend": "取消好友",
+                "DisplayName": "顯示名稱變更",
+                "TrustLevel": "信任等級變更",
+                "groupChange": "群組變更",
+                "group.announcement": "群組公告",
+                "group.informative": "群組加入",
+                "group.invite": "群組邀請",
+                "group.joinRequest": "群組加入請求",
+                "group.transfer": "群組轉讓請求",
+                "group.queueReady": "房間佇列就緒",
+                "instance.closed": "房間已關閉",
+                "VideoPlay": "影片播放",
+                "Event": "其他事件",
+                "External": "外部應用程式",
+                "BlockedOnPlayerJoined": "已封鎖玩家加入",
+                "BlockedOnPlayerLeft": "已封鎖玩家離開",
+                "MutedOnPlayerJoined": "已靜音玩家加入",
+                "MutedOnPlayerLeft": "已靜音玩家離開",
+                "AvatarChange": "房間內模型變更",
+                "PortalSpawn": "傳送門生成",
+                "ChatBoxMessage": "房間聊天框訊息",
+                "Blocked": "封鎖",
+                "Unblocked": "取消封鎖",
+                "Muted": "靜音",
+                "Unmuted": "取消靜音"
+            }
         },
         "previous_instances": {
             "header": "過去的房間",
@@ -2705,6 +2747,7 @@
         },
         "invite": {
             "self_sent": "已送出給自己的邀請",
+            "open_instance_failed_self_invite": "在 VRChat 中開啟房間失敗，正在改用自我邀請",
             "sent": "邀請已送出",
             "message_update_failed": "VRChat API 未能更新訊息，請再試一次",
             "message_updated": "邀請訊息已更新",
@@ -2818,7 +2861,10 @@
         "blocked": "已封鎖你",
         "unblocked": "已解除對你的封鎖",
         "muted": "已將你靜音",
-        "unmuted": "已解除對你的靜音"
+        "unmuted": "已解除對你的靜音",
+        "event_title": "事件",
+        "external_title": "外部通知",
+        "now_playing_title": "正在播放"
     },
     "status": {
         "title": "VRChat 狀態"
@@ -2946,6 +2992,10 @@
             "players": "用戶人數：",
             "cpu": "CPU：",
             "online": "線上："
+        },
+        "feed": {
+            "is_traveling_to": "正在前往",
+            "is_in": "位於"
         }
     },
     "api": {

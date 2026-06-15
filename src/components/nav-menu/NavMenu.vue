@@ -323,7 +323,7 @@
     };
 
     const openGithub = () => {
-        openExternalLink('https://github.com/FuLuTang/VRCX-jirai');
+        openExternalLink('https://github.com/yixijun/VRCX-Luo');
     };
 
     const handleSupportLink = (id) => {

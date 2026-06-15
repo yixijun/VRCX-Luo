@@ -153,6 +153,12 @@ vi.mock('../../../stores', () => ({
     })
 }));
 
+vi.mock('../../../stores/settings/notifications', () => ({
+    useNotificationsSettingsStore: () => ({
+        notificationLayout: 'classic'
+    })
+}));
+
 vi.mock('../../../services/config', () => ({
     default: {
         getString: (...args) => mocks.getString(...args),
@@ -170,7 +176,7 @@ vi.mock('../../../shared/constants', () => ({
     },
     isToolNavKey: (key) => typeof key === 'string' && key.startsWith('tool-'),
     links: {
-        github: 'https://github.com/FuLuTang/VRCX-jirai'
+        github: 'https://github.com/yixijun/VRCX-Luo'
     },
     navDefinitions: [
         {

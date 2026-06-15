@@ -12,9 +12,24 @@ import { parseLocation } from '../shared/utils/locationParser';
 
 const JOIN_COOLDOWN_MS = 15_000;
 
-function getFollowLocation(friendRef) {
+function getFollowTarget(friendRef) {
     const location = friendRef?.travelingToLocation || friendRef?.$travelingToLocation || friendRef?.location || friendRef?.$locationTag || '';
-    return isRealInstance(location) ? location : '';
+    if (!isRealInstance(location)) {
+        return {
+            location: '',
+            shortName: ''
+        };
+    }
+    const parsedLocation = parseLocation(location);
+    const locationInfo = friendRef?.$location || {};
+    return {
+        location,
+        shortName: parsedLocation.shortName || locationInfo.shortName || friendRef?.shortName || friendRef?.secureName || ''
+    };
+}
+
+function getFollowLocation(friendRef) {
+    return getFollowTarget(friendRef).location;
 }
 
 function sameInstance(a, b) {
@@ -33,6 +48,7 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
     const targetLocation = ref('');
     const statusText = ref('');
     const isJoining = ref(false);
+    const launchMode = ref('desktop');
 
     let unwatchFriend = null;
     let lastJoinLocation = '';
@@ -71,12 +87,11 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         return location !== lastJoinLocation || now - lastJoinAt > JOIN_COOLDOWN_MS;
     }
 
-    async function runJoin(location, reason = 'manual') {
+    async function runJoin(location, reason = 'manual', shortName = '') {
         if (!isRealInstance(location) || isJoining.value || !canJoinNow(location)) {
             return false;
         }
 
-        const gameStore = useGameStore();
         const launchStore = useLaunchStore();
         const locationStore = useLocationStore();
 
@@ -91,13 +106,14 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         statusText.value = reason === 'changed' ? '好友切换房间，正在跟随' : '正在加入好友所在房间';
 
         try {
-            if (!gameStore.isGameNoVR || gameStore.isSteamVRRunning) {
-                await launchStore.tryOpenInstanceInVrc(location, null);
-            } else {
+            if (launchMode.value === 'desktop') {
+                const gameStore = useGameStore();
                 if (gameStore.isGameRunning) {
                     await AppApi.QuitGame();
                 }
-                await launchStore.launchGame(location, null, true);
+                await launchStore.launchGame(location, shortName || null, true);
+            } else {
+                await launchStore.tryOpenInstanceInVrc(location, shortName || null);
             }
             return true;
         } catch (err) {
@@ -115,24 +131,25 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         unwatchFriend = watch(
             () => {
                 const ref = getCurrentTargetRef();
-                return getFollowLocation(ref);
+                return getFollowTarget(ref);
             },
-            async (location, previousLocation) => {
+            async (target, previousTarget) => {
+                const location = target.location;
                 if (!isActive.value || !location) {
                     return;
                 }
                 targetLocation.value = location;
-                if (!previousLocation) {
+                if (!previousTarget?.location) {
                     return;
                 }
-                if (location === previousLocation) {
+                if (location === previousTarget.location) {
                     return;
                 }
                 if (!friendStore.friends.has(targetFriendId.value)) {
                     stopFollow({ silent: true });
                     return;
                 }
-                await runJoin(location, 'changed');
+                await runJoin(location, 'changed', target.shortName);
             },
             { flush: 'sync' }
         );
@@ -174,7 +191,8 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
             return false;
         }
 
-        const location = getFollowLocation(friendRef);
+        const target = getFollowTarget(friendRef);
+        const location = target.location;
         if (!location) {
             toast.warning('无法开启自动跟随：该好友当前没有可加入的房间');
             return false;
@@ -193,12 +211,13 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         targetFriendId.value = friendRef.id;
         targetFriendName.value = friendRef.displayName || friendRef.name || friendRef.id;
         targetLocation.value = location;
+        launchMode.value = options.launchMode === 'vr' ? 'vr' : 'desktop';
         statusText.value = isSameRoom ? '已在同一房间，正在监听好友位置变化' : '已开启，准备加入好友房间';
         watchTargetFriend();
         toast.success(`自动跟随已开启：${targetFriendName.value}`);
 
         if (options.initialJoin !== false && !isSameRoom) {
-            await runJoin(location, 'initial');
+            await runJoin(location, 'initial', target.shortName);
         }
         return true;
     }
@@ -217,6 +236,7 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         targetLocation.value = '';
         statusText.value = '';
         isJoining.value = false;
+        launchMode.value = 'desktop';
         lastJoinLocation = '';
         lastJoinAt = 0;
         cleanupWatcher();
@@ -226,12 +246,16 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         return true;
     }
 
-    async function toggleFollow(friend) {
+    async function toggleFollow(friend, options = {}) {
         const friendRef = resolveFriendRef(friend);
         if (isActive.value && friendRef?.id === targetFriendId.value) {
             return stopFollow({ confirm: true });
         }
-        return startFollow(friendRef, { confirm: true, initialJoin: true });
+        return startFollow(friendRef, {
+            confirm: true,
+            initialJoin: true,
+            launchMode: options.launchMode || 'desktop'
+        });
     }
 
     return {
@@ -241,6 +265,7 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         targetLocation,
         statusText,
         isJoining,
+        launchMode,
         activeLabel,
         startFollow,
         stopFollow,

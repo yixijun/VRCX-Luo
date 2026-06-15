@@ -14,6 +14,7 @@ import { i18n } from '../../plugins/i18n';
 export function getNotificationMessage(noty, message, displayNameOverride) {
     const name = displayNameOverride || noty.displayName;
     const sender = displayNameOverride || noty.senderUsername;
+    const cleanMessage = String(message ?? '').trimStart();
     const t = i18n.global.t;
 
     switch (noty.type) {
@@ -71,23 +72,23 @@ export function getNotificationMessage(noty, message, displayNameOverride) {
                         noty.details.worldId,
                         noty.details.worldName
                     ),
-                    message
+                    message: cleanMessage
                 })
             };
         case 'requestInvite':
             return {
                 title: sender,
-                body: t('notifications.request_invite', { message })
+                body: t('notifications.request_invite', { message: cleanMessage })
             };
         case 'inviteResponse':
             return {
                 title: sender,
-                body: t('notifications.invite_response', { message })
+                body: t('notifications.invite_response', { message: cleanMessage })
             };
         case 'requestInviteResponse':
             return {
                 title: sender,
-                body: t('notifications.request_invite_response', { message })
+                body: t('notifications.request_invite_response', { message: cleanMessage })
             };
         case 'friendRequest':
             return {
@@ -179,11 +180,11 @@ export function getNotificationMessage(noty, message, displayNameOverride) {
                 body: t('notifications.chat_message', { message: noty.text })
             };
         case 'Event':
-            return { title: 'Event', body: noty.data };
+            return { title: t('notifications.event_title'), body: noty.data };
         case 'External':
-            return { title: 'External', body: noty.message };
+            return { title: t('notifications.external_title'), body: noty.message };
         case 'VideoPlay':
-            return { title: 'Now playing', body: noty.notyName };
+            return { title: t('notifications.now_playing_title'), body: noty.notyName };
         case 'BlockedOnPlayerJoined':
             return {
                 title: name,

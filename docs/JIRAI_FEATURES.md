@@ -1,8 +1,8 @@
-# VRCX-Jirai 改动清单（修正版）
+# VRCX-Luo 改动清单（修正版）
 
 > 基于原版 [vrcx-team/vrcx](https://github.com/vrcx-team/vrcx) 的分支。
 >
-> **只列出 jirai 特有**的改动。以下功能经确认都是 upstream 本来的，不是 jirai 加的，已移除：
+> **只列出 Luo 特有**的改动。以下功能经确认都是 upstream 本来的，不是 Luo 加的，已移除：
 > ~~关系网/共同好友、快速搜索(Ctrl+K)、Dashboard、Gallery/ScreenshotMetadata、My Avatars、
 >  Avatar Tags、Chatbox黑名单、通知中心、Registry备份、笔记导出、自动改变状态、
 >  My Avatars 页面、活动V2（activityV2.js）~~
@@ -16,12 +16,12 @@
 - [ ] [5. 信息抓取补全 + 同步指示器（Bio/Status Fetch）](#5-信息抓取补全--同步指示器biostatus-fetch)
 - [ ] [6. 个人简介 Diff 视图（Bio Diff）](#6-个人简介-diff-视图bio-diff)
 - [ ] [7. 自动跟随好友实例（Auto Follow）](#7-自动跟随好友实例auto-follow)
-- [ ] [8. 自动更新重定向到 Jirai 仓库](#8-自动更新重定向到-jirai-仓库)
+- [ ] [8. 自动更新重定向到 Luo 仓库](#8-自动更新重定向到-luo-仓库)
 - [ ] [9. 多账号功能 V4（WIP）](#9-多账号功能-v4wip)
 - [ ] [10. 本地构建 脚本](#10-本地构建脚本)
 - [ ] [11. 数据库结构文档](#11-数据库结构文档)
 - [ ] [12. UI 美化合集](#12-ui-美化合集)
-- [ ] [13. 构建配置调整（jirai 部分）](#13-构建配置调整jirai-部分)
+- [ ] [13. 构建配置调整（Luo 部分）](#13-构建配置调整luo-部分)
 
 ---
 
@@ -238,13 +238,13 @@ function recordBioSnapshot(userId, bio) {
 }
 ```
 
-- 保留上游原始 `UserDialogInfoTab.vue`，jirai 版本用 `UserDialogInfoTabJirai.vue` 命名避免冲突
+- 保留上游原始 `UserDialogInfoTab.vue`，Luo 版本用 `UserDialogInfoTabJirai.vue` 命名避免冲突
 - 使用 Feed 风格的 word-level diff，CJK 感知
 
 ### UI
 
 ```
-┌── User Info (Jirai) ─────────────────────────┐
+┌── User Info (Luo) ─────────────────────────┐
 │ 位置信息                                      │
 │ Instance: wrld_xxx:12345                     │
 │ [实例创建者] Alice                            │
@@ -297,13 +297,13 @@ watch(friendStore.friends, (friends) => {
 
 ---
 
-## 8. 自动更新重定向到 Jirai 仓库
+## 8. 自动更新重定向到 Luo 仓库
 
 **入口**: 自动（Settings → Advanced → Updates）
 
 **文件**: `src/stores/vrcxUpdater.js` (修改)
 
-将更新检测 URL 改为指向 `FuLuTang/VRCX-jirai`。CI 配置 `.github/workflows/` 也相应调整。
+将更新检测 URL 改为指向 `yixijun/VRCX-Luo`。CI 配置 `.github/workflows/` 也相应调整。
 
 ---
 
@@ -366,7 +366,7 @@ ERD（实体关系图）：SVG / Mermaid / DBML / Graphviz 鸦脚符号 / 物理
 
 ---
 
-## 13. 构建配置调整（jirai 部分）
+## 13. 构建配置调整（Luo 部分）
 
 | 改动                                       | 说明                                                          |
 | ------------------------------------------ | ------------------------------------------------------------- |
@@ -382,7 +382,7 @@ ERD（实体关系图）：SVG / Mermaid / DBML / Graphviz 鸦脚符号 / 物理
 
 ## 总结
 
-真正 jirai 特有的功能共 **13 项**，其中核心新功能 7 项：
+真正 Luo 特有的功能共 **13 项**，其中核心新功能 7 项：
 
 | #  | 功能           | 状态 | 代码量   |
 | -- | -------------- | ---- | -------- |

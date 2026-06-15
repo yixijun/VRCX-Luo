@@ -236,7 +236,7 @@
             "remove_tooltip": "取消追踪",
             "add_button": "添加 +",
             "add_dialog_title": "追踪玩家",
-            "add_dialog_hint": "手动输入用户ID（usr_xxx...），或在VRCX-jirai中点击任意玩家，通过右侧「⋯」按钮选择「追踪」。",
+            "add_dialog_hint": "手动输入用户ID（usr_xxx...），或在VRCX-Luo中点击任意玩家，通过右侧「⋯」按钮选择「追踪」。",
             "add_input_placeholder": "usr_xxx...",
             "add_verify_error": "无法获取该用户数据，请检查ID后重试。",
             "add_confirm_question": "是否为用户「{name}」？",
@@ -2390,7 +2390,49 @@
             "friends": "好友",
             "everyone": "所有人",
             "reset": "重置为默认",
-            "close": "关闭并保存"
+            "close": "关闭并保存",
+            "items": {
+                "Location": "自身位置",
+                "OnPlayerJoining": "玩家正在加入",
+                "OnPlayerJoined": "玩家已加入",
+                "OnPlayerLeft": "玩家已离开",
+                "Online": "上线",
+                "Offline": "离线",
+                "GPS": "位置变更",
+                "Status": "状态变更",
+                "invite": "邀请",
+                "requestInvite": "请求邀请",
+                "inviteResponse": "邀请回应",
+                "requestInviteResponse": "请求邀请回应",
+                "boop": "Boop 互动",
+                "friendRequest": "好友请求",
+                "Friend": "新增好友",
+                "Unfriend": "取消好友",
+                "DisplayName": "显示名称变更",
+                "TrustLevel": "信誉等级变更",
+                "groupChange": "群组变更",
+                "group.announcement": "群组公告",
+                "group.informative": "群组加入",
+                "group.invite": "群组邀请",
+                "group.joinRequest": "群组加入请求",
+                "group.transfer": "群组转让请求",
+                "group.queueReady": "实例队列就绪",
+                "instance.closed": "实例已关闭",
+                "VideoPlay": "视频播放",
+                "Event": "其他事件",
+                "External": "外部应用",
+                "BlockedOnPlayerJoined": "已屏蔽玩家加入",
+                "BlockedOnPlayerLeft": "已屏蔽玩家离开",
+                "MutedOnPlayerJoined": "已静音玩家加入",
+                "MutedOnPlayerLeft": "已静音玩家离开",
+                "AvatarChange": "房间内模型变更",
+                "PortalSpawn": "传送门生成",
+                "ChatBoxMessage": "房间聊天框消息",
+                "Blocked": "屏蔽",
+                "Unblocked": "取消屏蔽",
+                "Muted": "静音",
+                "Unmuted": "取消静音"
+            }
         },
         "previous_instances": {
             "header": "曾加入的房间",
@@ -2876,6 +2918,7 @@
         },
         "invite": {
             "self_sent": "已发送自我邀请",
+            "open_instance_failed_self_invite": "在 VRChat 中打开实例失败，正在改用自我邀请",
             "sent": "已发送邀请",
             "message_update_failed": "VRChat API 未能更新消息，请重试",
             "message_updated": "邀请消息已更新",
@@ -2989,7 +3032,10 @@
         "blocked": "屏蔽了你",
         "unblocked": "取消了对你的屏蔽",
         "muted": "屏蔽了你的语音",
-        "unmuted": "取消了对你的语音屏蔽"
+        "unmuted": "取消了对你的语音屏蔽",
+        "event_title": "事件",
+        "external_title": "外部通知",
+        "now_playing_title": "正在播放"
     },
     "status": {
         "title": "VRChat 状态"
@@ -3117,6 +3163,10 @@
             "players": "人数：",
             "cpu": "CPU：",
             "online": "在线："
+        },
+        "feed": {
+            "is_traveling_to": "正在前往",
+            "is_in": "位于"
         }
     },
     "api": {

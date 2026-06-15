@@ -128,15 +128,74 @@ describe('useAutoFollowStore', () => {
         expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
     });
 
-    it('opens the instance in VRChat when in VR mode', async () => {
-        mocks.isGameNoVR = false;
+    it('uses desktop launch when VRChat is in desktop mode even if SteamVR is running', async () => {
+        mocks.isSteamVRRunning = true;
         const store = useAutoFollowStore();
 
         await store.startFollow(friend(), { confirm: true, initialJoin: true });
 
+        expect(mocks.quitGame).toHaveBeenCalledTimes(1);
+        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, true);
+        expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
+    });
+
+    it('uses desktop launch when desktop UI requests it even if game mode state is stale', async () => {
+        mocks.isGameNoVR = false;
+        mocks.isSteamVRRunning = true;
+        const store = useAutoFollowStore();
+
+        await store.startFollow(friend(), { confirm: true, initialJoin: true, launchMode: 'desktop' });
+
+        expect(mocks.quitGame).toHaveBeenCalledTimes(1);
+        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, true);
+        expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
+    });
+
+    it('passes shortName from the friend location cache when relaunching in desktop mode', async () => {
+        const store = useAutoFollowStore();
+        const target = {
+            ...friend('wrld_target:2~friends(usr_owner)'),
+            $location: {
+                shortName: 'short123'
+            }
+        };
+
+        await store.startFollow(target, { confirm: true, initialJoin: true });
+
+        expect(mocks.launchGame).toHaveBeenCalledWith(
+            'wrld_target:2~friends(usr_owner)',
+            'short123',
+            true
+        );
+    });
+
+    it('opens the instance in VRChat when in VR mode', async () => {
+        mocks.isGameNoVR = false;
+        const store = useAutoFollowStore();
+
+        await store.startFollow(friend(), { confirm: true, initialJoin: true, launchMode: 'vr' });
+
         expect(mocks.tryOpenInstanceInVrc).toHaveBeenCalledWith('wrld_target:2', null);
         expect(mocks.launchGame).not.toHaveBeenCalled();
         expect(mocks.quitGame).not.toHaveBeenCalled();
+    });
+
+    it('passes shortName from the friend location cache when opening in VR mode', async () => {
+        mocks.isGameNoVR = false;
+        const store = useAutoFollowStore();
+        const target = {
+            ...friend('wrld_target:2~friends(usr_owner)'),
+            $location: {
+                shortName: 'short123'
+            }
+        };
+
+        await store.startFollow(target, { confirm: true, initialJoin: true, launchMode: 'vr' });
+
+        expect(mocks.tryOpenInstanceInVrc).toHaveBeenCalledWith(
+            'wrld_target:2~friends(usr_owner)',
+            'short123'
+        );
     });
 
     it('confirms before stopping the current target', async () => {

@@ -17,7 +17,7 @@
     VIProductVersion "${PRODUCT_VERSION}"
     VIFileVersion "${VERSION}"
     VIAddVersionKey "FileVersion" "${VERSION}"
-    VIAddVersionKey "ProductName" "VRCX-Jirai"
+    VIAddVersionKey "ProductName" "VRCX-Luo"
     VIAddVersionKey "ProductVersion" "${PRODUCT_VERSION}"
     VIAddVersionKey "LegalCopyright" "Copyright vrcx-team, pypy, natsumi"
     VIAddVersionKey "FileDescription" "Friendship management tool for VRChat"
@@ -35,10 +35,10 @@
     SetCompressor /SOLID lzma
     SetCompressorDictSize 16
     Unicode True
-    Name "VRCX-Jirai"
-    OutFile "VRCX-Jirai_Setup.exe"
-    InstallDir "$PROGRAMFILES64\VRCX-Jirai"
-    InstallDirRegKey HKLM "Software\VRCX-Jirai" "InstallDir"
+    Name "VRCX-Luo"
+    OutFile "VRCX-Luo_Setup.exe"
+    InstallDir "$PROGRAMFILES64\VRCX-Luo"
+    InstallDirRegKey HKLM "Software\VRCX-Luo" "InstallDir"
     RequestExecutionLevel admin
     ShowInstDetails show
 
@@ -74,7 +74,7 @@
 
     ; Checkbox to launch VRCX.
     !define MUI_FINISHPAGE_RUN
-    !define MUI_FINISHPAGE_RUN_TEXT "Launch VRCX-Jirai"
+    !define MUI_FINISHPAGE_RUN_TEXT "Launch VRCX-Luo"
     !define MUI_FINISHPAGE_RUN_FUNCTION launchVRCX
 
     ; Checkbox to create desktop shortcut.
@@ -109,19 +109,19 @@ FunctionEnd
 Function .onInit
     StrCpy $upgradeInstallation 0
 
-    ReadRegStr $R0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Jirai" "UninstallString"
+    ReadRegStr $R0 HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Luo" "UninstallString"
     StrCmp $R0 "" notInstalled
         StrCpy $upgradeInstallation 1
     notInstalled:
 
     ; If VRCX is already running, display a warning message
     loop:
-    StrCpy $1 "VRCX-Jirai.exe"
+    StrCpy $1 "VRCX-Luo.exe"
     nsProcess::_FindProcess "$1"
     Pop $R1
     ${If} $R1 = 0
-        MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "VRCX-Jirai 依旧在运行。$\n$\n点击“确定”结束进程，或者“取消”退出安装程序。" /SD IDOK IDCANCEL cancel
-            nsExec::ExecToStack "taskkill /IM VRCX-Jirai.exe"
+        MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "VRCX-Luo 依旧在运行。$\n$\n点击“确定”结束进程，或者“取消”退出安装程序。" /SD IDOK IDCANCEL cancel
+            nsExec::ExecToStack "taskkill /IM VRCX-Luo.exe"
     ${Else}
         Goto done
     ${EndIf}
@@ -140,12 +140,12 @@ Function .onInstSuccess
 FunctionEnd
 
 Function createDesktopShortcut
-    CreateShortcut "$DESKTOP\VRCX-Jirai.lnk" "$INSTDIR\VRCX-Jirai.exe"
+    CreateShortcut "$DESKTOP\VRCX-Luo.lnk" "$INSTDIR\VRCX-Luo.exe"
 FunctionEnd
 
 Function launchVRCX
     SetOutPath $INSTDIR
-    ShellExecAsUser::ShellExecAsUser "" "$INSTDIR\VRCX-Jirai.exe" ""
+    ShellExecAsUser::ShellExecAsUser "" "$INSTDIR\VRCX-Luo.exe" ""
 FunctionEnd
 
 ;--------------------------------
@@ -169,34 +169,34 @@ Section "Install" SecInstall
 
     File /r /x *.log /x *.pdb "..\build\Cef\*.*"
 
-    WriteRegStr HKLM "Software\VRCX-Jirai" "InstallDir" $INSTDIR
+    WriteRegStr HKLM "Software\VRCX-Luo" "InstallDir" $INSTDIR
     WriteUninstaller "$INSTDIR\Uninstall.exe"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Jirai" "DisplayName" "VRCX-Jirai"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Jirai" "Publisher" "FuLuTang"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Luo" "DisplayName" "VRCX-Luo"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Luo" "Publisher" "yixijun"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX" "DisplayVersion" "${VERSION}"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX" "DisplayArch" "x64"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX" "InstallLocation" "$INSTDIR"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Jirai" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Jirai" "DisplayIcon" "$\"$INSTDIR\VRCX.ico$\""
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Luo" "UninstallString" "$\"$INSTDIR\Uninstall.exe$\""
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Luo" "DisplayIcon" "$\"$INSTDIR\VRCX.ico$\""
 
     ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
     IntFmt $0 "0x%08X" $0
-    WriteRegDWORD HKLM  "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Jirai" "EstimatedSize" "$0"
+    WriteRegDWORD HKLM  "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Luo" "EstimatedSize" "$0"
 
     ${GetParameters} $R2
     ${GetOptions} $R2 /SKIP_SHORTCUT= $3
     StrCmp $3 "true" noShortcut
-        CreateShortCut "$SMPROGRAMS\VRCX-Jirai.lnk" "$INSTDIR\VRCX-Jirai.exe"
-        ApplicationID::Set "$SMPROGRAMS\VRCX-Jirai.lnk" "VRCX-Jirai"
+        CreateShortCut "$SMPROGRAMS\VRCX-Luo.lnk" "$INSTDIR\VRCX-Luo.exe"
+        ApplicationID::Set "$SMPROGRAMS\VRCX-Luo.lnk" "VRCX-Luo"
     noShortcut:
 
-    WriteRegStr HKCU "Software\Classes\vrcx-jirai" "" "URL:vrcx-jirai"
-    WriteRegStr HKCU "Software\Classes\vrcx-jirai" "FriendlyTypeName" "VRCX-Jirai"
+    WriteRegStr HKCU "Software\Classes\vrcx-luo" "" "URL:vrcx-luo"
+    WriteRegStr HKCU "Software\Classes\vrcx-luo" "FriendlyTypeName" "VRCX-Luo"
     WriteRegStr HKCU "Software\Classes\vrcx" "URL Protocol" ""
     WriteRegExpandStr HKCU "Software\Classes\vrcx\DefaultIcon" "" "$INSTDIR\VRCX.ico"
     WriteRegStr HKCU "Software\Classes\vrcx\shell" "" "open"
-    WriteRegStr HKCU "Software\Classes\vrcx-jirai\shell\open" "FriendlyAppName" "VRCX-Jirai"
-    WriteRegStr HKCU "Software\Classes\vrcx-jirai\shell\open\command" "" '"$INSTDIR\VRCX-Jirai.exe" /uri="%1" /params="%2 %3 %4"'
+    WriteRegStr HKCU "Software\Classes\vrcx-luo\shell\open" "FriendlyAppName" "VRCX-Luo"
+    WriteRegStr HKCU "Software\Classes\vrcx-luo\shell\open\command" "" '"$INSTDIR\VRCX-Luo.exe" /uri="%1" /params="%2 %3 %4"'
 SectionEnd
 
 ;--------------------------------
@@ -204,22 +204,22 @@ SectionEnd
 
 Section "Uninstall"
     ; If VRCX is already running, display a warning message and exit
-    StrCpy $1 "VRCX-Jirai.exe"
+    StrCpy $1 "VRCX-Luo.exe"
     nsProcess::_FindProcess "$1"
     Pop $R1
     ${If} $R1 = 0
-        MessageBox MB_OK|MB_ICONEXCLAMATION "VRCX-Jirai 依旧在运行。无法卸载此软件。$\n请先关闭 VRCX-Jirai 并重试。" /SD IDOK
+        MessageBox MB_OK|MB_ICONEXCLAMATION "VRCX-Luo 依旧在运行。无法卸载此软件。$\n请先关闭 VRCX-Luo 并重试。" /SD IDOK
         Abort
     ${EndIf}
 
     RMDir /r "$INSTDIR"
 
-    DeleteRegKey HKLM "Software\VRCX-Jirai"
-    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Jirai"
-    DeleteRegKey HKCU "Software\Classes\vrcx-jirai"
+    DeleteRegKey HKLM "Software\VRCX-Luo"
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\VRCX-Luo"
+    DeleteRegKey HKCU "Software\Classes\vrcx-luo"
 
     ${IfNot} ${Silent}
         Delete "$SMPROGRAMS\VRCX.lnk"
-        Delete "$DESKTOP\VRCX-Jirai.lnk"
+        Delete "$DESKTOP\VRCX-Luo.lnk"
     ${EndIf}
 SectionEnd

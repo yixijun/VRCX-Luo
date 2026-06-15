@@ -101,7 +101,7 @@ const availableFriends = computed(() => {
 });
 
 function selectFriend(friend) {
-    autoFollowStore.startFollow(friend.ref, { confirm: true, initialJoin: true });
+    autoFollowStore.startFollow(friend.ref, { confirm: true, initialJoin: true, launchMode: 'desktop' });
     emit('update:open', false);
 }
 </script>

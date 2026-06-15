@@ -1,6 +1,6 @@
-# VRCX-jirai 数据刷新机制说明
+# VRCX-Luo 数据刷新机制说明
 
-本文档描述 VRCX-jirai 中"好友动态 (Feed)"等数据是如何被采集、刷新和持久化的。
+本文档描述 VRCX-Luo 中"好友动态 (Feed)"等数据是如何被采集、刷新和持久化的。
 数据采集采用了**四层架构**，按实时性从高到低排列。
 
 ---
@@ -14,7 +14,7 @@
 | **L3 轮询 (5分钟)** | VRChat REST API | 5 分钟 | 自身状态、群组实例列表 |
 | **L4 全量同步 (1小时)** | VRChat REST API | 1 小时 | 全体好友列表的完整信息刷新 |
 
-另有 **Jirai 特供的数据补全机制**，用于弥补离线期间的数据缺口。
+另有 **Luo 特供的数据补全机制**，用于弥补离线期间的数据缺口。
 
 ---
 
@@ -111,7 +111,7 @@ if (props.bio && props.bio[0] && props.bio[1]) {
 
 ---
 
-## 3. Jirai 特供：数据补全机制 (Silent Info Fetch)
+## 3. Luo 特供：数据补全机制 (Silent Info Fetch)
 
 - **核心入口**：[`src/coordinators/infoFetchCoordinator.js`](../src/coordinators/infoFetchCoordinator.js) 中的 `runSilentInfoFetch()`。
 - **触发时机**：应用启动或断网重连后自动触发，也可由用户手动触发。
@@ -120,7 +120,7 @@ if (props.bio && props.bio[0] && props.bio[1]) {
   - **Status**：仅当灯色（`status`）本身发生变化时记录（忽略仅 `statusDescription` 的变化）。
 - **与原版的区别**：
 
-| 维度 | 原版 (L2 WebSocket / L4 全量同步) | Jirai 补全 (Silent Info Fetch) |
+| 维度 | 原版 (L2 WebSocket / L4 全量同步) | Luo 补全 (Silent Info Fetch) |
 |:---|:---|:---|
 | **触发方式** | 被动推送 / 定时轮询 | 主动全量扫描 |
 | **Bio 记录条件** | 新旧值都非空才记录 | 只要与数据库最新值不同就记录 |
@@ -136,8 +136,8 @@ if (props.bio && props.bio[0] && props.bio[1]) {
 | 表名后缀 | 数据类型 | 写入时机 |
 |:---|:---|:---|
 | `_feed_gps` | 位置变更 | L1 / L2 / L4 |
-| `_feed_status` | 灯色/状态描述变更 | L2 / L4 / Jirai补全 |
-| `_feed_bio` | 个人简介变更 | L2 / L4 / Jirai补全 / 打开用户资料页 |
+| `_feed_status` | 灯色/状态描述变更 | L2 / L4 / Luo补全 |
+| `_feed_bio` | 个人简介变更 | L2 / L4 / Luo补全 / 打开用户资料页 |
 | `_feed_avatar` | 头像变更 | L2 / L4 |
 | `_feed_online_offline` | 上线/下线 | L2 |
 | `gamelog_join_leave` | 进房/退房 (游戏日志) | L1 |
@@ -186,6 +186,6 @@ WebSocket 断开后 **5 秒**自动尝试重连。
 | [`src/coordinators/userEventCoordinator.js`](../src/coordinators/userEventCoordinator.js) | `runHandleUserUpdateFlow()` — 处理 diff 结果，写入 Feed |
 | [`src/coordinators/friendPresenceCoordinator.js`](../src/coordinators/friendPresenceCoordinator.js) | 好友在线状态变更处理，写入 Online/Offline |
 | [`src/coordinators/friendSyncCoordinator.js`](../src/coordinators/friendSyncCoordinator.js) | 全量好友列表刷新编排 |
-| [`src/coordinators/infoFetchCoordinator.js`](../src/coordinators/infoFetchCoordinator.js) | **[Jirai]** 数据补全扫描 |
+| [`src/coordinators/infoFetchCoordinator.js`](../src/coordinators/infoFetchCoordinator.js) | **[Luo]** 数据补全扫描 |
 | [`src/stores/feed.js`](../src/stores/feed.js) | Feed Store — UI 层的数据管理 |
 | [`src/services/database/feed.js`](../src/services/database/feed.js) | Feed 数据库读写，`UNION ALL` 聚合查询 |
