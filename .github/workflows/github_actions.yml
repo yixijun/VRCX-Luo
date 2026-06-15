@@ -4,10 +4,12 @@ on:
     workflow_dispatch:
         inputs:
             release:
-                description: '是否同步创建 GitHub Release?'
+                description: 'Create GitHub Release after build?'
                 type: boolean
                 default: false
     push:
+        branches:
+            - master
         tags:
             - '202*'
 
@@ -25,14 +27,32 @@ jobs:
         outputs:
             version: ${{ steps.version.outputs.version }}
             date: ${{ steps.version.outputs.date }}
+            short_sha: ${{ steps.version.outputs.short_sha }}
         steps:
             - uses: actions/checkout@v6
+              with:
+                  fetch-depth: 0
             - id: version
               run: |
-                  export FILENAME="$(cat Version)"
-                  export DATE="$(cat Version)"
-                  echo "version=${FILENAME}" >> $GITHUB_OUTPUT
+                  SHORT_SHA="${GITHUB_SHA::7}"
+                  BUILD_DATE="$(TZ=Asia/Shanghai date +'%Y.%-m.%-d')"
+
+                  if [[ "${GITHUB_REF_TYPE}" == "tag" ]]; then
+                      VERSION="${GITHUB_REF_NAME}"
+                  else
+                      VERSION="${BUILD_DATE}-${SHORT_SHA}"
+                  fi
+
+                  DATE="$(echo "${VERSION}" | grep -oE '^[0-9]{4}\.[0-9]{1,2}\.[0-9]{1,2}' || true)"
+                  if [[ -z "${DATE}" ]]; then
+                      DATE="${BUILD_DATE}"
+                  fi
+
+                  echo "version=${VERSION}" >> $GITHUB_OUTPUT
                   echo "date=${DATE}" >> $GITHUB_OUTPUT
+                  echo "short_sha=${SHORT_SHA}" >> $GITHUB_OUTPUT
+                  echo "Build version: ${VERSION}"
+                  echo "Installer version date: ${DATE}"
 
     build_dotnet_windows:
         runs-on: windows-latest
@@ -419,7 +439,7 @@ jobs:
             - name: Create Release
               uses: softprops/action-gh-release@v2
               with:
-                  tag_name: ${{ github.ref_name || needs.set_version.outputs.version }}
+                  tag_name: ${{ needs.set_version.outputs.version }}
                   files: release_assets/*
                   generate_release_notes: true
                   draft: false
