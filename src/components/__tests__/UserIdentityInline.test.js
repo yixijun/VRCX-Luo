@@ -1,6 +1,11 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { nextTick } from 'vue';
 import { reactive } from 'vue';
+
+const { fetchMock } = vi.hoisted(() => ({
+    fetchMock: vi.fn(() => Promise.resolve({ json: {} }))
+}));
 
 const cachedUsers = reactive(
     new Map([
@@ -35,6 +40,12 @@ vi.mock('../../composables/useUserDisplay', () => ({
     })
 }));
 
+vi.mock('../../api/queryRequest', () => ({
+    default: {
+        fetch: fetchMock
+    }
+}));
+
 vi.mock('../ui/avatar', () => ({
     Avatar: {
         template: '<span><slot /></span>',
@@ -56,8 +67,14 @@ vi.mock('lucide-vue-next', () => ({
 }));
 
 import UserIdentityInline from '../UserIdentityInline.vue';
+import { __resetUserIdentityHydrationForTests } from '../../composables/useUserIdentityHydration';
 
 describe('UserIdentityInline.vue', () => {
+    beforeEach(() => {
+        fetchMock.mockClear();
+        __resetUserIdentityHydrationForTests();
+    });
+
     it('resolves avatar from local user cache when only userId is provided', () => {
         const wrapper = mount(UserIdentityInline, {
             props: {
@@ -69,5 +86,32 @@ describe('UserIdentityInline.vue', () => {
         expect(wrapper.find('img').attributes('src')).toBe(
             'https://example.com/profile.png'
         );
+    });
+
+    it('hydrates an unknown user once when a valid userId has no cached avatar', async () => {
+        vi.useFakeTimers();
+
+        mount(UserIdentityInline, {
+            props: {
+                userId: 'usr_11111111-1111-4111-8111-111111111111',
+                displayName: 'Unknown User'
+            }
+        });
+        mount(UserIdentityInline, {
+            props: {
+                userId: 'usr_11111111-1111-4111-8111-111111111111',
+                displayName: 'Unknown User'
+            }
+        });
+
+        await nextTick();
+        await vi.runOnlyPendingTimersAsync();
+
+        expect(fetchMock).toHaveBeenCalledTimes(1);
+        expect(fetchMock).toHaveBeenCalledWith('user.dialog', {
+            userId: 'usr_11111111-1111-4111-8111-111111111111'
+        });
+
+        vi.useRealTimers();
     });
 });

@@ -14,9 +14,13 @@
 </template>
 
 <script setup>
-    import { computed } from 'vue';
+    import { computed, watch } from 'vue';
     import { User } from 'lucide-vue-next';
 
+    import {
+        hydrateUserIdentity,
+        shouldHydrateUserIdentity
+    } from '../composables/useUserIdentityHydration';
     import { getUserIdentity } from '../composables/useUserIdentityDisplay';
     import { useUserDisplay } from '../composables/useUserDisplay';
     import { useFriendStore, useUserStore } from '../stores';
@@ -58,6 +62,10 @@
         avatarImageClass: {
             type: [String, Array, Object],
             default: 'object-cover'
+        },
+        hydrateMissing: {
+            type: Boolean,
+            default: true
         }
     });
 
@@ -97,5 +105,36 @@
             imageUrl: props.imageUrl,
             imageResolver: resolvedImageResolver.value
         })
+    );
+
+    function hydrateMissingIdentity() {
+        if (!props.hydrateMissing) {
+            return;
+        }
+        const userId = props.userId || resolvedUser.value?.id || '';
+        if (
+            shouldHydrateUserIdentity({
+                user: resolvedUser.value,
+                userId,
+                imageUrl: props.imageUrl,
+                imageResolver: resolvedImageResolver.value
+            })
+        ) {
+            hydrateUserIdentity(userId);
+        }
+    }
+
+    watch(
+        () => [
+            props.userId,
+            props.imageUrl,
+            identity.value.imageUrl,
+            resolvedUser.value?.id,
+            resolvedUser.value?.profilePicOverrideThumbnail,
+            resolvedUser.value?.currentAvatarThumbnailImageUrl,
+            resolvedUser.value?.userIcon
+        ],
+        hydrateMissingIdentity,
+        { immediate: true, flush: 'post' }
     );
 </script>
