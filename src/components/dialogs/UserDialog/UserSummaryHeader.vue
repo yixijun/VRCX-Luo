@@ -260,6 +260,7 @@
                 <TooltipWrapper v-if="canShowAutoFollow" side="top" :content="autoFollowTooltip">
                     <Button
                         class="rounded-full"
+                        :class="{ 'auto-follow-action--active': isCurrentUserAutoFollowTarget }"
                         :variant="isCurrentUserAutoFollowTarget ? 'secondary' : 'outline'"
                         size="icon-lg"
                         @click="toggleAutoFollow">
@@ -366,3 +367,17 @@
         await autoFollowStore.toggleFollow(userDialog.value.ref);
     }
 </script>
+
+<style scoped>
+    .auto-follow-action--active {
+        border-color: var(--primary);
+        background-color: color-mix(in srgb, var(--primary) 18%, transparent);
+        box-shadow:
+            0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent),
+            0 0 14px color-mix(in srgb, var(--primary) 38%, transparent);
+    }
+
+    .auto-follow-action--active:hover {
+        background-color: color-mix(in srgb, var(--primary) 26%, transparent);
+    }
+</style>

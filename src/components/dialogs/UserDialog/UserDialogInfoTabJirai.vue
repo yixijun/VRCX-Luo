@@ -147,9 +147,12 @@
                             :style="{
                                 background: userDialog.isRepresentedGroupLoading ? 'var(--muted)' : ''
                             }"
-                            @click="showFullscreenImageDialog(userDialog.representedGroup.iconUrl)">
+                            @click="
+                                userDialog.representedGroup?.iconUrl &&
+                                showFullscreenImageDialog(userDialog.representedGroup.iconUrl)
+                            ">
                             <AvatarImage
-                                :src="userDialog.representedGroup.$thumbnailUrl"
+                                :src="userDialog.representedGroup?.$thumbnailUrl"
                                 @load="userDialog.isRepresentedGroupLoading = false"
                                 @error="userDialog.isRepresentedGroupLoading = false" />
                             <AvatarFallback class="rounded-lg!">
@@ -158,7 +161,7 @@
                         </Avatar>
                     </div>
                     <span
-                        v-if="userDialog.representedGroup.isRepresenting"
+                        v-if="userDialog.representedGroup?.isRepresenting"
                         style="vertical-align: top; cursor: pointer"
                         @click="showGroupDialog(userDialog.representedGroup.groupId)">
                         <span v-if="userDialog.representedGroup.ownerId === userDialog.id" style="margin-right: 6px"
