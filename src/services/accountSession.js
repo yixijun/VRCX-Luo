@@ -18,6 +18,7 @@ import { AppDebug } from './appConfig';
 import sqliteService from './sqlite.js';
 import webApiService from './webapi.js';
 import * as workerTimers from 'worker-timers';
+import { useModalStore } from '../stores/modal';
 
 // ── Utility ────────────────────────────────────────────────────────────────────
 
@@ -103,6 +104,9 @@ export class AccountSession {
                 method: 'GET',
                 headers: { Authorization: `Basic ${auth}` }
             });
+            if (currentUser?.requiresTwoFactorAuth) {
+                currentUser = await this._completeTwoFactorAuth(currentUser, savedEntry);
+            }
 
             this._wsEndpoint = wsToUse;
             this._apiEndpoint = endpointToUse;
@@ -184,6 +188,72 @@ export class AccountSession {
         } catch {
             return response.data;
         }
+    }
+
+    async _completeTwoFactorAuth(currentUser, savedEntry) {
+        const methods = Array.isArray(currentUser.requiresTwoFactorAuth)
+            ? currentUser.requiresTwoFactorAuth
+            : [];
+        const accountName =
+            savedEntry?.user?.displayName ||
+            savedEntry?.user?.username ||
+            savedEntry?.loginParams?.username ||
+            this.userId;
+
+        if (methods.includes('emailOtp')) {
+            await this._promptAndVerifyTwoFactor({
+                mode: 'emailOtp',
+                title: `Email 2FA - ${accountName}`,
+                description: `Enter the email verification code for ${accountName}.`,
+                endpoint: 'auth/twofactorauth/emailotp/verify'
+            });
+        } else {
+            await this._promptAndVerifyTwoFactor({
+                mode: 'totp',
+                title: `Two-factor code - ${accountName}`,
+                description: `Enter the two-factor code for ${accountName}.`,
+                endpoint: 'auth/twofactorauth/totp/verify',
+                cancelText: 'Use recovery code',
+                fallback: {
+                    mode: 'otp',
+                    title: `Recovery code - ${accountName}`,
+                    description: `Enter the recovery code for ${accountName}.`,
+                    endpoint: 'auth/twofactorauth/otp/verify',
+                    cancelText: 'Use two-factor code'
+                }
+            });
+        }
+
+        return this._requestRaw('auth/user');
+    }
+
+    async _promptAndVerifyTwoFactor(options) {
+        const modalStore = useModalStore();
+        const { ok, reason, value } = await modalStore.otpPrompt({
+            title: options.title,
+            description: options.description,
+            mode: options.mode,
+            cancelText: options.cancelText || 'Cancel',
+            confirmText: 'Verify'
+        });
+
+        if (reason === 'cancel' && options.fallback) {
+            return this._promptAndVerifyTwoFactor({
+                ...options.fallback,
+                fallback: options
+            });
+        }
+        if (!ok) {
+            throw new Error(`Secondary account ${this.userId}: two-factor authentication cancelled`);
+        }
+
+        const code = options.mode === 'otp'
+            ? `${value.slice(0, 4)}-${value.slice(4)}`
+            : value.trim();
+        await this._requestRaw(options.endpoint, {
+            method: 'POST',
+            params: { code }
+        });
     }
 
     // ── DB helpers ────────────────────────────────────────────────────────────

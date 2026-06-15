@@ -133,11 +133,7 @@ namespace VRCX
 
         private static string GetBrowserSubprocessPath()
         {
-            var subprocessPath = Path.Join(Program.BaseDirectory, "CefSharp.BrowserSubprocess.exe");
-            if (File.Exists(subprocessPath))
-                return subprocessPath;
-
-            logger.Warn("CefSharp.BrowserSubprocess.exe was not found, falling back to process path: {0}", Environment.ProcessPath);
+            logger.Info("Using main executable as CefSharp browser subprocess: {0}", Environment.ProcessPath);
             return Environment.ProcessPath ?? string.Empty;
         }
 

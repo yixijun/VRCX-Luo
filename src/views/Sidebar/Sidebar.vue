@@ -15,6 +15,7 @@
                 </button>
             </div>
             <div class="flex items-center mx-1 gap-1">
+                <AccountViewSwitcher />
                 <TooltipWrapper side="bottom" :content="t('side_panel.refresh_tooltip')">
                     <Button
                         class="rounded-full"
@@ -360,6 +361,7 @@
     import { useQuickSearchStore } from '../../stores/quickSearch';
     import { useTrackedNonFriendsStore } from '../../stores/trackedNonFriends';
 
+    import AccountViewSwitcher from '../../components/AccountViewSwitcher.vue';
     import FriendsSidebar from './components/FriendsSidebar.vue';
     import QuickSearchDialog from '../../components/QuickSearchDialog.vue';
     import FavoriteFriendGroupOrderDialog from './components/FavoriteFriendGroupOrderDialog.vue';

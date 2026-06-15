@@ -1,4 +1,4 @@
-import { reactive, ref, watch } from 'vue';
+import { computed, reactive, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
@@ -88,6 +88,10 @@ export const useAuthStore = defineStore('Auth', () => {
     const loginNetworkIssueHintToastId = ref(null);
     const loginNetworkIssueHintWindowMs = 90000;
     const loginNetworkIssueHintThreshold = 3;
+
+    const twoFactorAccountLabel = computed(() => {
+        return loginForm.value.username || loginForm.value.lastUserLoggedIn || '';
+    });
 
     watch(
         [() => watchState.isLoggedIn, () => userStore.currentUser],
@@ -808,7 +812,9 @@ export const useAuthStore = defineStore('Auth', () => {
         twoFactorAuthDialogVisible.value = true;
         modalStore
             .otpPrompt({
-                title: t('prompt.totp.header'),
+                title: twoFactorAccountLabel.value
+                    ? `${t('prompt.totp.header')} - ${twoFactorAccountLabel.value}`
+                    : t('prompt.totp.header'),
                 description: t('prompt.totp.description'),
                 mode: 'totp',
                 cancelText: t('prompt.totp.use_otp'),
@@ -850,7 +856,9 @@ export const useAuthStore = defineStore('Auth', () => {
         twoFactorAuthDialogVisible.value = true;
         modalStore
             .otpPrompt({
-                title: t('prompt.otp.header'),
+                title: twoFactorAccountLabel.value
+                    ? `${t('prompt.otp.header')} - ${twoFactorAccountLabel.value}`
+                    : t('prompt.otp.header'),
                 description: t('prompt.otp.description'),
                 mode: 'otp',
                 cancelText: t('prompt.otp.use_totp'),
@@ -893,7 +901,9 @@ export const useAuthStore = defineStore('Auth', () => {
         twoFactorAuthDialogVisible.value = true;
         modalStore
             .otpPrompt({
-                title: t('prompt.email_otp.header'),
+                title: twoFactorAccountLabel.value
+                    ? `${t('prompt.email_otp.header')} - ${twoFactorAccountLabel.value}`
+                    : t('prompt.email_otp.header'),
                 description: t('prompt.email_otp.description'),
                 mode: 'emailOtp',
                 cancelText: t('prompt.email_otp.resend'),

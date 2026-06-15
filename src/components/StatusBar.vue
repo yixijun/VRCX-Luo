@@ -7,7 +7,7 @@
             <ContextMenuTrigger as-child>
                 <div class="flex items-center w-full h-full px-2">
                     <!-- Multi-account view mode switcher (only when secondary sessions are active) -->
-                    <template v-if="hasSecondarySessions">
+                    <template v-if="false && hasSecondarySessions">
                         <Popover v-model:open="viewModePopoverOpen">
                             <PopoverTrigger as-child>
                                 <div
