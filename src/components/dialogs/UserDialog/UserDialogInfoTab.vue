@@ -605,14 +605,19 @@
     const bioArchiveLoading = ref(false);
     const bioArchiveDiffEnabled = ref(true);
     const bioArchiveRecords = ref([]);
+    let bioDiffRequestId = 0;
 
     async function loadBioDiff() {
+        const requestId = ++bioDiffRequestId;
         const dialogUserId = userDialog.value.id;
         if (!dialogUserId) {
             bioDiffHtml.value = '';
             return;
         }
         const records = await database.getRecentBioChangesForUser(dialogUserId, 50);
+        if (requestId !== bioDiffRequestId || dialogUserId !== userDialog.value.id) {
+            return;
+        }
         if (!records || records.length === 0) {
             bioDiffHtml.value = '';
             return;
@@ -639,7 +644,9 @@
             }
         }
 
-        bioDiffHtml.value = formatDifference(baseBio, latestRecord.bio || '');
+        if (requestId === bioDiffRequestId && dialogUserId === userDialog.value.id) {
+            bioDiffHtml.value = formatDifference(baseBio, latestRecord.bio || '');
+        }
     }
 
     function toggleBioDiff() {
@@ -650,21 +657,28 @@
     }
 
     watch(
-        () => userDialog.value.loading,
-        () => {
-            if (userDialog.value.visible) {
-                if (userDialog.value.id !== bioCache.value.userId) {
-                    bioCache.value = {
-                        userId: null,
-                        translated: null
-                    };
-                    bioDiffHtml.value = '';
-                }
-                if (bioDiffEnabled.value) {
-                    loadBioDiff();
-                }
+        () => ({
+            visible: userDialog.value.visible,
+            id: userDialog.value.id,
+            bio: userDialog.value.ref?.bio || ''
+        }),
+        ({ visible, id }) => {
+            if (!visible || !id) {
+                bioDiffHtml.value = '';
+                return;
             }
-        }
+            if (id !== bioCache.value.userId) {
+                bioCache.value = {
+                    userId: null,
+                    translated: null
+                };
+                bioDiffHtml.value = '';
+            }
+            if (bioDiffEnabled.value) {
+                loadBioDiff();
+            }
+        },
+        { immediate: true }
     );
 
     /**
