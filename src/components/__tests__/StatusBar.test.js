@@ -243,9 +243,18 @@ function mountStatusBar(storeOverrides = {}) {
 }
 
 describe('StatusBar.vue - Servers indicator', () => {
+    let zoomLevelChangedCallback = null;
+
     beforeEach(() => {
         vi.clearAllMocks();
         vi.useRealTimers();
+        zoomLevelChangedCallback = null;
+        window.electron = {
+            onZoomLevelChanged: vi.fn((callback) => {
+                zoomLevelChangedCallback = callback;
+                return vi.fn();
+            })
+        };
         globalThis.AppApi = new Proxy(
             {
                 CurrentCulture: vi.fn().mockResolvedValue('en-US'),
@@ -268,6 +277,7 @@ describe('StatusBar.vue - Servers indicator', () => {
 
     afterEach(() => {
         vi.useRealTimers();
+        delete window.electron;
     });
 
     test('shows "Game" label instead of "VRChat" for game running indicator', () => {
@@ -385,6 +395,18 @@ describe('StatusBar.vue - Servers indicator', () => {
 
         window.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true }));
         await new Promise((resolve) => setTimeout(resolve, 80));
+        await nextTick();
+
+        expect(wrapper.text()).toContain('112.50%');
+    });
+
+    test('refreshes zoom value when Electron reports zoom change', async () => {
+        const wrapper = mountStatusBar();
+        await nextTick();
+
+        expect(wrapper.text()).toContain('100.00%');
+
+        zoomLevelChangedCallback?.({}, 1.25);
         await nextTick();
 
         expect(wrapper.text()).toContain('112.50%');

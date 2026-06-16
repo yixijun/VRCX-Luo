@@ -56,6 +56,8 @@ contextBridge.exposeInMainWorld('electron', {
         registerManagedListener('setWindowSize', callback),
     onWindowStateChange: (callback) =>
         registerManagedListener('setWindowState', callback),
+    onZoomLevelChanged: (callback) =>
+        registerManagedListener('setZoomLevel', callback),
     onBrowserFocus: (callback) =>
         registerManagedListener('onBrowserFocus', callback),
     desktopNotification: (title, body, icon) =>

@@ -1021,6 +1021,7 @@
         clearTimeout(serversHoverTimer);
         clearTimeout(zoomWheelTimer);
         window.removeEventListener('wheel', handleZoomWheel);
+        cleanupZoomLevelListener?.();
     });
 
     watch(
@@ -1039,10 +1040,27 @@
     const zoomEditing = ref(false);
     const zoomInputRef = ref(null);
     let zoomWheelTimer = null;
+    let cleanupZoomLevelListener = null;
 
     if (!isMacOS.value) {
         initZoom();
         window.addEventListener('wheel', handleZoomWheel, { passive: true });
+        cleanupZoomLevelListener = window.electron?.onZoomLevelChanged?.(
+            (_event, level) => {
+                updateZoomLevel(level);
+            }
+        );
+    }
+
+    /**
+     *
+     * @param level
+     */
+    function updateZoomLevel(level) {
+        const value = Number(level);
+        if (Number.isFinite(value)) {
+            zoomLevel.value = Number(((value + 10) * 10).toFixed(2));
+        }
     }
 
     /**
@@ -1050,7 +1068,7 @@
      */
     async function initZoom() {
         try {
-            zoomLevel.value = Number((((await AppApi.GetZoom()) + 10) * 10).toFixed(2));
+            updateZoomLevel(await AppApi.GetZoom());
         } catch {
             // AppApi not available
         }

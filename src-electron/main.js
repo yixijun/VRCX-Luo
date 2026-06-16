@@ -361,18 +361,21 @@ function createWindow() {
 
     mainWindow.webContents.on('did-finish-load', () => {
         mainWindow.webContents.setZoomLevel(zoomLevel);
+        mainWindow.webContents.send('setZoomLevel', zoomLevel);
     });
 
     mainWindow.webContents.on('before-input-event', (event, input) => {
         if (input.control && input.key === '=') {
-            mainWindow.webContents.setZoomLevel(
-                mainWindow.webContents.getZoomLevel() + 1
-            );
+            const currentZoom = mainWindow.webContents.getZoomLevel() + 1;
+            mainWindow.webContents.setZoomLevel(currentZoom);
+            VRCXStorage.Set('VRCX_ZoomLevel', currentZoom.toString());
+            mainWindow.webContents.send('setZoomLevel', currentZoom);
         }
         if (input.control && input.key === '-') {
-            mainWindow.webContents.setZoomLevel(
-                mainWindow.webContents.getZoomLevel() - 1
-            );
+            const currentZoom = mainWindow.webContents.getZoomLevel() - 1;
+            mainWindow.webContents.setZoomLevel(currentZoom);
+            VRCXStorage.Set('VRCX_ZoomLevel', currentZoom.toString());
+            mainWindow.webContents.send('setZoomLevel', currentZoom);
         }
     });
 
@@ -384,6 +387,7 @@ function createWindow() {
             mainWindow.webContents.setZoomLevel(--currentZoom);
         }
         VRCXStorage.Set('VRCX_ZoomLevel', currentZoom.toString());
+        mainWindow.webContents.send('setZoomLevel', currentZoom);
     });
     mainWindow.webContents.setVisualZoomLevelLimits(1, 5);
 
