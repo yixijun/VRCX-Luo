@@ -30,7 +30,8 @@
                         class="rounded-full h-6 w-6 text-xs text-muted-foreground hover:text-foreground"
                         size="icon-sm"
                         variant="outline"
-                        :disabled="isOpeningInstance"
+                        :aria-busy="isOpeningInstance"
+                        :class="{ 'cursor-wait': isOpeningInstance }"
                         @click="openInstance">
                         <Loader2 v-if="isOpeningInstance" class="h-4 w-4 animate-spin" />
                         <Mail v-else class="h-4 w-4" />
@@ -357,6 +358,9 @@
     };
 
     const openInstance = () => {
+        if (isOpeningInstance.value) {
+            return;
+        }
         const L = parseLocation(resolvedInviteLocation.value);
         if (!L.isRealInstance) {
             return;
