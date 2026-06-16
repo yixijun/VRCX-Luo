@@ -30,16 +30,10 @@
                         class="rounded-full h-6 w-6 text-xs text-muted-foreground hover:text-foreground"
                         size="icon-sm"
                         variant="outline"
-                        v-if="isOpeningInstance">
-                        <Loader2 class="h-4 w-4 animate-spin" />
-                    </Button>
-                    <Button
-                        class="rounded-full h-6 w-6 text-xs text-muted-foreground hover:text-foreground"
-                        size="icon-sm"
-                        variant="outline"
-                        v-else
+                        :disabled="isOpeningInstance"
                         @click="openInstance">
-                        <Mail class="h-4 w-4" />
+                        <Loader2 v-if="isOpeningInstance" class="h-4 w-4 animate-spin" />
+                        <Mail v-else class="h-4 w-4" />
                     </Button>
                 </TooltipWrapper>
             </div>

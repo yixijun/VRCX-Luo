@@ -171,6 +171,12 @@
             <div class="flex-1 overflow-hidden">
                 <span class="block truncate font-medium leading-[18px]">{{ t('dialog.user.info.bio') }}</span>
                 <pre
+                    v-if="bioDiffEnabled && bioDiffHtml"
+                    class="text-xs leading-5.5 font-[inherit]"
+                    style="white-space: pre-wrap; margin: 0 0.5em 0 0; max-height: 210px; overflow-y: auto"
+                    v-html="bioDiffHtml"></pre>
+                <pre
+                    v-else
                     class="text-xs truncate font-[inherit]"
                     style="white-space: pre-wrap; margin: 0 0.5em 0 0; max-height: 210px; overflow-y: auto"
                     >{{ bioCache.translated || userDialog.ref.bio || '-' }}</pre
@@ -193,6 +199,15 @@
                         :aria-label="t('dialog.user.info.bio_archive')"
                         @click="showBioArchive">
                         <Archive class="h-3 w-3" />
+                    </Button>
+                    <Button
+                        v-if="currentUser.id !== userDialog.id"
+                        class="w-3 h-6 text-xs mr-0.5"
+                        size="icon-sm"
+                        :variant="bioDiffEnabled ? 'secondary' : 'ghost'"
+                        :aria-label="t('dialog.user.info.bio_diff_toggle')"
+                        @click="toggleBioDiff">
+                        <History class="h-3 w-3" />
                     </Button>
                     <Button
                         class="w-3 h-6 text-xs"
@@ -508,7 +523,7 @@
 </template>
 
 <script setup>
-    import { Archive, Copy, Image, Info, Languages, MoreHorizontal, Pencil, Trash2, User } from 'lucide-vue-next';
+    import { Archive, Copy, History, Image, Info, Languages, MoreHorizontal, Pencil, Trash2, User } from 'lucide-vue-next';
     import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import {
         DropdownMenu,
@@ -584,10 +599,55 @@
     const isEditNoteAndMemoDialogVisible = ref(false);
     const vrchatCredit = ref(null);
     const translateLoading = ref(false);
+    const bioDiffEnabled = ref(true);
+    const bioDiffHtml = ref('');
     const bioArchiveVisible = ref(false);
     const bioArchiveLoading = ref(false);
     const bioArchiveDiffEnabled = ref(true);
     const bioArchiveRecords = ref([]);
+
+    async function loadBioDiff() {
+        const dialogUserId = userDialog.value.id;
+        if (!dialogUserId) {
+            bioDiffHtml.value = '';
+            return;
+        }
+        const records = await database.getRecentBioChangesForUser(dialogUserId, 50);
+        if (!records || records.length === 0) {
+            bioDiffHtml.value = '';
+            return;
+        }
+
+        const latestRecord = records[0];
+        let baseBio = latestRecord.previousBio || '';
+        const DAY_IN_MS = 24 * 60 * 60 * 1000;
+
+        for (let i = 1; i < records.length; i++) {
+            if (i + 1 < records.length) {
+                const prevChange = records[i];
+                const olderChange = records[i + 1];
+                const t1 = new Date(prevChange.createdAt).getTime();
+                const t2 = new Date(olderChange.createdAt).getTime();
+
+                if (t1 - t2 <= DAY_IN_MS) {
+                    baseBio = olderChange.previousBio || '';
+                } else {
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        bioDiffHtml.value = formatDifference(baseBio, latestRecord.bio || '');
+    }
+
+    function toggleBioDiff() {
+        bioDiffEnabled.value = !bioDiffEnabled.value;
+        if (bioDiffEnabled.value) {
+            loadBioDiff();
+        }
+    }
 
     watch(
         () => userDialog.value.loading,
@@ -598,6 +658,10 @@
                         userId: null,
                         translated: null
                     };
+                    bioDiffHtml.value = '';
+                }
+                if (bioDiffEnabled.value) {
+                    loadBioDiff();
                 }
             }
         }
