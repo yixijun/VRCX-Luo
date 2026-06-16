@@ -1020,7 +1020,9 @@
     onBeforeUnmount(() => {
         clearTimeout(serversHoverTimer);
         clearTimeout(zoomWheelTimer);
+        clearInterval(zoomRefreshTimer);
         window.removeEventListener('wheel', handleZoomWheel);
+        window.removeEventListener('focus', initZoom);
         cleanupZoomLevelListener?.();
     });
 
@@ -1040,11 +1042,14 @@
     const zoomEditing = ref(false);
     const zoomInputRef = ref(null);
     let zoomWheelTimer = null;
+    let zoomRefreshTimer = null;
     let cleanupZoomLevelListener = null;
 
     if (!isMacOS.value) {
         initZoom();
         window.addEventListener('wheel', handleZoomWheel, { passive: true });
+        window.addEventListener('focus', initZoom);
+        zoomRefreshTimer = setInterval(initZoom, 1000);
         cleanupZoomLevelListener = window.electron?.onZoomLevelChanged?.(
             (_event, level) => {
                 updateZoomLevel(level);
@@ -1059,7 +1064,10 @@
     function updateZoomLevel(level) {
         const value = Number(level);
         if (Number.isFinite(value)) {
-            zoomLevel.value = Number(((value + 10) * 10).toFixed(2));
+            const nextZoomLevel = Number(((value + 10) * 10).toFixed(2));
+            if (nextZoomLevel !== zoomLevel.value) {
+                zoomLevel.value = nextZoomLevel;
+            }
         }
     }
 
@@ -1095,9 +1103,8 @@
             return;
         }
         clearTimeout(zoomWheelTimer);
-        zoomWheelTimer = setTimeout(() => {
-            initZoom();
-        }, 50);
+        initZoom();
+        zoomWheelTimer = setTimeout(initZoom, 250);
     }
 
     /**
