@@ -443,9 +443,9 @@ jobs:
                   tag_name: ${{ needs.set_version.outputs.version }}
                   name: VRCX-Luo ${{ needs.set_version.outputs.version }}
                   body: |
-                      ## VRCX-Luo 2026.6.14-fix2
+                      ## VRCX-Luo 2026.6.14-fix3
 
-                      Fix release for notification center clearing, installer launch, and the built-in updater version check.
+                      Fix release for notification center clearing, installer launch, update detection, and installer cleanup.
 
                       ### Changes
 
@@ -457,6 +457,9 @@ jobs:
                       - Fixed update release selection so manually selected versions can be downloaded correctly.
                       - Fixed installer restart so the downloaded Setup can launch from VRCX-Luo builds.
                       - Changed update detection to use GitHub's latest release endpoint instead of guessing from the release list, so later fix releases such as `fix2`, `fix3`, or newer are handled correctly.
+                      - Normalized updater release matching so tag names and display names compare consistently.
+                      - Saved downloaded Windows installers with a stable `VRCX-Luo_Setup.exe` name before installation.
+                      - Cleaned leftover updater installer files after normal startup, while keeping `/Upgrade` startup reserved for installing downloaded updates.
 
                       ### Build
 
