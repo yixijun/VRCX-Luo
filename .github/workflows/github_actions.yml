@@ -443,18 +443,18 @@ jobs:
                   tag_name: ${{ needs.set_version.outputs.version }}
                   name: VRCX-Luo ${{ needs.set_version.outputs.version }}
                   body: |
-                      ## VRCX-Luo 2026.6.16
+                      ## VRCX-Luo 2026.6.14-fix1
 
-                      Stable release with recent VRCX-Luo fixes and quality-of-life updates.
+                      Fix release for notification center clearing and the built-in updater download flow.
 
                       ### Changes
 
-                      - Fixed the user card "Open in VRChat" action tooltip drifting to the top-left after clicking the button.
-                      - Enabled profile bio diff by default for all user cards, including non-friends.
-                      - Improved bio archive diff comparison so each entry compares against the previous archive snapshot.
-                      - Fixed the status bar zoom value not refreshing immediately after Ctrl + mouse wheel zoom.
-                      - Fixed auto follow so it can continue tracking after the target leaves the game and rejoins later.
-                      - Removed the old VRCX Discord support entry from Settings and kept the VRCX-Luo repository entry.
+                      - Fixed notification center clear so cleared cards stay hidden after restarting VRCX-Luo.
+                      - Kept notification page history intact when clearing only the notification center.
+                      - Suppressed noisy expired notification "mark as seen" 404 errors.
+                      - Fixed updater asset selection on Windows to download the Setup installer instead of other `.exe` assets.
+                      - Added updater download progress polling and automatic installer launch after download.
+                      - Fixed update release selection so manually selected versions can be downloaded correctly.
 
                       ### Build
 
