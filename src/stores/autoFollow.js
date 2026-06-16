@@ -49,6 +49,7 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
     const statusText = ref('');
     const isJoining = ref(false);
     const launchMode = ref('desktop');
+    const preferredLaunchMode = ref('');
 
     let unwatchFriend = null;
     let lastJoinLocation = '';
@@ -87,6 +88,41 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         return location !== lastJoinLocation || now - lastJoinAt > JOIN_COOLDOWN_MS;
     }
 
+    async function readRuntimeState() {
+        const gameStore = useGameStore();
+        let isGameRunning = gameStore.isGameRunning;
+        let isSteamVRRunning = gameStore.isSteamVRRunning;
+        try {
+            [isGameRunning, isSteamVRRunning] = await Promise.all([
+                AppApi.IsGameRunning(),
+                AppApi.IsSteamVRRunning()
+            ]);
+            gameStore.setIsGameRunning?.(isGameRunning);
+            gameStore.setIsSteamVRRunning?.(isSteamVRRunning);
+        } catch (err) {
+            console.warn('Failed to read game runtime state', err);
+        }
+        return {
+            isGameRunning,
+            isGameNoVR: gameStore.isGameNoVR,
+            isSteamVRRunning
+        };
+    }
+
+    async function resolveLaunchMode(value) {
+        if (value === 'desktop' || value === 'vr') {
+            return value;
+        }
+        const runtimeState = await readRuntimeState();
+        if (runtimeState.isGameRunning && !runtimeState.isGameNoVR) {
+            return 'vr';
+        }
+        if (!runtimeState.isGameRunning && runtimeState.isSteamVRRunning) {
+            return 'vr';
+        }
+        return 'desktop';
+    }
+
     async function runJoin(location, reason = 'manual', shortName = '') {
         if (!isRealInstance(location) || isJoining.value || !canJoinNow(location)) {
             return false;
@@ -106,14 +142,20 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         statusText.value = reason === 'changed' ? '好友切换房间，正在跟随' : '正在加入好友所在房间';
 
         try {
-            if (launchMode.value === 'desktop') {
-                const gameStore = useGameStore();
-                if (gameStore.isGameRunning) {
+            const runtimeState = await readRuntimeState();
+            const mode = preferredLaunchMode.value || (await resolveLaunchMode());
+            launchMode.value = mode;
+            if (mode === 'vr') {
+                if (runtimeState.isGameRunning) {
+                    await launchStore.tryOpenInstanceInVrc(location, shortName || null);
+                } else {
+                    await launchStore.launchGame(location, shortName || null, false);
+                }
+            } else {
+                if (runtimeState.isGameRunning) {
                     await AppApi.QuitGame();
                 }
                 await launchStore.launchGame(location, shortName || null, true);
-            } else {
-                await launchStore.tryOpenInstanceInVrc(location, shortName || null);
             }
             return true;
         } catch (err) {
@@ -212,7 +254,11 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         targetFriendId.value = friendRef.id;
         targetFriendName.value = friendRef.displayName || friendRef.name || friendRef.id;
         targetLocation.value = location;
-        launchMode.value = options.launchMode === 'vr' ? 'vr' : 'desktop';
+        preferredLaunchMode.value =
+            options.launchMode === 'desktop' || options.launchMode === 'vr'
+                ? options.launchMode
+                : '';
+        launchMode.value = await resolveLaunchMode(preferredLaunchMode.value);
         statusText.value = isSameRoom ? '已在同一房间，正在监听好友位置变化' : '已开启，准备加入好友房间';
         watchTargetFriend();
         toast.success(`自动跟随已开启：${targetFriendName.value}`);
@@ -238,6 +284,7 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         statusText.value = '';
         isJoining.value = false;
         launchMode.value = 'desktop';
+        preferredLaunchMode.value = '';
         lastJoinLocation = '';
         lastJoinAt = 0;
         cleanupWatcher();
@@ -255,7 +302,7 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         return startFollow(friendRef, {
             confirm: true,
             initialJoin: true,
-            launchMode: options.launchMode || 'desktop'
+            launchMode: options.launchMode
         });
     }
 

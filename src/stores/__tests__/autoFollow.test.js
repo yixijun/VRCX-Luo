@@ -76,7 +76,9 @@ vi.mock('../modal', () => ({
 }));
 
 globalThis.AppApi = {
-    QuitGame: (...args) => mocks.quitGame(...args)
+    QuitGame: (...args) => mocks.quitGame(...args),
+    IsGameRunning: () => Promise.resolve(mocks.isGameRunning),
+    IsSteamVRRunning: () => Promise.resolve(mocks.isSteamVRRunning)
 };
 
 import { useAutoFollowStore } from '../autoFollow';
@@ -87,6 +89,10 @@ function friend(location = 'wrld_target:2') {
         displayName: 'Friend',
         location
     };
+}
+
+function flushPromises() {
+    return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
 describe('useAutoFollowStore', () => {
@@ -138,6 +144,42 @@ describe('useAutoFollowStore', () => {
         expect(mocks.quitGame).toHaveBeenCalledTimes(1);
         expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, true);
         expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
+    });
+
+    it('starts VRChat in VR mode when SteamVR is running and VRChat is not', async () => {
+        mocks.isGameRunning = false;
+        mocks.isSteamVRRunning = true;
+        const store = useAutoFollowStore();
+
+        await store.startFollow(friend(), { confirm: true, initialJoin: true });
+
+        expect(store.launchMode).toBe('vr');
+        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, false);
+        expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
+        expect(mocks.quitGame).not.toHaveBeenCalled();
+    });
+
+    it('uses live AppApi SteamVR state when store state has not updated yet', async () => {
+        mocks.isGameRunning = false;
+        mocks.isSteamVRRunning = true;
+        const store = useAutoFollowStore();
+
+        await store.startFollow(friend(), { confirm: true, initialJoin: true });
+
+        expect(store.launchMode).toBe('vr');
+        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, false);
+    });
+
+    it('auto-detects VR launch when VRChat is running in VR mode', async () => {
+        mocks.isGameNoVR = false;
+        const store = useAutoFollowStore();
+
+        await store.startFollow(friend(), { confirm: true, initialJoin: true });
+
+        expect(store.launchMode).toBe('vr');
+        expect(mocks.tryOpenInstanceInVrc).toHaveBeenCalledWith('wrld_target:2', null);
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+        expect(mocks.quitGame).not.toHaveBeenCalled();
     });
 
     it('uses desktop launch when desktop UI requests it even if game mode state is stale', async () => {
@@ -228,10 +270,28 @@ describe('useAutoFollowStore', () => {
 
         target.location = 'wrld_returned:5';
         await nextTick();
-        await Promise.resolve();
+        await flushPromises();
 
         expect(store.isActive).toBe(true);
         expect(mocks.quitGame).toHaveBeenCalledTimes(1);
         expect(mocks.launchGame).toHaveBeenCalledWith('wrld_returned:5', null, true);
+    });
+
+    it('re-detects launch mode when the followed target changes rooms', async () => {
+        const target = reactive(friend('wrld_target:2'));
+        mocks.friends.set(target.id, { ref: target });
+        const store = useAutoFollowStore();
+
+        await store.startFollow(target, { confirm: false, initialJoin: false });
+
+        mocks.isGameRunning = false;
+        mocks.isSteamVRRunning = true;
+        target.location = 'wrld_vr:7';
+        await nextTick();
+        await flushPromises();
+
+        expect(store.launchMode).toBe('vr');
+        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_vr:7', null, false);
+        expect(mocks.quitGame).not.toHaveBeenCalled();
     });
 });

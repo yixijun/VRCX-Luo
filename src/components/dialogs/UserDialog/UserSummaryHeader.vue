@@ -363,6 +363,6 @@
     const userDialogCommand = props.userDialogCommand;
 
     async function toggleAutoFollow() {
-        await autoFollowStore.toggleFollow(userDialog.value.ref, { launchMode: 'desktop' });
+        await autoFollowStore.toggleFollow(userDialog.value.ref);
     }
 </script>
