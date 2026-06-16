@@ -112,6 +112,14 @@ export function getReleaseName(release) {
 }
 
 /**
+ * @param {string} value
+ * @returns {string}
+ */
+export function getUpdaterReleaseKey(value) {
+    return normalizeUpdaterVersion(value) || String(value || '');
+}
+
+/**
  * @param {object} release
  * @returns {number}
  */
@@ -482,7 +490,10 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
             latestReleaseFromEndpoint ? [latestReleaseFromEndpoint, ...json] : json
         );
         VRCXUpdateDialog.value.updatePendingIsLatest = false;
-        if (D.release === pendingVRCXInstall.value) {
+        if (
+            getUpdaterReleaseKey(D.release) ===
+            getUpdaterReleaseKey(pendingVRCXInstall.value)
+        ) {
             // update already downloaded and latest version
             VRCXUpdateDialog.value.updatePendingIsLatest = true;
         }
@@ -537,7 +548,7 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
             if (!downloadUrl) {
                 return;
             }
-            const releaseName = release.name;
+            const releaseName = getReleaseName(release);
             downloadVRCXUpdate(downloadUrl, hashString, size, releaseName);
             break;
         }

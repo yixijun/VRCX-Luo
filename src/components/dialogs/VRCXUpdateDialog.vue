@@ -67,7 +67,7 @@
                 </Button>
                 <Button
                     variant="default"
-                    v-if="VRCXUpdateDialog.release !== pendingVRCXInstall"
+                    v-if="!selectedReleaseDownloaded"
                     :disabled="updateInProgress"
                     @click="installVRCXUpdate">
                     {{ t('dialog.vrcx_updater.download') }}
@@ -89,10 +89,12 @@
     import { Button } from '@/components/ui/button';
     import { Progress } from '@/components/ui/progress';
     import { storeToRefs } from 'pinia';
+    import { computed } from 'vue';
     import { useI18n } from 'vue-i18n';
 
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
     import { useVRCXUpdaterStore } from '../../stores';
+    import { getUpdaterReleaseKey } from '../../stores/vrcxUpdater';
 
     const VRCXUpdaterStore = useVRCXUpdaterStore();
 
@@ -108,6 +110,12 @@
     const { installVRCXUpdate, loadBranchVersions, restartVRCX, updateProgressText, cancelUpdate } = VRCXUpdaterStore;
 
     const { t } = useI18n();
+
+    const selectedReleaseDownloaded = computed(
+        () =>
+            getUpdaterReleaseKey(VRCXUpdateDialog.value.release) ===
+            getUpdaterReleaseKey(pendingVRCXInstall.value)
+    );
 
     const handleBranchChange = (value) => {
         if (!value || value === branch.value) {

@@ -17,7 +17,7 @@ namespace VRCX
     public class Update
     {
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-        private static readonly string VrcxSetupExecutable = Path.Join(Program.AppDataDirectory, "VRCX_Setup.exe");
+        private static readonly string VrcxSetupExecutable = Path.Join(Program.AppDataDirectory, "VRCX-Luo_Setup.exe");
         private static readonly string UpdateExecutable = Path.Join(Program.AppDataDirectory, "update.exe");
         private static readonly string TempDownload = Path.Join(Program.AppDataDirectory, "tempDownload");
         private static readonly HttpClient httpClient;
@@ -48,32 +48,59 @@ namespace VRCX
 
         public static void Check()
         {
-            if (Process.GetProcessesByName("VRCX_Setup").Length > 0)
+            if (Process.GetProcessesByName("VRCX-Luo_Setup").Length > 0 || Process.GetProcessesByName("VRCX_Setup").Length > 0)
                 Environment.Exit(0);
 
+            if (!StartupArgs.LaunchArguments.IsUpgrade)
+            {
+                CleanupUpdateFiles();
+                return;
+            }
+
+            if (File.Exists(VrcxSetupExecutable))
+            {
+                InstallUpdate(VrcxSetupExecutable);
+                return;
+            }
+
+            if (File.Exists(UpdateExecutable))
+            {
+                InstallUpdate();
+                return;
+            }
+
+            if (File.Exists(TempDownload))
+                File.Delete(TempDownload);
+        }
+
+        private static void CleanupUpdateFiles()
+        {
             if (File.Exists(TempDownload))
                 File.Delete(TempDownload);
             if (File.Exists(VrcxSetupExecutable))
                 File.Delete(VrcxSetupExecutable);
-
             if (File.Exists(UpdateExecutable))
-                InstallUpdate();
+                File.Delete(UpdateExecutable);
         }
 
-        private static void InstallUpdate()
+        private static void InstallUpdate(string setupPath = "")
         {
             var setupArguments = string.Empty;
 
             try
             {
-                if (File.Exists(VrcxSetupExecutable))
-                    File.Delete(VrcxSetupExecutable);
-                File.Move(UpdateExecutable, VrcxSetupExecutable);
+                if (string.IsNullOrEmpty(setupPath))
+                {
+                    if (File.Exists(VrcxSetupExecutable))
+                        File.Delete(VrcxSetupExecutable);
+                    File.Move(UpdateExecutable, VrcxSetupExecutable);
+                    setupPath = VrcxSetupExecutable;
+                }
                 var vrcxProcess = new Process
                 {
                     StartInfo = new ProcessStartInfo
                     {
-                        FileName = VrcxSetupExecutable,
+                        FileName = setupPath,
                         Arguments = setupArguments,
                         UseShellExecute = true,
                         WorkingDirectory = Program.AppDataDirectory
@@ -225,9 +252,9 @@ namespace VRCX
             if (string.IsNullOrEmpty(AppImagePath))
             {
                 // Windows
-                if (File.Exists(UpdateExecutable))
-                    File.Delete(UpdateExecutable);
-                File.Move(TempDownload, UpdateExecutable);
+                if (File.Exists(VrcxSetupExecutable))
+                    File.Delete(VrcxSetupExecutable);
+                File.Move(TempDownload, VrcxSetupExecutable);
             }
             else
             {

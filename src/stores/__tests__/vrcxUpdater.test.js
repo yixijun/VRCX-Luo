@@ -46,6 +46,7 @@ function flushPromises() {
 
 import {
     getAssetOfInterest,
+    getUpdaterReleaseKey,
     normalizeUpdaterVersion,
     sortReleasesByPublishedAt,
     useVRCXUpdaterStore
@@ -59,6 +60,16 @@ describe('normalizeUpdaterVersion', () => {
         ['v2026.6.16', '2026.06.16']
     ])('normalizes %s', (input, expected) => {
         expect(normalizeUpdaterVersion(input)).toBe(expected);
+    });
+});
+
+describe('getUpdaterReleaseKey', () => {
+    test.each([
+        ['VRCX-Luo 2026.6.14-fix2', '2026.06.14-fix2'],
+        ['2026.6.14-fix2', '2026.06.14-fix2'],
+        ['VRCX-Luo 2026.6.14-fix5', '2026.06.14-fix5']
+    ])('normalizes release key %s', (input, expected) => {
+        expect(getUpdaterReleaseKey(input)).toBe(expected);
     });
 });
 
