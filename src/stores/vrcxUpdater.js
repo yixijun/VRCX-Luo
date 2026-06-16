@@ -24,6 +24,68 @@ const emptyWhatsNewDialog = () => ({
     items: []
 });
 
+/**
+ * @param {object} asset
+ * @returns {boolean}
+ */
+export function isWindowsSetupAsset(asset) {
+    const name = String(asset?.name || '').toLowerCase();
+    return (
+        asset?.state === 'uploaded' &&
+        name.endsWith('.exe') &&
+        name.includes('setup') &&
+        (asset.content_type === 'application/x-msdownload' ||
+            asset.content_type === 'application/x-msdos-program' ||
+            asset.content_type === 'application/octet-stream')
+    );
+}
+
+/**
+ * @param {object} asset
+ * @param {string} arch
+ * @returns {boolean}
+ */
+export function isLinuxAppImageAsset(asset, arch) {
+    return (
+        asset?.state === 'uploaded' &&
+        String(asset.name || '').endsWith(`${arch}.AppImage`) &&
+        asset.content_type === 'application/octet-stream'
+    );
+}
+
+/**
+ * @param {object[]} assets
+ * @param {{windows?: boolean, linux?: boolean, arch?: string}} options
+ * @returns {{ downloadUrl: string, hashString: string, size: number }}
+ */
+export function getAssetOfInterest(assets, options = {}) {
+    let downloadUrl = '';
+    let hashString = '';
+    let size = 0;
+    const assetList = Array.isArray(assets) ? assets : [];
+    const selectedAsset = assetList.find((asset) => {
+        if (options.windows) {
+            return isWindowsSetupAsset(asset);
+        }
+        if (options.linux) {
+            return isLinuxAppImageAsset(asset, options.arch || 'x64');
+        }
+        return false;
+    });
+
+    if (selectedAsset) {
+        downloadUrl = selectedAsset.browser_download_url;
+        if (
+            selectedAsset.digest &&
+            selectedAsset.digest.startsWith('sha256:')
+        ) {
+            hashString = selectedAsset.digest.replace('sha256:', '');
+        }
+        size = selectedAsset.size;
+    }
+    return { downloadUrl, hashString, size };
+}
+
 export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
     const { t } = useI18n();
 
@@ -245,42 +307,6 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
             await configRepository.setString('VRCX_id', vrcxId.value);
         }
     }
-    function getAssetOfInterest(assets) {
-        let downloadUrl = '';
-        let hashString = '';
-        let size = 0;
-        for (const asset of assets) {
-            if (asset.state !== 'uploaded') {
-                continue;
-            }
-            if (
-                WINDOWS &&
-                asset.name.endsWith('.exe') &&
-                (asset.content_type === 'application/x-msdownload' ||
-                    asset.content_type === 'application/x-msdos-program')
-            ) {
-                downloadUrl = asset.browser_download_url;
-                if (asset.digest && asset.digest.startsWith('sha256:')) {
-                    hashString = asset.digest.replace('sha256:', '');
-                }
-                size = asset.size;
-                break;
-            }
-            if (
-                LINUX &&
-                asset.name.endsWith(`${arch.value}.AppImage`) &&
-                asset.content_type === 'application/octet-stream'
-            ) {
-                downloadUrl = asset.browser_download_url;
-                if (asset.digest && asset.digest.startsWith('sha256:')) {
-                    hashString = asset.digest.replace('sha256:', '');
-                }
-                size = asset.size;
-                break;
-            }
-        }
-        return { downloadUrl, hashString, size };
-    }
     async function checkForVRCXUpdate() {
         if (noUpdater.value) {
             return false;
@@ -379,33 +405,43 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
         if (updateInProgress.value) {
             return;
         }
+        let progressTimer = null;
         try {
             updateInProgress.value = true;
-            await downloadFileProgress();
+            updateProgress.value = 0;
+            progressTimer = workerTimers.setInterval(updateFileProgress, 150);
             await AppApi.DownloadUpdate(downloadUrl, hashString, size);
             pendingVRCXInstall.value = releaseName;
+            updateProgress.value = 100;
+            if (!LINUX) {
+                restartVRCX(true);
+            }
         } catch (err) {
             console.error(err);
             toast.error(`${t('message.vrcx_updater.failed_install')} ${err}`);
         } finally {
+            if (progressTimer !== null) {
+                workerTimers.clearInterval(progressTimer);
+            }
             updateInProgress.value = false;
-            updateProgress.value = 0;
+            if (!pendingVRCXInstall.value) {
+                updateProgress.value = 0;
+            }
         }
     }
-    async function downloadFileProgress() {
+    async function updateFileProgress() {
         updateProgress.value = await AppApi.CheckUpdateProgress();
-        if (updateInProgress.value) {
-            workerTimers.setTimeout(() => downloadFileProgress(), 150);
-        }
     }
     function installVRCXUpdate() {
         for (const release of VRCXUpdateDialog.value.releases) {
             if ((release.tag_name || release.name) !== VRCXUpdateDialog.value.release) {
                 continue;
             }
-            const { downloadUrl, hashString, size } = getAssetOfInterest(
-                release.assets
-            );
+            const { downloadUrl, hashString, size } = getAssetOfInterest(release.assets, {
+                windows: WINDOWS,
+                linux: LINUX,
+                arch: arch.value
+            });
             if (!downloadUrl) {
                 return;
             }

@@ -44,7 +44,85 @@ function flushPromises() {
     return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-import { useVRCXUpdaterStore } from '../vrcxUpdater';
+import { getAssetOfInterest, useVRCXUpdaterStore } from '../vrcxUpdater';
+
+describe('getAssetOfInterest', () => {
+    test('selects Windows setup asset instead of other exe assets', () => {
+        const result = getAssetOfInterest(
+            [
+                {
+                    state: 'uploaded',
+                    name: 'VRCX-Luo.exe',
+                    content_type: 'application/x-msdownload',
+                    browser_download_url: 'https://example.com/portable.exe',
+                    digest: 'sha256:portable',
+                    size: 1
+                },
+                {
+                    state: 'uploaded',
+                    name: 'VRCX-Luo_Setup.exe',
+                    content_type: 'application/x-msdownload',
+                    browser_download_url: 'https://example.com/setup.exe',
+                    digest: 'sha256:setup',
+                    size: 2
+                }
+            ],
+            { windows: true }
+        );
+
+        expect(result).toEqual({
+            downloadUrl: 'https://example.com/setup.exe',
+            hashString: 'setup',
+            size: 2
+        });
+    });
+
+    test('does not select non-setup Windows exe assets', () => {
+        const result = getAssetOfInterest(
+            [
+                {
+                    state: 'uploaded',
+                    name: 'VRCX-Luo.exe',
+                    content_type: 'application/x-msdownload',
+                    browser_download_url: 'https://example.com/app.exe',
+                    size: 1
+                }
+            ],
+            { windows: true }
+        );
+
+        expect(result.downloadUrl).toBe('');
+    });
+
+    test('selects Linux AppImage for the current arch', () => {
+        const result = getAssetOfInterest(
+            [
+                {
+                    state: 'uploaded',
+                    name: 'VRCX-Luo-arm64.AppImage',
+                    content_type: 'application/octet-stream',
+                    browser_download_url: 'https://example.com/arm64.AppImage',
+                    size: 1
+                },
+                {
+                    state: 'uploaded',
+                    name: 'VRCX-Luo-x64.AppImage',
+                    content_type: 'application/octet-stream',
+                    browser_download_url: 'https://example.com/x64.AppImage',
+                    digest: 'sha256:linux',
+                    size: 3
+                }
+            ],
+            { linux: true, arch: 'x64' }
+        );
+
+        expect(result).toEqual({
+            downloadUrl: 'https://example.com/x64.AppImage',
+            hashString: 'linux',
+            size: 3
+        });
+    });
+});
 
 describe('useVRCXUpdaterStore.setAutoUpdateVRCX', () => {
     beforeEach(async () => {

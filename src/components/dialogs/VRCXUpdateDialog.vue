@@ -44,9 +44,9 @@
                                     <SelectContent>
                                         <SelectItem
                                             v-for="item in VRCXUpdateDialog.releases"
-                                            :key="item.name"
-                                            :value="item.name">
-                                            {{ item.tag_name }}
+                                            :key="item.tag_name || item.name"
+                                            :value="item.tag_name || item.name">
+                                            {{ item.name || item.tag_name }}
                                         </SelectItem>
                                     </SelectContent>
                                 </Select>
