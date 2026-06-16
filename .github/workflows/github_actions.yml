@@ -443,7 +443,7 @@ jobs:
                   tag_name: ${{ needs.set_version.outputs.version }}
                   name: VRCX-Luo ${{ needs.set_version.outputs.version }}
                   body: |
-                      ## VRCX-Luo 2026.6.14-fix3
+                      ## VRCX-Luo 2026.6.14-fix4
 
                       Fix release for notification center clearing, installer launch, update detection, and installer cleanup.
 
@@ -460,6 +460,8 @@ jobs:
                       - Normalized updater release matching so tag names and display names compare consistently.
                       - Saved downloaded Windows installers with a stable `VRCX-Luo_Setup.exe` name before installation.
                       - Cleaned leftover updater installer files after normal startup, while keeping `/Upgrade` startup reserved for installing downloaded updates.
+                      - Fixed Auto Follow launch mode detection so SteamVR/VRChat runtime state is checked live before joining.
+                      - Auto Follow now starts VRChat in VR mode when SteamVR is already running and VRChat is not open, while still opening the in-game join flow when both are running.
 
                       ### Build
 
