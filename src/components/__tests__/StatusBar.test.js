@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
 import { createTestingPinia } from '@pinia/testing';
 import { mount } from '@vue/test-utils';
@@ -46,12 +46,21 @@ vi.mock('../../services/websocket', () => ({
 
 vi.mock('../../services/webapi', () => ({
     default: {
-        execute: vi.fn().mockResolvedValue({
-            status: 200,
-            data: JSON.stringify({
-                page: { updated_at: '2026-01-01T00:00:00.000Z' },
-                status: { description: 'All Systems Operational' }
-            })
+        execute: vi.fn().mockImplementation((options = {}) => {
+            const url = String(options.url || '');
+            if (url.includes('github.com') || url.includes('api.github.com')) {
+                return Promise.resolve({
+                    status: 200,
+                    data: JSON.stringify([])
+                });
+            }
+            return Promise.resolve({
+                status: 200,
+                data: JSON.stringify({
+                    page: { updated_at: '2026-01-01T00:00:00.000Z' },
+                    status: { description: 'All Systems Operational' }
+                })
+            });
         })
     }
 }));
@@ -236,6 +245,29 @@ function mountStatusBar(storeOverrides = {}) {
 describe('StatusBar.vue - Servers indicator', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        vi.useRealTimers();
+        globalThis.AppApi = new Proxy(
+            {
+                CurrentCulture: vi.fn().mockResolvedValue('en-US'),
+                GetVersion: vi.fn().mockResolvedValue('VRCX-Luo 2026.6.15'),
+                GetZoom: vi.fn().mockResolvedValue(0),
+                SetTrayIconNotification: vi.fn(),
+                SetZoom: vi.fn()
+            },
+            {
+                get(target, prop) {
+                    if (prop in target) {
+                        return target[prop];
+                    }
+                    target[prop] = vi.fn().mockResolvedValue(null);
+                    return target[prop];
+                }
+            }
+        );
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     test('shows "Game" label instead of "VRChat" for game running indicator', () => {
@@ -341,5 +373,20 @@ describe('StatusBar.vue - Servers indicator', () => {
         expect(wrapper.text()).toContain('Reorder');
         expect(wrapper.text()).toContain('Move Up');
         expect(wrapper.text()).toContain('Move Down');
+    });
+
+    test('refreshes zoom value after Ctrl + wheel changes app zoom', async () => {
+        AppApi.GetZoom.mockResolvedValueOnce(0).mockResolvedValue(1.25);
+
+        const wrapper = mountStatusBar();
+        await nextTick();
+
+        expect(wrapper.text()).toContain('100.00%');
+
+        window.dispatchEvent(new WheelEvent('wheel', { ctrlKey: true }));
+        await new Promise((resolve) => setTimeout(resolve, 80));
+        await nextTick();
+
+        expect(wrapper.text()).toContain('112.50%');
     });
 });

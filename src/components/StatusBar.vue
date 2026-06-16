@@ -1019,6 +1019,8 @@
 
     onBeforeUnmount(() => {
         clearTimeout(serversHoverTimer);
+        clearTimeout(zoomWheelTimer);
+        window.removeEventListener('wheel', handleZoomWheel);
     });
 
     watch(
@@ -1036,9 +1038,11 @@
     const formattedZoomLevel = computed(() => Number(zoomLevel.value || 0).toFixed(2));
     const zoomEditing = ref(false);
     const zoomInputRef = ref(null);
+    let zoomWheelTimer = null;
 
     if (!isMacOS.value) {
         initZoom();
+        window.addEventListener('wheel', handleZoomWheel, { passive: true });
     }
 
     /**
@@ -1062,6 +1066,20 @@
         } catch {
             // AppApi not available
         }
+    }
+
+    /**
+     *
+     * @param event
+     */
+    function handleZoomWheel(event) {
+        if (!event.ctrlKey && !event.metaKey) {
+            return;
+        }
+        clearTimeout(zoomWheelTimer);
+        zoomWheelTimer = setTimeout(() => {
+            initZoom();
+        }, 50);
     }
 
     /**
