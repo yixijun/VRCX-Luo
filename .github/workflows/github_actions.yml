@@ -443,7 +443,7 @@ jobs:
                   tag_name: ${{ needs.set_version.outputs.version }}
                   name: VRCX-Luo ${{ needs.set_version.outputs.version }}
                   body: |
-                      ## VRCX-Luo 2026.6.14-fix1
+                      ## VRCX-Luo 2026.6.14-fix2
 
                       Fix release for notification center clearing, installer launch, and the built-in updater version check.
 
