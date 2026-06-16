@@ -1,3 +1,4 @@
+import { nextTick, reactive } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { createPinia, setActivePinia } from 'pinia';
 
@@ -210,5 +211,27 @@ describe('useAutoFollowStore', () => {
                 confirmText: '取消跟随'
             })
         );
+    });
+
+    it('continues following when the target goes offline and later joins another instance', async () => {
+        const target = reactive(friend('wrld_target:2'));
+        mocks.friends.set(target.id, { ref: target });
+        const store = useAutoFollowStore();
+
+        await store.startFollow(target, { confirm: false, initialJoin: false });
+
+        target.location = 'offline';
+        await nextTick();
+        expect(store.isActive).toBe(true);
+        expect(store.statusText).toContain('等待重新上线');
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+
+        target.location = 'wrld_returned:5';
+        await nextTick();
+        await Promise.resolve();
+
+        expect(store.isActive).toBe(true);
+        expect(mocks.quitGame).toHaveBeenCalledTimes(1);
+        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_returned:5', null, true);
     });
 });

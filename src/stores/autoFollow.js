@@ -135,18 +135,19 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
             },
             async (target, previousTarget) => {
                 const location = target.location;
-                if (!isActive.value || !location) {
-                    return;
-                }
-                targetLocation.value = location;
-                if (!previousTarget?.location) {
-                    return;
-                }
-                if (location === previousTarget.location) {
+                if (!isActive.value) {
                     return;
                 }
                 if (!friendStore.friends.has(targetFriendId.value)) {
                     stopFollow({ silent: true });
+                    return;
+                }
+                if (!location) {
+                    statusText.value = '好友离线或暂时没有可加入房间，等待重新上线';
+                    return;
+                }
+                targetLocation.value = location;
+                if (location === previousTarget.location) {
                     return;
                 }
                 await runJoin(location, 'changed', target.shortName);
