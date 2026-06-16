@@ -445,7 +445,7 @@ jobs:
                   body: |
                       ## VRCX-Luo 2026.6.14-fix1
 
-                      Fix release for notification center clearing and the built-in updater download flow.
+                      Fix release for notification center clearing, installer launch, and the built-in updater version check.
 
                       ### Changes
 
@@ -455,6 +455,8 @@ jobs:
                       - Fixed updater asset selection on Windows to download the Setup installer instead of other `.exe` assets.
                       - Added updater download progress polling and automatic installer launch after download.
                       - Fixed update release selection so manually selected versions can be downloaded correctly.
+                      - Fixed installer restart so the downloaded Setup can launch from VRCX-Luo builds.
+                      - Changed update detection to use GitHub's latest release endpoint instead of guessing from the release list, so later fix releases such as `fix2`, `fix3`, or newer are handled correctly.
 
                       ### Build
 
