@@ -445,7 +445,25 @@ jobs:
               with:
                   tag_name: ${{ needs.set_version.outputs.version }}
                   name: VRCX-Luo ${{ needs.set_version.outputs.version }}
+                  body: |
+                      ## VRCX-Luo 2026.6.16
+
+                      正式版更新，包含近期 VRCX-Luo 的主要修复和体验优化。
+
+                      ### 本次修改
+
+                      - 修复个人卡片中“在 VRChat 中打开”按钮点击后，鼠标悬停提示漂移到左上角的问题。
+                      - 个人信息卡片的个人简介 diff 默认开启，方便直接查看简介变化。
+                      - 优化个人简介归档 diff，对比对象改为上一次归档记录，而不是最初记录。
+                      - 修复 Ctrl + 鼠标滚轮缩放时，状态栏缩放数值不会实时刷新的问题。
+                      - 修复自动跟随在目标玩家退出游戏再重新加入后无法继续跟随的问题。
+                      - 移除设置页中指向原 VRCX Discord 的帮助支持入口，保留 VRCX-Luo 仓库入口。
+
+                      ### 构建说明
+
+                      - Windows 安装包、便携版、Linux AppImage、macOS DMG 均由 GitHub Actions 自动构建。
+                      - 此版本基于 VRCX-Luo 仓库发布。
                   files: release_assets/*
-                  generate_release_notes: true
+                  generate_release_notes: false
                   draft: false
                   prerelease: ${{ !startsWith(github.ref, 'refs/tags/202') }}
