@@ -86,6 +86,52 @@ export function getAssetOfInterest(assets, options = {}) {
     return { downloadUrl, hashString, size };
 }
 
+/**
+ * @param {string} version
+ * @returns {string}
+ */
+export function normalizeUpdaterVersion(version) {
+    const versionMatch = String(version || '')
+        .replace(/^VRCX(?:-Luo)?(?:\s+Nightly)?\s+/, '')
+        .replace(/^v/, '')
+        .match(/(\d{4})\.(\d{1,2})\.(\d{1,2})(?:[-.]?(fix\d+))?/i);
+    if (!versionMatch) {
+        return '';
+    }
+    const [, year, month, day, suffix = ''] = versionMatch;
+    const normalized = `${year}.${month.padStart(2, '0')}.${day.padStart(2, '0')}`;
+    return suffix ? `${normalized}-${suffix.toLowerCase()}` : normalized;
+}
+
+/**
+ * @param {object} release
+ * @returns {string}
+ */
+export function getReleaseName(release) {
+    return release?.tag_name || release?.name || '';
+}
+
+/**
+ * @param {object} release
+ * @returns {number}
+ */
+export function getReleasePublishedAt(release) {
+    const value = Date.parse(
+        release?.published_at || release?.created_at || ''
+    );
+    return Number.isFinite(value) ? value : 0;
+}
+
+/**
+ * @param {object[]} releases
+ * @returns {object[]}
+ */
+export function sortReleasesByPublishedAt(releases) {
+    return [...releases].sort(
+        (a, b) => getReleasePublishedAt(b) - getReleasePublishedAt(a)
+    );
+}
+
 export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
     const { t } = useI18n();
 
@@ -315,16 +361,18 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
         const latestVersionName = VRCXUpdateDialog.value.release;
         if (latestVersionName) {
             latestAppVersion.value = latestVersionName;
-            // Strip "VRCX-Luo " or "VRCX-Luo Nightly " prefix for comparison
-            const currentVersionStripped = currentVersion.value
-                .replace(/^VRCX-Luo(?:\s+Nightly)?\s+/, '')
-                .replace(/^v/, '')
-                .trim();
-            const latestVersionStripped = latestVersionName
-                .replace(/^v/, '')
-                .trim();
-            if (latestVersionStripped !== currentVersionStripped) {
+            const currentVersionNormalized = normalizeUpdaterVersion(
+                currentVersion.value
+            );
+            const latestVersionNormalized =
+                normalizeUpdaterVersion(latestVersionName);
+            if (
+                latestVersionNormalized &&
+                latestVersionNormalized !== currentVersionNormalized
+            ) {
                 pendingVRCXUpdate.value = true;
+            } else {
+                pendingVRCXUpdate.value = false;
             }
         }
         return true;
@@ -385,9 +433,12 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
                 }
             }
         }
-        D.releases = releases;
-        const latestRelease = releases.length > 0 ? releases[0] : (json.length > 0 ? json[0] : null);
-        D.release = latestRelease ? (latestRelease.tag_name || latestRelease.name) : '';
+        D.releases = sortReleasesByPublishedAt(releases);
+        const latestRelease =
+            D.releases.length > 0
+                ? D.releases[0]
+                : sortReleasesByPublishedAt(json).at(0);
+        D.release = getReleaseName(latestRelease);
         updateChangeLogFromReleases(json);
         VRCXUpdateDialog.value.updatePendingIsLatest = false;
         if (D.release === pendingVRCXInstall.value) {
@@ -434,7 +485,7 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
     }
     function installVRCXUpdate() {
         for (const release of VRCXUpdateDialog.value.releases) {
-            if ((release.tag_name || release.name) !== VRCXUpdateDialog.value.release) {
+            if (getReleaseName(release) !== VRCXUpdateDialog.value.release) {
                 continue;
             }
             const { downloadUrl, hashString, size } = getAssetOfInterest(release.assets, {

@@ -100,14 +100,22 @@ namespace VRCX
             {
                 StartInfo = new ProcessStartInfo
                 {
-                    FileName = Path.Join(Program.BaseDirectory, "VRCX.exe"),
+                    FileName = Application.ExecutablePath,
                     Arguments = string.Join(' ', args),
                     UseShellExecute = true,
                     WorkingDirectory = Program.BaseDirectory
                 }
             };
-            vrcxProcess.Start();
-            Environment.Exit(0);
+            try
+            {
+                vrcxProcess.Start();
+                Environment.Exit(0);
+            }
+            catch (Exception e)
+            {
+                logger.Error(e, "Failed to restart VRCX");
+                MessageBox.Show($"Failed to restart VRCX: {e.Message}", "Restart failed", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         public override bool CheckForUpdateExe()

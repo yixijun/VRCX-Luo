@@ -44,7 +44,43 @@ function flushPromises() {
     return new Promise((resolve) => setTimeout(resolve, 0));
 }
 
-import { getAssetOfInterest, useVRCXUpdaterStore } from '../vrcxUpdater';
+import {
+    getAssetOfInterest,
+    normalizeUpdaterVersion,
+    sortReleasesByPublishedAt,
+    useVRCXUpdaterStore
+} from '../vrcxUpdater';
+
+describe('normalizeUpdaterVersion', () => {
+    test.each([
+        ['VRCX-Luo 2026.6.14-fix1', '2026.06.14-fix1'],
+        ['2026.6.14-fix1', '2026.06.14-fix1'],
+        ['VRCX-Luo 2026.6.16', '2026.06.16'],
+        ['v2026.6.16', '2026.06.16']
+    ])('normalizes %s', (input, expected) => {
+        expect(normalizeUpdaterVersion(input)).toBe(expected);
+    });
+});
+
+describe('sortReleasesByPublishedAt', () => {
+    test('sorts releases by publish time descending', () => {
+        const releases = sortReleasesByPublishedAt([
+            {
+                tag_name: '2026.6.16',
+                published_at: '2026-06-16T00:00:00Z'
+            },
+            {
+                tag_name: '2026.6.14-fix1',
+                published_at: '2026-06-17T00:00:00Z'
+            }
+        ]);
+
+        expect(releases.map((release) => release.tag_name)).toEqual([
+            '2026.6.14-fix1',
+            '2026.6.16'
+        ]);
+    });
+});
 
 describe('getAssetOfInterest', () => {
     test('selects Windows setup asset instead of other exe assets', () => {
@@ -213,5 +249,38 @@ describe('useVRCXUpdaterStore.setAutoUpdateVRCX', () => {
         expect(store.changeLogDialog.releaseUrl).toBe(
             'https://github.com/yixijun/VRCX-Luo/releases/tag/beta-2026.6.15'
         );
+    });
+
+    test('does not mark update pending when current fix release is latest', async () => {
+        globalThis.AppApi.GetVersion.mockResolvedValue(
+            'VRCX-Luo 2026.6.14-fix1'
+        );
+        mocks.webApiService.execute.mockResolvedValue({
+            status: 200,
+            data: JSON.stringify([
+                {
+                    tag_name: '2026.6.16',
+                    name: 'VRCX-Luo 2026.6.16',
+                    prerelease: false,
+                    published_at: '2026-06-16T00:00:00Z',
+                    assets: [{ state: 'uploaded' }]
+                },
+                {
+                    tag_name: '2026.6.14-fix1',
+                    name: 'VRCX-Luo 2026.6.14-fix1',
+                    prerelease: false,
+                    published_at: '2026-06-17T00:00:00Z',
+                    assets: [{ state: 'uploaded' }]
+                }
+            ])
+        });
+
+        setActivePinia(createPinia());
+        const store = useVRCXUpdaterStore();
+        await flushPromises();
+        await store.checkForVRCXUpdate();
+
+        expect(store.latestAppVersion).toBe('2026.6.14-fix1');
+        expect(store.pendingVRCXUpdate).toBe(false);
     });
 });
