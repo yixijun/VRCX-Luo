@@ -358,7 +358,8 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
             return false;
         }
         await loadBranchVersions();
-        const latestVersionName = VRCXUpdateDialog.value.release;
+        const latestVersionName =
+            latestAppVersion.value || VRCXUpdateDialog.value.release;
         if (latestVersionName) {
             latestAppVersion.value = latestVersionName;
             const currentVersionNormalized = normalizeUpdaterVersion(
@@ -383,10 +384,11 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
         return true;
     }
 
-    async function loadBranchVersions() {
-        const D = VRCXUpdateDialog.value;
-        const url = branches[branch.value].urlReleases;
-        checkingForVRCXUpdate.value = true;
+    /**
+     * @param {string} url
+     * @returns {Promise<any | null>}
+     */
+    async function fetchGitHubReleaseJson(url) {
         let response;
         let json;
         try {
@@ -399,10 +401,13 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
             });
             json = JSON.parse(response.data);
         } catch (error) {
-            console.error('Failed to check for VRCX update', error);
-            return;
-        } finally {
-            checkingForVRCXUpdate.value = false;
+            console.error('Failed to parse VRCX release response', error);
+            toast.error(
+                t('message.vrcx_updater.failed', {
+                    message: String(error)
+                })
+            );
+            return null;
         }
         if (response.status !== 200) {
             toast.error(
@@ -410,16 +415,44 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
                     message: `${response.status} ${response.data}`
                 })
             );
-            return;
+            return null;
         }
-        logWebRequest('[EXTERNAL GET]', url, `(${response.status})`, json);
-        const releases = [];
-        if (typeof json !== 'object' || json.message) {
+        if (json && typeof json === 'object' && json.message) {
             toast.error(
                 t('message.vrcx_updater.failed', {
                     message: json.message
                 })
             );
+            return null;
+        }
+        logWebRequest('[EXTERNAL GET]', url, `(${response.status})`, json);
+        return json;
+    }
+
+    async function loadBranchVersions() {
+        const D = VRCXUpdateDialog.value;
+        const branchConfig = branches[branch.value];
+        const url = branchConfig.urlReleases;
+        const latestUrl = branchConfig.urlLatest;
+        checkingForVRCXUpdate.value = true;
+        let json;
+        let latestReleaseJson;
+        try {
+            [json, latestReleaseJson] = await Promise.all([
+                fetchGitHubReleaseJson(url),
+                fetchGitHubReleaseJson(latestUrl)
+            ]);
+        } catch (error) {
+            console.error('Failed to check for VRCX update', error);
+            return;
+        } finally {
+            checkingForVRCXUpdate.value = false;
+        }
+        if (!json) {
+            return;
+        }
+        const releases = [];
+        if (!Array.isArray(json)) {
             return;
         }
         for (const release of json) {
@@ -434,12 +467,20 @@ export const useVRCXUpdaterStore = defineStore('VRCXUpdater', () => {
             }
         }
         D.releases = sortReleasesByPublishedAt(releases);
-        const latestRelease =
-            D.releases.length > 0
-                ? D.releases[0]
-                : sortReleasesByPublishedAt(json).at(0);
-        D.release = getReleaseName(latestRelease);
-        updateChangeLogFromReleases(json);
+        const latestReleaseFromEndpoint =
+            latestReleaseJson &&
+            typeof latestReleaseJson === 'object' &&
+            !Array.isArray(latestReleaseJson)
+                ? latestReleaseJson
+                : null;
+        const selectedLatestRelease =
+            latestReleaseFromEndpoint || D.releases.at(0);
+        const latestReleaseName = getReleaseName(selectedLatestRelease);
+        D.release = latestReleaseName;
+        latestAppVersion.value = latestReleaseName;
+        updateChangeLogFromReleases(
+            latestReleaseFromEndpoint ? [latestReleaseFromEndpoint, ...json] : json
+        );
         VRCXUpdateDialog.value.updatePendingIsLatest = false;
         if (D.release === pendingVRCXInstall.value) {
             // update already downloaded and latest version
