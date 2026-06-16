@@ -440,11 +440,25 @@ jobs:
                   find artifacts -type f \( -name "*.exe" -o -name "*.zip" -o -name "*.AppImage" -o -name "*.dmg" \) -exec mv {} release_assets/ \;
                   ls -R release_assets
 
+            - name: Prepare release notes
+              run: |
+                  notes_file=".github/release-notes/${{ needs.set_version.outputs.version }}.md"
+                  if [[ -f "${notes_file}" ]]; then
+                      cp "${notes_file}" release_notes.md
+                  else
+                      {
+                          echo "## VRCX-Luo ${{ needs.set_version.outputs.version }}"
+                          echo
+                          echo "Automated build from GitHub Actions."
+                      } > release_notes.md
+                  fi
+
             - name: Create Release
               uses: softprops/action-gh-release@v2
               with:
                   tag_name: ${{ needs.set_version.outputs.version }}
                   name: VRCX-Luo ${{ needs.set_version.outputs.version }}
+                  body_path: release_notes.md
                   files: release_assets/*
                   generate_release_notes: true
                   draft: false
