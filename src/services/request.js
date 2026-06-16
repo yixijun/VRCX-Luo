@@ -297,6 +297,15 @@ export function shouldIgnoreError(code, endpoint) {
     if (
         (code === 404 || code === -1) &&
         typeof endpoint === 'string' &&
+        /^(auth\/user\/notifications|notifications)\/[^/]+\/see$/.test(
+            endpoint
+        )
+    ) {
+        return true;
+    }
+    if (
+        (code === 404 || code === -1) &&
+        typeof endpoint === 'string' &&
         endpoint.split('/').length === 2 &&
         (endpoint.startsWith('users/') ||
             endpoint.startsWith('worlds/') ||

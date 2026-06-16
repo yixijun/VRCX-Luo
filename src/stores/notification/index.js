@@ -118,6 +118,9 @@ export const useNotificationStore = defineStore('Notification', () => {
     const notificationCenterHiddenSet = computed(
         () => new Set(notificationCenterHiddenIds.value)
     );
+    const notificationCenterHiddenIdsConfigKey =
+        'VRCX_notificationCenterHiddenIds';
+    const notificationCenterHiddenIdsLimit = 1000;
     const unseenFriendNotifications = computed(() =>
         friendNotifications.value.filter(
             (n) =>
@@ -173,6 +176,28 @@ export const useNotificationStore = defineStore('Notification', () => {
 
     const notyMap = {};
 
+    /**
+     *
+     */
+    function saveNotificationCenterHiddenIds() {
+        const ids = [
+            ...new Set(
+                notificationCenterHiddenIds.value.filter(
+                    (id) => typeof id === 'string' && id.length > 0
+                )
+            )
+        ].slice(-notificationCenterHiddenIdsLimit);
+        notificationCenterHiddenIds.value = ids;
+        configRepository
+            .setArray(notificationCenterHiddenIdsConfigKey, ids)
+            .catch((err) => {
+                console.warn(
+                    'Failed to save hidden notification center IDs:',
+                    err
+                );
+            });
+    }
+
     watch(
         () => watchState.isLoggedIn,
         (isLoggedIn) => {
@@ -195,9 +220,16 @@ export const useNotificationStore = defineStore('Notification', () => {
                 '[]'
             )
         );
+        const hiddenIds = await configRepository.getArray(
+            notificationCenterHiddenIdsConfigKey,
+            []
+        );
+        notificationCenterHiddenIds.value = hiddenIds.filter(
+            (id) => typeof id === 'string' && id.length > 0
+        );
     }
 
-    init();
+    const initPromise = init();
 
     /**
      *
@@ -208,7 +240,7 @@ export const useNotificationStore = defineStore('Notification', () => {
         const { ref } = args;
         const array = notificationTable.value.data;
         const { length } = array;
-        if (ref.seen) {
+        if (ref.seen || notificationCenterHiddenSet.value.has(ref.id)) {
             removeFromArray(unseenNotifications.value, ref.id);
         } else if (!unseenNotifications.value.includes(ref.id)) {
             unseenNotifications.value.push(ref.id);
@@ -550,6 +582,7 @@ export const useNotificationStore = defineStore('Notification', () => {
             removeFromArray(unseenNotifications.value, noty.id);
         }
         notificationCenterHiddenIds.value = [...ids];
+        saveNotificationCenterHiddenIds();
         if (unseenNotifications.value.length === 0) {
             uiStore.removeNotify('notification');
         }
@@ -658,7 +691,7 @@ export const useNotificationStore = defineStore('Notification', () => {
      */
     function handleNotificationV2(args) {
         const ref = applyNotificationV2(args.json);
-        if (ref.seen) {
+        if (ref.seen || notificationCenterHiddenSet.value.has(ref.id)) {
             removeFromArray(unseenNotifications.value, ref.id);
         } else if (!unseenNotifications.value.includes(ref.id)) {
             unseenNotifications.value.push(ref.id);
@@ -1226,6 +1259,7 @@ export const useNotificationStore = defineStore('Notification', () => {
      *
      */
     async function initNotifications() {
+        await initPromise;
         notificationInitStatus.value = false;
         let tableData = await database.getNotificationsV2();
         let notifications = await database.getNotifications();

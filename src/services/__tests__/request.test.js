@@ -184,6 +184,21 @@ describe('shouldIgnoreError', () => {
         expect(shouldIgnoreError(404, 'users/usr_123/mutuals')).toBe(false);
     });
 
+    test.each([
+        [404, 'auth/user/notifications/frq_123/see'],
+        [-1, 'auth/user/notifications/frq_123/see'],
+        [404, 'notifications/frq_123/see'],
+        [-1, 'notifications/frq_123/see']
+    ])('ignores %i for notification seen endpoint %s', (code, endpoint) => {
+        expect(shouldIgnoreError(code, endpoint)).toBe(true);
+    });
+
+    test('does NOT ignore other notification endpoints', () => {
+        expect(shouldIgnoreError(404, 'notifications/frq_123/respond')).toBe(
+            false
+        );
+    });
+
     test('returns false for unmatched patterns', () => {
         expect(shouldIgnoreError(500, 'auth/login')).toBe(false);
         expect(shouldIgnoreError(200, 'config')).toBe(false);
