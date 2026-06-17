@@ -3284,6 +3284,24 @@
                 "support": "Support VRCX"
             },
             "releases": {
+                "2026_06_17": {
+                    "title": "Web Remote",
+                    "subtitle": "View and control the running VRCX-Luo app from a LAN browser.",
+                    "items": {
+                        "remote_access": {
+                            "title": "Remote Page",
+                            "description": "Adds an opt-in web remote service with a VRCX-like desktop layout and a compact responsive mobile layout."
+                        },
+                        "remote_actions": {
+                            "title": "Remote Actions",
+                            "description": "Supports friend search, opening profiles, joining instances, request/self invites, auto follow, boops, and status description updates."
+                        },
+                        "remote_notifications": {
+                            "title": "Remote Notifications",
+                            "description": "The web UI can view notification center items, mark seen, hide notifications, respond to invites, and show browser notifications when allowed."
+                        }
+                    }
+                },
                 "2026_04_05": {
                     "title": "Explore New Features",
                     "subtitle": "A few useful features you might not notice",

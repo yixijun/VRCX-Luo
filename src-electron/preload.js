@@ -67,6 +67,8 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.invoke('remote:start', port, privacyMode),
     stopRemoteAccessServer: () => ipcRenderer.invoke('remote:stop'),
     getRemoteAccessStatus: () => ipcRenderer.invoke('remote:status'),
+    repairRemoteAccessLan: (port) =>
+        ipcRenderer.invoke('remote:repairLanAccess', port),
     getOverlayWindow: () => ipcRenderer.invoke('app:getOverlayWindow'),
     updateVr: (active, hmdOverlay, wristOverlay, menuButton, overlayHand) =>
         ipcRenderer.invoke(

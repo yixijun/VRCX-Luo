@@ -25,12 +25,15 @@ public class RemoteAccessServer
     private readonly ConcurrentDictionary<WebSocket, byte> _sockets = new();
     private readonly ConcurrentDictionary<string, LoginFailure> _loginFailures = new();
     private HttpListener? _listener;
+    private TcpListener? _lanProxyListener;
     private CancellationTokenSource? _cts;
     private Task? _broadcastLoopTask;
+    private Task? _lanProxyLoopTask;
     private Func<string, Task<string>>? _evaluateScript;
     private int _port = 23580;
     private bool _privacyMode;
     private bool _localOnly;
+    private bool _lanProxyRunning;
     private string _error = "";
 
     public RemoteAccessStatus Status => new()
@@ -41,7 +44,9 @@ public class RemoteAccessServer
             ? $"http://{(_localOnly ? "127.0.0.1" : GetLanAddress())}:{_port}/"
             : "",
         error = _error,
-        localOnly = _localOnly
+        localOnly = _localOnly,
+        lanAccessReady = (_lanProxyRunning || HasUrlAcl(_port)) && HasFirewallRule(_port),
+        lanAddress = GetLanAddress()
     };
 
     public RemoteAccessStatus Start(int port, bool privacyMode, Func<string, Task<string>> evaluateScript)
@@ -52,10 +57,13 @@ public class RemoteAccessServer
         _evaluateScript = evaluateScript;
         _error = "";
         _localOnly = false;
+        _lanProxyRunning = false;
         _cts = new CancellationTokenSource();
         try
         {
             _listener = CreateStartedListener(_port);
+            if (_localOnly)
+                PromoteLocalListenerToLanProxy(_cts.Token);
             var listener = _listener;
             var token = _cts.Token;
             _ = Task.Run(() => ListenLoop(listener, token));
@@ -74,14 +82,19 @@ public class RemoteAccessServer
     {
         var cts = _cts;
         var listener = _listener;
+        var lanProxyListener = _lanProxyListener;
         _cts = null;
         _listener = null;
+        _lanProxyListener = null;
+        _lanProxyRunning = false;
         try
         {
             cts?.Cancel();
             try { listener?.Stop(); } catch { }
             try { listener?.Close(); } catch { }
+            try { lanProxyListener?.Stop(); } catch { }
             _broadcastLoopTask = null;
+            _lanProxyLoopTask = null;
             foreach (var socket in _sockets.Keys)
             {
                 try { socket.Abort(); } catch { }
@@ -115,6 +128,25 @@ public class RemoteAccessServer
                 Logger.Error(e);
             }
         });
+    }
+
+    public RemoteAccessStatus RepairLanAccess(int port)
+    {
+        _port = port;
+        _error = "";
+        if (!OperatingSystem.IsWindows())
+        {
+            _error = "局域网权限修复仅 Windows 需要。";
+            return Status;
+        }
+
+        var urlAclOk = TryEnsureUrlAcls(port);
+        var firewallOk = HasFirewallRule(port) || TryAddFirewallRule(port, true);
+        if (!urlAclOk || !firewallOk)
+        {
+            _error = "局域网访问权限修复失败，请允许 UAC 弹窗后重试。";
+        }
+        return Status;
     }
 
     private async Task ListenLoop(HttpListener listener, CancellationToken token)
@@ -527,6 +559,124 @@ public class RemoteAccessServer
         throw lastError ?? new InvalidOperationException("Failed to start remote access server");
     }
 
+    private void PromoteLocalListenerToLanProxy(CancellationToken token)
+    {
+        if (TryStartLanProxy(_port, _port, token))
+        {
+            _localOnly = false;
+            _error = "";
+            return;
+        }
+
+        var oldListener = _listener;
+        try { oldListener?.Stop(); } catch { }
+        try { oldListener?.Close(); } catch { }
+
+        var internalPort = GetAvailableLoopbackPort();
+        _listener = CreateLoopbackListener(internalPort);
+        if (TryStartLanProxy(_port, internalPort, token))
+        {
+            _localOnly = false;
+            _error = "";
+            return;
+        }
+
+        try { _listener?.Stop(); } catch { }
+        try { _listener?.Close(); } catch { }
+        _listener = CreateLoopbackListener(_port);
+        _localOnly = true;
+    }
+
+    private bool TryStartLanProxy(int listenPort, int targetPort, CancellationToken token)
+    {
+        var lanAddress = GetLanAddress();
+        if (lanAddress == "127.0.0.1" || !IPAddress.TryParse(lanAddress, out var address))
+            return false;
+
+        try
+        {
+            _lanProxyListener = new TcpListener(address, listenPort);
+            _lanProxyListener.Start();
+            _lanProxyRunning = true;
+            _lanProxyLoopTask = Task.Run(() => LanProxyLoop(_lanProxyListener, targetPort, token), token);
+            return true;
+        }
+        catch (Exception e)
+        {
+            _lanProxyRunning = false;
+            _error = "LAN proxy listener failed; started on 127.0.0.1 only.";
+            Logger.Warn(e, "Failed to start remote access LAN proxy");
+            try { _lanProxyListener?.Stop(); } catch { }
+            _lanProxyListener = null;
+            return false;
+        }
+    }
+
+    private static HttpListener CreateLoopbackListener(int port)
+    {
+        var listener = new HttpListener();
+        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        listener.Start();
+        return listener;
+    }
+
+    private static int GetAvailableLoopbackPort()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        try
+        {
+            listener.Start();
+            return ((IPEndPoint)listener.LocalEndpoint).Port;
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+
+    private static async Task LanProxyLoop(TcpListener listener, int port, CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            try
+            {
+                var client = await listener.AcceptTcpClientAsync(token);
+                _ = Task.Run(() => ForwardLanClient(client, port, token), token);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (ObjectDisposedException)
+            {
+                break;
+            }
+            catch (Exception e)
+            {
+                if (!token.IsCancellationRequested)
+                    Logger.Warn(e, "Remote access LAN proxy accept failed");
+            }
+        }
+    }
+
+    private static async Task ForwardLanClient(TcpClient client, int port, CancellationToken token)
+    {
+        using var inbound = client;
+        using var loopback = new TcpClient();
+        try
+        {
+            await loopback.ConnectAsync(IPAddress.Loopback, port, token);
+            await using var inboundStream = inbound.GetStream();
+            await using var loopbackStream = loopback.GetStream();
+            var clientToServer = inboundStream.CopyToAsync(loopbackStream, token);
+            var serverToClient = loopbackStream.CopyToAsync(inboundStream, token);
+            await Task.WhenAny(clientToServer, serverToClient);
+        }
+        catch (Exception e) when (e is IOException or SocketException or ObjectDisposedException or OperationCanceledException)
+        {
+        }
+    }
+
     private static bool IsListenerRunning(HttpListener? listener)
     {
         try
@@ -596,23 +746,93 @@ public class RemoteAccessServer
         if (!OperatingSystem.IsWindows())
             return false;
 
-        if (HasUrlAcl(port))
+        return TryEnsureUrlAcls(port);
+    }
+
+    private static bool TryEnsureUrlAcls(int port)
+    {
+        var urls = new[]
+        {
+            $"http://+:{port}/",
+            $"http://*:{port}/",
+            $"http://{GetLanAddress()}:{port}/"
+        };
+        var ok = false;
+        foreach (var url in urls)
+        {
+            if (HasUrlAcl(url) || TryAddUrlAcl(url, false) || TryAddUrlAcl(url, true))
+                ok = true;
+        }
+        return ok;
+    }
+
+    private static bool HasFirewallRule(int port)
+    {
+        if (!OperatingSystem.IsWindows())
             return true;
 
-        if (TryAddUrlAcl(port, false))
-            return true;
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "netsh",
+                Arguments = $"advfirewall firewall show rule name=\"VRCX-Luo Remote Access {port}\"",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            });
+            process?.WaitForExit(3000);
+            return process?.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
 
-        return TryAddUrlAcl(port, true);
+    private static bool TryAddFirewallRule(int port, bool elevated)
+    {
+        try
+        {
+            var args =
+                $"advfirewall firewall add rule name=\"VRCX-Luo Remote Access {port}\" dir=in action=allow protocol=TCP localport={port}";
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "netsh",
+                Arguments = args,
+                CreateNoWindow = !elevated,
+                UseShellExecute = elevated,
+                Verb = elevated ? "runas" : "",
+                WindowStyle = elevated ? ProcessWindowStyle.Normal : ProcessWindowStyle.Hidden,
+                RedirectStandardOutput = !elevated,
+                RedirectStandardError = !elevated
+            });
+            process?.WaitForExit(elevated ? 15000 : 3000);
+            return process?.ExitCode == 0;
+        }
+        catch (Exception e)
+        {
+            Logger.Debug(e, "Failed to add remote access firewall rule");
+            return false;
+        }
     }
 
     private static bool HasUrlAcl(int port)
+    {
+        return HasUrlAcl($"http://+:{port}/") ||
+            HasUrlAcl($"http://*:{port}/") ||
+            HasUrlAcl($"http://{GetLanAddress()}:{port}/");
+    }
+
+    private static bool HasUrlAcl(string url)
     {
         try
         {
             using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "netsh",
-                Arguments = $"http show urlacl url=http://+:{port}/",
+                Arguments = $"http show urlacl url={url}",
                 CreateNoWindow = true,
                 UseShellExecute = false,
                 RedirectStandardOutput = true,
@@ -629,12 +849,17 @@ public class RemoteAccessServer
 
     private static bool TryAddUrlAcl(int port, bool elevated)
     {
+        return TryAddUrlAcl($"http://+:{port}/", elevated);
+    }
+
+    private static bool TryAddUrlAcl(string url, bool elevated)
+    {
         try
         {
             using var process = Process.Start(new ProcessStartInfo
             {
                 FileName = "netsh",
-                Arguments = $"http add urlacl url=http://+:{port}/ sddl=D:(A;;GX;;;WD)",
+                Arguments = $"http add urlacl url={url} sddl=D:(A;;GX;;;WD)",
                 CreateNoWindow = !elevated,
                 UseShellExecute = elevated,
                 Verb = elevated ? "runas" : "",

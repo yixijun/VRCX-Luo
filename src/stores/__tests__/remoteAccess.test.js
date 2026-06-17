@@ -121,4 +121,29 @@ describe('useRemoteAccessStore native bridge compatibility', () => {
 
         expect(store.hasPassword).toBe(true);
     });
+
+    test('does not report LAN repair success when the restarted server is still local-only', async () => {
+        globalThis.AppApi = {
+            RepairRemoteAccessLan: vi.fn().mockResolvedValue({
+                running: true,
+                url: 'http://127.0.0.1:23580/',
+                localOnly: false
+            }),
+            StartRemoteAccessServer: vi.fn().mockResolvedValue({
+                running: true,
+                url: 'http://127.0.0.1:23580/',
+                localOnly: true
+            }),
+            StopRemoteAccessServer: vi.fn(),
+            GetRemoteAccessStatus: vi.fn()
+        };
+        const store = useRemoteAccessStore();
+        store.enabled = true;
+        store.hasPassword = true;
+
+        await expect(store.repairLanAccess()).resolves.toBe(false);
+
+        expect(store.error).not.toBe('');
+        expect(mocks.toastError).toHaveBeenCalledWith(store.error);
+    });
 });

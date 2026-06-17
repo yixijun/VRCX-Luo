@@ -1,4 +1,20 @@
 const whatsNewReleases = Object.freeze({
+    '2026.06.17': {
+        items: [
+            {
+                key: 'remote_access',
+                icon: 'monitor-smartphone'
+            },
+            {
+                key: 'remote_actions',
+                icon: 'mouse-pointer-click'
+            },
+            {
+                key: 'remote_notifications',
+                icon: 'bell'
+            }
+        ]
+    },
     '2026.04.05': {
         items: [
             {

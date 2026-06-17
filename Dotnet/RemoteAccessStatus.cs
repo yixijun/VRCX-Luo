@@ -7,4 +7,6 @@ public class RemoteAccessStatus
     public string url { get; set; } = "";
     public string error { get; set; } = "";
     public bool localOnly { get; set; }
+    public bool lanAccessReady { get; set; }
+    public string lanAddress { get; set; } = "";
 }

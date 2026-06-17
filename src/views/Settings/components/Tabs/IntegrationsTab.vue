@@ -144,7 +144,7 @@
 
         <SettingsGroup title="网页远控">
             <template #description>
-                <p class="m-0">在局域网浏览器中查看并操控当前已登录的 VRCX。</p>
+                <p class="m-0">在局域网浏览器中查看并操作当前已登录的 VRCX。</p>
                 <p v-if="remoteAccessStore.url" class="m-0">
                     <span class="text-foreground">{{ remoteAccessStore.url }}</span>
                 </p>
@@ -153,7 +153,7 @@
                 </p>
             </template>
 
-            <SettingsItem label="启用网页远控" description="默认关闭，启用后同一局域网设备可访问。">
+            <SettingsItem label="启用网页远控" description="默认关闭，启用后同一局域网设备可通过浏览器访问。">
                 <Switch
                     :model-value="remoteAccessStore.enabled"
                     :disabled="!remoteAccessStore.hasPassword"
@@ -185,6 +185,16 @@
                 <Switch
                     :model-value="remoteAccessStore.privacyMode"
                     @update:modelValue="remoteAccessStore.setPrivacyMode" />
+            </SettingsItem>
+
+            <SettingsItem label="局域网权限" description="手机或其他设备无法访问时，点击后会弹出 UAC 修复 URLACL 和防火墙规则。">
+                <Button
+                    size="sm"
+                    variant="outline"
+                    :disabled="!remoteAccessStore.hasPassword"
+                    @click="repairRemoteAccess">
+                    修复局域网访问权限
+                </Button>
             </SettingsItem>
 
             <SettingsItem label="访问地址">
@@ -279,8 +289,6 @@
     const isYouTubeApiDialogVisible = ref(false);
     const isTranslationApiDialogVisible = ref(false);
 
-    remoteAccessStore.init();
-
     /**
      *
      */
@@ -311,6 +319,13 @@
         }
         await navigator.clipboard.writeText(remoteAccessStore.url);
         toast.success('访问地址已复制');
+    }
+
+    async function repairRemoteAccess() {
+        const ok = await remoteAccessStore.repairLanAccess();
+        if (ok) {
+            toast.success('局域网访问权限已修复');
+        }
     }
 
     /**

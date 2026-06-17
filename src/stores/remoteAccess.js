@@ -21,6 +21,19 @@ function getLocalHostHint() {
         : '127.0.0.1';
 }
 
+function applyStatus(status, refs) {
+    refs.running.value = Boolean(status?.running);
+    refs.url.value =
+        status?.url ||
+        (refs.running.value
+            ? `http://${getLocalHostHint()}:${refs.port.value}/`
+            : '');
+    refs.error.value = status?.error || '';
+    refs.localOnly.value = Boolean(status?.localOnly);
+    refs.lanAccessReady.value = Boolean(status?.lanAccessReady);
+    refs.lanAddress.value = status?.lanAddress || '';
+}
+
 export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
     const enabled = ref(false);
     const port = ref(23580);
@@ -29,9 +42,21 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
     const running = ref(false);
     const url = ref('');
     const error = ref('');
+    const localOnly = ref(false);
+    const lanAccessReady = ref(false);
+    const lanAddress = ref('');
     let initialized = false;
 
     const canStart = computed(() => hasPassword.value && port.value > 0);
+    const refs = {
+        port,
+        running,
+        url,
+        error,
+        localOnly,
+        lanAccessReady,
+        lanAddress
+    };
 
     async function init() {
         if (initialized) {
@@ -58,14 +83,7 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
 
     async function refreshStatus() {
         try {
-            const status = await getNativeRemoteApi().status();
-            running.value = Boolean(status?.running);
-            url.value =
-                status?.url ||
-                (running.value
-                    ? `http://${getLocalHostHint()}:${port.value}/`
-                    : '');
-            error.value = status?.error || '';
+            applyStatus(await getNativeRemoteApi().status(), refs);
         } catch (err) {
             running.value = false;
             error.value = err?.message || String(err);
@@ -79,10 +97,7 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
                 port.value,
                 privacyMode.value
             );
-            running.value = Boolean(status?.running);
-            url.value =
-                status?.url || `http://${getLocalHostHint()}:${port.value}/`;
-            error.value = status?.error || '';
+            applyStatus(status, refs);
             if (error.value) {
                 toast.error(error.value);
             }
@@ -100,6 +115,7 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
             await getNativeRemoteApi().stop();
             running.value = false;
             url.value = '';
+            localOnly.value = false;
             await refreshStatus();
         } catch (err) {
             running.value = false;
@@ -144,6 +160,37 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
         }
     }
 
+    async function repairLanAccess() {
+        error.value = '';
+        try {
+            const status = await getNativeRemoteApi().repair(port.value);
+            applyStatus(status, refs);
+            if (error.value) {
+                toast.error(error.value);
+                return false;
+            }
+            if (enabled.value) {
+                const restartedStatus = await start();
+                if (
+                    !restartedStatus?.running ||
+                    restartedStatus?.localOnly ||
+                    restartedStatus?.error
+                ) {
+                    error.value =
+                        restartedStatus?.error ||
+                        '局域网访问权限仍未生效，请确认 UAC 已允许后重试。';
+                    toast.error(error.value);
+                    return false;
+                }
+            }
+            return true;
+        } catch (err) {
+            error.value = err?.message || String(err);
+            toast.error(error.value);
+            return false;
+        }
+    }
+
     return {
         enabled,
         port,
@@ -152,6 +199,9 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
         running,
         url,
         error,
+        localOnly,
+        lanAccessReady,
+        lanAddress,
         canStart,
         init,
         refreshStatus,
@@ -160,7 +210,8 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
         setEnabled,
         setPort,
         setPrivacyMode,
-        setPassword
+        setPassword,
+        repairLanAccess
     };
 });
 
@@ -170,13 +221,14 @@ function getNativeRemoteApi() {
     if (
         typeof window.electron?.startRemoteAccessServer === 'function' ||
         typeof window.electron?.stopRemoteAccessServer === 'function' ||
-        typeof window.electron?.getRemoteAccessStatus === 'function'
+        typeof window.electron?.getRemoteAccessStatus === 'function' ||
+        typeof window.electron?.repairRemoteAccessLan === 'function'
     ) {
         return {
-            start:
-                window.electron.startRemoteAccessServer || unavailable,
+            start: window.electron.startRemoteAccessServer || unavailable,
             stop: window.electron.stopRemoteAccessServer || unavailable,
-            status: window.electron.getRemoteAccessStatus || unavailable
+            status: window.electron.getRemoteAccessStatus || unavailable,
+            repair: window.electron.repairRemoteAccessLan || unavailable
         };
     }
     return {
@@ -191,6 +243,10 @@ function getNativeRemoteApi() {
         status:
             typeof AppApi?.GetRemoteAccessStatus === 'function'
                 ? AppApi.GetRemoteAccessStatus
+                : unavailable,
+        repair:
+            typeof AppApi?.RepairRemoteAccessLan === 'function'
+                ? AppApi.RepairRemoteAccessLan
                 : unavailable
     };
 }

@@ -65,6 +65,13 @@ declare global {
             ) => () => void;
             onBrowserFocus: (Function: (event: any) => void) => () => void;
             restartApp: () => Promise<void>;
+            startRemoteAccessServer: (
+                port: number,
+                privacyMode: boolean
+            ) => Promise<any>;
+            stopRemoteAccessServer: () => Promise<void>;
+            getRemoteAccessStatus: () => Promise<any>;
+            repairRemoteAccessLan: (port: number) => Promise<any>;
             getOverlayWindow: () => Promise<boolean>;
             updateVr: (
                 active: bool,
@@ -191,6 +198,13 @@ declare global {
         SetUserAgent(): Promise<void>;
         SetTrayIconNotification(notify: boolean): Promise<void>;
         OpenCalendarFile(icsContent: string): Promise<void>;
+        StartRemoteAccessServer(
+            port: number,
+            privacyMode: boolean
+        ): Promise<any>;
+        StopRemoteAccessServer(): Promise<void>;
+        GetRemoteAccessStatus(): Promise<any>;
+        RepairRemoteAccessLan(port: number): Promise<any>;
 
         // Common Functions
         GetColourFromUserID(userId: string): Promise<number>;

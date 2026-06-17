@@ -155,5 +155,15 @@ namespace VRCX
         {
             return new RemoteAccessStatus();
         }
+
+        public override RemoteAccessStatus RepairRemoteAccessLan(int port)
+        {
+            return new RemoteAccessStatus
+            {
+                running = false,
+                port = port,
+                error = "Electron remote access is managed by the Electron main process"
+            };
+        }
     }
 }

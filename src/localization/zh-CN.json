@@ -3336,6 +3336,24 @@
                 "support": "支持 VRCX"
             },
             "releases": {
+                "2026_06_17": {
+                    "title": "网页远控",
+                    "subtitle": "通过局域网浏览器查看和操作正在运行的 VRCX-Luo。",
+                    "items": {
+                        "remote_access": {
+                            "title": "远控页面",
+                            "description": "新增默认关闭的网页远控服务，桌面端接近 VRCX 布局，移动端使用更紧凑的响应式界面。"
+                        },
+                        "remote_actions": {
+                            "title": "远程操作",
+                            "description": "支持好友搜索、打开资料、加入实例、请求邀请、自我邀请、自动跟随、戳一戳和状态描述更新。"
+                        },
+                        "remote_notifications": {
+                            "title": "远程通知",
+                            "description": "网页端可查看通知中心、标记已读、隐藏通知、响应邀请，并在浏览器允许时弹出新通知提示。"
+                        }
+                    }
+                },
                 "2026_04_05": {
                     "title": "探索新功能",
                     "subtitle": "一些你可能不会注意到的实用功能",

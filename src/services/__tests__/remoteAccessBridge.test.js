@@ -11,6 +11,10 @@ const mocks = vi.hoisted(() => ({
     sendNotificationResponse: vi.fn(() => Promise.resolve()),
     sendRequestInvite: vi.fn(() => Promise.resolve()),
     selfInvite: vi.fn(() => Promise.resolve()),
+    sendBoop: vi.fn(() => Promise.resolve()),
+    startFollow: vi.fn(() => Promise.resolve()),
+    stopFollow: vi.fn(() => Promise.resolve()),
+    showUserDialog: vi.fn(),
     launchGame: vi.fn(() => Promise.resolve()),
     tryOpenInstanceInVrc: vi.fn(() => Promise.resolve()),
     currentUser: {
@@ -48,6 +52,14 @@ const mocks = vi.hoisted(() => ({
             receiverUserId: 'usr_me',
             message: 'secret invite',
             details: { worldId: 'wrld_friend' },
+            responses: [
+                {
+                    type: 'yes',
+                    text: 'Accept',
+                    icon: 'check',
+                    data: 'ok'
+                }
+            ],
             seen: false
         }
     ],
@@ -59,7 +71,10 @@ const mocks = vi.hoisted(() => ({
         return vi.fn();
     }),
     clearAllNotifications: vi.fn(),
-    clearNotificationCenter: vi.fn()
+    clearNotificationCenter: vi.fn(),
+    markAllAsSeen: vi.fn(),
+    refreshFriends: vi.fn(() => Promise.resolve()),
+    searchUserByDisplayName: vi.fn(() => Promise.resolve())
 }));
 
 vi.mock('vue', () => ({
@@ -81,9 +96,24 @@ vi.mock('../../api', () => ({
             mocks.sendNotificationResponse(...args),
         sendRequestInvite: (...args) => mocks.sendRequestInvite(...args)
     },
+    miscRequest: {
+        sendBoop: (...args) => mocks.sendBoop(...args)
+    },
     userRequest: {
         saveCurrentUser: (...args) => mocks.saveCurrentUser(...args)
     }
+}));
+
+vi.mock('../../stores/autoFollow', () => ({
+    useAutoFollowStore: () => ({
+        isActive: getStoreOverride('autoFollowIsActive', false),
+        isJoining: getStoreOverride('autoFollowIsJoining', false),
+        targetFriendId: getStoreOverride('autoFollowTargetFriendId', ''),
+        targetFriendName: getStoreOverride('autoFollowTargetFriendName', ''),
+        statusText: getStoreOverride('autoFollowStatusText', ''),
+        startFollow: (...args) => mocks.startFollow(...args),
+        stopFollow: (...args) => mocks.stopFollow(...args)
+    })
 }));
 
 function getStoreOverride(key, fallback) {
@@ -96,9 +126,18 @@ vi.mock('../../stores/friend', () => ({
     useFriendStore: () => {
         mocks.storeAccesses.push('friend');
         return {
-            friends: getStoreOverride('friends', mocks.friends)
+            friends: getStoreOverride('friends', mocks.friends),
+            refreshFriends: (...args) => mocks.refreshFriends(...args)
         };
     }
+}));
+
+vi.mock('../../stores/favorite', () => ({
+    useFavoriteStore: () => ({
+        favoriteFriends: getStoreOverride('favoriteFriends', []),
+        favoriteWorlds: getStoreOverride('favoriteWorlds', []),
+        favoriteAvatars: getStoreOverride('favoriteAvatars', [])
+    })
 }));
 
 vi.mock('../../stores/game', () => ({
@@ -116,6 +155,23 @@ vi.mock('../../stores/launch', () => ({
     useLaunchStore: () => ({
         launchGame: (...args) => mocks.launchGame(...args),
         tryOpenInstanceInVrc: (...args) => mocks.tryOpenInstanceInVrc(...args)
+    })
+}));
+
+vi.mock('../../stores/gameLog', () => ({
+    useGameLogStore: () => ({
+        gameLogTableData: getStoreOverride('gameLogTableData', []),
+        latestGameLogEntry: getStoreOverride('latestGameLogEntry', null),
+        nowPlaying: getStoreOverride('nowPlaying', {})
+    })
+}));
+
+vi.mock('../../stores/instance', () => ({
+    useInstanceStore: () => ({
+        cachedInstances: getStoreOverride('cachedInstances', new Map()),
+        currentInstanceWorld: getStoreOverride('currentInstanceWorld', {
+            ref: {}
+        })
     })
 }));
 
@@ -169,9 +225,31 @@ vi.mock('../../stores/notification', () => ({
                 mocks.notifications
             ),
             clearNotificationCenter: (...args) =>
-                mocks.clearNotificationCenter(...args)
+                mocks.clearNotificationCenter(...args),
+            markAllAsSeen: (...args) => mocks.markAllAsSeen(...args)
         };
     }
+}));
+
+vi.mock('../../stores/avatar', () => ({
+    useAvatarStore: () => ({
+        avatarHistory: getStoreOverride('avatarHistory', []),
+        cachedAvatars: getStoreOverride('cachedAvatars', new Map())
+    })
+}));
+
+vi.mock('../../stores/search', () => ({
+    useSearchStore: () => ({
+        searchUserResults: getStoreOverride('searchUserResults', []),
+        searchUserByDisplayName: (...args) =>
+            mocks.searchUserByDisplayName(...args)
+    })
+}));
+
+vi.mock('../../stores/sharedFeed', () => ({
+    useSharedFeedStore: () => ({
+        sharedFeedData: getStoreOverride('sharedFeedData', [])
+    })
 }));
 
 vi.mock('../../stores/ui', () => ({
@@ -194,11 +272,22 @@ vi.mock('../../stores/user', () => ({
     }
 }));
 
+vi.mock('../../stores/world', () => ({
+    useWorldStore: () => ({
+        cachedWorlds: getStoreOverride('cachedWorlds', new Map())
+    })
+}));
+
 vi.mock('../../shared/utils', () => ({
+    isRealInstance: (location) => String(location || '').startsWith('wrld_'),
     parseLocation: () => ({
         worldId: 'wrld_friend',
         instanceId: '456'
     })
+}));
+
+vi.mock('../../coordinators/userCoordinator', () => ({
+    showUserDialog: (...args) => mocks.showUserDialog(...args)
 }));
 
 describe('remoteAccessBridge', () => {
@@ -254,9 +343,15 @@ describe('remoteAccessBridge', () => {
         expect(snapshot.notifications[0].senderUsername).toBe('Hidden');
         expect(snapshot.notifications[0].message).toBe('');
         expect(snapshot.notifications[0].details).toBeNull();
+        expect(snapshot.notifications[0].responses).toEqual([]);
     });
 
     it('builds friend snapshots from friend context refs', async () => {
+        mocks.storeOverrides = {
+            cachedWorlds: new Map([
+                ['wrld_friend', { id: 'wrld_friend', name: 'Friend World' }]
+            ])
+        };
         const { buildSnapshot } = await import('../remoteAccessBridge');
 
         const snapshot = buildSnapshot();
@@ -266,8 +361,50 @@ describe('remoteAccessBridge', () => {
             displayName: 'Friend',
             currentAvatarThumbnailImageUrl: 'https://img/friend.png',
             state: 'online',
-            location: 'wrld_friend:456'
+            location: 'wrld_friend:456',
+            locationName: 'Friend World',
+            worldName: 'Friend World'
         });
+    });
+
+    it('exposes safe notification response buttons to the remote page', async () => {
+        const { buildSnapshot } = await import('../remoteAccessBridge');
+
+        const snapshot = buildSnapshot();
+
+        expect(snapshot.notifications[0].responses).toEqual([
+            {
+                type: 'yes',
+                text: 'Accept',
+                icon: 'check',
+                data: 'ok'
+            }
+        ]);
+    });
+
+    it('exposes boop and auto follow actions through the whitelist', async () => {
+        const { executeAction } = await import('../remoteAccessBridge');
+
+        await executeAction('user.open', { userId: 'usr_friend' });
+        await executeAction('user.boop', { userId: 'usr_friend' });
+        await executeAction('user.boop', {
+            userId: 'usr_friend',
+            emojiId: 'default_wave'
+        });
+        await executeAction('autoFollow.start', { userId: 'usr_friend' });
+        await executeAction('autoFollow.stop');
+
+        expect(mocks.showUserDialog).toHaveBeenCalledWith('usr_friend');
+        expect(mocks.sendBoop).toHaveBeenCalledWith({
+            userId: 'usr_friend',
+            emojiId: undefined
+        });
+        expect(mocks.sendBoop).toHaveBeenCalledWith({
+            userId: 'usr_friend',
+            emojiId: 'default_wave'
+        });
+        expect(mocks.startFollow).toHaveBeenCalled();
+        expect(mocks.stopFollow).toHaveBeenCalledWith({ silent: false });
     });
 
     it('tolerates stores that are not fully initialised during startup', async () => {

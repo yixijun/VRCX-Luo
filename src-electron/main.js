@@ -259,6 +259,10 @@ ipcMain.handle('remote:status', () => {
     return remoteAccessServer.status();
 });
 
+ipcMain.handle('remote:repairLanAccess', (event, port) => {
+    return remoteAccessServer.repairLanAccess(port);
+});
+
 ipcMain.handle('app:getOverlayWindow', () => {
     if (overlayWindow && overlayWindow.webContents) {
         return (

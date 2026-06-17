@@ -266,5 +266,14 @@ namespace VRCX
         {
             return RemoteAccessServer.Instance.Status;
         }
+
+        public override RemoteAccessStatus RepairRemoteAccessLan(int port)
+        {
+            var status = RemoteAccessServer.Instance.RepairLanAccess(port);
+            if (!string.IsNullOrEmpty(status.error))
+                return status;
+
+            return RemoteAccessServer.Instance.Status;
+        }
     }
 }

@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const http = require('http');
 const os = require('os');
@@ -127,8 +128,65 @@ class RemoteAccessServer {
             port: this.port,
             url: this.server ? `http://${getLanAddress()}:${this.port}/` : '',
             error: this.error,
-            localOnly: false
+            localOnly: false,
+            lanAccessReady: this.hasFirewallRule(this.port),
+            lanAddress: getLanAddress()
         };
+    }
+
+    repairLanAccess(port) {
+        this.port = port;
+        this.error = '';
+        if (process.platform !== 'win32') {
+            return this.status();
+        }
+        if (!this.hasFirewallRule(port) && !this.addFirewallRule(port, true)) {
+            this.error = 'Failed to repair LAN firewall permission.';
+        }
+        return this.status();
+    }
+
+    hasFirewallRule(port) {
+        if (process.platform !== 'win32') {
+            return true;
+        }
+        const result = spawnSync('netsh', [
+            'advfirewall',
+            'firewall',
+            'show',
+            'rule',
+            `name=VRCX-Luo Remote Access ${port}`
+        ]);
+        return result.status === 0;
+    }
+
+    addFirewallRule(port, elevated) {
+        if (process.platform !== 'win32') {
+            return true;
+        }
+        const args = [
+            'advfirewall',
+            'firewall',
+            'add',
+            'rule',
+            `name=VRCX-Luo Remote Access ${port}`,
+            'dir=in',
+            'action=allow',
+            'protocol=TCP',
+            `localport=${port}`
+        ];
+        if (!elevated) {
+            return spawnSync('netsh', args).status === 0;
+        }
+        const command = `Start-Process netsh -Verb runAs -WindowStyle Normal -ArgumentList ${JSON.stringify(args.join(' '))}`;
+        const result = spawnSync('powershell.exe', [
+            '-NoProfile',
+            '-ExecutionPolicy',
+            'Bypass',
+            '-Command',
+            command
+        ]);
+        return result.status === 0;
     }
 
     start(port, privacyMode) {
