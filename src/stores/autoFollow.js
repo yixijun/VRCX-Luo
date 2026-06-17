@@ -9,8 +9,23 @@ import { useLocationStore } from './location';
 import { useModalStore } from './modal';
 import { isRealInstance } from '../shared/utils/instance';
 import { parseLocation } from '../shared/utils/locationParser';
+import configRepository from '../services/config';
 
-const JOIN_COOLDOWN_MS = 15_000;
+const DEFAULT_JOIN_COOLDOWN_SECONDS = 15;
+const MIN_JOIN_COOLDOWN_SECONDS = 3;
+const MAX_JOIN_COOLDOWN_SECONDS = 120;
+const JOIN_COOLDOWN_CONFIG_KEY = 'VRCX_autoFollowJoinCooldownMs';
+
+function clampJoinCooldownSeconds(value) {
+    const seconds = Number.parseInt(value, 10);
+    if (!Number.isFinite(seconds)) {
+        return DEFAULT_JOIN_COOLDOWN_SECONDS;
+    }
+    return Math.min(
+        MAX_JOIN_COOLDOWN_SECONDS,
+        Math.max(MIN_JOIN_COOLDOWN_SECONDS, seconds)
+    );
+}
 
 function getFollowTarget(friendRef) {
     const location = friendRef?.travelingToLocation || friendRef?.$travelingToLocation || friendRef?.location || friendRef?.$locationTag || '';
@@ -50,10 +65,12 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
     const isJoining = ref(false);
     const launchMode = ref('desktop');
     const preferredLaunchMode = ref('');
+    const joinCooldownSeconds = ref(DEFAULT_JOIN_COOLDOWN_SECONDS);
 
     let unwatchFriend = null;
     let lastJoinLocation = '';
     let lastJoinAt = 0;
+    let joinCooldownEditVersion = 0;
 
     const activeLabel = computed(() => {
         if (!isActive.value) {
@@ -80,12 +97,28 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         return useFriendStore().friends.get(targetFriendId.value)?.ref || null;
     }
 
+    function normalizeInstanceKey(location) {
+        if (!isRealInstance(location)) {
+            return '';
+        }
+        const parsed = parseLocation(location);
+        return `${parsed.worldId}:${parsed.instanceName || parsed.instanceId}`;
+    }
+
     function canJoinNow(location) {
         if (!isRealInstance(location)) {
             return false;
         }
         const now = Date.now();
-        return location !== lastJoinLocation || now - lastJoinAt > JOIN_COOLDOWN_MS;
+        return (
+            normalizeInstanceKey(location) !== lastJoinLocation ||
+            now - lastJoinAt > joinCooldownSeconds.value * 1000
+        );
+    }
+
+    function rememberJoinAttempt(location) {
+        lastJoinLocation = normalizeInstanceKey(location);
+        lastJoinAt = Date.now();
     }
 
     async function readRuntimeState() {
@@ -109,11 +142,10 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         };
     }
 
-    async function resolveLaunchMode(value) {
+    function resolveLaunchModeFromRuntime(value, runtimeState) {
         if (value === 'desktop' || value === 'vr') {
             return value;
         }
-        const runtimeState = await readRuntimeState();
         if (runtimeState.isGameRunning && !runtimeState.isGameNoVR) {
             return 'vr';
         }
@@ -124,7 +156,7 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
     }
 
     async function runJoin(location, reason = 'manual', shortName = '') {
-        if (!isRealInstance(location) || isJoining.value || !canJoinNow(location)) {
+        if (!isRealInstance(location) || isJoining.value) {
             return false;
         }
 
@@ -136,14 +168,21 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
             return true;
         }
 
+        if (!canJoinNow(location)) {
+            statusText.value = '自动跟随冷却中，正在等待下一次位置变化';
+            return false;
+        }
+
         isJoining.value = true;
-        lastJoinLocation = location;
-        lastJoinAt = Date.now();
+        rememberJoinAttempt(location);
         statusText.value = reason === 'changed' ? '好友切换房间，正在跟随' : '正在加入好友所在房间';
 
         try {
             const runtimeState = await readRuntimeState();
-            const mode = preferredLaunchMode.value || (await resolveLaunchMode());
+            const mode = resolveLaunchModeFromRuntime(
+                preferredLaunchMode.value,
+                runtimeState
+            );
             launchMode.value = mode;
             if (mode === 'vr') {
                 if (runtimeState.isGameRunning) {
@@ -201,7 +240,9 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
     async function confirmStart(friendRef, location, sameRoom) {
         const modalStore = useModalStore();
         const name = friendRef.displayName || friendRef.name || friendRef.id;
-        const modeText = sameRoom
+        const modeText = !location
+            ? '该好友当前没有可加入房间。开启后会等待好友进入可加入房间，然后自动跟随。'
+            : sameRoom
             ? '你已经和该好友在同一个房间。开启后只会监听后续换房间。'
             : '开启后会尝试加入该好友当前房间，并继续监听后续换房间。PC 桌面模式会重启 VRChat 加入实例，VR 模式会直接打开实例链接。';
         const result = await modalStore.confirm({
@@ -236,10 +277,6 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
 
         const target = getFollowTarget(friendRef);
         const location = target.location;
-        if (!location) {
-            toast.warning('无法开启自动跟随：该好友当前没有可加入的房间');
-            return false;
-        }
 
         const locationStore = useLocationStore();
         const isSameRoom = sameInstance(location, locationStore.lastLocation.location);
@@ -258,12 +295,17 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
             options.launchMode === 'desktop' || options.launchMode === 'vr'
                 ? options.launchMode
                 : '';
-        launchMode.value = await resolveLaunchMode(preferredLaunchMode.value);
-        statusText.value = isSameRoom ? '已在同一房间，正在监听好友位置变化' : '已开启，准备加入好友房间';
+        launchMode.value = resolveLaunchModeFromRuntime(
+            preferredLaunchMode.value,
+            await readRuntimeState()
+        );
+        statusText.value = !location
+            ? '好友当前没有可加入房间，等待好友进入可加入房间'
+            : isSameRoom ? '已在同一房间，正在监听好友位置变化' : '已开启，准备加入好友房间';
         watchTargetFriend();
         toast.success(`自动跟随已开启：${targetFriendName.value}`);
 
-        if (options.initialJoin !== false && !isSameRoom) {
+        if (options.initialJoin !== false && location && !isSameRoom) {
             await runJoin(location, 'initial', target.shortName);
         }
         return true;
@@ -306,6 +348,29 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         });
     }
 
+    async function loadJoinCooldownSeconds() {
+        const editVersion = joinCooldownEditVersion;
+        const storedMs = await configRepository.getInt(
+            JOIN_COOLDOWN_CONFIG_KEY,
+            DEFAULT_JOIN_COOLDOWN_SECONDS * 1000
+        );
+        if (editVersion !== joinCooldownEditVersion) {
+            return;
+        }
+        joinCooldownSeconds.value = clampJoinCooldownSeconds(
+            Math.round(storedMs / 1000)
+        );
+    }
+
+    async function setJoinCooldownSeconds(value) {
+        joinCooldownEditVersion++;
+        const seconds = clampJoinCooldownSeconds(value);
+        joinCooldownSeconds.value = seconds;
+        await configRepository.setInt(JOIN_COOLDOWN_CONFIG_KEY, seconds * 1000);
+    }
+
+    loadJoinCooldownSeconds();
+
     return {
         isActive,
         targetFriendId,
@@ -314,9 +379,11 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         statusText,
         isJoining,
         launchMode,
+        joinCooldownSeconds,
         activeLabel,
         startFollow,
         stopFollow,
-        toggleFollow
+        toggleFollow,
+        setJoinCooldownSeconds
     };
 });

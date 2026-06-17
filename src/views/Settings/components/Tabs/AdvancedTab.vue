@@ -28,6 +28,27 @@
             <SettingsItem :label="t('view.settings.advanced.advanced.auto_join_group_certification.header')">
                 <Switch :model-value="autoJoinGroupCertification" @update:modelValue="setAutoJoinGroupCertification" />
             </SettingsItem>
+
+            <SettingsItem
+                label="自动跟随冷却时间"
+                description="同一个实例在冷却时间内不会重复触发，切换到新实例会立即跟随。">
+                <div class="flex items-center gap-2">
+                    <NumberField
+                        :model-value="autoFollowStore.joinCooldownSeconds"
+                        :min="3"
+                        :max="120"
+                        :step="1"
+                        class="w-24"
+                        @update:modelValue="autoFollowStore.setJoinCooldownSeconds">
+                        <NumberFieldContent>
+                            <NumberFieldDecrement />
+                            <NumberFieldInput class="h-8 text-center" />
+                            <NumberFieldIncrement />
+                        </NumberFieldContent>
+                    </NumberField>
+                    <span class="text-sm text-muted-foreground">秒</span>
+                </div>
+            </SettingsItem>
         </SettingsGroup>
 
         <SettingsGroup :title="t('view.settings.advanced_groups.security.header')">
@@ -389,6 +410,13 @@
     import { computed, reactive, ref } from 'vue';
     import { Button } from '@/components/ui/button';
     import { Switch } from '@/components/ui/switch';
+    import {
+        NumberField,
+        NumberFieldContent,
+        NumberFieldDecrement,
+        NumberFieldIncrement,
+        NumberFieldInput
+    } from '@/components/ui/number-field';
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { Alert, AlertDescription } from '@/components/ui/alert';
     import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -401,6 +429,7 @@
         useAdvancedSettingsStore,
         useAppearanceSettingsStore,
         useAuthStore,
+        useAutoFollowStore,
         useAvatarStore,
         useGeneralSettingsStore,
         useGroupStore,
@@ -424,6 +453,7 @@
     const { t } = useI18n();
 
     const advancedSettingsStore = useAdvancedSettingsStore();
+    const autoFollowStore = useAutoFollowStore();
     const { enablePrimaryPasswordChange } = useAuthStore();
     const { cachedConfig } = storeToRefs(useAuthStore());
     const { showConsole } = useUiStore();

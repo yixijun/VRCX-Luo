@@ -200,21 +200,12 @@
         </div>
         <BackToTop :virtualizer="virtualizer" :target="scrollViewportRef" :tooltip="false" />
 
-<!-- <div class="absolute bottom-5 right-[70px] z-10">
-            <button
-                class="auto-follow-btn"
-                :class="{ 'auto-follow-btn--active': autoFollowStore.isActive }"
-                @click="toggleAutoFollow">
-                {{ autoFollowStore.isActive ? '跟随中 ■' : '自动跟随' }}
-                <Navigation class="w-3.5 h-3.5 ml-1.5" />
-            </button>
-        </div> -->
     </div>
 </template>
 
 <script setup>
     import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
-    import { ChevronDown, Clock, Navigation, User } from 'lucide-vue-next';
+    import { ChevronDown, Clock, User } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
@@ -241,8 +232,7 @@
         useGameStore,
         useLaunchStore,
         useLocationStore,
-        useUserStore,
-        useAutoFollowStore
+        useUserStore
     } from '../../../stores';
     import { buildFriendRow, buildInstanceHeaderRow, buildToggleRow, estimateRowSize } from '../friendsSidebarUtils';
     import { getFriendsSortFunction, isRealInstance } from '../../../shared/utils';
@@ -263,19 +253,7 @@
 
     import '@/styles/status-icon.css';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
-    import { openAutoFollowDialog } from '../../../coordinators/autoFollowCoordinator';
-
     const { t } = useI18n();
-
-    const autoFollowStore = useAutoFollowStore();
-
-    function toggleAutoFollow() {
-        if (autoFollowStore.isActive) {
-            autoFollowStore.stopFollow();
-        } else {
-            openAutoFollowDialog();
-        }
-    }
 
     const friendStore = useFriendStore();
     const {
@@ -989,41 +967,5 @@
     }
 </script>
 
-<style scoped>
-    .auto-follow-btn {
-        display: inline-flex;
-        align-items: center;
-        padding: 6px 14px;
-        border-radius: 9999px;
-        border: none;
-        background: rgba(59, 130, 246, 0.4);
-        backdrop-filter: blur(4px);
-        color: white;
-        font-size: 13px;
-        font-weight: 500;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-
-    .auto-follow-btn:hover {
-        background: rgba(59, 130, 246, 0.55);
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    }
-
-    .auto-follow-btn:active {
-        transform: scale(0.96);
-    }
-
-    .auto-follow-btn--active {
-        background: rgba(249, 115, 22, 0.5);
-    }
-
-    .auto-follow-btn--active:hover {
-        background: rgba(249, 115, 22, 0.65);
-    }
-</style>
 
 

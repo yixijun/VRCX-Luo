@@ -17,7 +17,15 @@ const mocks = vi.hoisted(() => ({
     },
     launchGame: vi.fn(() => Promise.resolve(true)),
     tryOpenInstanceInVrc: vi.fn(() => Promise.resolve(true)),
-    quitGame: vi.fn(() => Promise.resolve(1))
+    quitGame: vi.fn(() => Promise.resolve(1)),
+    configValues: new Map(),
+    getInt: vi.fn((key, defaultValue = null) =>
+        Promise.resolve(mocks.configValues.has(key) ? mocks.configValues.get(key) : defaultValue)
+    ),
+    setInt: vi.fn((key, value) => {
+        mocks.configValues.set(key, value);
+        return Promise.resolve();
+    })
 }));
 
 vi.mock('vue-sonner', () => ({
@@ -75,6 +83,13 @@ vi.mock('../modal', () => ({
     })
 }));
 
+vi.mock('../../services/config', () => ({
+    default: {
+        getInt: (...args) => mocks.getInt(...args),
+        setInt: (...args) => mocks.setInt(...args)
+    }
+}));
+
 globalThis.AppApi = {
     QuitGame: (...args) => mocks.quitGame(...args),
     IsGameRunning: () => Promise.resolve(mocks.isGameRunning),
@@ -110,6 +125,9 @@ describe('useAutoFollowStore', () => {
         mocks.launchGame.mockClear();
         mocks.tryOpenInstanceInVrc.mockClear();
         mocks.quitGame.mockClear();
+        mocks.configValues.clear();
+        mocks.getInt.mockClear();
+        mocks.setInt.mockClear();
     });
 
     it('starts listening without launching when already in the same instance', async () => {
@@ -275,6 +293,79 @@ describe('useAutoFollowStore', () => {
         expect(store.isActive).toBe(true);
         expect(mocks.quitGame).toHaveBeenCalledTimes(1);
         expect(mocks.launchGame).toHaveBeenCalledWith('wrld_returned:5', null, true);
+    });
+
+    it('starts waiting when the target has no joinable instance', async () => {
+        const target = reactive(friend('offline'));
+        mocks.friends.set(target.id, { ref: target });
+        const store = useAutoFollowStore();
+
+        await store.startFollow(target, { confirm: false, initialJoin: true });
+
+        expect(store.isActive).toBe(true);
+        expect(store.targetLocation).toBe('');
+        expect(store.statusText).toContain('等待');
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+        expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
+    });
+
+    it('joins when a waiting target later enters a joinable instance', async () => {
+        const target = reactive(friend('offline'));
+        mocks.friends.set(target.id, { ref: target });
+        const store = useAutoFollowStore();
+
+        await store.startFollow(target, { confirm: false, initialJoin: true });
+        target.location = 'wrld_returned:5';
+        await nextTick();
+        await flushPromises();
+
+        expect(store.targetLocation).toBe('wrld_returned:5');
+        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_returned:5', null, true);
+    });
+
+    it('does not repeat join for the same instance inside the cooldown', async () => {
+        const target = reactive(friend('wrld_target:2'));
+        mocks.friends.set(target.id, { ref: target });
+        const store = useAutoFollowStore();
+
+        await store.startFollow(target, { confirm: false, initialJoin: true });
+        mocks.launchGame.mockClear();
+        target.location = 'wrld_target:2~region(us)';
+        await nextTick();
+        await flushPromises();
+
+        expect(store.statusText).toContain('冷却');
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+    });
+
+    it('joins a new instance even when the previous instance is still cooling down', async () => {
+        const target = reactive(friend('wrld_target:2'));
+        mocks.friends.set(target.id, { ref: target });
+        const store = useAutoFollowStore();
+
+        await store.startFollow(target, { confirm: false, initialJoin: true });
+        mocks.launchGame.mockClear();
+        target.location = 'wrld_other:8';
+        await nextTick();
+        await flushPromises();
+
+        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_other:8', null, true);
+    });
+
+    it('clamps and saves the join cooldown setting', async () => {
+        const store = useAutoFollowStore();
+
+        await store.setJoinCooldownSeconds(1);
+        expect(store.joinCooldownSeconds).toBe(3);
+        expect(mocks.setInt).toHaveBeenLastCalledWith('VRCX_autoFollowJoinCooldownMs', 3000);
+
+        await store.setJoinCooldownSeconds(150);
+        expect(store.joinCooldownSeconds).toBe(120);
+        expect(mocks.setInt).toHaveBeenLastCalledWith('VRCX_autoFollowJoinCooldownMs', 120000);
+
+        await store.setJoinCooldownSeconds('bad');
+        expect(store.joinCooldownSeconds).toBe(15);
+        expect(mocks.setInt).toHaveBeenLastCalledWith('VRCX_autoFollowJoinCooldownMs', 15000);
     });
 
     it('re-detects launch mode when the followed target changes rooms', async () => {

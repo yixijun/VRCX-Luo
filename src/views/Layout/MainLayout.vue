@@ -83,8 +83,6 @@
 
         <SendBoopDialog></SendBoopDialog>
 
-        <AutoFollowDialog v-model:open="isAutoFollowDialogOpen"></AutoFollowDialog>
-
         <GlobalToolsDialogs></GlobalToolsDialogs>
 
         <ChangelogDialog></ChangelogDialog>
@@ -108,7 +106,6 @@
 
     import AvatarImportDialog from '../Favorites/dialogs/AvatarImportDialog.vue';
     import ChangelogDialog from '../Settings/dialogs/ChangelogDialog.vue';
-    import AutoFollowDialog from '../../components/dialogs/AutoFollowDialog.vue';
     import ChooseFavoriteGroupDialog from '../../components/dialogs/ChooseFavoriteGroupDialog.vue';
     import FriendImportDialog from '../Favorites/dialogs/FriendImportDialog.vue';
     import FullscreenImagePreview from '../../components/FullscreenImagePreview.vue';
@@ -127,8 +124,6 @@
     import WorldImportDialog from '../Favorites/dialogs/WorldImportDialog.vue';
     import WhatsNewDialog from '../../components/onboarding/WhatsNewDialog.vue';
     import SpotlightDialog from '../../components/onboarding/SpotlightDialog.vue';
-
-    import { isAutoFollowDialogOpen } from '../../coordinators/autoFollowCoordinator';
 
     const router = useRouter();
 
