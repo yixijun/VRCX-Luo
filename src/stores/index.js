@@ -43,6 +43,7 @@ import { useWristOverlaySettingsStore } from './settings/wristOverlay';
 import { useAutoFollowStore } from './autoFollow';
 import { useManualRelationsStore } from './manualRelations';
 import { useTrackedNonFriendsStore } from './trackedNonFriends';
+import { useRemoteAccessStore } from './remoteAccess';
 
 export const pinia = createPinia();
 
@@ -168,7 +169,8 @@ export function createGlobalStores() {
         quickSearch: useQuickSearchStore(),
         autoFollow: useAutoFollowStore(),
         trackedNonFriends: useTrackedNonFriendsStore(),
-        manualRelations: useManualRelationsStore()
+        manualRelations: useManualRelationsStore(),
+        remoteAccess: useRemoteAccessStore()
     };
 }
 
@@ -214,5 +216,6 @@ export {
     useQuickSearchStore,
     useAutoFollowStore,
     useTrackedNonFriendsStore,
-    useManualRelationsStore
+    useManualRelationsStore,
+    useRemoteAccessStore
 };

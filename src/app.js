@@ -11,6 +11,7 @@ import {
 import { initPiniaPlugins, pinia } from './stores';
 import { queryClient } from './queries';
 import { initAccountHubWatcher } from './services/accountHub.js';
+import { initRemoteAccessBridge } from './services/remoteAccessBridge.js';
 
 import App from './App.vue';
 
@@ -28,5 +29,6 @@ await initSentry(app);
 
 // Initialise multi-account hub watcher (after Pinia is up)
 initAccountHubWatcher();
+initRemoteAccessBridge();
 
 app.mount('#root');

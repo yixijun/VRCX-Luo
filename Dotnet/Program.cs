@@ -250,6 +250,7 @@ namespace VRCX
             Application.Run(new MainForm());
 
             logger.Info("{0} Exiting...", Version);
+            RemoteAccessServer.Instance.Stop();
             WebApi.Instance.SaveCookies();
             OverlayServer.Instance.Exit();
             CefService.Instance.Exit();

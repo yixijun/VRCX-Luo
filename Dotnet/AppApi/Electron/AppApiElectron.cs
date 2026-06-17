@@ -136,5 +136,24 @@ namespace VRCX
         public override void OpenCalendarFile(string icsContent)
         {
         }
+
+        public override RemoteAccessStatus StartRemoteAccessServer(int port, bool privacyMode)
+        {
+            return new RemoteAccessStatus
+            {
+                running = false,
+                port = port,
+                error = "Electron remote access is managed by the Electron main process"
+            };
+        }
+
+        public override void StopRemoteAccessServer()
+        {
+        }
+
+        public override RemoteAccessStatus GetRemoteAccessStatus()
+        {
+            return new RemoteAccessStatus();
+        }
     }
 }

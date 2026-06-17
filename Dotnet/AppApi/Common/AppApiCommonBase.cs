@@ -26,6 +26,9 @@ namespace VRCX
         public abstract void FlashWindow();
         public abstract void SetUserAgent();
         public abstract void OpenCalendarFile(string icsContent);
+        public abstract RemoteAccessStatus StartRemoteAccessServer(int port, bool privacyMode);
+        public abstract void StopRemoteAccessServer();
+        public abstract RemoteAccessStatus GetRemoteAccessStatus();
 
         // Folders
         public abstract string GetVRChatAppDataLocation();

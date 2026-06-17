@@ -247,5 +247,24 @@ namespace VRCX
                 logger.Error(ex, "Failed to open calendar file");
             }
         }
+
+        public override RemoteAccessStatus StartRemoteAccessServer(int port, bool privacyMode)
+        {
+            return RemoteAccessServer.Instance.Start(port, privacyMode, async (script) =>
+            {
+                var response = await MainForm.Instance.Browser.EvaluateScriptAsync(script);
+                return response.Success ? response.Result?.ToString() ?? "null" : JsonSerializer.Serialize(new { error = response.Message });
+            });
+        }
+
+        public override void StopRemoteAccessServer()
+        {
+            RemoteAccessServer.Instance.Stop();
+        }
+
+        public override RemoteAccessStatus GetRemoteAccessStatus()
+        {
+            return RemoteAccessServer.Instance.Status;
+        }
     }
 }

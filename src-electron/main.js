@@ -93,6 +93,7 @@ if (process.arch === 'arm64' && fs.existsSync(armPath)) {
 }
 
 const InteropApi = require('./InteropApi');
+const RemoteAccessServer = require('./remoteAccessServer');
 const interopApi = new InteropApi();
 
 const OVERLAY_WRIST_FRAME_WIDTH = 512;
@@ -134,6 +135,11 @@ ipcMain.handle('callDotNetMethod', (event, className, methodName, args) => {
 let mainWindow = undefined;
 
 const VRCXStorage = interopApi.getDotNetObject('VRCXStorage');
+const remoteAccessServer = new RemoteAccessServer({
+    rootDir,
+    storage: VRCXStorage,
+    getMainWindow: () => mainWindow
+});
 const hasAskedToMoveAppImage =
     VRCXStorage.Get('VRCX_HasAskedToMoveAppImage') === 'true';
 
@@ -239,6 +245,18 @@ ipcMain.handle('app:restart', () => {
         app.relaunch();
         app.quit();
     }
+});
+
+ipcMain.handle('remote:start', (event, port, privacyMode) => {
+    return remoteAccessServer.start(port, privacyMode);
+});
+
+ipcMain.handle('remote:stop', () => {
+    remoteAccessServer.stop();
+});
+
+ipcMain.handle('remote:status', () => {
+    return remoteAccessServer.status();
 });
 
 ipcMain.handle('app:getOverlayWindow', () => {

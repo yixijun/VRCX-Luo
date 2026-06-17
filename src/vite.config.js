@@ -191,7 +191,8 @@ export default defineConfig(({ mode }) => {
                 preserveEntrySignatures: false,
                 input: {
                     index: resolve(import.meta.dirname, './index.html'),
-                    vr: resolve(import.meta.dirname, './vr.html')
+                    vr: resolve(import.meta.dirname, './vr.html'),
+                    remote: resolve(import.meta.dirname, './remote.html')
                 },
                 output: {
                     assetFileNames: getAssetFilename,

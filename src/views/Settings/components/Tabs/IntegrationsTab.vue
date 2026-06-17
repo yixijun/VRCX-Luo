@@ -142,6 +142,71 @@
             </SettingsItem>
         </SettingsGroup>
 
+        <SettingsGroup title="网页远控">
+            <template #description>
+                <p class="m-0">在局域网浏览器中查看并操控当前已登录的 VRCX。</p>
+                <p v-if="remoteAccessStore.url" class="m-0">
+                    <span class="text-foreground">{{ remoteAccessStore.url }}</span>
+                </p>
+                <p v-if="remoteAccessStore.error" class="m-0 text-destructive">
+                    {{ remoteAccessStore.error }}
+                </p>
+            </template>
+
+            <SettingsItem label="启用网页远控" description="默认关闭，启用后同一局域网设备可访问。">
+                <Switch
+                    :model-value="remoteAccessStore.enabled"
+                    :disabled="!remoteAccessStore.hasPassword"
+                    @update:modelValue="remoteAccessStore.setEnabled" />
+            </SettingsItem>
+
+            <SettingsItem label="访问端口" description="默认 23580，端口被占用时不会启动。">
+                <Input
+                    class="w-28"
+                    type="number"
+                    min="1024"
+                    max="65535"
+                    :model-value="String(remoteAccessStore.port)"
+                    @change="remoteAccessStore.setPort($event.target.value)" />
+            </SettingsItem>
+
+            <SettingsItem label="访问密码" description="密码仅用于换取网页会话令牌，不会明文保存。">
+                <div class="flex items-center gap-2">
+                    <Input
+                        v-model="remotePassword"
+                        class="w-44"
+                        type="password"
+                        placeholder="设置访问密码" />
+                    <Button size="sm" variant="outline" @click="saveRemotePassword">保存</Button>
+                </div>
+            </SettingsItem>
+
+            <SettingsItem label="隐私模式" description="隐藏私密位置、通知正文等敏感内容。">
+                <Switch
+                    :model-value="remoteAccessStore.privacyMode"
+                    @update:modelValue="remoteAccessStore.setPrivacyMode" />
+            </SettingsItem>
+
+            <SettingsItem label="访问地址">
+                <div class="flex items-center gap-2">
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="!remoteAccessStore.url"
+                        @click="copyRemoteUrl">
+                        复制地址
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="!remoteAccessStore.hasPassword"
+                        @click="remoteAccessStore.refreshStatus">
+                        刷新状态
+                    </Button>
+                </div>
+            </SettingsItem>
+        </SettingsGroup>
+
         <TranslationApiDialog v-model:isTranslationApiDialogVisible="isTranslationApiDialogVisible" />
         <YouTubeApiDialog v-model:isYouTubeApiDialogVisible="isYouTubeApiDialogVisible" />
         <AvatarProviderDialog v-model:isAvatarProviderDialogVisible="isAvatarProviderDialogVisible" />
@@ -152,14 +217,17 @@
     import { ref } from 'vue';
     import { Languages } from 'lucide-vue-next';
     import { Button } from '@/components/ui/button';
+    import { Input } from '@/components/ui/input';
     import { Switch } from '@/components/ui/switch';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
+    import { toast } from 'vue-sonner';
 
     import {
         useAdvancedSettingsStore,
         useAvatarProviderStore,
         useDiscordPresenceSettingsStore,
+        useRemoteAccessStore,
         useVrStore
     } from '@/stores';
 
@@ -170,6 +238,8 @@
     import SettingsItem from '../SettingsItem.vue';
 
     const { t } = useI18n();
+    const remoteAccessStore = useRemoteAccessStore();
+    const remotePassword = ref('');
 
     const advancedSettingsStore = useAdvancedSettingsStore();
     const { updateVRLastLocation, updateOpenVR } = useVrStore();
@@ -209,6 +279,8 @@
     const isYouTubeApiDialogVisible = ref(false);
     const isTranslationApiDialogVisible = ref(false);
 
+    remoteAccessStore.init();
+
     /**
      *
      */
@@ -221,6 +293,24 @@
      */
     function showTranslationApiDialog() {
         isTranslationApiDialogVisible.value = true;
+    }
+
+    async function saveRemotePassword() {
+        if (remotePassword.value.length < 6) {
+            toast.error('访问密码至少需要 6 位');
+            return;
+        }
+        await remoteAccessStore.setPassword(remotePassword.value);
+        remotePassword.value = '';
+        toast.success('网页远控密码已保存');
+    }
+
+    async function copyRemoteUrl() {
+        if (!remoteAccessStore.url) {
+            return;
+        }
+        await navigator.clipboard.writeText(remoteAccessStore.url);
+        toast.success('访问地址已复制');
     }
 
     /**
