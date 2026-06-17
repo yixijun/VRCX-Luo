@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -504,6 +505,21 @@ public class RemoteAccessServer
             catch (Exception e)
             {
                 lastError = e;
+                if (i == 0 && TryEnsureUrlAcl(port))
+                {
+                    try { listener.Close(); } catch { }
+                    listener = new HttpListener();
+                    try
+                    {
+                        listener.Prefixes.Add(prefixes[i]);
+                        listener.Start();
+                        return listener;
+                    }
+                    catch (Exception retryError)
+                    {
+                        lastError = retryError;
+                    }
+                }
                 try { listener.Close(); } catch { }
             }
         }
@@ -573,6 +589,67 @@ public class RemoteAccessServer
             }
         }
         return "127.0.0.1";
+    }
+
+    private static bool TryEnsureUrlAcl(int port)
+    {
+        if (!OperatingSystem.IsWindows())
+            return false;
+
+        if (HasUrlAcl(port))
+            return true;
+
+        if (TryAddUrlAcl(port, false))
+            return true;
+
+        return TryAddUrlAcl(port, true);
+    }
+
+    private static bool HasUrlAcl(int port)
+    {
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "netsh",
+                Arguments = $"http show urlacl url=http://+:{port}/",
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            });
+            process?.WaitForExit(3000);
+            return process?.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool TryAddUrlAcl(int port, bool elevated)
+    {
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "netsh",
+                Arguments = $"http add urlacl url=http://+:{port}/ sddl=D:(A;;GX;;;WD)",
+                CreateNoWindow = !elevated,
+                UseShellExecute = elevated,
+                Verb = elevated ? "runas" : "",
+                WindowStyle = elevated ? ProcessWindowStyle.Normal : ProcessWindowStyle.Hidden,
+                RedirectStandardOutput = !elevated,
+                RedirectStandardError = !elevated
+            });
+            process?.WaitForExit(elevated ? 15000 : 3000);
+            return process?.ExitCode == 0;
+        }
+        catch (Exception e)
+        {
+            Logger.Debug(e, "Failed to add remote access URL ACL");
+            return false;
+        }
     }
 
     private sealed class LoginFailure

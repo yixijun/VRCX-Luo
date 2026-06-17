@@ -37,20 +37,42 @@ function toPlainUser(user, privacyMode) {
     if (!user) {
         return null;
     }
+    const ref = user.ref || user;
     return {
-        id: user.id,
-        displayName: user.displayName || user.username || user.id,
-        userIcon: user.userIcon || '',
+        id: ref.id || user.id,
+        displayName:
+            ref.displayName ||
+            user.displayName ||
+            user.name ||
+            ref.username ||
+            ref.id ||
+            user.id,
+        userIcon: ref.userIcon || user.userIcon || '',
         currentAvatarThumbnailImageUrl:
-            user.currentAvatarThumbnailImageUrl || '',
-        profilePicOverride: user.profilePicOverride || '',
-        status: user.status || '',
-        statusDescription: privacyMode ? '' : user.statusDescription || '',
-        state: user.state || '',
-        location: privacyMode ? '' : user.location || user.$location?.tag || '',
+            ref.currentAvatarThumbnailImageUrl ||
+            user.currentAvatarThumbnailImageUrl ||
+            '',
+        profilePicOverride:
+            ref.profilePicOverride || user.profilePicOverride || '',
+        status: ref.status || user.status || '',
+        statusDescription: privacyMode
+            ? ''
+            : ref.statusDescription || user.statusDescription || '',
+        state: user.state || ref.state || '',
+        location: privacyMode
+            ? ''
+            : ref.location ||
+              ref.$location?.tag ||
+              user.location ||
+              user.$location?.tag ||
+              '',
         travelingToLocation: privacyMode
             ? ''
-            : user.travelingToLocation || user.$travelingToLocation || '',
+            : ref.travelingToLocation ||
+              ref.$travelingToLocation ||
+              user.travelingToLocation ||
+              user.$travelingToLocation ||
+              '',
         isFriend: Boolean(user.isFriend || user.$isFriend),
         isFavorite: Boolean(user.$isFavorite)
     };

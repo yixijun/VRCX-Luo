@@ -25,10 +25,16 @@ const mocks = vi.hoisted(() => ({
             'usr_friend',
             {
                 id: 'usr_friend',
-                displayName: 'Friend',
+                name: 'Friend context fallback',
                 state: 'online',
-                location: 'wrld_friend:456',
-                statusDescription: 'friend status'
+                ref: {
+                    id: 'usr_friend',
+                    displayName: 'Friend',
+                    state: 'online',
+                    location: 'wrld_friend:456',
+                    statusDescription: 'friend status',
+                    currentAvatarThumbnailImageUrl: 'https://img/friend.png'
+                }
             }
         ]
     ]),
@@ -248,6 +254,20 @@ describe('remoteAccessBridge', () => {
         expect(snapshot.notifications[0].senderUsername).toBe('Hidden');
         expect(snapshot.notifications[0].message).toBe('');
         expect(snapshot.notifications[0].details).toBeNull();
+    });
+
+    it('builds friend snapshots from friend context refs', async () => {
+        const { buildSnapshot } = await import('../remoteAccessBridge');
+
+        const snapshot = buildSnapshot();
+
+        expect(snapshot.friends[0]).toMatchObject({
+            id: 'usr_friend',
+            displayName: 'Friend',
+            currentAvatarThumbnailImageUrl: 'https://img/friend.png',
+            state: 'online',
+            location: 'wrld_friend:456'
+        });
     });
 
     it('tolerates stores that are not fully initialised during startup', async () => {

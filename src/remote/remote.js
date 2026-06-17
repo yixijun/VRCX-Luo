@@ -1,4 +1,5 @@
 import './remote.css';
+import logoUrl from '../../images/VRCX.png';
 
 const TOKEN_KEY = 'vrcxRemoteToken';
 
@@ -12,6 +13,8 @@ const state = {
     error: '',
     busyAction: ''
 };
+
+document.documentElement.classList.add('dark');
 
 const root = document.getElementById('root');
 
@@ -28,12 +31,72 @@ function el(tag, attrs = {}, children = []) {
             node.setAttribute(key, String(value));
         }
     }
-    node.append(...children);
+    node.append(...children.filter((child) => child !== ''));
     return node;
 }
 
 function safeText(value, fallback = '暂无') {
     return value ? String(value) : fallback;
+}
+
+function statusLabel(value) {
+    return (
+        {
+            active: '在线',
+            online: '在线',
+            offline: '离线',
+            'join me': '欢迎加入',
+            'ask me': '需要询问',
+            busy: '忙碌'
+        }[value] || safeText(value, '未知')
+    );
+}
+
+function connectionLabel() {
+    return (
+        {
+            connected: '已连接',
+            disconnected: '未连接',
+            error: '连接异常'
+        }[state.status] || state.status
+    );
+}
+
+function firstGlyph(value) {
+    return safeText(value, '?').trim().slice(0, 1).toUpperCase();
+}
+
+function avatarUrl(user) {
+    return (
+        user?.userIcon ||
+        user?.profilePicOverride ||
+        user?.currentAvatarThumbnailImageUrl ||
+        ''
+    );
+}
+
+function renderAvatar(user, className = 'avatar') {
+    const url = avatarUrl(user);
+    if (!url) {
+        return el('span', {
+            class: `${className} avatar-fallback`,
+            text: firstGlyph(user?.displayName || user?.id)
+        });
+    }
+    return el('img', {
+        class: className,
+        src: url,
+        alt: '',
+        referrerpolicy: 'no-referrer',
+        onError: (event) => {
+            event.currentTarget.replaceWith(
+                el('span', {
+                    class: `${className} avatar-fallback`,
+                    text: firstGlyph(user?.displayName || user?.id)
+                })
+            );
+        }
+    });
 }
 
 async function api(path, options = {}) {
@@ -44,10 +107,7 @@ async function api(path, options = {}) {
     if (state.token) {
         headers.Authorization = `Bearer ${state.token}`;
     }
-    const response = await fetch(path, {
-        ...options,
-        headers
-    });
+    const response = await fetch(path, { ...options, headers });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) {
         throw new Error(data.error || `HTTP ${response.status}`);
@@ -78,7 +138,7 @@ async function logout() {
     try {
         await api('/api/auth/logout', { method: 'POST' });
     } catch {
-        // logout should still clear local session
+        // Local logout still clears the browser session.
     }
     state.token = '';
     state.snapshot = null;
@@ -150,6 +210,7 @@ async function action(type, payload = {}) {
 
 function actionButton(text, type, payload, disabled = false) {
     return el('button', {
+        class: 'action-button',
         text: state.busyAction === type ? '处理中...' : text,
         disabled: disabled || Boolean(state.busyAction),
         onClick: () => action(type, payload)
@@ -160,11 +221,13 @@ function renderLogin() {
     root.replaceChildren(
         el('main', { class: 'login-shell' }, [
             el('section', { class: 'login-panel' }, [
-                el('img', { src: '/images/VRCX.png', class: 'logo', alt: '' }),
-                el('h1', { text: 'VRCX-Luo 网页远控' }),
-                el('p', {
-                    text: '输入主程序设置页中保存的网页远控访问密码。'
-                }),
+                el('div', { class: 'brand-large' }, [
+                    el('img', { src: logoUrl, class: 'logo', alt: '' }),
+                    el('div', {}, [
+                        el('h1', { text: 'VRCX-Luo 远控' }),
+                        el('p', { text: '通过浏览器安全访问正在运行的 VRCX' })
+                    ])
+                ]),
                 state.error
                     ? el('p', { class: 'error-text', text: state.error })
                     : '',
@@ -183,15 +246,6 @@ function renderLogin() {
     );
 }
 
-function friendImage(friend) {
-    return (
-        friend?.userIcon ||
-        friend?.profilePicOverride ||
-        friend?.currentAvatarThumbnailImageUrl ||
-        '/images/VRCX.png'
-    );
-}
-
 function renderFriend(friend) {
     const selected = state.selectedFriendId === friend.id;
     return el(
@@ -205,11 +259,14 @@ function renderFriend(friend) {
             }
         },
         [
-            el('img', { src: friendImage(friend), alt: '' }),
+            renderAvatar(friend),
             el('span', { class: 'friend-main' }, [
-                el('strong', { text: friend.displayName }),
+                el('strong', { text: safeText(friend.displayName, friend.id) }),
                 el('small', {
-                    text: friend.location || friend.statusDescription || friend.state
+                    text:
+                        friend.location ||
+                        friend.statusDescription ||
+                        statusLabel(friend.state)
                 })
             ]),
             el('span', { class: `state-dot ${friend.state || 'offline'}` })
@@ -229,10 +286,9 @@ function renderNavItem(view, label) {
 }
 
 function renderStatusBadge(snap) {
-    const label = snap?.loggedIn ? '主程序已登录' : '主程序未登录';
     return el('span', {
         class: `badge ${snap?.loggedIn ? 'ok' : 'warn'}`,
-        text: label
+        text: snap?.loggedIn ? '主程序已登录' : '主程序未登录'
     });
 }
 
@@ -240,7 +296,7 @@ function renderFriendsView(snap, selected) {
     return [
         el('header', { class: 'toolbar' }, [
             el('div', {}, [
-                el('h1', { text: selected?.displayName || '好友' }),
+                el('h1', { text: safeText(selected?.displayName, '好友') }),
                 el('p', {
                     text:
                         selected?.location ||
@@ -248,34 +304,41 @@ function renderFriendsView(snap, selected) {
                         '没有可显示的位置'
                 })
             ]),
-            el('button', { text: '刷新', onClick: refreshSnapshot })
+            el('button', { class: 'ghost-button', text: '刷新', onClick: refreshSnapshot })
         ]),
-        el('div', { class: 'cards' }, [
-            el('article', { class: 'card' }, [
-                el('h2', { text: '好友实例' }),
-                el('p', {
-                    text: selected?.location
-                        ? selected.location
-                        : '该好友当前没有可加入实例。'
-                }),
-                actionButton(
-                    '打开好友实例',
-                    'instance.open',
-                    { location: selected?.location },
-                    !selected?.location
-                ),
-                actionButton(
-                    '请求邀请',
-                    'friend.requestInvite',
-                    { userId: selected?.id },
-                    !selected?.id
-                ),
-                actionButton(
-                    '自我邀请',
-                    'friend.selfInvite',
-                    { location: selected?.location },
-                    !selected?.location
-                )
+        el('div', { class: 'dashboard-grid' }, [
+            el('article', { class: 'panel highlight-panel' }, [
+                el('div', { class: 'selected-user' }, [
+                    renderAvatar(selected, 'avatar large'),
+                    el('div', {}, [
+                        el('h2', { text: safeText(selected?.displayName, '未选择') }),
+                        el('p', {
+                            text: `${statusLabel(selected?.state)} ${
+                                selected?.statusDescription || ''
+                            }`
+                        })
+                    ])
+                ]),
+                el('div', { class: 'button-grid' }, [
+                    actionButton(
+                        '打开好友实例',
+                        'instance.open',
+                        { location: selected?.location },
+                        !selected?.location
+                    ),
+                    actionButton(
+                        '请求邀请',
+                        'friend.requestInvite',
+                        { userId: selected?.id },
+                        !selected?.id
+                    ),
+                    actionButton(
+                        '自我邀请',
+                        'friend.selfInvite',
+                        { location: selected?.location },
+                        !selected?.location
+                    )
+                ])
             ]),
             renderCurrentInstanceCard(snap)
         ])
@@ -283,32 +346,43 @@ function renderFriendsView(snap, selected) {
 }
 
 function renderCurrentInstanceCard(snap) {
-    return el('article', { class: 'card' }, [
-        el('h2', { text: '当前实例' }),
+    return el('article', { class: 'panel' }, [
+        el('div', { class: 'panel-heading' }, [
+            el('h2', { text: '当前实例' }),
+            el('span', {
+                class: 'badge',
+                text: snap?.game?.isRunning ? 'VRChat 运行中' : 'VRChat 未运行'
+            })
+        ]),
         el('p', {
+            class: 'location-text',
             text:
                 snap?.location?.name ||
                 snap?.location?.location ||
-                '当前没有实例信息。'
+                '当前没有实例信息'
         }),
         el('div', { class: 'meta-grid' }, [
-            el('span', { text: `VRChat：${snap?.game?.isRunning ? '运行中' : '未运行'}` }),
+            el('span', {
+                text: `VRChat：${snap?.game?.isRunning ? '运行中' : '未运行'}`
+            }),
             el('span', {
                 text: `SteamVR：${snap?.game?.isSteamVrRunning ? '运行中' : '未运行'}`
             })
         ]),
-        actionButton(
-            '打开当前实例',
-            'instance.open',
-            { location: snap?.location?.location },
-            !snap?.location?.location
-        ),
-        actionButton(
-            '启动并加入',
-            'instance.launch',
-            { location: snap?.location?.location, desktopMode: false },
-            !snap?.location?.location
-        )
+        el('div', { class: 'button-grid' }, [
+            actionButton(
+                '打开当前实例',
+                'instance.open',
+                { location: snap?.location?.location },
+                !snap?.location?.location
+            ),
+            actionButton(
+                '启动并加入',
+                'instance.launch',
+                { location: snap?.location?.location, desktopMode: false },
+                !snap?.location?.location
+            )
+        ])
     ]);
 }
 
@@ -320,19 +394,22 @@ function renderInstanceView(snap) {
                 el('h1', { text: '实例' }),
                 el('p', { text: safeText(snap?.location?.location, '未检测到当前位置') })
             ]),
-            el('button', { text: '刷新', onClick: refreshSnapshot })
+            el('button', { class: 'ghost-button', text: '刷新', onClick: refreshSnapshot })
         ]),
-        el('div', { class: 'cards' }, [
+        el('div', { class: 'dashboard-grid' }, [
             renderCurrentInstanceCard(snap),
-            el('article', { class: 'card' }, [
-                el('h2', { text: `当前实例玩家 ${users.length}` }),
+            el('article', { class: 'panel' }, [
+                el('div', { class: 'panel-heading' }, [
+                    el('h2', { text: '当前实例玩家' }),
+                    el('span', { class: 'badge', text: String(users.length) })
+                ]),
                 el(
                     'div',
                     { class: 'compact-list' },
-                    users.slice(0, 16).map((user) =>
+                    users.slice(0, 24).map((user) =>
                         el('div', { class: 'compact-row' }, [
-                            el('img', { src: friendImage(user), alt: '' }),
-                            el('span', { text: user.displayName })
+                            renderAvatar(user),
+                            el('span', { text: safeText(user.displayName, user.id) })
                         ])
                     )
                 )
@@ -351,7 +428,7 @@ function renderNotificationsView(snap) {
             ]),
             actionButton('清理通知中心', 'ui.clearNotificationCenter', {})
         ]),
-        el('div', { class: 'notification-list large' }, [
+        el('div', { class: 'notification-list' }, [
             ...(notifications.length
                 ? notifications.map((noty) =>
                       el('article', { class: 'notification' }, [
@@ -364,6 +441,7 @@ function renderNotificationsView(snap) {
                           el('p', { text: noty.message || '无正文' }),
                           noty.type?.includes('invite')
                               ? el('button', {
+                                    class: 'action-button',
                                     text: '响应邀请',
                                     onClick: () => {
                                         if (confirm('确定要响应这条邀请通知吗？')) {
@@ -401,12 +479,14 @@ function renderStatusView(snap) {
             el('div', {}, [
                 el('h1', { text: '社交状态' }),
                 el('p', {
-                    text: `${snap?.status?.value || 'unknown'} ${snap?.status?.description || ''}`
+                    text: `${statusLabel(snap?.status?.value)} ${
+                        snap?.status?.description || ''
+                    }`
                 })
             ]),
             renderStatusBadge(snap)
         ]),
-        el('article', { class: 'card wide' }, [
+        el('article', { class: 'panel wide' }, [
             el('h2', { text: '切换状态' }),
             el('div', { class: 'status-buttons' }, [
                 ...statuses.map(([status, label]) =>
@@ -457,7 +537,7 @@ function renderMain() {
         el('main', { class: 'app-shell' }, [
             el('aside', { class: 'nav' }, [
                 el('div', { class: 'brand' }, [
-                    el('img', { src: '/images/VRCX.png', alt: '' }),
+                    el('img', { src: logoUrl, alt: '' }),
                     el('span', { text: 'VRCX-Luo' })
                 ]),
                 renderNavItem('friends', '好友'),
@@ -472,16 +552,21 @@ function renderMain() {
             ]),
             el('section', { class: 'sidebar' }, [
                 el('div', { class: 'me-card' }, [
-                    el('strong', {
-                        text: snap?.currentUser?.displayName || '未登录'
-                    }),
-                    el('small', {
-                        text: `${snap?.status?.value || ''} ${snap?.status?.description || ''}`
-                    }),
-                    el('small', {
-                        text: `WebSocket：${state.status}`
-                    }),
-                    renderStatusBadge(snap)
+                    renderAvatar(snap?.currentUser, 'avatar large'),
+                    el('div', {}, [
+                        el('strong', {
+                            text: snap?.currentUser?.displayName || '未登录'
+                        }),
+                        el('small', {
+                            text: `${statusLabel(snap?.status?.value)} ${
+                                snap?.status?.description || ''
+                            }`
+                        })
+                    ]),
+                    el('div', { class: 'remote-state' }, [
+                        el('span', { text: `WebSocket：${connectionLabel()}` }),
+                        renderStatusBadge(snap)
+                    ])
                 ]),
                 el('div', { class: 'friend-list' }, friends.map(renderFriend))
             ]),
