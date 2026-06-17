@@ -6,15 +6,13 @@ import {
     userRequest
 } from '../api';
 import { watchState } from './watchState';
-import {
-    useFriendStore,
-    useGameStore,
-    useLaunchStore,
-    useLocationStore,
-    useNotificationStore,
-    useUiStore,
-    useUserStore
-} from '../stores';
+import { useFriendStore } from '../stores/friend';
+import { useGameStore } from '../stores/game';
+import { useLaunchStore } from '../stores/launch';
+import { useLocationStore } from '../stores/location';
+import { useNotificationStore } from '../stores/notification';
+import { useUiStore } from '../stores/ui';
+import { useUserStore } from '../stores/user';
 import { parseLocation } from '../shared/utils';
 
 const SNAPSHOT_VERSION = 1;
@@ -23,6 +21,17 @@ const DANGEROUS_ACTIONS = new Set([
     'notification.hide',
     'notification.see'
 ]);
+
+const EMPTY_ARRAY = Object.freeze([]);
+const EMPTY_MAP = Object.freeze(new Map());
+
+function asArray(value) {
+    return Array.isArray(value) ? value : EMPTY_ARRAY;
+}
+
+function asMap(value) {
+    return value instanceof Map ? value : EMPTY_MAP;
+}
 
 function toPlainUser(user, privacyMode) {
     if (!user) {
@@ -67,12 +76,12 @@ function toPlainNotification(notification, privacyMode) {
 
 function getNotificationCenterItems(notificationStore) {
     const groups = [
-        notificationStore.unseenFriendNotifications || [],
-        notificationStore.unseenGroupNotifications || [],
-        notificationStore.unseenOtherNotifications || [],
-        notificationStore.recentFriendNotifications || [],
-        notificationStore.recentGroupNotifications || [],
-        notificationStore.recentOtherNotifications || []
+        asArray(notificationStore.unseenFriendNotifications),
+        asArray(notificationStore.unseenGroupNotifications),
+        asArray(notificationStore.unseenOtherNotifications),
+        asArray(notificationStore.recentFriendNotifications),
+        asArray(notificationStore.recentGroupNotifications),
+        asArray(notificationStore.recentOtherNotifications)
     ];
     const seen = new Set();
     const output = [];
@@ -97,7 +106,10 @@ function buildSnapshot(options = {}) {
     const gameStore = useGameStore();
     const uiStore = useUiStore();
 
-    const friends = Array.from(friendStore.friends.values())
+    const friendMap = asMap(friendStore.friends);
+    const notifiedMenus = asArray(uiStore.notifiedMenus);
+
+    const friends = Array.from(friendMap.values())
         .map((friend) => toPlainUser(friend, privacyMode))
         .filter(Boolean)
         .sort((a, b) => {
@@ -152,7 +164,7 @@ function buildSnapshot(options = {}) {
                 toPlainNotification(notification, privacyMode)
             )
             .filter(Boolean),
-        notifiedMenus: [...uiStore.notifiedMenus]
+        notifiedMenus: [...notifiedMenus]
     };
 }
 
@@ -286,10 +298,10 @@ function createBridge() {
             watchState.isLoggedIn,
             watchState.isFriendsLoaded,
             useUserStore().currentUser,
-            useFriendStore().friends.size,
-            useNotificationStore().unseenNotifications.length,
-            useUiStore().notifiedMenus.length,
-            useLocationStore().lastLocation.location,
+            useFriendStore().friends?.size ?? 0,
+            useNotificationStore().unseenNotifications?.length ?? 0,
+            useUiStore().notifiedMenus?.length ?? 0,
+            useLocationStore().lastLocation?.location ?? '',
             useLocationStore().lastLocationDestination,
             useGameStore().isGameRunning
         ],

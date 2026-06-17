@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
     watchState: {
@@ -46,8 +46,17 @@ const mocks = vi.hoisted(() => ({
         }
     ],
     notifiedMenus: ['Notifications'],
+    storeOverrides: {},
+    watch: vi.fn((source) => {
+        source();
+        return vi.fn();
+    }),
     clearAllNotifications: vi.fn(),
     clearNotificationCenter: vi.fn()
+}));
+
+vi.mock('vue', () => ({
+    watch: (...args) => mocks.watch(...args)
 }));
 
 vi.mock('../watchState', () => ({
@@ -70,44 +79,92 @@ vi.mock('../../api', () => ({
     }
 }));
 
-vi.mock('../../stores', () => ({
+function getStoreOverride(key, fallback) {
+    return Object.hasOwn(mocks.storeOverrides, key)
+        ? mocks.storeOverrides[key]
+        : fallback;
+}
+
+vi.mock('../../stores/friend', () => ({
     useFriendStore: () => ({
-        friends: mocks.friends
-    }),
+        friends: getStoreOverride('friends', mocks.friends)
+    })
+}));
+
+vi.mock('../../stores/game', () => ({
     useGameStore: () => ({
-        isGameRunning: true,
-        isGameNoVR: false,
-        isSteamVRRunning: true
-    }),
+        isGameRunning: getStoreOverride('isGameRunning', true),
+        isGameNoVR: getStoreOverride('isGameNoVR', false),
+        isSteamVRRunning: getStoreOverride('isSteamVRRunning', true)
+    })
+}));
+
+vi.mock('../../stores/launch', () => ({
     useLaunchStore: () => ({
         launchGame: (...args) => mocks.launchGame(...args),
         tryOpenInstanceInVrc: (...args) => mocks.tryOpenInstanceInVrc(...args)
-    }),
+    })
+}));
+
+vi.mock('../../stores/location', () => ({
     useLocationStore: () => ({
-        lastLocation: {
+        lastLocation: getStoreOverride('lastLocation', {
             location: 'wrld_home:123',
             name: 'Home',
             playerList: new Map()
-        },
-        lastLocationDestination: ''
-    }),
+        }),
+        lastLocationDestination: getStoreOverride(
+            'lastLocationDestination',
+            ''
+        )
+    })
+}));
+
+vi.mock('../../stores/notification', () => ({
     useNotificationStore: () => ({
-        unseenFriendNotifications: mocks.notifications,
-        unseenGroupNotifications: [],
-        unseenOtherNotifications: [],
-        recentFriendNotifications: [],
-        recentGroupNotifications: [],
-        recentOtherNotifications: [],
-        unseenNotifications: mocks.notifications,
+        unseenFriendNotifications: getStoreOverride(
+            'unseenFriendNotifications',
+            mocks.notifications
+        ),
+        unseenGroupNotifications: getStoreOverride(
+            'unseenGroupNotifications',
+            []
+        ),
+        unseenOtherNotifications: getStoreOverride(
+            'unseenOtherNotifications',
+            []
+        ),
+        recentFriendNotifications: getStoreOverride(
+            'recentFriendNotifications',
+            []
+        ),
+        recentGroupNotifications: getStoreOverride(
+            'recentGroupNotifications',
+            []
+        ),
+        recentOtherNotifications: getStoreOverride(
+            'recentOtherNotifications',
+            []
+        ),
+        unseenNotifications: getStoreOverride(
+            'unseenNotifications',
+            mocks.notifications
+        ),
         clearNotificationCenter: (...args) =>
             mocks.clearNotificationCenter(...args)
-    }),
+    })
+}));
+
+vi.mock('../../stores/ui', () => ({
     useUiStore: () => ({
-        notifiedMenus: mocks.notifiedMenus,
+        notifiedMenus: getStoreOverride('notifiedMenus', mocks.notifiedMenus),
         clearAllNotifications: (...args) => mocks.clearAllNotifications(...args)
-    }),
+    })
+}));
+
+vi.mock('../../stores/user', () => ({
     useUserStore: () => ({
-        currentUser: mocks.currentUser
+        currentUser: getStoreOverride('currentUser', mocks.currentUser)
     })
 }));
 
@@ -119,6 +176,11 @@ vi.mock('../../shared/utils', () => ({
 }));
 
 describe('remoteAccessBridge', () => {
+    beforeEach(() => {
+        mocks.storeOverrides = {};
+        mocks.watch.mockClear();
+    });
+
     it('rejects unknown remote actions', async () => {
         const { executeAction } = await import('../remoteAccessBridge');
 
@@ -154,5 +216,29 @@ describe('remoteAccessBridge', () => {
         expect(snapshot.notifications[0].senderUsername).toBe('Hidden');
         expect(snapshot.notifications[0].message).toBe('');
         expect(snapshot.notifications[0].details).toBeNull();
+    });
+
+    it('tolerates stores that are not fully initialised during startup', async () => {
+        mocks.storeOverrides = {
+            friends: undefined,
+            unseenFriendNotifications: undefined,
+            unseenNotifications: undefined,
+            notifiedMenus: undefined,
+            lastLocation: undefined,
+            lastLocationDestination: undefined,
+            currentUser: undefined
+        };
+        const { buildSnapshot, initRemoteAccessBridge } = await import(
+            '../remoteAccessBridge'
+        );
+
+        const snapshot = buildSnapshot();
+
+        expect(snapshot.currentUser).toBeNull();
+        expect(snapshot.friends).toEqual([]);
+        expect(snapshot.notifications).toEqual([]);
+        expect(snapshot.notifiedMenus).toEqual([]);
+        expect(snapshot.location.location).toBe('');
+        expect(() => initRemoteAccessBridge()).not.toThrow();
     });
 });
