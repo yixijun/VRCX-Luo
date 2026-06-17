@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     buildVisibleFriendSections,
     clampFriendSectionHeight,
+    friendStateTone,
     friendMatchesQuery
 } from '../remoteFriendSections';
 
@@ -97,5 +98,12 @@ describe('buildVisibleFriendSections', () => {
             )
         ).toBe(true);
         expect(friendMatchesQuery({ displayName: 'Alice' }, 'bob')).toBe(false);
+    });
+
+    it('maps friend states to visual tones used by the remote friend list', () => {
+        expect(friendStateTone({ state: 'active' })).toBe('active');
+        expect(friendStateTone({ state: 'online' })).toBe('online');
+        expect(friendStateTone({ state: 'offline' })).toBe('offline');
+        expect(friendStateTone({})).toBe('offline');
     });
 });

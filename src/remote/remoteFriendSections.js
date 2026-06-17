@@ -40,6 +40,10 @@ function friendMatchesQuery(friend, query = '') {
         .includes(needle);
 }
 
+function friendStateTone(friend = {}) {
+    return ['active', 'online'].includes(friend.state) ? friend.state : 'offline';
+}
+
 function buildVisibleFriendSections({
     groups = {},
     sectionHeights = {},
@@ -62,4 +66,9 @@ function buildVisibleFriendSections({
     }).filter(Boolean);
 }
 
-export { buildVisibleFriendSections, clampFriendSectionHeight, friendMatchesQuery };
+export {
+    buildVisibleFriendSections,
+    clampFriendSectionHeight,
+    friendMatchesQuery,
+    friendStateTone
+};

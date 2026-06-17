@@ -3,7 +3,8 @@ import logoUrl from '../../images/VRCX.png';
 import { photonEmojis } from '../shared/constants/photon.js';
 import {
     buildVisibleFriendSections,
-    clampFriendSectionHeight
+    clampFriendSectionHeight,
+    friendStateTone
 } from './remoteFriendSections.js';
 import {
     canRequestBrowserNotificationPermission,
@@ -606,10 +607,13 @@ function renderBadge(text, tone = '') {
 
 function renderFriend(friend, compact = false) {
     const selected = state.selectedFriendId === friend.id;
+    const tone = friendStateTone(friend);
     return el(
         'button',
         {
-            class: `friend-row ${selected ? 'selected' : ''} ${compact ? 'compact' : ''}`,
+            class: `friend-row friend-${tone} ${selected ? 'selected' : ''} ${
+                compact ? 'compact' : ''
+            }`,
             title: `${safeText(friend.displayName, friend.id)}\n${friendLocationText(friend)}`,
             onClick: () => {
                 state.selectedFriendId = friend.id;
@@ -619,7 +623,10 @@ function renderFriend(friend, compact = false) {
             onContextMenu: (event) => openFriendContextMenu(event, friend)
         },
         [
-            renderAvatar(friend),
+            el('span', { class: 'avatar-wrap' }, [
+                renderAvatar(friend),
+                el('span', { class: `state-dot ${tone}` })
+            ]),
             el('span', { class: 'friend-main' }, [
                 el('strong', {
                     text: safeText(friend.displayName, friend.id)
@@ -627,23 +634,26 @@ function renderFriend(friend, compact = false) {
                 el('small', {
                     text: friendLocationText(friend)
                 })
-            ]),
-            el('span', { class: `state-dot ${friend.state || 'offline'}` })
+            ])
         ]
     );
 }
 
 function renderUserRow(user, compact = false) {
+    const tone = friendStateTone(user);
     return el(
         'button',
         {
-            class: `friend-row ${compact ? 'compact' : ''}`,
+            class: `friend-row friend-${tone} ${compact ? 'compact' : ''}`,
             title: `${safeText(user.displayName, user.id)}\n${friendLocationText(user)}`,
             onClick: () => action('user.open', { userId: user.id }),
             onContextMenu: (event) => openUserContextMenu(event, user, 'user')
         },
         [
-            renderAvatar(user),
+            el('span', { class: 'avatar-wrap' }, [
+                renderAvatar(user),
+                el('span', { class: `state-dot ${tone}` })
+            ]),
             el('span', { class: 'friend-main' }, [
                 el('strong', {
                     text: safeText(user.displayName, user.id)
@@ -651,8 +661,7 @@ function renderUserRow(user, compact = false) {
                 el('small', {
                     text: friendLocationText(user)
                 })
-            ]),
-            el('span', { class: `state-dot ${user.state || 'offline'}` })
+            ])
         ]
     );
 }

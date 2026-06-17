@@ -261,7 +261,7 @@ button:active {
     align-items: center;
     border: 0;
     border-radius: 6px;
-    background: color-mix(in oklch, var(--muted) 38%, transparent);
+    background: color-mix(in oklch, var(--muted) 24%, transparent);
     padding: 10px;
     margin-bottom: 0;
 }
@@ -282,8 +282,8 @@ button:active {
 }
 
 .friend-section h3 {
-    margin: 14px 8px 8px;
-    color: var(--muted-foreground);
+    margin: 16px 8px 8px;
+    color: color-mix(in oklch, var(--foreground) 82%, var(--muted-foreground));
     font-size: 14px;
     font-weight: 600;
 }
@@ -326,25 +326,43 @@ button:active {
 
 .friend-row {
     display: grid;
-    grid-template-columns: 44px minmax(0, 1fr) 8px;
+    grid-template-columns: 58px minmax(0, 1fr);
     width: 100%;
     align-items: center;
-    gap: 10px;
+    gap: 12px;
     border: 0;
     border-radius: 8px;
     background: transparent;
     cursor: pointer;
-    padding: 8px;
+    padding: 7px 8px;
     text-align: left;
 }
 
 .friend-row.compact {
-    padding: 7px 8px;
+    padding: 6px 8px;
 }
 
 .friend-row:hover,
 .friend-row.selected {
-    background: var(--accent);
+    background: color-mix(in oklch, var(--accent) 72%, transparent);
+}
+
+.friend-row.friend-active.selected,
+.friend-row.friend-active:hover {
+    background: color-mix(in oklch, var(--status-active) 13%, var(--accent));
+}
+
+.friend-row.friend-online.selected,
+.friend-row.friend-online:hover {
+    background: color-mix(in oklch, var(--status-online) 11%, var(--accent));
+}
+
+.avatar-wrap {
+    position: relative;
+    display: inline-grid;
+    width: 52px;
+    height: 52px;
+    place-items: center;
 }
 
 .avatar,
@@ -406,16 +424,33 @@ button:active {
     font-weight: 700;
 }
 
+.friend-active .friend-main strong {
+    color: #b894ff;
+}
+
+.friend-online .friend-main strong {
+    color: var(--status-online);
+}
+
+.friend-offline .friend-main strong {
+    color: color-mix(in oklch, var(--foreground) 86%, var(--muted-foreground));
+}
+
 .friend-main small,
 .me-card small {
     font-size: 13px;
 }
 
 .state-dot {
-    width: 8px;
-    height: 8px;
+    position: absolute;
+    right: 2px;
+    bottom: 2px;
+    width: 13px;
+    height: 13px;
+    border: 2px solid var(--sidebar);
     border-radius: 999px;
     background: var(--status-offline);
+    box-shadow: 0 0 0 1px rgb(0 0 0 / 35%);
 }
 
 .state-dot.active {
