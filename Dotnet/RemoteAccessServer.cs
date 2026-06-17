@@ -34,9 +34,9 @@ public class RemoteAccessServer
 
     public RemoteAccessStatus Status => new()
     {
-        running = _listener?.IsListening == true,
+        running = IsListenerRunning(_listener),
         port = _port,
-        url = _listener?.IsListening == true
+        url = IsListenerRunning(_listener)
             ? $"http://{(_localOnly ? "127.0.0.1" : GetLanAddress())}:{_port}/"
             : "",
         error = _error,
@@ -52,11 +52,12 @@ public class RemoteAccessServer
         _error = "";
         _localOnly = false;
         _cts = new CancellationTokenSource();
-        _listener = new HttpListener();
         try
         {
-            TryStartListener(_listener, _port);
-            _ = Task.Run(() => ListenLoop(_cts.Token));
+            _listener = CreateStartedListener(_port);
+            var listener = _listener;
+            var token = _cts.Token;
+            _ = Task.Run(() => ListenLoop(listener, token));
             _broadcastLoopTask = Task.Run(() => BroadcastLoop(_cts.Token));
         }
         catch (Exception e)
@@ -70,11 +71,15 @@ public class RemoteAccessServer
 
     public void Stop()
     {
+        var cts = _cts;
+        var listener = _listener;
+        _cts = null;
+        _listener = null;
         try
         {
-            _cts?.Cancel();
-            _listener?.Stop();
-            _listener?.Close();
+            cts?.Cancel();
+            try { listener?.Stop(); } catch { }
+            try { listener?.Close(); } catch { }
             _broadcastLoopTask = null;
             foreach (var socket in _sockets.Keys)
             {
@@ -88,8 +93,7 @@ public class RemoteAccessServer
         }
         finally
         {
-            _listener = null;
-            _cts = null;
+            cts?.Dispose();
         }
     }
 
@@ -112,14 +116,24 @@ public class RemoteAccessServer
         });
     }
 
-    private async Task ListenLoop(CancellationToken token)
+    private async Task ListenLoop(HttpListener listener, CancellationToken token)
     {
-        while (!token.IsCancellationRequested && _listener?.IsListening == true)
+        while (!token.IsCancellationRequested && IsListenerRunning(listener))
         {
             try
             {
-                var context = await _listener.GetContextAsync();
+                var context = await listener.GetContextAsync();
                 _ = Task.Run(() => HandleContext(context));
+            }
+            catch (ObjectDisposedException)
+            {
+                break;
+            }
+            catch (HttpListenerException)
+            {
+                if (!token.IsCancellationRequested)
+                    throw;
+                break;
             }
             catch (Exception e)
             {
@@ -463,34 +477,50 @@ public class RemoteAccessServer
         await socket.SendAsync(bytes, WebSocketMessageType.Text, true, CancellationToken.None);
     }
 
-    private void TryStartListener(HttpListener listener, int port)
+    private HttpListener CreateStartedListener(int port)
+    {
+        var prefixes = new[]
+        {
+            $"http://+:{port}/",
+            $"http://{GetLanAddress()}:{port}/",
+            $"http://127.0.0.1:{port}/"
+        };
+
+        Exception? lastError = null;
+        for (var i = 0; i < prefixes.Length; i++)
+        {
+            var listener = new HttpListener();
+            try
+            {
+                listener.Prefixes.Add(prefixes[i]);
+                listener.Start();
+                if (i == prefixes.Length - 1)
+                {
+                    _localOnly = true;
+                    _error = "LAN listener requires Windows URL ACL permission; started on 127.0.0.1 only.";
+                }
+                return listener;
+            }
+            catch (Exception e)
+            {
+                lastError = e;
+                try { listener.Close(); } catch { }
+            }
+        }
+
+        throw lastError ?? new InvalidOperationException("Failed to start remote access server");
+    }
+
+    private static bool IsListenerRunning(HttpListener? listener)
     {
         try
         {
-            listener.Prefixes.Add($"http://+:{port}/");
-            listener.Start();
-            return;
+            return listener?.IsListening == true;
         }
-        catch
+        catch (ObjectDisposedException)
         {
-            listener.Prefixes.Clear();
+            return false;
         }
-
-        try
-        {
-            listener.Prefixes.Add($"http://{GetLanAddress()}:{port}/");
-            listener.Start();
-            return;
-        }
-        catch
-        {
-            listener.Prefixes.Clear();
-        }
-
-        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-        listener.Start();
-        _localOnly = true;
-        _error = "LAN listener requires Windows URL ACL permission; started on 127.0.0.1 only.";
     }
 
     private static string GetClientKey(HttpListenerRequest request)
