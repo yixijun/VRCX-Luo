@@ -16,6 +16,10 @@ import {
     getSubmenuDirection,
     shouldCloseContextMenu
 } from './remoteContextMenu.js';
+import {
+    captureScrollState,
+    restoreScrollState
+} from './remoteScrollState.js';
 
 const TOKEN_KEY = 'vrcxRemoteToken';
 const FRIEND_SECTION_HEIGHTS_KEY = 'vrcxRemoteFriendSectionHeights';
@@ -1561,6 +1565,7 @@ function renderMain() {
         state.selectedFriendId = selected.id;
     }
 
+    const scrollState = captureScrollState(root, '.friend-list');
     root.replaceChildren(
         el('main', { class: 'app-shell' }, [
             el('aside', { class: 'left-nav' }, [
@@ -1584,6 +1589,7 @@ function renderMain() {
             renderToastLayer()
         ])
     );
+    restoreScrollState(root, '.friend-list', scrollState);
 }
 
 function renderToastLayer() {
