@@ -39,17 +39,30 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
      * @returns {Promise<void>}
      */
     async function getVrcStatus() {
-        const response = await webApiService.execute({
-            url: `${vrcStatusApiUrl}/status.json`,
-            method: 'GET',
-            headers: {
-                Referer: 'https://vrcx.app'
-            }
-        });
+        let response;
+        try {
+            response = await webApiService.execute({
+                url: `${vrcStatusApiUrl}/status.json`,
+                method: 'GET',
+                headers: {
+                    Referer: 'https://vrcx.app'
+                }
+            });
+        } catch (err) {
+            console.error('Failed to fetch VRChat status', err);
+            lastTimeFetched.value = Date.now();
+            lastStatus.value = 'Failed to fetch VRC status';
+            lastStatusIndicator.value = '';
+            lastStatusSummary.value = '';
+            pollingInterval.value = 2 * 60 * 1000; // 2 minutes
+            return;
+        }
         lastTimeFetched.value = Date.now();
         if (response.status !== 200) {
             console.error('Failed to fetch VRChat status', response);
             lastStatus.value = 'Failed to fetch VRC status';
+            lastStatusIndicator.value = '';
+            lastStatusSummary.value = '';
             pollingInterval.value = 2 * 60 * 1000; // 2 minutes
             return;
         }
@@ -71,15 +84,23 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
      * @returns {Promise<void>}
      */
     async function getVrcStatusSummary() {
-        const response = await webApiService.execute({
-            url: `${vrcStatusApiUrl}/summary.json`,
-            method: 'GET',
-            headers: {
-                Referer: 'https://vrcx.app'
-            }
-        });
+        let response;
+        try {
+            response = await webApiService.execute({
+                url: `${vrcStatusApiUrl}/summary.json`,
+                method: 'GET',
+                headers: {
+                    Referer: 'https://vrcx.app'
+                }
+            });
+        } catch (err) {
+            console.error('Failed to fetch VRChat status summary', err);
+            lastStatusSummary.value = '';
+            return;
+        }
         if (response.status !== 200) {
             console.error('Failed to fetch VRChat status summary', response);
+            lastStatusSummary.value = '';
             return;
         }
         const data = JSON.parse(response.data);

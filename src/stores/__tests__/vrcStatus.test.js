@@ -66,6 +66,28 @@ describe('useVrcStatusStore.getVrcStatus', () => {
         expect(store.hasIssue).toBe(true);
     });
 
+    test('handles status request failures without leaking an unhandled promise', async () => {
+        const store = useVrcStatusStore();
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        mocks.execute.mockRejectedValueOnce(
+            new Error(
+                'The SSL connection could not be established, see inner exception.'
+            )
+        );
+
+        await expect(store.getVrcStatus()).resolves.toBeUndefined();
+
+        expect(store.lastStatus).toBe('Failed to fetch VRC status');
+        expect(store.hasIssue).toBe(true);
+        expect(consoleError).toHaveBeenCalledWith(
+            'Failed to fetch VRChat status',
+            expect.any(Error)
+        );
+        consoleError.mockRestore();
+    });
+
     test('fetches summary for incident status and appends component summary', async () => {
         const store = useVrcStatusStore();
         mocks.execute
@@ -97,6 +119,33 @@ describe('useVrcStatusStore.getVrcStatus', () => {
         expect(store.lastStatus).toBe('Partial System Outage');
         expect(store.statusText).toBe('Partial System Outage: API, CDN');
         expect(store.hasIssue).toBe(true);
+    });
+
+    test('handles summary request failures without leaking an unhandled promise', async () => {
+        const store = useVrcStatusStore();
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+        mocks.execute
+            .mockResolvedValueOnce({
+                status: 200,
+                data: JSON.stringify({
+                    page: { updated_at: '2026-01-02T00:00:00.000Z' },
+                    status: { description: 'Partial System Outage' }
+                })
+            })
+            .mockRejectedValueOnce(new Error('summary SSL error'));
+
+        await expect(store.getVrcStatus()).resolves.toBeUndefined();
+        await flushPromises();
+
+        expect(store.lastStatus).toBe('Partial System Outage');
+        expect(store.statusText).toBe('Partial System Outage');
+        expect(consoleError).toHaveBeenCalledWith(
+            'Failed to fetch VRChat status summary',
+            expect.any(Error)
+        );
+        consoleError.mockRestore();
     });
 
     test('clears status when all systems are operational', async () => {
