@@ -51,7 +51,7 @@ export const useChartsStore = defineStore('Charts', () => {
         cancelRequested: false
     });
 
-    const friendCount = computed(() => friendStore.friends.size || 0);
+    const friendCount = computed(() => friendStore.friends?.size ?? 0);
     const currentUser = computed(
         () => userStore.currentUser?.value ?? userStore.currentUser
     );
