@@ -4,6 +4,7 @@ import { photonEmojis } from '../shared/constants/photon.js';
 import {
     buildVisibleFriendSections,
     clampFriendSectionHeight,
+    friendDisplayModel,
     friendStateTone
 } from './remoteFriendSections.js';
 import {
@@ -607,11 +608,11 @@ function renderBadge(text, tone = '') {
 
 function renderFriend(friend, compact = false) {
     const selected = state.selectedFriendId === friend.id;
-    const tone = friendStateTone(friend);
+    const display = friendDisplayModel(friend);
     return el(
         'button',
         {
-            class: `friend-row friend-${tone} ${selected ? 'selected' : ''} ${
+            class: `friend-row friend-${display.tone} ${selected ? 'selected' : ''} ${
                 compact ? 'compact' : ''
             }`,
             title: `${safeText(friend.displayName, friend.id)}\n${friendLocationText(friend)}`,
@@ -625,14 +626,15 @@ function renderFriend(friend, compact = false) {
         [
             el('span', { class: 'avatar-wrap' }, [
                 renderAvatar(friend),
-                el('span', { class: `state-dot ${tone}` })
+                el('span', { class: `state-dot ${display.tone}` })
             ]),
             el('span', { class: 'friend-main' }, [
                 el('strong', {
-                    text: safeText(friend.displayName, friend.id)
+                    style: display.nameStyle,
+                    text: safeText(display.name, friend.id)
                 }),
                 el('small', {
-                    text: friendLocationText(friend)
+                    text: display.subtitle || friendLocationText(friend)
                 })
             ])
         ]
@@ -640,11 +642,11 @@ function renderFriend(friend, compact = false) {
 }
 
 function renderUserRow(user, compact = false) {
-    const tone = friendStateTone(user);
+    const display = friendDisplayModel(user);
     return el(
         'button',
         {
-            class: `friend-row friend-${tone} ${compact ? 'compact' : ''}`,
+            class: `friend-row friend-${display.tone} ${compact ? 'compact' : ''}`,
             title: `${safeText(user.displayName, user.id)}\n${friendLocationText(user)}`,
             onClick: () => action('user.open', { userId: user.id }),
             onContextMenu: (event) => openUserContextMenu(event, user, 'user')
@@ -652,14 +654,15 @@ function renderUserRow(user, compact = false) {
         [
             el('span', { class: 'avatar-wrap' }, [
                 renderAvatar(user),
-                el('span', { class: `state-dot ${tone}` })
+                el('span', { class: `state-dot ${display.tone}` })
             ]),
             el('span', { class: 'friend-main' }, [
                 el('strong', {
-                    text: safeText(user.displayName, user.id)
+                    style: display.nameStyle,
+                    text: safeText(display.name, user.id)
                 }),
                 el('small', {
-                    text: friendLocationText(user)
+                    text: display.subtitle || friendLocationText(user)
                 })
             ])
         ]
@@ -691,7 +694,10 @@ function renderFriendSection(section) {
         class: 'friend-section',
         style: `height:${section.height}px;`
     }, [
-        el('h3', { text: `${section.title} ${section.count}` }),
+        el('h3', { class: 'friend-section-title' }, [
+            el('i', { class: 'ri-arrow-down-s-line' }),
+            el('span', { text: `${section.title} — ${section.count}` })
+        ]),
         el(
             'div',
             { class: 'friend-list' },

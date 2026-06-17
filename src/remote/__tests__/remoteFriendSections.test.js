@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
     buildVisibleFriendSections,
     clampFriendSectionHeight,
+    friendDisplayModel,
     friendStateTone,
     friendMatchesQuery
 } from '../remoteFriendSections';
@@ -105,5 +106,31 @@ describe('buildVisibleFriendSections', () => {
         expect(friendStateTone({ state: 'online' })).toBe('online');
         expect(friendStateTone({ state: 'offline' })).toBe('offline');
         expect(friendStateTone({})).toBe('offline');
+    });
+
+    it('builds sidebar-style friend display rows like the app sidebar', () => {
+        expect(
+            friendDisplayModel({
+                displayName: 'Active Friend',
+                state: 'active',
+                statusDescription: 'Playing VR',
+                userColour: '#b894ff',
+                locationName: 'Hidden World'
+            })
+        ).toEqual({
+            name: 'Active Friend',
+            subtitle: 'Playing VR',
+            tone: 'active',
+            nameStyle: 'color:#b894ff'
+        });
+
+        expect(
+            friendDisplayModel({
+                displayName: 'Online Friend',
+                state: 'online',
+                statusDescription: 'Status',
+                locationName: 'Midnight Rooftop'
+            }).subtitle
+        ).toBe('Midnight Rooftop');
     });
 });

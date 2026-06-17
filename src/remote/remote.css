@@ -282,10 +282,10 @@ button:active {
 }
 
 .friend-section h3 {
-    margin: 16px 8px 8px;
+    margin: 14px 8px 6px;
     color: color-mix(in oklch, var(--foreground) 82%, var(--muted-foreground));
-    font-size: 14px;
-    font-weight: 600;
+    font-size: 13px;
+    font-weight: 500;
 }
 
 .me-section {
@@ -326,50 +326,50 @@ button:active {
 
 .friend-row {
     display: grid;
-    grid-template-columns: 58px minmax(0, 1fr);
+    grid-template-columns: 46px minmax(0, 1fr);
     width: 100%;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     border: 0;
     border-radius: 8px;
     background: transparent;
     cursor: pointer;
-    padding: 7px 8px;
+    padding: 6px;
     text-align: left;
 }
 
 .friend-row.compact {
-    padding: 6px 8px;
+    padding: 6px;
 }
 
 .friend-row:hover,
 .friend-row.selected {
-    background: color-mix(in oklch, var(--accent) 72%, transparent);
+    background: color-mix(in oklch, var(--muted) 50%, transparent);
 }
 
 .friend-row.friend-active.selected,
 .friend-row.friend-active:hover {
-    background: color-mix(in oklch, var(--status-active) 13%, var(--accent));
+    background: color-mix(in oklch, var(--muted) 50%, transparent);
 }
 
 .friend-row.friend-online.selected,
 .friend-row.friend-online:hover {
-    background: color-mix(in oklch, var(--status-online) 11%, var(--accent));
+    background: color-mix(in oklch, var(--muted) 50%, transparent);
 }
 
 .avatar-wrap {
     position: relative;
     display: inline-grid;
-    width: 52px;
-    height: 52px;
+    width: 36px;
+    height: 36px;
     place-items: center;
 }
 
 .avatar,
 .media-thumb {
     display: inline-grid;
-    width: 44px;
-    height: 44px;
+    width: 36px;
+    height: 36px;
     flex: 0 0 auto;
     place-items: center;
     border: 1px solid var(--border);
@@ -400,7 +400,9 @@ button:active {
 .friend-main {
     display: grid;
     min-width: 0;
-    gap: 1px;
+    height: 36px;
+    align-content: space-between;
+    gap: 0;
 }
 
 .friend-main strong,
@@ -420,45 +422,51 @@ button:active {
 .friend-main strong,
 .me-card strong {
     color: var(--foreground);
-    font-size: 15px;
-    font-weight: 700;
-}
-
-.friend-active .friend-main strong {
-    color: #b894ff;
-}
-
-.friend-online .friend-main strong {
-    color: var(--status-online);
-}
-
-.friend-offline .friend-main strong {
-    color: color-mix(in oklch, var(--foreground) 86%, var(--muted-foreground));
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 18px;
 }
 
 .friend-main small,
 .me-card small {
-    font-size: 13px;
+    color: var(--muted-foreground);
+    font-size: 12px;
+    line-height: 16px;
 }
 
 .state-dot {
     position: absolute;
-    right: 2px;
-    bottom: 2px;
-    width: 13px;
-    height: 13px;
-    border: 2px solid var(--sidebar);
+    right: 0;
+    bottom: 0;
+    width: 9px;
+    height: 9px;
+    border: 0;
     border-radius: 999px;
     background: var(--status-offline);
-    box-shadow: 0 0 0 1px rgb(0 0 0 / 35%);
+    box-shadow: 0 0 0 2px var(--sidebar);
 }
 
 .state-dot.active {
-    background: var(--status-active);
+    background: transparent;
+    border: 2px solid var(--status-online);
+    box-shadow:
+        0 0 0 1.5px var(--sidebar),
+        0 0 4px color-mix(in oklch, var(--status-online) 40%, transparent);
 }
 
 .state-dot.online {
     background: var(--status-online);
+}
+
+.friend-section-title {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.friend-section-title i {
+    font-size: 16px;
+    line-height: 1;
 }
 
 .toolbar {

@@ -144,6 +144,7 @@ function toPlainUser(user, privacyMode, stores = {}) {
             ref.currentAvatarThumbnailImageUrl ||
             user.currentAvatarThumbnailImageUrl ||
             '',
+        userColour: ref.$userColour || user.$userColour || '',
         profilePicOverride:
             ref.profilePicOverride || user.profilePicOverride || '',
         status: ref.status || user.status || '',
@@ -155,6 +156,13 @@ function toPlainUser(user, privacyMode, stores = {}) {
         locationName: privacyMode ? '' : locationName,
         worldName: privacyMode ? '' : locationName,
         travelingToLocation,
+        onlineFor: ref.$online_for || user.$online_for || null,
+        activeFor: ref.$active_for || user.$active_for || null,
+        offlineFor: ref.$offline_for || user.$offline_for || null,
+        locationAt: ref.$location_at || user.$location_at || null,
+        travelingToTime:
+            ref.$travelingToTime || user.$travelingToTime || null,
+        pendingOffline: Boolean(user.pendingOffline || ref.pendingOffline),
         isFriend: Boolean(user.isFriend || user.$isFriend),
         isFavorite: Boolean(user.$isFavorite)
     };

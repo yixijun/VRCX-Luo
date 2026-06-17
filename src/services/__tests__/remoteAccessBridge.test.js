@@ -37,6 +37,7 @@ const mocks = vi.hoisted(() => ({
                     state: 'online',
                     location: 'wrld_friend:456',
                     statusDescription: 'friend status',
+                    $userColour: '#b894ff',
                     currentAvatarThumbnailImageUrl: 'https://img/friend.png'
                 }
             }
@@ -363,7 +364,8 @@ describe('remoteAccessBridge', () => {
             state: 'online',
             location: 'wrld_friend:456',
             locationName: 'Friend World',
-            worldName: 'Friend World'
+            worldName: 'Friend World',
+            userColour: '#b894ff'
         });
     });
 

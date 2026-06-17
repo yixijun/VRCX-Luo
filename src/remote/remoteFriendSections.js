@@ -44,6 +44,29 @@ function friendStateTone(friend = {}) {
     return ['active', 'online'].includes(friend.state) ? friend.state : 'offline';
 }
 
+function friendDisplayModel(friend = {}) {
+    const tone = friendStateTone(friend);
+    const name = friend.displayName || friend.name || friend.id || '';
+    const sidebarSubtitle =
+        tone === 'online'
+            ? friend.locationName ||
+              friend.worldName ||
+              friend.location ||
+              friend.statusDescription ||
+              ''
+            : friend.statusDescription ||
+              friend.locationName ||
+              friend.worldName ||
+              friend.location ||
+              '';
+    return {
+        name,
+        subtitle: sidebarSubtitle,
+        tone,
+        nameStyle: friend.userColour ? `color:${friend.userColour}` : ''
+    };
+}
+
 function buildVisibleFriendSections({
     groups = {},
     sectionHeights = {},
@@ -69,6 +92,7 @@ function buildVisibleFriendSections({
 export {
     buildVisibleFriendSections,
     clampFriendSectionHeight,
+    friendDisplayModel,
     friendMatchesQuery,
     friendStateTone
 };
