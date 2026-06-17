@@ -50,6 +50,7 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
         port.value = clampRemotePort(portValue);
         hasPassword.value = Boolean(passwordHash);
         privacyMode.value = privacyValue;
+        await syncPasswordHashToNativeStorage(passwordHash);
         if (enabled.value && hasPassword.value) {
             await start();
         }
@@ -136,6 +137,7 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
     async function setPassword(password) {
         const hash = await createPasswordHash(password);
         await configRepository.setString(PASSWORD_KEY, hash);
+        await syncPasswordHashToNativeStorage(hash);
         hasPassword.value = true;
         if (enabled.value) {
             await start();
@@ -191,4 +193,15 @@ function getNativeRemoteApi() {
                 ? AppApi.GetRemoteAccessStatus
                 : unavailable
     };
+}
+
+async function syncPasswordHashToNativeStorage(hash) {
+    const nativeStorage = globalThis.VRCXStorage;
+    if (!hash || typeof nativeStorage?.Set !== 'function') {
+        return;
+    }
+    await nativeStorage.Set(PASSWORD_KEY, hash);
+    if (typeof nativeStorage?.Save === 'function') {
+        await nativeStorage.Save();
+    }
 }
