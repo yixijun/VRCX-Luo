@@ -12,6 +12,8 @@ const ENABLED_KEY = 'VRCX_remoteAccessEnabled';
 const PORT_KEY = 'VRCX_remoteAccessPort';
 const PASSWORD_KEY = 'VRCX_remoteAccessPasswordHash';
 const PRIVACY_KEY = 'VRCX_remoteAccessPrivacyMode';
+const NATIVE_API_UNAVAILABLE_MESSAGE =
+    '网页远控接口不可用，请重新编译本地测试版。';
 
 function getLocalHostHint() {
     return location.hostname && location.hostname !== 'localhost'
@@ -93,10 +95,16 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
     }
 
     async function stop() {
-        await getNativeRemoteApi().stop();
-        running.value = false;
-        url.value = '';
-        await refreshStatus();
+        try {
+            await getNativeRemoteApi().stop();
+            running.value = false;
+            url.value = '';
+            await refreshStatus();
+        } catch (err) {
+            running.value = false;
+            url.value = '';
+            error.value = err?.message || String(err);
+        }
     }
 
     async function setEnabled(value) {
@@ -155,16 +163,32 @@ export const useRemoteAccessStore = defineStore('RemoteAccess', () => {
 });
 
 function getNativeRemoteApi() {
-    if (window.electron?.startRemoteAccessServer) {
+    const unavailable = () =>
+        Promise.reject(new Error(NATIVE_API_UNAVAILABLE_MESSAGE));
+    if (
+        typeof window.electron?.startRemoteAccessServer === 'function' ||
+        typeof window.electron?.stopRemoteAccessServer === 'function' ||
+        typeof window.electron?.getRemoteAccessStatus === 'function'
+    ) {
         return {
-            start: window.electron.startRemoteAccessServer,
-            stop: window.electron.stopRemoteAccessServer,
-            status: window.electron.getRemoteAccessStatus
+            start:
+                window.electron.startRemoteAccessServer || unavailable,
+            stop: window.electron.stopRemoteAccessServer || unavailable,
+            status: window.electron.getRemoteAccessStatus || unavailable
         };
     }
     return {
-        start: AppApi.StartRemoteAccessServer,
-        stop: AppApi.StopRemoteAccessServer,
-        status: AppApi.GetRemoteAccessStatus
+        start:
+            typeof AppApi?.StartRemoteAccessServer === 'function'
+                ? AppApi.StartRemoteAccessServer
+                : unavailable,
+        stop:
+            typeof AppApi?.StopRemoteAccessServer === 'function'
+                ? AppApi.StopRemoteAccessServer
+                : unavailable,
+        status:
+            typeof AppApi?.GetRemoteAccessStatus === 'function'
+                ? AppApi.GetRemoteAccessStatus
+                : unavailable
     };
 }
