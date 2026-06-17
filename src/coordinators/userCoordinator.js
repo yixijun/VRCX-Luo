@@ -879,7 +879,16 @@ export function handleConfig(args) {
     if (!languages) {
         return;
     }
-    userStore.setSubsetOfLanguages(languages);
+    if (typeof userStore.setSubsetOfLanguages === 'function') {
+        userStore.setSubsetOfLanguages(languages);
+    } else if (userStore.subsetOfLanguages?.value !== undefined) {
+        userStore.subsetOfLanguages.value = languages;
+    } else if (typeof userStore.$patch === 'function') {
+        userStore.$patch((state) => {
+            state.subsetOfLanguages = languages;
+        });
+    }
+
     const data = [];
     for (const key in languages) {
         const value = languages[key];
@@ -888,7 +897,17 @@ export function handleConfig(args) {
             value
         });
     }
-    userStore.setLanguageDialogLanguages(data);
+    if (typeof userStore.setLanguageDialogLanguages === 'function') {
+        userStore.setLanguageDialogLanguages(data);
+    } else if (userStore.languageDialog?.value) {
+        userStore.languageDialog.value.languages = data;
+    } else if (typeof userStore.$patch === 'function') {
+        userStore.$patch((state) => {
+            if (state.languageDialog) {
+                state.languageDialog.languages = data;
+            }
+        });
+    }
 }
 
 /**
