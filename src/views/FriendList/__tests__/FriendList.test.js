@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
     friendsListSearch: null,
     getAllUserStats: vi.fn(),
     getAllUserMutualCount: vi.fn(),
+    getAllUserMutualOptedOut: vi.fn(),
+    fetchMutualGraph: vi.fn(),
     confirmDeleteFriend: vi.fn(),
     handleFriendDelete: vi.fn(),
     showUserDialog: vi.fn(),
@@ -70,7 +72,14 @@ vi.mock('../../../stores', () => ({
         friends: mocks.friends,
         allFavoriteFriendIds: mocks.allFavoriteFriendIds,
         getAllUserStats: mocks.getAllUserStats,
-        getAllUserMutualCount: mocks.getAllUserMutualCount
+        getAllUserMutualCount: mocks.getAllUserMutualCount,
+        getAllUserMutualOptedOut: mocks.getAllUserMutualOptedOut
+    }),
+    useChartsStore: () => ({
+        mutualGraphStatus: {
+            isFetching: false
+        },
+        fetchMutualGraph: mocks.fetchMutualGraph
     }),
     useModalStore: () => ({
         confirm: (...args) => mocks.modalConfirm(...args),
@@ -286,6 +295,8 @@ describe('FriendList.vue', () => {
         mocks.routerPush.mockReset();
         mocks.getAllUserStats.mockReset();
         mocks.getAllUserMutualCount.mockReset();
+        mocks.getAllUserMutualOptedOut.mockReset();
+        mocks.fetchMutualGraph.mockReset();
         mocks.showUserDialog.mockReset();
         mocks.modalConfirm.mockClear();
         mocks.modalAlert.mockReset();
@@ -325,6 +336,16 @@ describe('FriendList.vue', () => {
         ).toEqual(['usr_1']);
         expect(mocks.getAllUserStats).toHaveBeenCalledTimes(1);
         expect(mocks.getAllUserMutualCount).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not crash before the friend map is initialized', async () => {
+        mocks.friends.value = undefined;
+
+        const wrapper = mount(FriendList);
+        await flushAsync();
+
+        expect(wrapper.vm.friendsListDisplayData).toEqual([]);
+        expect(mocks.getAllUserStats).not.toHaveBeenCalled();
     });
 
     test('debounces search input and applies immediately on change', async () => {
@@ -398,7 +419,7 @@ describe('FriendList.vue', () => {
         expect(mocks.getAllUserMutualCount).toHaveBeenCalledTimes(2);
     });
 
-    test('opens charts tab from toolbar button', async () => {
+    test('loads mutual friend data from toolbar button', async () => {
         const wrapper = mount(FriendList);
 
         await clickButtonByText(
@@ -406,7 +427,9 @@ describe('FriendList.vue', () => {
             'view.friend_list.load_mutual_friends'
         );
 
-        expect(mocks.routerPush).toHaveBeenCalledWith({ name: 'charts' });
+        expect(mocks.fetchMutualGraph).toHaveBeenCalledTimes(1);
+        expect(mocks.getAllUserMutualCount).toHaveBeenCalled();
+        expect(mocks.getAllUserMutualOptedOut).toHaveBeenCalled();
     });
 
     test('loads missing user profiles and shows completion toast', async () => {

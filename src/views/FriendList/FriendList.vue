@@ -193,6 +193,14 @@
     const friendsListSearchFilterVIP = ref(false);
     const selectedFriends = ref(new Set());
     const friendsListDisplayData = ref([]);
+    const emptyFriendMap = new Map();
+    const emptyFavoriteFriendIds = new Set();
+    const getFriendMap = () =>
+        friends.value instanceof Map ? friends.value : emptyFriendMap;
+    const getFavoriteFriendIds = () =>
+        allFavoriteFriendIds.value instanceof Set
+            ? allFavoriteFriendIds.value
+            : emptyFavoriteFriendIds;
     const pageSizes = computed(() => appearanceSettingsStore.tablePageSizes);
     const defaultSorting = [{ id: 'friendNumber', desc: true }];
 
@@ -292,7 +300,7 @@
     );
 
     watch(
-        () => friends.value.size,
+        () => getFriendMap().size,
         () => {
             friendSearchCache.clear();
             refreshFriendStats({ force: true });
@@ -307,7 +315,7 @@
     });
 
     function getFriendStatsRefreshKey() {
-        return Array.from(friends.value.keys()).sort().join('\u0000');
+        return Array.from(getFriendMap().keys()).sort().join('\u0000');
     }
 
     async function refreshFriendStats({ force = false } = {}) {
@@ -417,9 +425,9 @@
             cleanedQuery = removeWhitespace(query);
             upperQuery = query.toUpperCase();
         }
-        for (const ctx of friends.value.values()) {
+        for (const ctx of getFriendMap().values()) {
             if (!ctx.ref) continue;
-            if (friendsListSearchFilterVIP.value && !allFavoriteFriendIds.value.has(ctx.id)) continue;
+            if (friendsListSearchFilterVIP.value && !getFavoriteFriendIds().has(ctx.id)) continue;
             if (query) {
                 let match = false;
                 const searchEntry = getFriendSearchEntry(ctx);
@@ -525,7 +533,7 @@
      *
      */
     async function friendsListLoadUsers() {
-        const toFetch = Array.from(friends.value.values())
+        const toFetch = Array.from(getFriendMap().values())
             .filter((ctx) => ctx.ref && !ctx.ref.date_joined)
             .map((ctx) => ctx.id);
         const total = toFetch.length;

@@ -282,6 +282,7 @@ async function executeAction(type, payload = {}) {
 function createBridge() {
     let notifySnapshotChanged = () => {};
     let timer = null;
+    let stopWatching = null;
 
     function scheduleSnapshotChanged() {
         if (timer) {
@@ -293,28 +294,40 @@ function createBridge() {
         }, 500);
     }
 
-    watch(
-        () => [
-            watchState.isLoggedIn,
-            watchState.isFriendsLoaded,
-            useUserStore().currentUser,
-            useFriendStore().friends?.size ?? 0,
-            useNotificationStore().unseenNotifications?.length ?? 0,
-            useUiStore().notifiedMenus?.length ?? 0,
-            useLocationStore().lastLocation?.location ?? '',
-            useLocationStore().lastLocationDestination,
-            useGameStore().isGameRunning
-        ],
-        scheduleSnapshotChanged,
-        { deep: true }
-    );
+    function ensureWatching() {
+        if (stopWatching) {
+            return;
+        }
+        stopWatching = watch(
+            () => [
+                watchState.isLoggedIn,
+                watchState.isFriendsLoaded,
+                useUserStore().currentUser,
+                useFriendStore().friends?.size ?? 0,
+                useNotificationStore().unseenNotifications?.length ?? 0,
+                useUiStore().notifiedMenus?.length ?? 0,
+                useLocationStore().lastLocation?.location ?? '',
+                useLocationStore().lastLocationDestination,
+                useGameStore().isGameRunning
+            ],
+            scheduleSnapshotChanged,
+            { deep: true }
+        );
+    }
 
     return {
-        getRemoteSnapshot: (options) => buildSnapshot(options),
-        executeRemoteAction: executeAction,
+        getRemoteSnapshot(options) {
+            ensureWatching();
+            return buildSnapshot(options);
+        },
+        executeRemoteAction(type, payload) {
+            ensureWatching();
+            return executeAction(type, payload);
+        },
         setSnapshotChangedCallback(callback) {
             notifySnapshotChanged =
                 typeof callback === 'function' ? callback : () => {};
+            ensureWatching();
         }
     };
 }
