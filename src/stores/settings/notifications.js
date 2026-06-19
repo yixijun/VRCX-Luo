@@ -23,6 +23,7 @@ export const useNotificationsSettingsStore = defineStore(
         const ovrtHudNotifications = ref(true);
         const ovrtWristNotifications = ref(false);
         const imageNotifications = ref(true);
+        const desktopNotificationsEnabled = ref(true);
         const desktopToast = ref('Never');
         const afkDesktopToast = ref(false);
         const notificationTTS = ref('Never');
@@ -120,6 +121,7 @@ export const useNotificationsSettingsStore = defineStore(
         const notificationPosition = ref('topCenter');
         const notificationTimeout = ref(3000);
         const notificationLayout = ref('notification-center');
+        let desktopNotificationsListenerInitialized = false;
 
         async function initNotificationsSettings() {
             const [
@@ -130,6 +132,7 @@ export const useNotificationsSettingsStore = defineStore(
                 ovrtHudNotificationsConfig,
                 ovrtWristNotificationsConfig,
                 imageNotificationsConfig,
+                desktopNotificationsEnabledConfig,
                 desktopToastConfig,
                 afkDesktopToastConfig,
                 notificationTTSConfig,
@@ -147,6 +150,7 @@ export const useNotificationsSettingsStore = defineStore(
                 configRepository.getBool('VRCX_ovrtHudNotifications', true),
                 configRepository.getBool('VRCX_ovrtWristNotifications', false),
                 configRepository.getBool('VRCX_imageNotifications', true),
+                VRCXStorage.Get('VRCX_desktopNotificationsEnabled'),
                 configRepository.getString('VRCX_desktopToast', 'Never'),
                 configRepository.getBool('VRCX_afkDesktopToast', false),
                 configRepository.getString('VRCX_notificationTTS', 'Never'),
@@ -174,6 +178,8 @@ export const useNotificationsSettingsStore = defineStore(
             ovrtHudNotifications.value = ovrtHudNotificationsConfig;
             ovrtWristNotifications.value = ovrtWristNotificationsConfig;
             imageNotifications.value = imageNotificationsConfig;
+            desktopNotificationsEnabled.value =
+                desktopNotificationsEnabledConfig !== 'false';
             desktopToast.value = desktopToastConfig;
             afkDesktopToast.value = afkDesktopToastConfig;
             notificationTTS.value = notificationTTSConfig;
@@ -191,6 +197,17 @@ export const useNotificationsSettingsStore = defineStore(
                 // some workaround for failing to get voice list first run
                 updateTTSVoices();
             }, 5000);
+
+            if (!desktopNotificationsListenerInitialized) {
+                desktopNotificationsListenerInitialized = true;
+                window.addEventListener(
+                    'vrcx-desktop-notifications-updated',
+                    handleDesktopNotificationsUpdated
+                );
+                window.electron?.onDesktopNotificationsUpdated?.((enabled) => {
+                    desktopNotificationsEnabled.value = enabled !== false;
+                });
+            }
         }
 
         initNotificationsSettings();
@@ -237,6 +254,22 @@ export const useNotificationsSettingsStore = defineStore(
                 'VRCX_imageNotifications',
                 imageNotifications.value
             );
+        }
+
+        function setDesktopNotificationsEnabled(value = null) {
+            desktopNotificationsEnabled.value =
+                value === null ? !desktopNotificationsEnabled.value : !!value;
+            VRCXStorage.Set(
+                'VRCX_desktopNotificationsEnabled',
+                desktopNotificationsEnabled.value.toString()
+            );
+            window.electron?.setDesktopNotificationsEnabled?.(
+                desktopNotificationsEnabled.value
+            );
+        }
+
+        function handleDesktopNotificationsUpdated(event) {
+            desktopNotificationsEnabled.value = event.detail?.enabled !== false;
         }
 
         function changeNotificationPosition(value) {
@@ -474,6 +507,7 @@ export const useNotificationsSettingsStore = defineStore(
             ovrtHudNotifications,
             ovrtWristNotifications,
             imageNotifications,
+            desktopNotificationsEnabled,
             desktopToast,
             afkDesktopToast,
             notificationTTS,
@@ -494,6 +528,7 @@ export const useNotificationsSettingsStore = defineStore(
             setOvrtHudNotifications,
             setOvrtWristNotifications,
             setImageNotifications,
+            setDesktopNotificationsEnabled,
             setDesktopToast,
             setAfkDesktopToast,
             setNotificationTTS,

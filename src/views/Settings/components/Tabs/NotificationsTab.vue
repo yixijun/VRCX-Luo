@@ -31,12 +31,21 @@
         </SettingsGroup>
 
         <SettingsGroup :title="t('view.settings.notifications.notifications.desktop_notifications.header')">
+            <SettingsItem
+                :label="t('view.settings.notifications.notifications.desktop_notifications.enabled')"
+                :description="t('view.settings.notifications.notifications.desktop_notifications.enabled_description')">
+                <Switch
+                    :model-value="desktopNotificationsEnabled"
+                    @update:modelValue="setDesktopNotificationsEnabled()" />
+            </SettingsItem>
+
             <SettingsItem :label="t('view.settings.notifications.notifications.desktop_notifications.when_to_display')">
                 <ToggleGroup
                     type="single"
                     required
                     variant="outline"
                     size="sm"
+                    :disabled="!desktopNotificationsEnabled"
                     :model-value="desktopToast"
                     @update:model-value="setDesktopToast(String($event))">
                     <ToggleGroupItem value="Never">{{
@@ -67,7 +76,10 @@
                 :label="
                     t('view.settings.notifications.notifications.desktop_notifications.desktop_notification_while_afk')
                 ">
-                <Switch :model-value="afkDesktopToast" @update:modelValue="setAfkDesktopToast" />
+                <Switch
+                    :model-value="afkDesktopToast"
+                    :disabled="!desktopNotificationsEnabled"
+                    @update:modelValue="setAfkDesktopToast" />
             </SettingsItem>
         </SettingsGroup>
 
@@ -166,6 +178,7 @@
     const notificationsSettingsStore = useNotificationsSettingsStore();
 
     const {
+        desktopNotificationsEnabled,
         desktopToast,
         afkDesktopToast,
         notificationTTS,
@@ -177,6 +190,7 @@
     } = storeToRefs(notificationsSettingsStore);
 
     const {
+        setDesktopNotificationsEnabled,
         setDesktopToast,
         setAfkDesktopToast,
         setNotificationTTSNickName,

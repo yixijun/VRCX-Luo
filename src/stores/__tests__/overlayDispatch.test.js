@@ -172,6 +172,19 @@ describe('displayDesktopToast', () => {
 
         expect(AppApi.DesktopNotification).not.toHaveBeenCalled();
     });
+
+    test('does nothing when desktop notifications are disabled', () => {
+        deps.notificationsSettingsStore.desktopNotificationsEnabled = false;
+        dispatch = createOverlayDispatch(deps);
+        getNotificationMessage.mockReturnValue({
+            title: 'Friend Online',
+            body: 'Alice is online'
+        });
+
+        dispatch.displayDesktopToast({}, 'some message', 'img.jpg');
+
+        expect(AppApi.DesktopNotification).not.toHaveBeenCalled();
+    });
 });
 
 // ─── notySaveImage ───────────────────────────────────────────────────

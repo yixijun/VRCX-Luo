@@ -144,6 +144,14 @@ function getCloseToTray() {
     return VRCXStorage.Get('VRCX_CloseToTray') === 'true';
 }
 
+function areDesktopNotificationsEnabled() {
+    return VRCXStorage.Get('VRCX_desktopNotificationsEnabled') !== 'false';
+}
+
+function notifyDesktopNotificationsChanged(enabled) {
+    mainWindow?.webContents?.send('desktop-notifications-updated', enabled);
+}
+
 const gotTheLock = app.requestSingleInstanceLock();
 const strip_vrcx_prefix_regex = new RegExp('^' + VRCX_URI_PREFIX + '://');
 
@@ -201,6 +209,10 @@ ipcMain.handle('dialog:openDirectory', async () => {
 });
 
 ipcMain.handle('notification:showNotification', (event, title, body, icon) => {
+    if (!areDesktopNotificationsEnabled()) {
+        return;
+    }
+
     if (activeNotification) {
         activeNotification.close();
     }
@@ -281,6 +293,14 @@ ipcMain.handle('app:getNoUpdater', () => {
 
 ipcMain.handle('app:setTrayIconNotification', (event, notify) => {
     setTrayIconNotification(notify);
+});
+
+ipcMain.handle('app:setDesktopNotificationsEnabled', (event, enabled) => {
+    const next = !!enabled;
+    VRCXStorage.Set('VRCX_desktopNotificationsEnabled', String(next));
+    notifyDesktopNotificationsChanged(next);
+    destroyTray();
+    createTray();
 });
 
 function tryRelaunchWithArgs(args) {
@@ -534,23 +554,41 @@ function createTray() {
         trayIconNotify = path.join(rootDir, 'images/VRCX_notify.ico');
     }
     tray = new Tray(trayIcon);
+    const desktopNotificationsEnabled = areDesktopNotificationsEnabled();
     const contextMenu = Menu.buildFromTemplate([
         {
-            label: 'Open',
+            label: '打开 VRCX-Luo',
             type: 'normal',
             click: function () {
                 mainWindow.show();
             }
         },
         {
-            label: 'DevTools',
+            label: desktopNotificationsEnabled
+                ? '关闭桌面通知'
+                : '启用桌面通知',
+            type: 'checkbox',
+            checked: desktopNotificationsEnabled,
+            click: function () {
+                const enabled = !areDesktopNotificationsEnabled();
+                VRCXStorage.Set(
+                    'VRCX_desktopNotificationsEnabled',
+                    String(enabled)
+                );
+                notifyDesktopNotificationsChanged(enabled);
+                destroyTray();
+                createTray();
+            }
+        },
+        {
+            label: '开发者工具',
             type: 'normal',
             click: function () {
                 mainWindow.webContents.openDevTools();
             }
         },
         {
-            label: 'Quit VRCX',
+            label: '退出 VRCX-Luo',
             type: 'normal',
             click: function () {
                 appIsQuitting = true;

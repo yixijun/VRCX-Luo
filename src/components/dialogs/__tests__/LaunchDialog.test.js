@@ -6,6 +6,11 @@ const mocks = vi.hoisted(() => ({
     selfInvite: vi.fn(async () => ({})),
     writeText: vi.fn(),
     getBool: vi.fn(async () => false),
+    isGameRunning: { value: false },
+    isSteamVRRunning: { value: false },
+    setIsSteamVRRunning: vi.fn(),
+    confirm: vi.fn(async () => ({ ok: true })),
+    launchGame: vi.fn(),
     launchDialogData: {
         value: {
             visible: true,
@@ -17,7 +22,11 @@ const mocks = vi.hoisted(() => ({
 }));
 
 Object.assign(globalThis, {
-    navigator: { clipboard: { writeText: (...a) => mocks.writeText(...a) } }
+    navigator: { clipboard: { writeText: (...a) => mocks.writeText(...a) } },
+    AppApi: {
+        IsSteamVRRunning: vi.fn(async () => false),
+        StartSteamVR: vi.fn(async () => true)
+    }
 });
 
 vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
@@ -25,15 +34,19 @@ vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k) => k }) }));
 vi.mock('vue-sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
 vi.mock('../../../stores', () => ({
     useFriendStore: () => ({ friends: ref(new Map()) }),
-    useGameStore: () => ({ isGameRunning: ref(false) }),
+    useGameStore: () => ({
+        isGameRunning: mocks.isGameRunning,
+        isSteamVRRunning: mocks.isSteamVRRunning,
+        setIsSteamVRRunning: (...args) => mocks.setIsSteamVRRunning(...args)
+    }),
     useInviteStore: () => ({ canOpenInstanceInGame: ref(false) }),
     useLaunchStore: () => ({
         launchDialogData: mocks.launchDialogData,
-        launchGame: vi.fn(),
+        launchGame: (...args) => mocks.launchGame(...args),
         tryOpenInstanceInVrc: vi.fn()
     }),
     useLocationStore: () => ({ lastLocation: ref({ friendList: new Map() }) }),
-    useModalStore: () => ({ confirm: vi.fn() })
+    useModalStore: () => ({ confirm: (...args) => mocks.confirm(...args) })
 }));
 vi.mock('../../../shared/utils', () => ({
     getLaunchURL: () => 'vrchat://launch',
@@ -104,15 +117,69 @@ vi.mock('lucide-vue-next', () => ({
 }));
 
 import LaunchDialog from '../LaunchDialog.vue';
+import { Button } from '@/components/ui/button';
+
+async function flushPromises() {
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+}
+
+async function waitForExpect(assertion) {
+    for (let i = 0; i < 10; i++) {
+        try {
+            assertion();
+            return;
+        } catch (error) {
+            await flushPromises();
+            if (i === 9) {
+                throw error;
+            }
+        }
+    }
+}
 
 describe('LaunchDialog.vue', () => {
     beforeEach(() => {
         mocks.selfInvite.mockClear();
+        mocks.confirm.mockClear();
+        mocks.launchGame.mockClear();
+        mocks.setIsSteamVRRunning.mockClear();
+        mocks.isGameRunning.value = false;
+        mocks.isSteamVRRunning.value = false;
+        AppApi.IsSteamVRRunning = vi.fn(async () => false);
+        AppApi.StartSteamVR = vi.fn(async () => true);
     });
 
     it('renders launch dialog header', async () => {
         const wrapper = mount(LaunchDialog);
         await Promise.resolve();
         expect(wrapper.text()).toContain('dialog.launch.header');
+    });
+
+    it('waits after starting SteamVR before launching VRChat in VR mode', async () => {
+        vi.useFakeTimers();
+        const wrapper = mount(LaunchDialog);
+        await flushPromises();
+
+        const launchButton = wrapper
+            .findAllComponents(Button)
+            .find((button) => button.text() === 'dialog.launch.launch');
+        await launchButton.vm.$emit('click');
+        await flushPromises();
+
+        await waitForExpect(() => expect(AppApi.IsSteamVRRunning).toHaveBeenCalled());
+        await waitForExpect(() => expect(mocks.confirm).toHaveBeenCalled());
+        await waitForExpect(() => expect(AppApi.StartSteamVR).toHaveBeenCalled());
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(4999);
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        expect(mocks.launchGame).toHaveBeenCalledTimes(1);
+        expect(mocks.launchGame.mock.calls[0][2]).toBe(false);
+
+        vi.useRealTimers();
     });
 });

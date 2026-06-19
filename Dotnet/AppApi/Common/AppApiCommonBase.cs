@@ -51,6 +51,7 @@ namespace VRCX
         public abstract void CheckGameRunning();
         public abstract bool IsGameRunning();
         public abstract bool IsSteamVRRunning();
+        public abstract bool StartSteamVR();
         public abstract int QuitGame();
         public abstract bool StartGame(string arguments);
         public abstract bool StartGameFromPath(string path, string arguments);

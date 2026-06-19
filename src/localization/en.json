@@ -1125,6 +1125,8 @@
                     },
                     "desktop_notifications": {
                         "header": "Desktop Notifications",
+                        "enabled": "Enable Desktop Notifications",
+                        "enabled_description": "When disabled, system desktop notifications will not pop up, but Notification Center and the Notifications page still keep records.",
                         "when_to_display": "Show Desktop Notifications",
                         "when_to_display_vr": "Show VR Notifications",
                         "desktop_notification_while_afk": "Show Notifications While AFK"
@@ -2015,6 +2017,9 @@
             "open_ingame": "Open in-game",
             "self_invite": "Self invite",
             "game_running_warning": "Are you sure you want to launch a second VRChat instance?",
+            "steamvr_not_running_title": "SteamVR is not running",
+            "steamvr_not_running_warning": "SteamVR is not running. Open SteamVR before launching VRChat in VR mode?",
+            "open_steamvr": "Open SteamVR",
             "confirm_yes": "Yes",
             "confirm_no": "No"
         },

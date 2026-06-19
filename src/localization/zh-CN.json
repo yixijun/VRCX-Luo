@@ -1143,6 +1143,8 @@
                     },
                     "desktop_notifications": {
                         "header": "桌面通知",
+                        "enabled": "启用桌面通知",
+                        "enabled_description": "关闭后不会弹出系统桌面通知，但通知中心和通知页面仍会保留记录。",
                         "when_to_display": "何时显示",
                         "when_to_display_vr": "在 VR 中显示通知",
                         "desktop_notification_while_afk": "当处于 AFK 状态时显示桌面通知"
@@ -2025,6 +2027,9 @@
             "open_ingame": "在 VRChat 中打开",
             "self_invite": "邀请自己",
             "game_running_warning": "你确定要启动另一个 VRChat 客户端吗？",
+            "steamvr_not_running_title": "SteamVR 未运行",
+            "steamvr_not_running_warning": "SteamVR 当前未运行。是否先打开 SteamVR，再以 VR 模式启动 VRChat？",
+            "open_steamvr": "打开 SteamVR",
             "confirm_yes": "是，确认启动",
             "confirm_no": "否，我再想想"
         },

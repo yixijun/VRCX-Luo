@@ -248,6 +248,7 @@ declare global {
         CheckGameRunning(): Promise<void>;
         IsGameRunning(): Promise<boolean>;
         IsSteamVRRunning(): Promise<boolean>;
+        StartSteamVR(): Promise<boolean>;
         QuitGame(): Promise<number>;
         StartGame(arguments: string): Promise<boolean>;
         StartGameFromPath(path: string, arguments: string): Promise<boolean>;

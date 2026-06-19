@@ -30,6 +30,8 @@ namespace VRCX
             Instance = this;
             InitializeComponent();
             nativeWindow = NativeWindow.FromHandle(this.Handle);
+            UpdateDesktopNotificationsTrayMenu();
+            TrayMenu.Opening += (_, _) => UpdateDesktopNotificationsTrayMenu();
 
             // adding a 5s delay here to avoid excessive writes to disk
             _saveTimer = new Timer();
@@ -220,6 +222,31 @@ namespace VRCX
         private void TrayMenu_Open_Click(object sender, System.EventArgs e)
         {
             Focus_Window();
+        }
+
+        private bool AreDesktopNotificationsEnabled()
+        {
+            return VRCXStorage.Instance.Get("VRCX_desktopNotificationsEnabled") != "false";
+        }
+
+        private void UpdateDesktopNotificationsTrayMenu()
+        {
+            var enabled = AreDesktopNotificationsEnabled();
+            TrayMenu_DesktopNotifications.Checked = enabled;
+            TrayMenu_DesktopNotifications.Text = enabled ? "关闭桌面通知" : "启用桌面通知";
+        }
+
+        private void TrayMenu_DesktopNotifications_Click(object sender, System.EventArgs e)
+        {
+            var enabled = !AreDesktopNotificationsEnabled();
+            VRCXStorage.Instance.Set("VRCX_desktopNotificationsEnabled", enabled.ToString().ToLowerInvariant());
+            VRCXStorage.Instance.Save();
+            UpdateDesktopNotificationsTrayMenu();
+            Browser?.ExecuteScriptAsync(
+                "window.dispatchEvent(new CustomEvent('vrcx-desktop-notifications-updated', { detail: { enabled: " +
+                enabled.ToString().ToLowerInvariant() +
+                " } }));"
+            );
         }
 
         public void Focus_Window()

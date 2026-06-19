@@ -37,6 +37,7 @@ namespace VRCX
             this.components = new Container();
             this.TrayMenu = new ContextMenuStrip(this.components);
             this.TrayMenu_Open = new ToolStripMenuItem();
+            this.TrayMenu_DesktopNotifications = new ToolStripMenuItem();
             this.TrayMenu_DevTools = new ToolStripMenuItem();
             this.TrayMenu_ForceCrash = new ToolStripMenuItem();
             this.TrayMenu_Separator = new ToolStripSeparator();
@@ -50,6 +51,7 @@ namespace VRCX
             // TrayMenu
             //
             this.TrayMenu.Items.Add(this.TrayMenu_Open);
+            this.TrayMenu.Items.Add(this.TrayMenu_DesktopNotifications);
             this.TrayMenu.Items.Add(this.TrayMenu_DevTools);
             if (Program.LaunchDebug)
                 this.TrayMenu.Items.Add(this.TrayMenu_ForceCrash);
@@ -57,39 +59,45 @@ namespace VRCX
             this.TrayMenu.Items.Add(this.TrayMenu_Quit);
 
             this.TrayMenu.Name = "TrayMenu";
-            this.TrayMenu.Size = new Size(132, 54);
+            this.TrayMenu.Size = new Size(178, 98);
             //
             // TrayMenu_Open
             //
             this.TrayMenu_Open.Name = "TrayMenu_Open";
-            this.TrayMenu_Open.Size = new Size(131, 22);
-            this.TrayMenu_Open.Text = "Open";
+            this.TrayMenu_Open.Size = new Size(177, 22);
+            this.TrayMenu_Open.Text = "打开 VRCX-Luo";
             this.TrayMenu_Open.Click += new EventHandler(this.TrayMenu_Open_Click);
+            //
+            // TrayMenu_DesktopNotifications
+            //
+            this.TrayMenu_DesktopNotifications.Name = "TrayMenu_DesktopNotifications";
+            this.TrayMenu_DesktopNotifications.Size = new Size(177, 22);
+            this.TrayMenu_DesktopNotifications.Click += new EventHandler(this.TrayMenu_DesktopNotifications_Click);
             //
             // TrayMenu_DevTools
             //
             this.TrayMenu_DevTools.Name = "TrayMenu_DevTools";
-            this.TrayMenu_DevTools.Size = new Size(131, 22);
-            this.TrayMenu_DevTools.Text = "DevTools";
+            this.TrayMenu_DevTools.Size = new Size(177, 22);
+            this.TrayMenu_DevTools.Text = "开发者工具";
             this.TrayMenu_DevTools.Click += new EventHandler(this.TrayMenu_DevTools_Click);
             //
             // TrayMenu_ForceCrash
             //
             this.TrayMenu_ForceCrash.Name = "TrayMenu_ForceCrash";
-            this.TrayMenu_ForceCrash.Size = new Size(131, 22);
-            this.TrayMenu_ForceCrash.Text = "Force Crash";
+            this.TrayMenu_ForceCrash.Size = new Size(177, 22);
+            this.TrayMenu_ForceCrash.Text = "强制崩溃测试";
             this.TrayMenu_ForceCrash.Click += new EventHandler(this.TrayMenu_ForceCrash_Click);
             //
             // TrayMenu_Separator
             //
             this.TrayMenu_Separator.Name = "TrayMenu_Separator";
-            this.TrayMenu_Separator.Size = new Size(128, 6);
+            this.TrayMenu_Separator.Size = new Size(174, 6);
             //
             // TrayMenu_Quit
             //
             this.TrayMenu_Quit.Name = "TrayMenu_Quit";
-            this.TrayMenu_Quit.Size = new Size(131, 22);
-            this.TrayMenu_Quit.Text = "Quit VRCX";
+            this.TrayMenu_Quit.Size = new Size(177, 22);
+            this.TrayMenu_Quit.Text = "退出 VRCX-Luo";
             this.TrayMenu_Quit.Click += new EventHandler(this.TrayMenu_Quit_Click);
             //
             // TrayIcon
@@ -121,6 +129,7 @@ namespace VRCX
 
         private ContextMenuStrip TrayMenu;
         private ToolStripMenuItem TrayMenu_Open;
+        private ToolStripMenuItem TrayMenu_DesktopNotifications;
         private ToolStripMenuItem TrayMenu_DevTools;
         private ToolStripMenuItem TrayMenu_ForceCrash;
         private ToolStripSeparator TrayMenu_Separator;

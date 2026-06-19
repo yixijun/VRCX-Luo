@@ -193,6 +193,9 @@ export function createOverlayDispatch({
      * @param {string} image
      */
     function desktopNotification(displayName, message, image) {
+        if (notificationsSettingsStore.desktopNotificationsEnabled === false) {
+            return;
+        }
         if (WINDOWS) {
             AppApi.DesktopNotification(displayName, message, image);
         } else {

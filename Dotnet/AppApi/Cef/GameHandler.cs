@@ -47,6 +47,46 @@ namespace VRCX
             return ProcessMonitor.Instance.IsProcessRunning("vrserver");
         }
 
+        public override bool StartSteamVR()
+        {
+            try
+            {
+                using var key = Registry.ClassesRoot.OpenSubKey(@"steam\shell\open\command");
+                var match = Regex.Match(key.GetValue(string.Empty) as string, "^\"(.+?)\\\\steam.exe\"");
+                if (match.Success)
+                {
+                    var path = match.Groups[1].Value;
+                    Process.Start(new ProcessStartInfo
+                    {
+                        WorkingDirectory = path,
+                        FileName = $"{path}\\steam.exe",
+                        UseShellExecute = false,
+                        Arguments = "-applaunch 250820"
+                    })?.Dispose();
+                    return true;
+                }
+            }
+            catch
+            {
+                logger.Warn("Failed to start SteamVR from Steam");
+            }
+
+            try
+            {
+                Process.Start(new ProcessStartInfo("steam://launch/250820")
+                {
+                    UseShellExecute = true
+                })?.Dispose();
+                return true;
+            }
+            catch
+            {
+                logger.Warn("Failed to start SteamVR from protocol");
+            }
+
+            return false;
+        }
+
         public override int QuitGame()
         {
             var processes = Process.GetProcessesByName("VRChat");

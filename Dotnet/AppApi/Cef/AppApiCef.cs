@@ -55,6 +55,9 @@ namespace VRCX
 
         public override void DesktopNotification(string BoldText, string Text = "", string Image = "")
         {
+            if (VRCXStorage.Instance.Get("VRCX_desktopNotificationsEnabled") == "false")
+                return;
+
             try
             {
                 ToastContentBuilder builder = new ToastContentBuilder();
