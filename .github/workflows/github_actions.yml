@@ -443,25 +443,20 @@ jobs:
                   tag_name: ${{ needs.set_version.outputs.version }}
                   name: VRCX-Luo ${{ needs.set_version.outputs.version }}
                   body: |
-                      ## VRCX-Luo 2026.6.14-fix4
+                      ## VRCX-Luo 2026.6.19
 
-                      Fix release for notification center clearing, installer launch, update detection, and installer cleanup.
+                      This release focuses on notification controls, VR launch handling, friend list organization, and memory cleanup tools.
 
                       ### Changes
 
-                      - Fixed notification center clear so cleared cards stay hidden after restarting VRCX-Luo.
-                      - Kept notification page history intact when clearing only the notification center.
-                      - Suppressed noisy expired notification "mark as seen" 404 errors.
-                      - Fixed updater asset selection on Windows to download the Setup installer instead of other `.exe` assets.
-                      - Added updater download progress polling and automatic installer launch after download.
-                      - Fixed update release selection so manually selected versions can be downloaded correctly.
-                      - Fixed installer restart so the downloaded Setup can launch from VRCX-Luo builds.
-                      - Changed update detection to use GitHub's latest release endpoint instead of guessing from the release list, so later fix releases such as `fix2`, `fix3`, or newer are handled correctly.
-                      - Normalized updater release matching so tag names and display names compare consistently.
-                      - Saved downloaded Windows installers with a stable `VRCX-Luo_Setup.exe` name before installation.
-                      - Cleaned leftover updater installer files after normal startup, while keeping `/Upgrade` startup reserved for installing downloaded updates.
-                      - Fixed Auto Follow launch mode detection so SteamVR/VRChat runtime state is checked live before joining.
-                      - Auto Follow now starts VRChat in VR mode when SteamVR is already running and VRChat is not open, while still opening the in-game join flow when both are running.
+                      - Added a desktop notification switch and tray menu entry for enabling or disabling desktop notifications.
+                      - Added custom notification sounds so VRCX-Luo notifications can be distinguished from other apps.
+                      - Fixed custom notification sounds so they respect the desktop notification switch.
+                      - Added SteamVR status handling for VR launch, including a prompt to start SteamVR and a configurable delay before starting VRChat.
+                      - Added an offline inactive-friends category with configurable time and automatic hiding.
+                      - Added a Tools page memory cleanup utility for VRCX-Luo, VRChat, and CEF related processes.
+                      - Added deep memory cleanup with administrator confirmation, memory usage progress display, and Chinese UI copy.
+                      - Added a warning note for memory cleanup: `专为16G内存设计，效果未知`.
 
                       ### Build
 

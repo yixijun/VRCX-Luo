@@ -253,5 +253,42 @@ namespace VRCX
                 logger.Error(ex, "Failed to open calendar file");
             }
         }
+
+        public override bool RestartAsAdministrator()
+        {
+            if (!OperatingSystem.IsWindows())
+                return false;
+
+            var args = new List<string> { StartupArgs.VrcxLaunchArguments.IsUpgradePrefix };
+
+            if (StartupArgs.LaunchArguments.IsDebug)
+                args.Add(StartupArgs.VrcxLaunchArguments.IsDebugPrefix);
+
+            if (!string.IsNullOrWhiteSpace(StartupArgs.LaunchArguments.ConfigDirectory))
+                args.Add($"{StartupArgs.VrcxLaunchArguments.ConfigDirectoryPrefix}=\"{StartupArgs.LaunchArguments.ConfigDirectory}\"");
+
+            if (!string.IsNullOrWhiteSpace(StartupArgs.LaunchArguments.ProxyUrl))
+                args.Add($"{StartupArgs.VrcxLaunchArguments.ProxyUrlPrefix}=\"{StartupArgs.LaunchArguments.ProxyUrl}\"");
+
+            try
+            {
+                Process.Start(new ProcessStartInfo
+                {
+                    FileName = Application.ExecutablePath,
+                    Arguments = string.Join(' ', args),
+                    UseShellExecute = true,
+                    Verb = "runas",
+                    WorkingDirectory = Program.BaseDirectory
+                })?.Dispose();
+
+                Environment.Exit(0);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, "Failed to restart VRCX as administrator");
+                return false;
+            }
+        }
     }
 }

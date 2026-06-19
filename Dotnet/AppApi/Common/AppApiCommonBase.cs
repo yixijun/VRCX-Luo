@@ -26,6 +26,9 @@ namespace VRCX
         public abstract void FlashWindow();
         public abstract void SetUserAgent();
         public abstract void OpenCalendarFile(string icsContent);
+        public abstract bool RestartAsAdministrator();
+        public string GetMemoryCleanupSnapshot() => GetMemoryCleanupSnapshotInternal();
+        public string CleanupMemory(bool deep) => CleanupMemoryInternal(deep);
 
         // Folders
         public abstract string GetVRChatAppDataLocation();

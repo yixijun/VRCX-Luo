@@ -195,6 +195,9 @@ declare global {
         SetUserAgent(): Promise<void>;
         SetTrayIconNotification(notify: boolean): Promise<void>;
         OpenCalendarFile(icsContent: string): Promise<void>;
+        RestartAsAdministrator(): Promise<boolean>;
+        GetMemoryCleanupSnapshot(): Promise<string>;
+        CleanupMemory(deep: boolean): Promise<string>;
 
         // Common Functions
         GetColourFromUserID(userId: string): Promise<number>;

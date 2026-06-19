@@ -136,5 +136,10 @@ namespace VRCX
         public override void OpenCalendarFile(string icsContent)
         {
         }
+
+        public override bool RestartAsAdministrator()
+        {
+            return false;
+        }
     }
 }

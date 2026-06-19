@@ -168,6 +168,16 @@ const toolDefinitions = [
         action: { type: 'dialog', dialogKey: 'infoCompletion' }
     },
     {
+        key: 'memory-cleanup',
+        category: 'system',
+        iconKey: 'speed-up',
+        navIcon: 'ri-speed-up-line',
+        titleKey: 'view.tools.system_tools.memory_cleanup',
+        descriptionKey: 'view.tools.system_tools.memory_cleanup_description',
+        navEligible: true,
+        action: { type: 'dialog', dialogKey: 'memory-cleanup' }
+    },
+    {
         key: 'group-calendar',
         category: 'group',
         iconKey: 'calendar',

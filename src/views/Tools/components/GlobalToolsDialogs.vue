@@ -14,6 +14,9 @@
     <ProfileCompletionDialog
         :visible="infoCompletion"
         @close="closeDialog('infoCompletion')" />
+    <MemoryCleanupDialog
+        :visible="memoryCleanup"
+        @close="closeDialog('memoryCleanup')" />
 </template>
 
 <script setup>
@@ -30,6 +33,7 @@
     import ExportDiscordNamesDialog from '../dialogs/ExportDiscordNamesDialog.vue';
     import ExportFriendsListDialog from '../dialogs/ExportFriendsListDialog.vue';
     import GroupCalendarDialog from '../dialogs/GroupCalendarDialog.vue';
+    import MemoryCleanupDialog from '../dialogs/MemoryCleanupDialog.vue';
     import NoteExportDialog from '../dialogs/NoteExportDialog.vue';
 
     const { friends } = storeToRefs(useFriendStore());
@@ -42,6 +46,7 @@
         exportDiscordNames,
         exportFriendsList,
         groupCalendar,
+        memoryCleanup,
         noteExport
     } = storeToRefs(toolsStore);
 

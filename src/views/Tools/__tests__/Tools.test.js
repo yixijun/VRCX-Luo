@@ -7,6 +7,7 @@ const showGalleryPage = vi.fn();
 const showVRChatConfig = vi.fn();
 const showLaunchOptions = vi.fn();
 const showRegistryBackupDialog = vi.fn();
+const openDialog = vi.fn();
 const getString = vi.fn();
 const setString = vi.fn();
 const friends = ref([]);
@@ -40,7 +41,7 @@ vi.mock('pinia', async (importOriginal) => {
 vi.mock('../../../stores', () => ({
     useFriendStore: () => ({ friends }),
     useGalleryStore: () => ({ showGalleryPage }),
-    useToolsStore: () => ({ openDialog: vi.fn() }),
+    useToolsStore: () => ({ openDialog }),
     useAdvancedSettingsStore: () => ({ showVRChatConfig }),
     useLaunchStore: () => ({ showLaunchOptions }),
     useVrcxStore: () => ({ showRegistryBackupDialog })
@@ -160,5 +161,20 @@ describe('Tools.vue', () => {
             'VRCX_toolsCategoryCollapsed',
             expect.stringContaining('"image":false')
         );
+    });
+
+    test('clicking memory cleanup tool opens memory cleanup dialog', async () => {
+        const wrapper = mount(Tools);
+        await flushPromises();
+
+        const memoryCleanupItem = findToolItemByTitle(
+            wrapper,
+            'view.tools.system_tools.memory_cleanup'
+        );
+
+        expect(memoryCleanupItem).toBeTruthy();
+        await memoryCleanupItem.trigger('click');
+
+        expect(openDialog).toHaveBeenCalledWith('memoryCleanup');
     });
 });
