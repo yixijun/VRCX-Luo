@@ -53,7 +53,7 @@ namespace VRCX
             return await MainForm.Instance.Browser.GetZoomLevelAsync();
         }
 
-        public override void DesktopNotification(string BoldText, string Text = "", string Image = "")
+        public override void DesktopNotification(string BoldText, string Text = "", string Image = "", bool Silent = false)
         {
             if (VRCXStorage.Instance.Get("VRCX_desktopNotificationsEnabled") == "false")
                 return;
@@ -70,6 +70,9 @@ namespace VRCX
 
                 if (!string.IsNullOrEmpty(Text))
                     builder.AddText(Text);
+
+                if (Silent)
+                    builder.AddAudio(new ToastAudio { Silent = true });
 
                 builder.Show();
             }

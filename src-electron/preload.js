@@ -55,7 +55,7 @@ contextBridge.exposeInMainWorld('electron', {
             'desktop-notifications-updated',
             (_event, enabled) => callback(enabled)
         ),
-    openFileDialog: () => ipcRenderer.invoke('dialog:openFile'),
+    openFileDialog: (filters) => ipcRenderer.invoke('dialog:openFile', filters),
     openDirectoryDialog: () => ipcRenderer.invoke('dialog:openDirectory'),
     onWindowPositionChanged: (callback) =>
         registerManagedListener('setWindowPosition', callback),
@@ -67,8 +67,14 @@ contextBridge.exposeInMainWorld('electron', {
         registerManagedListener('setZoomLevel', callback),
     onBrowserFocus: (callback) =>
         registerManagedListener('onBrowserFocus', callback),
-    desktopNotification: (title, body, icon) =>
-        ipcRenderer.invoke('notification:showNotification', title, body, icon),
+    desktopNotification: (title, body, icon, silent) =>
+        ipcRenderer.invoke(
+            'notification:showNotification',
+            title,
+            body,
+            icon,
+            silent
+        ),
     restartApp: () => ipcRenderer.invoke('app:restart'),
     getOverlayWindow: () => ipcRenderer.invoke('app:getOverlayWindow'),
     updateVr: (active, hmdOverlay, wristOverlay, menuButton, overlayHand) =>

@@ -41,12 +41,15 @@ declare global {
             getClipboardText: () => Promise<string>;
             getNoUpdater: () => Promise<boolean>;
             setTrayIconNotification: (notify: boolean) => Promise<void>;
-            openFileDialog: () => Promise<string>;
+            openFileDialog: (
+                filters?: Array<{ name: string; extensions: string[] }>
+            ) => Promise<string>;
             openDirectoryDialog: () => Promise<string>;
             desktopNotification: (
                 displayName: string,
                 body?: string,
-                image?: string
+                image?: string,
+                silent?: boolean
             ) => Promise<void>;
             onWindowPositionChanged: (
                 Function: (
@@ -176,7 +179,8 @@ declare global {
         DesktopNotification(
             boldText: string,
             text?: string,
-            image?: string
+            image?: string,
+            silent?: boolean
         ): Promise<void>;
         RestartApplication(isUpgrade: boolean): Promise<void>;
         CheckForUpdateExe(): Promise<boolean>;

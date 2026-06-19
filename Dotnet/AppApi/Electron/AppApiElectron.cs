@@ -28,7 +28,7 @@ namespace VRCX
             return 1;
         }
 
-        public override void DesktopNotification(string BoldText, string Text = "", string Image = "")
+        public override void DesktopNotification(string BoldText, string Text = "", string Image = "", bool Silent = false)
         {
         }
 

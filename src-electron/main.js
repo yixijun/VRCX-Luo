@@ -185,10 +185,10 @@ if (!gotTheLock) {
     });
 }
 
-ipcMain.handle('dialog:openFile', async () => {
+ipcMain.handle('dialog:openFile', async (_event, filters = null) => {
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openFile'],
-        filters: [{ name: 'Images', extensions: ['png'] }]
+        filters: filters || [{ name: 'Images', extensions: ['png'] }]
     });
 
     if (!result.canceled && result.filePaths.length > 0) {
@@ -208,7 +208,7 @@ ipcMain.handle('dialog:openDirectory', async () => {
     return null;
 });
 
-ipcMain.handle('notification:showNotification', (event, title, body, icon) => {
+ipcMain.handle('notification:showNotification', (event, title, body, icon, silent) => {
     if (!areDesktopNotificationsEnabled()) {
         return;
     }
@@ -220,7 +220,8 @@ ipcMain.handle('notification:showNotification', (event, title, body, icon) => {
     const notification = new Notification({
         title,
         body,
-        icon
+        icon,
+        silent: !!silent
     });
     notification.on('close', () => {
         if (activeNotification === notification) {

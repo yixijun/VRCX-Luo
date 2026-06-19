@@ -26,6 +26,8 @@ export const useNotificationsSettingsStore = defineStore(
         const desktopNotificationsEnabled = ref(true);
         const desktopToast = ref('Never');
         const afkDesktopToast = ref(false);
+        const customNotificationSoundEnabled = ref(false);
+        const customNotificationSoundPath = ref('');
         const notificationTTS = ref('Never');
         const notificationTTSNickName = ref(false);
         const sharedFeedFilters = ref({
@@ -122,6 +124,7 @@ export const useNotificationsSettingsStore = defineStore(
         const notificationTimeout = ref(3000);
         const notificationLayout = ref('notification-center');
         let desktopNotificationsListenerInitialized = false;
+        let customNotificationAudio = null;
 
         async function initNotificationsSettings() {
             const [
@@ -135,6 +138,8 @@ export const useNotificationsSettingsStore = defineStore(
                 desktopNotificationsEnabledConfig,
                 desktopToastConfig,
                 afkDesktopToastConfig,
+                customNotificationSoundEnabledConfig,
+                customNotificationSoundPathConfig,
                 notificationTTSConfig,
                 notificationTTSNickNameConfig,
                 sharedFeedFiltersConfig,
@@ -153,6 +158,14 @@ export const useNotificationsSettingsStore = defineStore(
                 VRCXStorage.Get('VRCX_desktopNotificationsEnabled'),
                 configRepository.getString('VRCX_desktopToast', 'Never'),
                 configRepository.getBool('VRCX_afkDesktopToast', false),
+                configRepository.getBool(
+                    'VRCX_customNotificationSoundEnabled',
+                    false
+                ),
+                configRepository.getString(
+                    'VRCX_customNotificationSoundPath',
+                    ''
+                ),
                 configRepository.getString('VRCX_notificationTTS', 'Never'),
                 configRepository.getBool('VRCX_notificationTTSNickName', false),
                 configRepository.getString(
@@ -182,6 +195,10 @@ export const useNotificationsSettingsStore = defineStore(
                 desktopNotificationsEnabledConfig !== 'false';
             desktopToast.value = desktopToastConfig;
             afkDesktopToast.value = afkDesktopToastConfig;
+            customNotificationSoundEnabled.value =
+                customNotificationSoundEnabledConfig;
+            customNotificationSoundPath.value =
+                customNotificationSoundPathConfig || '';
             notificationTTS.value = notificationTTSConfig;
             notificationTTSNickName.value = notificationTTSNickNameConfig;
             sharedFeedFilters.value = JSON.parse(sharedFeedFiltersConfig);
@@ -293,6 +310,93 @@ export const useNotificationsSettingsStore = defineStore(
                 'VRCX_afkDesktopToast',
                 afkDesktopToast.value
             );
+        }
+
+        function setCustomNotificationSoundEnabled(value = null) {
+            customNotificationSoundEnabled.value =
+                value === null
+                    ? !customNotificationSoundEnabled.value
+                    : !!value;
+            configRepository.setBool(
+                'VRCX_customNotificationSoundEnabled',
+                customNotificationSoundEnabled.value
+            );
+        }
+
+        async function selectCustomNotificationSound() {
+            let filePath = '';
+            if (WINDOWS) {
+                filePath = await AppApi.OpenFileSelectorDialog(
+                    '',
+                    '.wav',
+                    'Audio Files (*.wav;*.mp3;*.ogg;*.m4a)|*.wav;*.mp3;*.ogg;*.m4a|All files (*.*)|*.*'
+                );
+            } else {
+                filePath = await window.electron?.openFileDialog?.([
+                    {
+                        name: 'Audio Files',
+                        extensions: ['wav', 'mp3', 'ogg', 'm4a']
+                    },
+                    { name: 'All files', extensions: ['*'] }
+                ]);
+            }
+            if (!filePath) {
+                return;
+            }
+            customNotificationSoundPath.value = filePath;
+            customNotificationSoundEnabled.value = true;
+            await configRepository.setString(
+                'VRCX_customNotificationSoundPath',
+                filePath
+            );
+            await configRepository.setBool(
+                'VRCX_customNotificationSoundEnabled',
+                true
+            );
+            playCustomNotificationSound();
+        }
+
+        async function clearCustomNotificationSound() {
+            customNotificationSoundPath.value = '';
+            customNotificationSoundEnabled.value = false;
+            await configRepository.setString(
+                'VRCX_customNotificationSoundPath',
+                ''
+            );
+            await configRepository.setBool(
+                'VRCX_customNotificationSoundEnabled',
+                false
+            );
+        }
+
+        function getCustomNotificationSoundUrl() {
+            if (!customNotificationSoundPath.value) {
+                return '';
+            }
+            return customNotificationSoundPath.value.startsWith('file:')
+                ? customNotificationSoundPath.value
+                : `file:///${encodeURI(
+                      customNotificationSoundPath.value.replaceAll('\\', '/')
+                  ).replaceAll('#', '%23')}`;
+        }
+
+        function shouldPlayCustomNotificationSound() {
+            return (
+                customNotificationSoundEnabled.value &&
+                !!customNotificationSoundPath.value
+            );
+        }
+
+        function playCustomNotificationSound() {
+            const soundUrl = getCustomNotificationSoundUrl();
+            if (!soundUrl) {
+                return;
+            }
+            customNotificationAudio = new Audio(soundUrl);
+            customNotificationAudio.currentTime = 0;
+            customNotificationAudio.play().catch((error) => {
+                console.error('[NotificationSound] Failed to play', error);
+            });
         }
         /**
          * @param {string} value
@@ -510,6 +614,8 @@ export const useNotificationsSettingsStore = defineStore(
             desktopNotificationsEnabled,
             desktopToast,
             afkDesktopToast,
+            customNotificationSoundEnabled,
+            customNotificationSoundPath,
             notificationTTS,
             notificationTTSNickName,
             sharedFeedFilters,
@@ -531,6 +637,11 @@ export const useNotificationsSettingsStore = defineStore(
             setDesktopNotificationsEnabled,
             setDesktopToast,
             setAfkDesktopToast,
+            setCustomNotificationSoundEnabled,
+            selectCustomNotificationSound,
+            clearCustomNotificationSound,
+            shouldPlayCustomNotificationSound,
+            playCustomNotificationSound,
             setNotificationTTS,
             setNotificationTTSNickName,
             getTTSVoiceName,

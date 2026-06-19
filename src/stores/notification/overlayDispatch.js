@@ -62,7 +62,13 @@ export function createOverlayDispatch({
     function displayDesktopToast(noty, message, image) {
         const result = getNotificationMessage(noty, message);
         if (result) {
-            desktopNotification(result.title, result.body, image);
+            const useCustomSound =
+                notificationsSettingsStore.shouldPlayCustomNotificationSound?.() ===
+                true;
+            desktopNotification(result.title, result.body, image, useCustomSound);
+            if (useCustomSound) {
+                notificationsSettingsStore.playCustomNotificationSound?.();
+            }
         }
     }
 
@@ -192,14 +198,19 @@ export function createOverlayDispatch({
      * @param {string} message
      * @param {string} image
      */
-    function desktopNotification(displayName, message, image) {
+    function desktopNotification(displayName, message, image, silent = false) {
         if (notificationsSettingsStore.desktopNotificationsEnabled === false) {
             return;
         }
         if (WINDOWS) {
-            AppApi.DesktopNotification(displayName, message, image);
+            AppApi.DesktopNotification(displayName, message, image, silent);
         } else {
-            window.electron.desktopNotification(displayName, message, image);
+            window.electron.desktopNotification(
+                displayName,
+                message,
+                image,
+                silent
+            );
         }
     }
 

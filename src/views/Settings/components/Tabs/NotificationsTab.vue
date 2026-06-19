@@ -81,6 +81,43 @@
                     :disabled="!desktopNotificationsEnabled"
                     @update:modelValue="setAfkDesktopToast" />
             </SettingsItem>
+
+            <SettingsItem
+                :label="t('view.settings.notifications.notifications.desktop_notifications.custom_sound')"
+                :description="
+                    t('view.settings.notifications.notifications.desktop_notifications.custom_sound_description')
+                ">
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <Switch
+                        :model-value="customNotificationSoundEnabled"
+                        :disabled="!customNotificationSoundPath"
+                        @update:modelValue="setCustomNotificationSoundEnabled()" />
+                    <span class="max-w-64 truncate text-sm text-muted-foreground">
+                        {{
+                            customNotificationSoundPath ||
+                            t('view.settings.notifications.notifications.desktop_notifications.no_custom_sound')
+                        }}
+                    </span>
+                    <Button size="sm" variant="outline" @click="selectCustomNotificationSound">
+                        {{ t('view.settings.notifications.notifications.desktop_notifications.select_sound') }}
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="!customNotificationSoundPath"
+                        @click="playCustomNotificationSound">
+                        <Play />
+                        {{ t('view.settings.notifications.notifications.desktop_notifications.test_sound') }}
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="ghost"
+                        :disabled="!customNotificationSoundPath"
+                        @click="clearCustomNotificationSound">
+                        {{ t('view.settings.notifications.notifications.desktop_notifications.clear_sound') }}
+                    </Button>
+                </div>
+            </SettingsItem>
         </SettingsGroup>
 
         <SettingsGroup :title="t('view.settings.notifications.notifications.text_to_speech.header')">
@@ -181,6 +218,8 @@
         desktopNotificationsEnabled,
         desktopToast,
         afkDesktopToast,
+        customNotificationSoundEnabled,
+        customNotificationSoundPath,
         notificationTTS,
         notificationTTSNickName,
         isTestTTSVisible,
@@ -193,6 +232,10 @@
         setDesktopNotificationsEnabled,
         setDesktopToast,
         setAfkDesktopToast,
+        setCustomNotificationSoundEnabled,
+        selectCustomNotificationSound,
+        clearCustomNotificationSound,
+        playCustomNotificationSound,
         setNotificationTTSNickName,
         getTTSVoiceName,
         changeTTSVoice,

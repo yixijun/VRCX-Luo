@@ -1147,7 +1147,13 @@
                         "enabled_description": "关闭后不会弹出系统桌面通知，但通知中心和通知页面仍会保留记录。",
                         "when_to_display": "何时显示",
                         "when_to_display_vr": "在 VR 中显示通知",
-                        "desktop_notification_while_afk": "当处于 AFK 状态时显示桌面通知"
+                        "desktop_notification_while_afk": "当处于 AFK 状态时显示桌面通知",
+                        "custom_sound": "自定义提示音",
+                        "custom_sound_description": "桌面通知弹出时播放此声音。启用后会静音系统通知声音，避免双响。",
+                        "no_custom_sound": "未选择提示音",
+                        "select_sound": "选择",
+                        "test_sound": "测试",
+                        "clear_sound": "清除"
                     },
                     "text_to_speech": {
                         "header": "文字转语音选项",

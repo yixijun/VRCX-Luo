@@ -1129,7 +1129,13 @@
                         "enabled_description": "When disabled, system desktop notifications will not pop up, but Notification Center and the Notifications page still keep records.",
                         "when_to_display": "Show Desktop Notifications",
                         "when_to_display_vr": "Show VR Notifications",
-                        "desktop_notification_while_afk": "Show Notifications While AFK"
+                        "desktop_notification_while_afk": "Show Notifications While AFK",
+                        "custom_sound": "Custom Notification Sound",
+                        "custom_sound_description": "Plays this sound when a desktop notification is shown. When enabled, the system notification sound is muted.",
+                        "no_custom_sound": "No sound selected",
+                        "select_sound": "Select",
+                        "test_sound": "Test",
+                        "clear_sound": "Clear"
                     },
                     "text_to_speech": {
                         "header": "Text-To-Speech",

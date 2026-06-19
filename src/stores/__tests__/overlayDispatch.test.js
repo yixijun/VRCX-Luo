@@ -23,7 +23,9 @@ function makeDeps(overrides = {}) {
             fetch: vi.fn().mockResolvedValue({ json: null })
         },
         notificationsSettingsStore: {
-            notificationTimeout: 5000
+            notificationTimeout: 5000,
+            shouldPlayCustomNotificationSound: vi.fn(() => false),
+            playCustomNotificationSound: vi.fn()
         },
         advancedSettingsStore: {
             notificationOpacity: 80
@@ -161,8 +163,31 @@ describe('displayDesktopToast', () => {
         expect(AppApi.DesktopNotification).toHaveBeenCalledWith(
             'Friend Online',
             'Alice is online',
-            'img.jpg'
+            'img.jpg',
+            false
         );
+    });
+
+    test('mutes system notification and plays custom sound when enabled', () => {
+        deps.notificationsSettingsStore.shouldPlayCustomNotificationSound.mockReturnValue(
+            true
+        );
+        getNotificationMessage.mockReturnValue({
+            title: 'Friend Online',
+            body: 'Alice is online'
+        });
+
+        dispatch.displayDesktopToast({}, 'some message', 'img.jpg');
+
+        expect(AppApi.DesktopNotification).toHaveBeenCalledWith(
+            'Friend Online',
+            'Alice is online',
+            'img.jpg',
+            true
+        );
+        expect(
+            deps.notificationsSettingsStore.playCustomNotificationSound
+        ).toHaveBeenCalledTimes(1);
     });
 
     test('does nothing when getNotificationMessage returns null', () => {
