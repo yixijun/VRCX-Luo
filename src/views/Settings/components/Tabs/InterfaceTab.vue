@@ -189,6 +189,24 @@
                 </ToggleGroup>
             </SettingsItem>
 
+            <SettingsItem
+                :label="t('view.settings.appearance.appearance.inactive_friend_days')"
+                :description="t('view.settings.appearance.appearance.inactive_friend_days_description')">
+                <NumberField
+                    :model-value="inactiveFriendDays"
+                    :min="7"
+                    :max="365"
+                    :step="1"
+                    class="w-32"
+                    @update:modelValue="setInactiveFriendDays">
+                    <NumberFieldContent>
+                        <NumberFieldDecrement />
+                        <NumberFieldInput />
+                        <NumberFieldIncrement />
+                    </NumberFieldContent>
+                </NumberField>
+            </SettingsItem>
+
             <SettingsItem :label="t('view.settings.appearance.appearance.table_page_sizes')">
                 <Button size="sm" variant="outline" @click="tablePageSizesDialogOpen = true">{{
                     t('common.actions.configure')
@@ -425,6 +443,7 @@
         isAgeGatedInstancesVisible,
         sortFavorites,
         instanceUsersSortAlphabetical,
+        inactiveFriendDays,
         dtHour12,
         dtIsoFormat,
         weekStartsOn,
@@ -449,6 +468,7 @@
         setShowInstanceIdInLocation,
         setIsAgeGatedInstancesVisible,
         setInstanceUsersSortAlphabetical,
+        setInactiveFriendDays,
         setDtHour12,
         setDtIsoFormat,
         setWeekStartsOn,

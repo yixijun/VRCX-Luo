@@ -86,6 +86,7 @@ export const useAppearanceSettingsStore = defineStore(
         const isSidebarDivideByFriendGroup = ref(false);
         const sidebarFavoriteGroups = ref([]);
         const sidebarFavoriteGroupOrder = ref([]);
+        const inactiveFriendDays = ref(30);
         const hideUserNotes = ref(false);
         const hideUserMemos = ref(false);
         const hideUnfriends = ref(false);
@@ -169,6 +170,7 @@ export const useAppearanceSettingsStore = defineStore(
                 isSidebarDivideByFriendGroupConfig,
                 sidebarFavoriteGroupsConfig,
                 sidebarFavoriteGroupOrderConfig,
+                inactiveFriendDaysConfig,
                 hideUserNotesConfig,
                 hideUserMemosConfig,
                 hideUnfriendsConfig,
@@ -238,6 +240,7 @@ export const useAppearanceSettingsStore = defineStore(
                     'VRCX_sidebarFavoriteGroupOrder',
                     '[]'
                 ),
+                configRepository.getInt('VRCX_inactiveFriendDays', 30),
                 configRepository.getBool('VRCX_hideUserNotes', false),
                 configRepository.getBool('VRCX_hideUserMemos', false),
                 configRepository.getBool('VRCX_hideUnfriends', false),
@@ -354,6 +357,11 @@ export const useAppearanceSettingsStore = defineStore(
             );
             sidebarFavoriteGroupOrder.value = JSON.parse(
                 sidebarFavoriteGroupOrderConfig
+            );
+            inactiveFriendDays.value = clampInt(
+                inactiveFriendDaysConfig,
+                7,
+                365
             );
             hideUserNotes.value = hideUserNotesConfig;
             hideUserMemos.value = hideUserMemosConfig;
@@ -867,6 +875,16 @@ export const useAppearanceSettingsStore = defineStore(
             );
         }
         /**
+         * @param {number} value
+         */
+        function setInactiveFriendDays(value) {
+            inactiveFriendDays.value = clampInt(value, 7, 365);
+            configRepository.setInt(
+                'VRCX_inactiveFriendDays',
+                inactiveFriendDays.value
+            );
+        }
+        /**
          *
          */
         function setHideUserNotes() {
@@ -1217,6 +1235,7 @@ export const useAppearanceSettingsStore = defineStore(
             isSidebarDivideByFriendGroup,
             sidebarFavoriteGroups,
             sidebarFavoriteGroupOrder,
+            inactiveFriendDays,
             hideUserNotes,
             hideUserMemos,
             hideUnfriends,
@@ -1260,6 +1279,7 @@ export const useAppearanceSettingsStore = defineStore(
             setIsSidebarDivideByFriendGroup,
             setSidebarFavoriteGroups,
             setSidebarFavoriteGroupOrder,
+            setInactiveFriendDays,
             setHideUserNotes,
             setHideUserMemos,
             setHideUnfriends,

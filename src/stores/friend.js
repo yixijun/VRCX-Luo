@@ -71,6 +71,7 @@ export const useFriendStore = defineStore('Friend', () => {
         onlineFriends: 0,
         activeFriends: 0,
         offlineFriends: 0,
+        inactiveFriends: 0,
         friendsInSameInstance: 0
     });
 
@@ -330,6 +331,32 @@ export const useFriendStore = defineStore('Friend', () => {
             (f) => f.state === 'offline' || !f.state
         );
         trackDerivedDebug('offlineFriends', result.length);
+        return result;
+    });
+
+    const inactiveFriends = computed(() => {
+        const inactiveBefore =
+            Date.now() -
+            appearanceSettingsStore.inactiveFriendDays * 24 * 60 * 60 * 1000;
+        const result = offlineFriends.value
+            .filter((friend) => {
+                const lastLogin = friend.ref?.last_login;
+                if (!lastLogin) {
+                    return false;
+                }
+                const lastLoginTime = Date.parse(lastLogin);
+                return (
+                    Number.isFinite(lastLoginTime) &&
+                    lastLoginTime < inactiveBefore
+                );
+            })
+            .slice()
+            .sort((a, b) => {
+                const aTime = Date.parse(a.ref?.last_login || '');
+                const bTime = Date.parse(b.ref?.last_login || '');
+                return aTime - bTime;
+            });
+        trackDerivedDebug('inactiveFriends', result.length);
         return result;
     });
 
@@ -1426,6 +1453,7 @@ export const useFriendStore = defineStore('Friend', () => {
         onlineFriends,
         activeFriends,
         offlineFriends,
+        inactiveFriends,
         friendsInSameInstance,
 
         allFavoriteFriendIds,

@@ -23,6 +23,7 @@ vi.mock('@vueuse/core', async (importOriginal) => {
 vi.mock('../../../stores', () => ({
     useFriendStore: () => ({
         friends: ref(new Map()),
+        inactiveFriends: ref([]),
         isRefreshFriendsLoading: ref(false),
         onlineFriendCount: ref(0)
     }),
@@ -31,6 +32,9 @@ vi.mock('../../../stores', () => ({
         isNotificationCenterOpen: mocks.centerOpen,
         hasUnseenNotifications: mocks.hasUnseen,
         markAllAsSeen: (...a) => mocks.markAllAsSeen(...a)
+    }),
+    useNotificationsSettingsStore: () => ({
+        notificationLayout: ref('notification-center')
     }),
     useAppearanceSettingsStore: () => ({
         sidebarSortMethod1: ref(''),
@@ -57,6 +61,9 @@ vi.mock('../../../stores', () => ({
 }));
 vi.mock('../../../stores/quickSearch', () => ({
     useQuickSearchStore: () => ({ open: (...a) => mocks.openSearch(...a) })
+}));
+vi.mock('../../../stores/trackedNonFriends', () => ({
+    useTrackedNonFriendsStore: () => ({ trackedList: ref([]) })
 }));
 vi.mock('../../../coordinators/friendSyncCoordinator', () => ({
     runRefreshFriendsListFlow: (...a) => mocks.refreshFriends(...a)
@@ -137,10 +144,19 @@ vi.mock('../components/FriendsSidebar.vue', () => ({
 vi.mock('../components/GroupsSidebar.vue', () => ({
     default: { template: '<div />' }
 }));
+vi.mock('../components/InactiveFriendsSidebar.vue', () => ({
+    default: { template: '<div />' }
+}));
+vi.mock('../components/TrackedNonFriendsSidebar.vue', () => ({
+    default: { template: '<div />' }
+}));
 vi.mock('../components/FavoriteFriendGroupOrderDialog.vue', () => ({
     default: { template: '<div />' }
 }));
 vi.mock('../components/NotificationCenterSheet.vue', () => ({
+    default: { template: '<div />' }
+}));
+vi.mock('../../../components/AccountViewSwitcher.vue', () => ({
     default: { template: '<div />' }
 }));
 vi.mock('../../../components/QuickSearchDialog.vue', () => ({

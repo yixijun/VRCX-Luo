@@ -60,6 +60,9 @@ export function createOverlayDispatch({
      * @param image
      */
     function displayDesktopToast(noty, message, image) {
+        if (notificationsSettingsStore.desktopNotificationsEnabled === false) {
+            return;
+        }
         const result = getNotificationMessage(noty, message);
         if (result) {
             const useCustomSound =

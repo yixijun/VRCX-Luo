@@ -242,6 +242,11 @@
             "add_verify_error": "无法获取该用户数据，请检查ID后重试。",
             "add_confirm_question": "是否为用户「{name}」？",
             "add_back": "返回"
+        },
+        "inactive_friends": {
+            "tab_label": "不活跃",
+            "description": "超过 {days} 天未登录的离线好友。",
+            "last_login": "最后登录：{time}"
         }
     },
     "view": {
@@ -1032,7 +1037,9 @@
                     "table_density_comfortable": "舒适",
                     "table_density_compact": "紧凑",
                     "table_entries_settings": "条目读取设置",
-                    "table_entries_settings_description": "控制读取列表和进行搜索时加载的条目数量"
+                    "table_entries_settings_description": "控制读取列表和进行搜索时加载的条目数量",
+                    "inactive_friend_days": "不活跃好友阈值",
+                    "inactive_friend_days_description": "超过该最后登录天数的离线好友会显示在右侧不活跃好友标签中。"
                 },
                 "display": {
                     "header": "显示设置"

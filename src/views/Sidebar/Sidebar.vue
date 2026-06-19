@@ -299,6 +299,10 @@
                 <span>{{ t('side_panel.tracked_nonfriends.tab_label') }}</span>
                 <span class="sidebar-tab-count"> ({{ trackedNonFriendsList.length }}) </span>
             </template>
+            <template #label-inactive>
+                <span>{{ t('side_panel.inactive_friends.tab_label') }}</span>
+                <span class="sidebar-tab-count"> ({{ inactiveFriends.length }}) </span>
+            </template>
             <template #friends>
                 <div class="h-full overflow-hidden">
                     <FriendsSidebar />
@@ -312,6 +316,11 @@
             <template #tracked>
                 <div class="h-full overflow-hidden">
                     <TrackedNonFriendsSidebar />
+                </div>
+            </template>
+            <template #inactive>
+                <div class="h-full overflow-hidden">
+                    <InactiveFriendsSidebar />
                 </div>
             </template>
         </TabsUnderline>
@@ -368,8 +377,9 @@
     import GroupsSidebar from './components/GroupsSidebar.vue';
     import NotificationCenterSheet from './components/NotificationCenterSheet.vue';
     import TrackedNonFriendsSidebar from './components/TrackedNonFriendsSidebar.vue';
+    import InactiveFriendsSidebar from './components/InactiveFriendsSidebar.vue';
 
-    const { friends, isRefreshFriendsLoading, onlineFriendCount } = storeToRefs(useFriendStore());
+    const { friends, inactiveFriends, isRefreshFriendsLoading, onlineFriendCount } = storeToRefs(useFriendStore());
     const { groupInstances } = storeToRefs(useGroupStore());
     const notificationStore = useNotificationStore();
     const { isNotificationCenterOpen, hasUnseenNotifications } = storeToRefs(notificationStore);
@@ -475,6 +485,9 @@
         }
 
         tabs.push({ value: 'tracked', label: t('side_panel.tracked_nonfriends.tab_label') });
+        if (inactiveFriends.value.length > 0) {
+            tabs.push({ value: 'inactive', label: t('side_panel.inactive_friends.tab_label') });
+        }
         return tabs;
     });
 </script>

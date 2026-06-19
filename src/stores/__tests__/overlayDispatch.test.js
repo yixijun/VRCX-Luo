@@ -210,6 +210,25 @@ describe('displayDesktopToast', () => {
 
         expect(AppApi.DesktopNotification).not.toHaveBeenCalled();
     });
+
+    test('does not play custom sound when desktop notifications are disabled', () => {
+        deps.notificationsSettingsStore.desktopNotificationsEnabled = false;
+        deps.notificationsSettingsStore.shouldPlayCustomNotificationSound.mockReturnValue(
+            true
+        );
+        dispatch = createOverlayDispatch(deps);
+        getNotificationMessage.mockReturnValue({
+            title: 'Friend Online',
+            body: 'Alice is online'
+        });
+
+        dispatch.displayDesktopToast({}, 'some message', 'img.jpg');
+
+        expect(AppApi.DesktopNotification).not.toHaveBeenCalled();
+        expect(
+            deps.notificationsSettingsStore.playCustomNotificationSound
+        ).not.toHaveBeenCalled();
+    });
 });
 
 // ─── notySaveImage ───────────────────────────────────────────────────

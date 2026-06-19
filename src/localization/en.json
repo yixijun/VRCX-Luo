@@ -235,6 +235,11 @@
             "add_verify_error": "Could not retrieve user data. Please check the ID and try again.",
             "add_confirm_question": "Is this user \"{name}\"?",
             "add_back": "Back"
+        },
+        "inactive_friends": {
+            "tab_label": "Inactive",
+            "description": "Offline friends who have not logged in for more than {days} days.",
+            "last_login": "Last login: {time}"
         }
     },
     "view": {
@@ -1021,7 +1026,9 @@
                     "table_density_comfortable": "Comfortable",
                     "table_density_compact": "Compact",
                     "table_entries_settings": "Table Entries Settings",
-                    "table_entries_settings_description": "Control how many items are loaded for lists and searches."
+                    "table_entries_settings_description": "Control how many items are loaded for lists and searches.",
+                    "inactive_friend_days": "Inactive friend threshold",
+                    "inactive_friend_days_description": "Offline friends older than this last login age are shown in the inactive friends tab."
                 },
                 "display": {
                     "header": "Display"
