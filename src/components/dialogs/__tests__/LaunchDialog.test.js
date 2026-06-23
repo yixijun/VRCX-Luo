@@ -182,4 +182,47 @@ describe('LaunchDialog.vue', () => {
 
         vi.useRealTimers();
     });
+
+    it('continues launching VRChat in VR mode when SteamVR prompt is declined', async () => {
+        mocks.confirm.mockResolvedValueOnce({ ok: false });
+        const wrapper = mount(LaunchDialog);
+        await flushPromises();
+
+        const launchButton = wrapper
+            .findAllComponents(Button)
+            .find((button) => button.text() === 'dialog.launch.launch');
+        await launchButton.vm.$emit('click');
+        await flushPromises();
+
+        await waitForExpect(() => expect(mocks.confirm).toHaveBeenCalled());
+        expect(AppApi.StartSteamVR).not.toHaveBeenCalled();
+        expect(mocks.launchGame).toHaveBeenCalledTimes(1);
+        expect(mocks.launchGame.mock.calls[0][2]).toBe(false);
+    });
+
+    it('uses a real cancel action when confirming a second VRChat client launch', async () => {
+        mocks.isGameRunning.value = true;
+        mocks.isSteamVRRunning.value = true;
+        AppApi.IsSteamVRRunning = vi.fn(async () => true);
+        mocks.confirm.mockResolvedValueOnce({ ok: false });
+        const wrapper = mount(LaunchDialog);
+        await flushPromises();
+
+        const launchButton = wrapper
+            .findAllComponents(Button)
+            .find((button) => button.text() === 'dialog.launch.launch');
+        await launchButton.vm.$emit('click');
+        await flushPromises();
+
+        await waitForExpect(() =>
+            expect(mocks.confirm).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    description: 'dialog.launch.game_running_warning',
+                    confirmText: 'dialog.launch.game_running_confirm',
+                    cancelText: 'dialog.launch.cancel_launch'
+                })
+            )
+        );
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+    });
 });

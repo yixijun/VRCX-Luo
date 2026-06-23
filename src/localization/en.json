@@ -106,6 +106,16 @@
             "restore_default_confirm": "Restore navigation to its default order?"
         }
     },
+    "quick_launch": {
+        "tooltip": "Quick Launch",
+        "header": "Quick Launch",
+        "vrchat_desktop": "Start VRChat Desktop",
+        "vrchat_vr": "Start VRChat VR",
+        "steamvr": "Start SteamVR",
+        "steamvr_running": "SteamVR is already running",
+        "steamvr_started": "SteamVR started",
+        "steamvr_failed": "Failed to start SteamVR"
+    },
     "dashboard": {
         "default_name": "Dashboard",
         "new_dashboard": "New Dashboard",
@@ -2063,7 +2073,9 @@
             "steamvr_not_running_warning": "SteamVR is not running. Open SteamVR before launching VRChat in VR mode?",
             "open_steamvr": "Open SteamVR",
             "confirm_yes": "Yes",
-            "confirm_no": "No"
+            "confirm_no": "Launch Anyway",
+            "game_running_confirm": "Launch Anyway",
+            "cancel_launch": "Cancel Launch"
         },
         "launch_options": {
             "header": "VRChat Launch Options",

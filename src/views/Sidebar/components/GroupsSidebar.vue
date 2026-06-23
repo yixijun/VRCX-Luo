@@ -80,6 +80,7 @@
                 </div>
             </div>
         </div>
+        <QuickLaunchButton :target="scrollViewportRef" />
         <BackToTop :virtualizer="virtualizer" :target="scrollViewportRef" :tooltip="false" />
     </div>
 </template>
@@ -107,6 +108,7 @@
     import { instanceRequest } from '../../../api';
 
     import BackToTop from '../../../components/BackToTop.vue';
+    import QuickLaunchButton from '../../../components/QuickLaunchButton.vue';
     import Location from '../../../components/Location.vue';
 
     const { t } = useI18n();

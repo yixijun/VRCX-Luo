@@ -173,6 +173,51 @@ export const useLaunchStore = defineStore('Launch', () => {
         console.log('Launch Game', args.join(' '), desktopMode);
     }
 
+    /**
+     * Start VRChat without targeting a specific instance.
+     * @param {boolean} desktopMode
+     * @returns {Promise<boolean>}
+     */
+    async function launchVRChat(desktopMode = false) {
+        const args = [];
+        const launchArguments =
+            await configRepository.getString('launchArguments');
+        const vrcLaunchPathOverride = await configRepository.getString(
+            'vrcLaunchPathOverride'
+        );
+        if (launchArguments) {
+            args.push(launchArguments);
+        }
+        if (desktopMode) {
+            args.push('--no-vr');
+        }
+        const command = args.join(' ');
+        try {
+            if (vrcLaunchPathOverride && !LINUX) {
+                const result = await AppApi.StartGameFromPath(
+                    vrcLaunchPathOverride,
+                    command
+                );
+                if (!result) {
+                    toast.error(t('message.launch.invalid_custom_path'));
+                    return false;
+                }
+            } else {
+                const result = await AppApi.StartGame(command);
+                if (!result) {
+                    toast.error(t('message.launch.vrchat_not_found'));
+                    return false;
+                }
+            }
+            toast.success(t('message.launch.launched'));
+            return true;
+        } catch (e) {
+            console.error(e);
+            toast.error(t('message.launch.failed', { error: e.message }));
+            return false;
+        }
+    }
+
     return {
         isLaunchOptionsDialogVisible,
         isOpeningInstance,
@@ -181,6 +226,7 @@ export const useLaunchStore = defineStore('Launch', () => {
         showLaunchDialog,
         getLaunchUrl,
         launchGame,
+        launchVRChat,
         tryOpenInstanceInVrc
     };
 });

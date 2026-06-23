@@ -198,6 +198,7 @@
                 </div>
             </div>
         </div>
+        <QuickLaunchButton :target="scrollViewportRef" />
         <BackToTop :virtualizer="virtualizer" :target="scrollViewportRef" :tooltip="false" />
 
 <!-- <div class="absolute bottom-5 right-[70px] z-10">
@@ -254,6 +255,7 @@
     import { parseLocation } from '../../../shared/utils';
 
     import BackToTop from '../../../components/BackToTop.vue';
+    import QuickLaunchButton from '../../../components/QuickLaunchButton.vue';
     import FriendItem from './FriendItem.vue';
     import Location from '../../../components/Location.vue';
     import configRepository from '../../../services/config';

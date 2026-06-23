@@ -30,8 +30,8 @@ namespace VRCX
             Instance = this;
             InitializeComponent();
             nativeWindow = NativeWindow.FromHandle(this.Handle);
-            UpdateDesktopNotificationsTrayMenu();
-            TrayMenu.Opening += (_, _) => UpdateDesktopNotificationsTrayMenu();
+            UpdateTraySettingsMenu();
+            TrayMenu.Opening += (_, _) => UpdateTraySettingsMenu();
 
             // adding a 5s delay here to avoid excessive writes to disk
             _saveTimer = new Timer();
@@ -229,11 +229,24 @@ namespace VRCX
             return VRCXStorage.Instance.Get("VRCX_desktopNotificationsEnabled") != "false";
         }
 
-        private void UpdateDesktopNotificationsTrayMenu()
+        private bool IsTraySilentModeEnabled()
         {
-            var enabled = AreDesktopNotificationsEnabled();
-            TrayMenu_DesktopNotifications.Checked = enabled;
-            TrayMenu_DesktopNotifications.Text = enabled ? "关闭桌面通知" : "启用桌面通知";
+            return VRCXStorage.Instance.Get("VRCX_traySilentMode") == "true";
+        }
+
+        private bool IsVSleepModeEnabled()
+        {
+            return VRCXStorage.Instance.Get("VRCX_vSleepMode") == "true";
+        }
+
+        private void UpdateTraySettingsMenu()
+        {
+            var desktopNotificationsEnabled = AreDesktopNotificationsEnabled();
+            TrayMenu_DesktopNotifications.Checked = desktopNotificationsEnabled;
+            TrayMenu_DesktopNotifications.Text = desktopNotificationsEnabled ? "关闭桌面通知" : "启用桌面通知";
+
+            TrayMenu_SilentMode.Checked = IsTraySilentModeEnabled();
+            TrayMenu_VSleepMode.Checked = IsVSleepModeEnabled();
         }
 
         private void TrayMenu_DesktopNotifications_Click(object sender, System.EventArgs e)
@@ -241,9 +254,35 @@ namespace VRCX
             var enabled = !AreDesktopNotificationsEnabled();
             VRCXStorage.Instance.Set("VRCX_desktopNotificationsEnabled", enabled.ToString().ToLowerInvariant());
             VRCXStorage.Instance.Save();
-            UpdateDesktopNotificationsTrayMenu();
+            UpdateTraySettingsMenu();
             Browser?.ExecuteScriptAsync(
                 "window.dispatchEvent(new CustomEvent('vrcx-desktop-notifications-updated', { detail: { enabled: " +
+                enabled.ToString().ToLowerInvariant() +
+                " } }));"
+            );
+        }
+
+        private void TrayMenu_SilentMode_Click(object sender, System.EventArgs e)
+        {
+            var enabled = !IsTraySilentModeEnabled();
+            VRCXStorage.Instance.Set("VRCX_traySilentMode", enabled.ToString().ToLowerInvariant());
+            VRCXStorage.Instance.Save();
+            UpdateTraySettingsMenu();
+            Browser?.ExecuteScriptAsync(
+                "window.dispatchEvent(new CustomEvent('vrcx-tray-silent-mode-updated', { detail: { enabled: " +
+                enabled.ToString().ToLowerInvariant() +
+                " } }));"
+            );
+        }
+
+        private void TrayMenu_VSleepMode_Click(object sender, System.EventArgs e)
+        {
+            var enabled = !IsVSleepModeEnabled();
+            VRCXStorage.Instance.Set("VRCX_vSleepMode", enabled.ToString().ToLowerInvariant());
+            VRCXStorage.Instance.Save();
+            UpdateTraySettingsMenu();
+            Browser?.ExecuteScriptAsync(
+                "window.dispatchEvent(new CustomEvent('vrcx-v-sleep-mode-updated', { detail: { enabled: " +
                 enabled.ToString().ToLowerInvariant() +
                 " } }));"
             );

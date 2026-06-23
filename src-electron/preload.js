@@ -50,9 +50,22 @@ contextBridge.exposeInMainWorld('electron', {
         ipcRenderer.invoke('app:setTrayIconNotification', notify),
     setDesktopNotificationsEnabled: (enabled) =>
         ipcRenderer.invoke('app:setDesktopNotificationsEnabled', enabled),
+    setTraySilentMode: (enabled) =>
+        ipcRenderer.invoke('app:setTraySilentMode', enabled),
+    setVSleepMode: (enabled) => ipcRenderer.invoke('app:setVSleepMode', enabled),
     onDesktopNotificationsUpdated: (callback) =>
         registerManagedListener(
             'desktop-notifications-updated',
+            (_event, enabled) => callback(enabled)
+        ),
+    onTraySilentModeUpdated: (callback) =>
+        registerManagedListener(
+            'tray-silent-mode-updated',
+            (_event, enabled) => callback(enabled)
+        ),
+    onVSleepModeUpdated: (callback) =>
+        registerManagedListener(
+            'v-sleep-mode-updated',
             (_event, enabled) => callback(enabled)
         ),
     openFileDialog: (filters) => ipcRenderer.invoke('dialog:openFile', filters),

@@ -113,6 +113,16 @@
             "save": "保存"
         }
     },
+    "quick_launch": {
+        "tooltip": "快速启动",
+        "header": "快速启动",
+        "vrchat_desktop": "启动 VRChat 桌面模式",
+        "vrchat_vr": "启动 VRChat VR 模式",
+        "steamvr": "启动 SteamVR",
+        "steamvr_running": "SteamVR 已在运行",
+        "steamvr_started": "SteamVR 已启动",
+        "steamvr_failed": "SteamVR 启动失败"
+    },
     "dashboard": {
         "default_name": "仪表板",
         "new_dashboard": "新建仪表板",
@@ -2073,7 +2083,9 @@
             "steamvr_not_running_warning": "SteamVR 当前未运行。是否先打开 SteamVR，再以 VR 模式启动 VRChat？",
             "open_steamvr": "打开 SteamVR",
             "confirm_yes": "是，确认启动",
-            "confirm_no": "否，我再想想"
+            "confirm_no": "仍然启动",
+            "game_running_confirm": "仍然启动",
+            "cancel_launch": "取消启动"
         },
         "launch_options": {
             "header": "启动选项",

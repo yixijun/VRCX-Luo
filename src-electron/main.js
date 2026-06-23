@@ -152,6 +152,22 @@ function notifyDesktopNotificationsChanged(enabled) {
     mainWindow?.webContents?.send('desktop-notifications-updated', enabled);
 }
 
+function isTraySilentModeEnabled() {
+    return VRCXStorage.Get('VRCX_traySilentMode') === 'true';
+}
+
+function notifyTraySilentModeChanged(enabled) {
+    mainWindow?.webContents?.send('tray-silent-mode-updated', enabled);
+}
+
+function isVSleepModeEnabled() {
+    return VRCXStorage.Get('VRCX_vSleepMode') === 'true';
+}
+
+function notifyVSleepModeChanged(enabled) {
+    mainWindow?.webContents?.send('v-sleep-mode-updated', enabled);
+}
+
 const gotTheLock = app.requestSingleInstanceLock();
 const strip_vrcx_prefix_regex = new RegExp('^' + VRCX_URI_PREFIX + '://');
 
@@ -300,6 +316,22 @@ ipcMain.handle('app:setDesktopNotificationsEnabled', (event, enabled) => {
     const next = !!enabled;
     VRCXStorage.Set('VRCX_desktopNotificationsEnabled', String(next));
     notifyDesktopNotificationsChanged(next);
+    destroyTray();
+    createTray();
+});
+
+ipcMain.handle('app:setTraySilentMode', (event, enabled) => {
+    const next = !!enabled;
+    VRCXStorage.Set('VRCX_traySilentMode', String(next));
+    notifyTraySilentModeChanged(next);
+    destroyTray();
+    createTray();
+});
+
+ipcMain.handle('app:setVSleepMode', (event, enabled) => {
+    const next = !!enabled;
+    VRCXStorage.Set('VRCX_vSleepMode', String(next));
+    notifyVSleepModeChanged(next);
     destroyTray();
     createTray();
 });
@@ -556,6 +588,8 @@ function createTray() {
     }
     tray = new Tray(trayIcon);
     const desktopNotificationsEnabled = areDesktopNotificationsEnabled();
+    const traySilentModeEnabled = isTraySilentModeEnabled();
+    const vSleepModeEnabled = isVSleepModeEnabled();
     const contextMenu = Menu.buildFromTemplate([
         {
             label: '打开 VRCX-Luo',
@@ -577,6 +611,30 @@ function createTray() {
                     String(enabled)
                 );
                 notifyDesktopNotificationsChanged(enabled);
+                destroyTray();
+                createTray();
+            }
+        },
+        {
+            label: '静音模式',
+            type: 'checkbox',
+            checked: traySilentModeEnabled,
+            click: function () {
+                const enabled = !isTraySilentModeEnabled();
+                VRCXStorage.Set('VRCX_traySilentMode', String(enabled));
+                notifyTraySilentModeChanged(enabled);
+                destroyTray();
+                createTray();
+            }
+        },
+        {
+            label: 'V睡模式',
+            type: 'checkbox',
+            checked: vSleepModeEnabled,
+            click: function () {
+                const enabled = !isVSleepModeEnabled();
+                VRCXStorage.Set('VRCX_vSleepMode', String(enabled));
+                notifyVSleepModeChanged(enabled);
                 destroyTray();
                 createTray();
             }

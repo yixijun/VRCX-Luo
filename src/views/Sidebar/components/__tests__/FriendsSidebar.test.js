@@ -201,6 +201,10 @@ vi.mock('../../../../components/BackToTop.vue', () => ({
     default: { template: '<div data-testid="back-to-top" />' }
 }));
 
+vi.mock('../../../../components/QuickLaunchButton.vue', () => ({
+    default: { template: '<div data-testid="quick-launch-button" />' }
+}));
+
 vi.mock('../../../../components/Location.vue', () => ({
     default: {
         props: ['location', 'traveling', 'link'],

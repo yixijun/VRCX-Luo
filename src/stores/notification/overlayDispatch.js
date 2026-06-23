@@ -68,7 +68,10 @@ export function createOverlayDispatch({
             const useCustomSound =
                 notificationsSettingsStore.shouldPlayCustomNotificationSound?.() ===
                 true;
-            desktopNotification(result.title, result.body, image, useCustomSound);
+            const silent =
+                useCustomSound ||
+                notificationsSettingsStore.traySilentMode === true;
+            desktopNotification(result.title, result.body, image, silent);
             if (useCustomSound) {
                 notificationsSettingsStore.playCustomNotificationSound?.();
             }

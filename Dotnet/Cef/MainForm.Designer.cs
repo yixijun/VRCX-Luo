@@ -38,6 +38,8 @@ namespace VRCX
             this.TrayMenu = new ContextMenuStrip(this.components);
             this.TrayMenu_Open = new ToolStripMenuItem();
             this.TrayMenu_DesktopNotifications = new ToolStripMenuItem();
+            this.TrayMenu_SilentMode = new ToolStripMenuItem();
+            this.TrayMenu_VSleepMode = new ToolStripMenuItem();
             this.TrayMenu_DevTools = new ToolStripMenuItem();
             this.TrayMenu_ForceCrash = new ToolStripMenuItem();
             this.TrayMenu_Separator = new ToolStripSeparator();
@@ -52,6 +54,8 @@ namespace VRCX
             //
             this.TrayMenu.Items.Add(this.TrayMenu_Open);
             this.TrayMenu.Items.Add(this.TrayMenu_DesktopNotifications);
+            this.TrayMenu.Items.Add(this.TrayMenu_SilentMode);
+            this.TrayMenu.Items.Add(this.TrayMenu_VSleepMode);
             this.TrayMenu.Items.Add(this.TrayMenu_DevTools);
             if (Program.LaunchDebug)
                 this.TrayMenu.Items.Add(this.TrayMenu_ForceCrash);
@@ -73,6 +77,20 @@ namespace VRCX
             this.TrayMenu_DesktopNotifications.Name = "TrayMenu_DesktopNotifications";
             this.TrayMenu_DesktopNotifications.Size = new Size(177, 22);
             this.TrayMenu_DesktopNotifications.Click += new EventHandler(this.TrayMenu_DesktopNotifications_Click);
+            //
+            // TrayMenu_SilentMode
+            //
+            this.TrayMenu_SilentMode.Name = "TrayMenu_SilentMode";
+            this.TrayMenu_SilentMode.Size = new Size(177, 22);
+            this.TrayMenu_SilentMode.Text = "静音模式";
+            this.TrayMenu_SilentMode.Click += new EventHandler(this.TrayMenu_SilentMode_Click);
+            //
+            // TrayMenu_VSleepMode
+            //
+            this.TrayMenu_VSleepMode.Name = "TrayMenu_VSleepMode";
+            this.TrayMenu_VSleepMode.Size = new Size(177, 22);
+            this.TrayMenu_VSleepMode.Text = "V睡模式";
+            this.TrayMenu_VSleepMode.Click += new EventHandler(this.TrayMenu_VSleepMode_Click);
             //
             // TrayMenu_DevTools
             //
@@ -130,6 +148,8 @@ namespace VRCX
         private ContextMenuStrip TrayMenu;
         private ToolStripMenuItem TrayMenu_Open;
         private ToolStripMenuItem TrayMenu_DesktopNotifications;
+        private ToolStripMenuItem TrayMenu_SilentMode;
+        private ToolStripMenuItem TrayMenu_VSleepMode;
         private ToolStripMenuItem TrayMenu_DevTools;
         private ToolStripMenuItem TrayMenu_ForceCrash;
         private ToolStripSeparator TrayMenu_Separator;

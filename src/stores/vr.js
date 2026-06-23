@@ -157,10 +157,11 @@ export const useVrStore = defineStore('Vr', () => {
         ) {
             let hmdOverlay = false;
             if (
-                notificationsSettingsStore.overlayNotifications ||
-                advancedSettingsStore.progressPie ||
-                photonStore.photonEventOverlay ||
-                photonStore.timeoutHudOverlay
+                !notificationsSettingsStore.vSleepMode &&
+                (notificationsSettingsStore.overlayNotifications ||
+                    advancedSettingsStore.progressPie ||
+                    photonStore.photonEventOverlay ||
+                    photonStore.timeoutHudOverlay)
             ) {
                 hmdOverlay = true;
             }

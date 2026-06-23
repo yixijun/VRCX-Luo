@@ -952,6 +952,7 @@ export const useNotificationStore = defineStore('Notification', () => {
         };
 
         const playNotificationTTS =
+            notificationsSettingsStore.traySilentMode !== true &&
             notiConditions[notificationsSettingsStore.notificationTTS]?.();
         const playDesktopToast =
             notiConditions[notificationsSettingsStore.desktopToast]?.() ||
