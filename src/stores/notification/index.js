@@ -957,7 +957,6 @@ export const useNotificationStore = defineStore('Notification', () => {
         const playDesktopToast =
             notiConditions[notificationsSettingsStore.desktopToast]?.() ||
             notiConditions['AFK']();
-
         const playOverlayToast =
             notiConditions[notificationsSettingsStore.overlayToast]?.();
         const playOverlayNotification =

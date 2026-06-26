@@ -8,14 +8,14 @@ namespace VRCX
     partial class MainForm
     {
         /// <summary>
-        ///     필수 디자이너 변수입니다.
+        ///     必需的设计器变量。
         /// </summary>
         private IContainer components = null;
 
         /// <summary>
-        ///     사용 중인 모든 리소스를 정리합니다.
+        ///     清理所有正在使用的资源。
         /// </summary>
-        /// <param name="disposing">관리되는 리소스를 삭제해야 하면 true이고, 그렇지 않으면 false입니다.</param>
+        /// <param name="disposing">如果应释放托管资源则为 true，否则为 false。</param>
         protected override void Dispose(bool disposing)
         {
             if (disposing && (components != null))
@@ -26,11 +26,11 @@ namespace VRCX
             base.Dispose(disposing);
         }
 
-        #region Windows Form 디자이너에서 생성한 코드
+        #region Windows 窗体设计器生成的代码
 
         /// <summary>
-        ///     디자이너 지원에 필요한 메서드입니다.
-        ///     이 메서드의 내용을 코드 편집기로 수정하지 마세요.
+        ///     设计器支持所需的方法。
+        ///     请不要使用代码编辑器修改此方法的内容。
         /// </summary>
         private void InitializeComponent()
         {

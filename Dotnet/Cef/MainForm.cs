@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.IO;
@@ -245,6 +245,7 @@ namespace VRCX
             TrayMenu_DesktopNotifications.Checked = desktopNotificationsEnabled;
             TrayMenu_DesktopNotifications.Text = desktopNotificationsEnabled ? "关闭桌面通知" : "启用桌面通知";
 
+
             TrayMenu_SilentMode.Checked = IsTraySilentModeEnabled();
             TrayMenu_VSleepMode.Checked = IsVSleepModeEnabled();
         }
@@ -319,5 +320,6 @@ namespace VRCX
         {
             TrayIcon.Icon = notify ? _appIconNoty : _appIcon;
         }
+
     }
 }

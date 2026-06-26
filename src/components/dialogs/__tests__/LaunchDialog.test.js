@@ -95,7 +95,7 @@ vi.mock('@/components/ui/button', () => ({
     Button: {
         emits: ['click'],
         template:
-            '<button data-testid="btn" @click="$emit(\'click\')"><slot /></button>'
+            '<button v-bind="$attrs" data-testid="btn" @click="$emit(\'click\', $event)"><slot /></button>'
     }
 }));
 vi.mock('@/components/ui/button-group', () => ({
@@ -224,5 +224,16 @@ describe('LaunchDialog.vue', () => {
             )
         );
         expect(mocks.launchGame).not.toHaveBeenCalled();
+    });
+
+    it('does not launch when clicking the launch options trigger', async () => {
+        const wrapper = mount(LaunchDialog);
+        await flushPromises();
+
+        await wrapper.get('[data-testid="launch-more-button"]').trigger('click');
+        await flushPromises();
+
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+        expect(mocks.confirm).not.toHaveBeenCalled();
     });
 });
