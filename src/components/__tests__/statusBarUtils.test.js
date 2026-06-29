@@ -9,7 +9,9 @@ import {
     loadVisibility,
     normalizeClock,
     normalizeUtcHour,
-    parseClockOffset
+    parseClockOffset,
+    zoomLevelToPercent,
+    zoomPercentToLevel
 } from '../statusBarUtils';
 
 // ─── normalizeUtcHour ────────────────────────────────────────────────
@@ -325,6 +327,26 @@ describe('formatAppUptime', () => {
 });
 
 // ─── test helpers ────────────────────────────────────────────────────
+
+describe('zoom conversion', () => {
+    test('converts Chromium zoom level to real percent', () => {
+        expect(zoomLevelToPercent(0)).toBe(100);
+        expect(zoomLevelToPercent(1)).toBe(120);
+        expect(zoomLevelToPercent(-1)).toBe(83.33);
+    });
+
+    test('converts real percent back to Chromium zoom level', () => {
+        expect(zoomPercentToLevel(100)).toBe(0);
+        expect(zoomPercentToLevel(120)).toBe(1);
+        expect(zoomPercentToLevel(83.33)).toBeCloseTo(-1, 2);
+    });
+
+    test('clamps invalid zoom percent input', () => {
+        expect(zoomPercentToLevel('bad')).toBe(0);
+        expect(zoomPercentToLevel(10)).toBeCloseTo(zoomPercentToLevel(25));
+        expect(zoomPercentToLevel(900)).toBeCloseTo(zoomPercentToLevel(500));
+    });
+});
 
 /** Minimal in-memory Storage-like object for testing. */
 function createMockStorage() {

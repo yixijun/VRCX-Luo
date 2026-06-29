@@ -572,7 +572,9 @@
         normalizeOrder,
         normalizeClock,
         normalizeUtcHour,
-        parseClockOffset
+        parseClockOffset,
+        zoomLevelToPercent,
+        zoomPercentToLevel
     } from './statusBarUtils';
 
     import configRepository from '../services/config';
@@ -1064,7 +1066,7 @@
     function updateZoomLevel(level) {
         const value = Number(level);
         if (Number.isFinite(value)) {
-            const nextZoomLevel = Number(((value + 10) * 10).toFixed(2));
+            const nextZoomLevel = zoomLevelToPercent(value);
             if (nextZoomLevel !== zoomLevel.value) {
                 zoomLevel.value = nextZoomLevel;
             }
@@ -1088,7 +1090,7 @@
     function setZoomLevel() {
         try {
             zoomLevel.value = normalizeZoomPercent(zoomLevel.value);
-            AppApi.SetZoom(zoomLevel.value / 10 - 10);
+            AppApi.SetZoom(zoomPercentToLevel(zoomLevel.value));
         } catch {
             // AppApi not available
         }

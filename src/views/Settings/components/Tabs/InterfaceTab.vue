@@ -416,6 +416,7 @@
     import { getLanguageName, languageCodes } from '@/localization';
     import { APP_CJK_FONT_PACKS, APP_FONT_CONFIG, APP_FONT_DEFAULT_KEY, APP_FONT_FAMILIES } from '@/shared/constants';
     import { Button } from '@/components/ui/button';
+    import { zoomLevelToPercent, zoomPercentToLevel } from '@/components/statusBarUtils';
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
@@ -715,7 +716,7 @@
      *
      */
     async function getZoomLevel() {
-        zoomLevel.value = Number((((await AppApi.GetZoom()) + 10) * 10).toFixed(2));
+        zoomLevel.value = zoomLevelToPercent(await AppApi.GetZoom());
     }
 
     /**
@@ -723,6 +724,6 @@
      */
     function setZoomLevel() {
         zoomLevel.value = Number(Number(zoomLevel.value || 0).toFixed(2));
-        AppApi.SetZoom(zoomLevel.value / 10 - 10);
+        AppApi.SetZoom(zoomPercentToLevel(zoomLevel.value));
     }
 </script>

@@ -1,6 +1,9 @@
 <template>
-    <div style="display: flex">
-        <div style="flex: none; height: 120px; width: 160px">
+    <div data-testid="user-summary-header" class="flex min-w-0 flex-wrap items-start gap-4">
+        <div
+            data-testid="user-summary-media"
+            class="shrink-0 overflow-hidden rounded-xl"
+            style="height: 120px; width: 160px">
             <img
                 v-if="
                     !userDialog.loading &&
@@ -9,7 +12,7 @@
                 "
                 class="cursor-pointer"
                 :src="userDialog.ref.profilePicOverrideThumbnail || userDialog.ref.profilePicOverride"
-                style="height: 120px; width: 213.33px; border-radius: var(--radius-xl); object-fit: cover"
+                style="height: 120px; width: 160px; border-radius: var(--radius-xl); object-fit: cover"
                 @click="showFullscreenImageDialog(userDialog.ref.profilePicOverride)"
                 @error="profileImageError = true"
                 loading="lazy" />
@@ -28,9 +31,9 @@
                 <Image class="size-8 text-muted-foreground" />
             </div>
         </div>
-        <div class="ml-4" style="flex: 1; display: flex; align-items: flex-start">
-            <div style="flex: 1">
-                <div>
+        <div data-testid="user-summary-body" class="flex min-w-0 flex-1 flex-wrap items-start gap-3">
+            <div data-testid="user-summary-details" class="min-w-0 flex-1 basis-72">
+                <div class="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-1">
                     <TooltipWrapper v-if="userDialog.ref.status" side="top">
                         <template #content>
                             <span>{{ getUserStateText(userDialog.ref) }}</span>
@@ -55,8 +58,7 @@
                         </TooltipWrapper>
                     </template>
                     <span
-                        class="font-bold"
-                        style="margin-left: 6px; margin-right: 6px; cursor: pointer"
+                        class="mx-1 min-w-0 cursor-pointer break-words font-bold"
                         v-text="userDialog.ref.displayName"
                         @click="copyUserDisplayName(userDialog.ref.displayName)"></span>
                     <TooltipWrapper v-if="userDialog.ref.pronouns" side="top" :content="t('dialog.user.pronouns')">
@@ -75,7 +77,6 @@
                             style="display: inline-block; margin-right: 6px"></span>
                     </TooltipWrapper>
                     <template v-if="userDialog.ref.id === currentUser.id">
-                        <br />
                         <span
                             class="x-grey font-mono text-xs"
                             style="margin-right: 8px; cursor: pointer"
@@ -83,7 +84,10 @@
                             @click="copyUserDisplayName(currentUser.username)"></span>
                     </template>
                 </div>
-                <div class="mt-2 flex items-center gap-1" v-show="!userDialog.loading">
+                <div
+                    data-testid="user-summary-tags"
+                    class="mt-2 flex flex-wrap items-center gap-1"
+                    v-show="!userDialog.loading">
                     <Popover @update:open="handleTrustHistoryOpen">
                         <PopoverTrigger asChild>
                             <Badge
@@ -231,7 +235,7 @@
                         >{{ userDialog.ref.$customTag }}</Badge
                     >
                 </div>
-                <div class="mt-1">
+                <div data-testid="user-summary-badges" class="mt-1 flex flex-wrap items-center gap-1">
                     <TooltipWrapper v-for="badge in userDialog.ref.badges" :key="badge.badgeId" side="top">
                         <template #content>
                             <span>{{ badge.badgeName }}</span>
@@ -293,12 +297,12 @@
                         </div>
                     </TooltipWrapper>
                 </div>
-                <div>
-                    <span class="text-xs" v-text="userDialog.ref.statusDescription"></span>
+                <div class="mt-1 min-w-0">
+                    <span class="break-words text-xs" v-text="userDialog.ref.statusDescription"></span>
                 </div>
             </div>
 
-            <div v-if="userDialog.ref.userIcon" style="flex: none; margin-right: 8px">
+            <div v-if="userDialog.ref.userIcon" class="shrink-0">
                 <img
                     v-if="!userIconError"
                     class="cursor-pointer"
@@ -315,7 +319,7 @@
                 </div>
             </div>
 
-            <div class="ml-2 mt-12 flex items-center">
+            <div data-testid="user-summary-actions" class="ml-auto flex shrink-0 items-center gap-2 self-start">
                 <TooltipWrapper v-if="canShowAutoFollow" side="top" :content="autoFollowTooltip">
                     <Button
                         class="rounded-full"
@@ -325,7 +329,7 @@
                         <Navigation class="size-5" />
                     </Button>
                 </TooltipWrapper>
-                <UserActionDropdown :class="{ 'ml-2': canShowAutoFollow }" :user-dialog-command="userDialogCommand" />
+                <UserActionDropdown :user-dialog-command="userDialogCommand" />
             </div>
         </div>
     </div>

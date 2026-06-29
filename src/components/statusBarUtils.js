@@ -224,3 +224,29 @@ export function formatAppUptime(elapsedSeconds) {
         .padStart(2, '0');
     return `${hours}:${minutes}:${seconds}`;
 }
+
+/**
+ * Convert Chromium/Cef zoom level to the actual visual zoom percent.
+ * Chromium uses powers of 1.2 per zoom level.
+ * @param {*} level
+ * @returns {number}
+ */
+export function zoomLevelToPercent(level) {
+    const value = Number(level);
+    if (!Number.isFinite(value)) {
+        return 100;
+    }
+    return Number((Math.pow(1.2, value) * 100).toFixed(2));
+}
+
+/**
+ * Convert a visual zoom percent back to Chromium/Cef zoom level.
+ * @param {*} percent
+ * @returns {number}
+ */
+export function zoomPercentToLevel(percent) {
+    const value = Number(percent);
+    const safePercent = Number.isFinite(value) ? value : 100;
+    const clampedPercent = Math.min(500, Math.max(25, safePercent));
+    return Number((Math.log(clampedPercent / 100) / Math.log(1.2)).toFixed(4));
+}

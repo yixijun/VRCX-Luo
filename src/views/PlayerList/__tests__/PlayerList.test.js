@@ -228,6 +228,23 @@ describe('PlayerList.vue', () => {
         expect(mocks.photonColumnToggleVisibility).toHaveBeenCalledWith(false);
     });
 
+    test('keeps world details content-sized and lets the player list fill the remaining space', () => {
+        mocks.currentInstanceWorld.value.ref.id = 'wrld_1';
+        mocks.currentInstanceWorld.value.ref.name = 'Test World';
+
+        const wrapper = mount(PlayerList, {
+            global: {
+                stubs: {
+                    TooltipWrapper: { template: '<div><slot /></div>' },
+                    LocationWorld: { template: '<div />' }
+                }
+            }
+        });
+
+        expect(wrapper.get('[data-testid="player-list-details"]').classes()).toContain('shrink-0');
+        expect(wrapper.get('[data-testid="player-list-table"]').classes()).toContain('flex-1');
+    });
+
     test('row click opens user dialog when id exists, otherwise lookups user', async () => {
         const wrapper = mount(PlayerList, {
             global: {

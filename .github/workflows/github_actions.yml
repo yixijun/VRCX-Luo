@@ -443,25 +443,31 @@ jobs:
                   tag_name: ${{ needs.set_version.outputs.version }}
                   name: VRCX-Luo ${{ needs.set_version.outputs.version }}
                   body: |
-                      ## VRCX-Luo 2026.6.19
+                      ## VRCX-Luo ${{ needs.set_version.outputs.version }}
 
-                      This release focuses on notification controls, VR launch handling, friend list organization, and memory cleanup tools.
+                      本次更新同步本地相对云端 master 的全部功能改动，包含快速启动、托盘通知控制、VR 启动体验、用户卡片等级记录以及缩放布局修复。
 
-                      ### Changes
+                      ### 更新内容
 
-                      - Added a desktop notification switch and tray menu entry for enabling or disabling desktop notifications.
-                      - Added custom notification sounds so VRCX-Luo notifications can be distinguished from other apps.
-                      - Fixed custom notification sounds so they respect the desktop notification switch.
-                      - Added SteamVR status handling for VR launch, including a prompt to start SteamVR and a configurable delay before starting VRChat.
-                      - Added an offline inactive-friends category with configurable time and automatic hiding.
-                      - Added a Tools page memory cleanup utility for VRCX-Luo, VRChat, and CEF related processes.
-                      - Added deep memory cleanup with administrator confirmation, memory usage progress display, and Chinese UI copy.
-                      - Added a warning note for memory cleanup: `专为16G内存设计，效果未知`.
+                      - 新增右下角快速启动按钮，可快速启动 VRChat 桌面模式、VR 模式和 SteamVR。
+                      - 快速启动按钮会跟随页面滚动自动上移，避免挡住回到顶部等悬浮按钮。
+                      - VR 模式启动前会检测 SteamVR 状态；SteamVR 未运行时可提示打开 SteamVR，并在启动后延迟再启动 VRChat。
+                      - 优化启动实例弹窗按钮样式，避免点击空白区域误触启动。
+                      - VRChat 已运行时的启动确认文案改为“仍然启动 / 取消启动”，交互更明确。
+                      - 新增桌面通知开关，并同步到 Windows CEF 与 Electron 托盘右键菜单。
+                      - 新增托盘“静音模式”，开启后自定义通知音效不会播放。
+                      - 新增托盘“V睡模式”，开启后关闭 VR 叠加通知显示，但保留手腕叠加。
+                      - 新增用户卡片等级时间按钮，可查看本地记录到的玩家不同信任等级变化时间。
+                      - 修复 Ctrl + 滚轮缩放后，状态栏和设置页缩放数字不实时同步的问题。
+                      - 修正缩放倍率换算逻辑，状态栏输入数字后会按真实 Chromium 缩放比例生效。
+                      - 优化玩家列表区域，高缩放时顶部信息区可滚动，玩家列表不会被挤没。
+                      - 优化个人信息卡片头部布局，高缩放或窗口较窄时头像、名称、徽章、状态和操作按钮不会消失。
+                      - 补充快速启动、VR 启动、通知开关、等级时间、缩放与高缩放布局相关测试。
 
-                      ### Build
+                      ### 构建
 
-                      - Windows installer, portable zip, Linux AppImage, and macOS DMG are built by GitHub Actions.
-                      - This release is built from the VRCX-Luo repository.
+                      - Windows 安装包、便携压缩包、Linux AppImage 和 macOS DMG 由 GitHub Actions 构建。
+                      - 本版本由 VRCX-Luo 仓库构建。
                   files: release_assets/*
                   generate_release_notes: false
                   draft: false

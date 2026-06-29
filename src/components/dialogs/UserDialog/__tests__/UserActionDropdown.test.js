@@ -30,6 +30,12 @@ vi.mock('../../../../composables/useInviteChecks', () => ({
 vi.mock('../../../../composables/useRecentActions', () => ({
     isActionRecent: () => false
 }));
+vi.mock('../../../../stores/trackedNonFriends', () => ({
+    useTrackedNonFriendsStore: () => ({
+        isTracked: () => false,
+        toggleTrackedNonFriend: vi.fn()
+    })
+}));
 vi.mock('../../../ui/dropdown-menu', () => ({
     DropdownMenu: { template: '<div><slot /></div>' },
     DropdownMenuTrigger: { template: '<div><slot /></div>' },
@@ -72,6 +78,8 @@ vi.mock('lucide-vue-next', () => ({
     Star: { template: '<i />' },
     Trash2: { template: '<i />' },
     User: { template: '<i />' },
+    UserMinus: { template: '<i />' },
+    UserPlus: { template: '<i />' },
     VolumeX: { template: '<i />' },
     X: { template: '<i />' },
     XCircle: { template: '<i />' }
