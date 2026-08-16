@@ -1,15 +1,15 @@
 <template>
-    <div class="flex flex-col h-full">
+    <div class="flex min-h-0 h-full flex-col">
         <DialogHeader>
             <DialogTitle>{{ t('dialog.previous_instances.info') }}</DialogTitle>
         </DialogHeader>
 
         <DataTableLayout
             v-if="viewMode === 'table'"
-            class="min-w-0 w-full flex-1"
+            class="min-h-0 min-w-0 w-full flex-1"
             :table="table"
             :loading="loading"
-            :table-style="tableStyle"
+            auto-height
             :page-sizes="pageSizes"
             :total-items="totalItems"
             :on-page-size-change="handlePageSizeChange"
@@ -57,7 +57,7 @@
             </template>
         </DataTableLayout>
 
-        <div v-else-if="viewMode === 'chart'" class="flex flex-col min-w-0 w-full flex-1">
+        <div v-else-if="viewMode === 'chart'" class="flex min-h-0 min-w-0 w-full flex-1 flex-col">
             <div class="flex items-center justify-between px-1 py-2 flex-shrink-0">
                 <div class="flex items-center gap-2">
                     <ToggleGroup
@@ -107,12 +107,11 @@
                     placeholder="伪记录"
                     search-placeholder="搜索..."
                     :clearable="true"
-                    :close-on-select="true"
-                >
+                    :close-on-select="true">
                     <template #trigger="{ text }">
                         <div class="flex items-center truncate">
                             <Search class="mr-2 size-4 opacity-50" />
-                            <span class="truncate">{{ text || "伪记录" }}</span>
+                            <span class="truncate">{{ text || '伪记录' }}</span>
                         </div>
                     </template>
                     <template #item="{ item }">
@@ -124,13 +123,7 @@
                     </template>
                 </VirtualCombobox>
             </div>
-            <Button
-                size="sm"
-                variant="outline"
-                :disabled="!manualAddUserId"
-                @click="handleAddFakeRecord"
-                class="px-3"
-            >
+            <Button size="sm" variant="outline" :disabled="!manualAddUserId" @click="handleAddFakeRecord" class="px-3">
                 <Plus class="size-4 mr-1" />
                 添加记录
             </Button>
@@ -147,7 +140,15 @@
     import { useI18n } from 'vue-i18n';
     import { BarChart3, List, Plus, Search } from 'lucide-vue-next';
 
-    import { useGameLogStore, useInstanceStore, useSearchStore, useVrcxStore, useFriendStore, useUserStore, useTrackedNonFriendsStore } from '../../../stores';
+    import {
+        useGameLogStore,
+        useInstanceStore,
+        useSearchStore,
+        useVrcxStore,
+        useFriendStore,
+        useUserStore,
+        useTrackedNonFriendsStore
+    } from '../../../stores';
     import { compareByCreatedAt, localeIncludes, parseLocation, timeToText } from '../../../shared/utils';
     import { DataTableLayout } from '../../ui/data-table';
     import { InputGroupField } from '../../../components/ui/input-group';
@@ -205,7 +206,7 @@
             }
         };
 
-        friendSections.value.forEach(section => {
+        friendSections.value.forEach((section) => {
             addGroup({ key: section.key, label: section.label, list: section.friends });
         });
 
@@ -219,7 +220,7 @@
 
         let targetUser = null;
         for (const group of userPickerGroups.value) {
-            const found = group.items.find(i => i.value === manualAddUserId.value);
+            const found = group.items.find((i) => i.value === manualAddUserId.value);
             if (found) {
                 targetUser = found;
                 break;
@@ -231,10 +232,13 @@
 
         let joinTime = Date.now();
         if (currentUser.value?.id) {
-            const ownJoinTime = await database.getLastJoinTimeForUserAtLocation({
-                id: currentUser.value.id,
-                displayName: currentUser.value.displayName || currentUser.value.username
-            }, location.value.tag);
+            const ownJoinTime = await database.getLastJoinTimeForUserAtLocation(
+                {
+                    id: currentUser.value.id,
+                    displayName: currentUser.value.displayName || currentUser.value.username
+                },
+                location.value.tag
+            );
             if (ownJoinTime) {
                 joinTime = ownJoinTime;
             }
@@ -285,7 +289,6 @@
             dialogState.value.pageIndex = value;
         }
     });
-    const tableStyle = { maxHeight: '100%' };
     const search = computed({
         get: () => dialogState.value.search,
         set: (value) => {

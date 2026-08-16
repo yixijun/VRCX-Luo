@@ -2,6 +2,14 @@
     <div class="flex flex-col gap-10 py-2">
         <SettingsGroup :title="t('view.settings.social.interaction.header')">
             <SettingsItem
+                :label="t('view.settings.social.interaction.relationship_suggestion_prompts')"
+                :description="t('view.settings.social.interaction.relationship_suggestion_prompts_description')">
+                <Switch
+                    :model-value="relationshipSuggestionPromptsEnabled"
+                    @update:modelValue="setRelationshipSuggestionPromptsEnabled" />
+            </SettingsItem>
+
+            <SettingsItem
                 :label="t('view.settings.appearance.user_dialog.recent_action_cooldown')"
                 :description="t('view.settings.appearance.user_dialog.recent_action_cooldown_description')">
                 <Switch
@@ -96,11 +104,19 @@
     const generalSettingsStore = useGeneralSettingsStore();
     const favoriteStore = useFavoriteStore();
 
-    const { recentActionCooldownEnabled, recentActionCooldownMinutes, localFavoriteFriendsGroups } =
-        storeToRefs(generalSettingsStore);
+    const {
+        recentActionCooldownEnabled,
+        recentActionCooldownMinutes,
+        relationshipSuggestionPromptsEnabled,
+        localFavoriteFriendsGroups
+    } = storeToRefs(generalSettingsStore);
 
-    const { setRecentActionCooldownEnabled, setRecentActionCooldownMinutes, setLocalFavoriteFriendsGroups } =
-        generalSettingsStore;
+    const {
+        setRecentActionCooldownEnabled,
+        setRecentActionCooldownMinutes,
+        setRelationshipSuggestionPromptsEnabled,
+        setLocalFavoriteFriendsGroups
+    } = generalSettingsStore;
 
     const { favoriteFriendGroups, localFriendFavoriteGroups } = storeToRefs(favoriteStore);
 </script>

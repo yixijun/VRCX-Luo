@@ -1,6 +1,6 @@
 <template>
-    <div class="flex row-auto gap-2" v-bind="$attrs">
-        <div id="standart-actions" class="flex row-auto gap-2">
+    <div class="instance-action-bar flex min-w-0 flex-wrap items-center gap-2" v-bind="$attrs">
+        <div id="standart-actions" class="flex flex-wrap items-center gap-1.5">
             <div v-if="showLaunchButton" class="inline-block">
                 <TooltipWrapper side="top" :content="t('dialog.user.info.launch_invite_tooltip')">
                     <Button
@@ -58,7 +58,7 @@
             </TooltipWrapper>
         </div>
 
-        <div v-if="showInstanceInfo" class="flex items-center gap-1.5 text-muted-foreground">
+        <div v-if="showInstanceInfo" class="flex min-w-0 flex-wrap items-center gap-1.5 text-muted-foreground">
             <TooltipWrapper v-if="instanceInfoState.isValidInstance" side="top">
                 <template #content>
                     <div class="flex flex-col flex-wrap items-center gap-x-6 gap-y-2">
@@ -133,7 +133,7 @@
             </span>
         </div>
 
-        <div v-if="hasInstanceMetadata" class="flex items-center row-auto gap-2">
+        <div v-if="hasInstanceMetadata" class="flex min-w-0 flex-wrap items-center gap-2">
             <TooltipWrapper side="top" :content="t('dialog.user.info.instance_queue')">
                 <span v-if="instance?.queueSize" class="flex items-center gap-0.5">
                     <SquareStack class="h-4 w-4" />
@@ -156,6 +156,41 @@
         </div>
     </div>
 </template>
+
+<style scoped>
+    #standart-actions :deep([data-slot='button']) {
+        width: 2rem;
+        min-width: 2rem;
+        height: 2rem;
+        min-height: 2rem;
+        border-radius: 0.5rem;
+        background: color-mix(in oklch, var(--background) 82%, transparent);
+        transition:
+            color 140ms ease,
+            background-color 140ms ease,
+            border-color 140ms ease,
+            box-shadow 140ms ease,
+            transform 100ms ease;
+    }
+
+    #standart-actions :deep([data-slot='button']:hover) {
+        border-color: color-mix(in oklch, var(--ring) 50%, var(--border));
+        box-shadow: 0 3px 10px rgb(0 0 0 / 12%);
+        transform: translateY(-1px);
+    }
+
+    #standart-actions :deep([data-slot='button']:active) {
+        box-shadow: none;
+        transform: scale(0.92);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        #standart-actions :deep([data-slot='button']:hover),
+        #standart-actions :deep([data-slot='button']:active) {
+            transform: none;
+        }
+    }
+</style>
 
 <script lang="ts" setup>
     import {

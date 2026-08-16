@@ -256,7 +256,20 @@
         "inactive_friends": {
             "tab_label": "不活跃",
             "description": "超过 {days} 天未登录的离线好友。",
-            "last_login": "最后登录：{time}"
+            "last_login": "最后登录：{time}",
+            "batch_manage": "批量管理不活跃好友",
+            "select_all": "全选",
+            "deselect_all": "取消全选",
+            "selected_count": "已选 {selected}/{total}",
+            "select_friend": "选择 {name}",
+            "delete_selected": "删除已选好友",
+            "cancel": "取消",
+            "confirm_title": "删除 {count} 位好友？",
+            "confirm_description": "将从好友列表中删除所选玩家。此操作无法撤销，并且可能影响你的信誉等级。",
+            "confirm_delete": "删除 {count} 位",
+            "preview_more": "以及另外 {count} 位",
+            "delete_success": "已删除 {count} 位好友。",
+            "delete_partial": "已删除 {deleted} 位好友，另有 {failed} 位删除失败并保持选中。"
         }
     },
     "view": {
@@ -477,6 +490,7 @@
             "refresh_tooltip": "刷新",
             "actions": {
                 "accept": "接受",
+                "accept_and_launch": "接受并启动 VRChat",
                 "invite": "邀请",
                 "decline": "拒绝",
                 "delete_log": "删除日志",
@@ -885,7 +899,9 @@
             },
             "social": {
                 "interaction": {
-                    "header": "交互"
+                    "header": "交互",
+                    "relationship_suggestion_prompts": "显示推测关联提示",
+                    "relationship_suggestion_prompts_description": "打开玩家资料时，显示可能存在好友关系的推测弹窗。"
                 },
                 "favorites": {
                     "header": "收藏"
@@ -1672,6 +1688,7 @@
             },
             "mutual_friends": {
                 "header": "共同好友",
+                "confirmed_date_tooltip": "最近一次从 VRChat 获取并确认该共同好友关系的日期，不是成为好友的日期。",
                 "sorting": {
                     "alphabetical": "字母顺序",
                     "last_active": "最后活跃",
@@ -1932,6 +1949,10 @@
                 "visibility_friends": "可见性：好友",
                 "visibility_hidden": "可见性：隐藏",
                 "create_post": "创建群组帖子",
+                "create_content": "新建群组内容",
+                "create_event": "新建活动",
+                "create_announcement": "新建公告",
+                "create_gallery": "新建相册",
                 "moderation_tools": "成员管理",
                 "leave": "离开群组",
                 "block": "屏蔽该群组",
@@ -1959,6 +1980,14 @@
                 "last_visited": "最后访问时间",
                 "past_events": "之前举办的活动",
                 "upcoming_events": "即将到来的活动"
+            },
+            "events": {
+                "header": "活动"
+            },
+            "instances": {
+                "header": "房间",
+                "empty": "当前没有活跃的群组房间",
+                "refresh_players": "刷新玩家人数"
             },
             "posts": {
                 "header": "帖子",
@@ -1993,8 +2022,13 @@
                 "search": "搜索"
             },
             "gallery": {
-                "header": "相册"
+                "header": "相册",
+                "refresh": "刷新相册",
+                "upload": "上传照片到当前相册",
+                "uploaded": "照片已上传到群组相册",
+                "upload_failed": "上传群组相册照片失败"
             },
+            "resize_sidebar": "调整群组主页左右区域大小",
             "json": {
                 "header": "原始 JSON 信息"
             }
@@ -2582,6 +2616,50 @@
             "create_post": "创建帖子",
             "edit_post": "编辑帖子"
         },
+        "group_event_create": {
+            "header": "新建群组活动",
+            "title": "活动标题",
+            "starts_at": "开始时间",
+            "ends_at": "结束时间",
+            "access": "可见范围",
+            "public": "公开",
+            "group_only": "仅群组成员",
+            "category": "活动类型",
+            "description": "活动描述",
+            "send_notification": "向群组成员发送通知",
+            "cancel": "取消",
+            "create": "创建活动",
+            "required": "请填写标题、描述和有效的活动时间",
+            "invalid_time": "结束时间必须晚于开始时间",
+            "success": "群组活动已创建",
+            "failed": "创建群组活动失败",
+            "categories": {
+                "arts": "艺术",
+                "avatars": "虚拟形象",
+                "dance": "舞蹈",
+                "education": "教育",
+                "exploration": "探索",
+                "film_media": "影视媒体",
+                "gaming": "游戏",
+                "hangout": "聚会闲聊",
+                "music": "音乐",
+                "other": "其他",
+                "performance": "演出",
+                "roleplaying": "角色扮演",
+                "wellness": "健康与放松"
+            }
+        },
+        "group_gallery_create": {
+            "header": "新建群组相册",
+            "name": "相册名称",
+            "description": "相册描述",
+            "members_only": "仅群组成员可见",
+            "cancel": "取消",
+            "create": "创建相册",
+            "required": "请输入相册名称",
+            "success": "群组相册已创建",
+            "failed": "创建群组相册失败"
+        },
         "group_calendar": {
             "header": "活动日历",
             "list_view": "列表视图",
@@ -2598,7 +2676,10 @@
                 "description": "描述",
                 "export_to_calendar": "导出到日历",
                 "download_ics": "下载 .ics 文件",
-                "copied_event_link": "相关活动日历的链接已复制到剪贴板"
+                "copied_event_link": "相关活动日历的链接已复制到剪贴板",
+                "delete": "删除活动",
+                "deleted": "活动已删除",
+                "delete_failed": "删除活动失败"
             },
             "featured_events": "精选活动"
         },
@@ -2698,6 +2779,7 @@
         "invite_group": "确定要邀请这些用户加入群组吗？",
         "delete_log": "确定要删除日志吗？",
         "accept_friend_request": "要接受这个好友请求吗？",
+        "accept_invite_and_launch": "接受这个邀请并在 VRChat 中打开对应房间吗？",
         "send_invite": "要发送邀请吗？",
         "decline_type": "确定要拒绝{type}吗？",
         "delete_type": "确定要删除{type}吗？",
@@ -2705,6 +2787,7 @@
         "clear_group": "确定要清空群组吗？",
         "delete_group": "确定要删除群组 {name} 吗？",
         "delete_post": "确定要删除这个公告吗？",
+        "delete_group_event": "确定要删除活动“{title}”吗？此操作无法撤销。",
         "block_group": "确定要屏蔽这个群组吗？",
         "unblock_group": "确定要取消屏蔽这个群组吗？",
         "leave_group": "确定要离开这个群组吗？",
@@ -3005,7 +3088,9 @@
             "message_update_failed": "VRChat API 未能更新消息，请重试",
             "message_updated": "邀请消息已更新",
             "response_sent": "已发送邀请回复消息",
-            "response_photo_sent": "已发送回复消息"
+            "response_photo_sent": "已发送回复消息",
+            "location_unavailable": "这个邀请不包含有效的房间位置",
+            "accept_launch_failed": "接受邀请或启动 VRChat 失败"
         },
         "launch": {
             "invalid_path": "无效路径，你必须输入 VRChat 文件夹所在的路径或 “launch.exe” 所在的路径",

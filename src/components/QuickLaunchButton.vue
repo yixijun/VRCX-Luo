@@ -53,44 +53,52 @@
             return () =>
                 h(DropdownMenu, null, {
                     default: () => [
-                        h(DropdownMenuTrigger, { asChild: true }, {
-                            default: () =>
-                                h(
-                                    Button,
-                                    {
-                                        'data-testid': 'quick-launch-button',
-                                        size: 'icon',
-                                        variant: 'secondary',
-                                        class: 'h-9 w-9 rounded-full p-0 shadow',
-                                        title: t('quick_launch.tooltip'),
-                                        disabled: isLaunching.value
-                                    },
-                                    {
-                                        default: () =>
-                                            isLaunching.value
-                                                ? h(Loader2, { class: 'h-4 w-4 animate-spin' })
-                                                : h(Rocket, { class: 'h-4 w-4' })
-                                    }
-                                )
-                        }),
-                        h(DropdownMenuContent, { align: 'end', side: 'top', class: 'w-52' }, {
-                            default: () => [
-                                h(DropdownMenuLabel, null, () => t('quick_launch.header')),
-                                h(DropdownMenuSeparator),
-                                h(DropdownMenuItem, { onClick: launchDesktop }, () => [
-                                    h(Monitor, { class: 'size-4' }),
-                                    t('quick_launch.vrchat_desktop')
-                                ]),
-                                h(DropdownMenuItem, { onClick: launchVr }, () => [
-                                    h(Headset, { class: 'size-4' }),
-                                    t('quick_launch.vrchat_vr')
-                                ]),
-                                h(DropdownMenuItem, { onClick: startSteamVR }, () => [
-                                    h(CirclePlay, { class: 'size-4' }),
-                                    t('quick_launch.steamvr')
-                                ])
-                            ]
-                        })
+                        h(
+                            DropdownMenuTrigger,
+                            { asChild: true },
+                            {
+                                default: () =>
+                                    h(
+                                        Button,
+                                        {
+                                            'data-testid': 'quick-launch-button',
+                                            size: 'icon',
+                                            variant: 'secondary',
+                                            class: 'h-9 w-9 rounded-full p-0 shadow',
+                                            title: t('quick_launch.tooltip'),
+                                            disabled: isLaunching.value
+                                        },
+                                        {
+                                            default: () =>
+                                                isLaunching.value
+                                                    ? h(Loader2, { class: 'h-4 w-4 animate-spin' })
+                                                    : h(Rocket, { class: 'h-4 w-4' })
+                                        }
+                                    )
+                            }
+                        ),
+                        h(
+                            DropdownMenuContent,
+                            { align: 'end', side: 'top', class: 'w-52' },
+                            {
+                                default: () => [
+                                    h(DropdownMenuLabel, null, () => t('quick_launch.header')),
+                                    h(DropdownMenuSeparator),
+                                    h(DropdownMenuItem, { onClick: launchDesktop }, () => [
+                                        h(Monitor, { class: 'size-4' }),
+                                        t('quick_launch.vrchat_desktop')
+                                    ]),
+                                    h(DropdownMenuItem, { onClick: launchVr }, () => [
+                                        h(Headset, { class: 'size-4' }),
+                                        t('quick_launch.vrchat_vr')
+                                    ]),
+                                    h(DropdownMenuItem, { onClick: startSteamVR }, () => [
+                                        h(CirclePlay, { class: 'size-4' }),
+                                        t('quick_launch.steamvr')
+                                    ])
+                                ]
+                            }
+                        )
                     ]
                 });
         }
@@ -211,14 +219,14 @@
         if (await refreshSteamVRState()) {
             return true;
         }
-        const { ok } = await modalStore.confirm({
+        const { ok, reason } = await modalStore.confirm({
             description: t('dialog.launch.steamvr_not_running_warning'),
             title: t('dialog.launch.steamvr_not_running_title'),
             confirmText: t('dialog.launch.open_steamvr'),
             cancelText: t('dialog.launch.confirm_no')
         });
         if (!ok) {
-            return true;
+            return reason === 'cancel';
         }
         return startSteamVR();
     }

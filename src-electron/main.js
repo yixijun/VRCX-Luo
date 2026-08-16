@@ -54,6 +54,7 @@ const rootDir = app.getAppPath();
 let tray = null;
 let trayIcon = null;
 let trayIconNotify = null;
+let trayNotificationSnapshot = { total: 0, items: [] };
 
 // Get launch arguments
 let appImagePath = process.env.APPIMAGE;
@@ -233,30 +234,33 @@ ipcMain.handle('dialog:openDirectory', async () => {
     return null;
 });
 
-ipcMain.handle('notification:showNotification', (event, title, body, icon, silent) => {
-    if (!areDesktopNotificationsEnabled()) {
-        return;
-    }
-
-    if (activeNotification) {
-        activeNotification.close();
-    }
-
-    const notification = new Notification({
-        title,
-        body,
-        icon,
-        silent: !!silent
-    });
-    notification.on('close', () => {
-        if (activeNotification === notification) {
-            notification.removeAllListeners();
-            activeNotification = null;
+ipcMain.handle(
+    'notification:showNotification',
+    (event, title, body, icon, silent) => {
+        if (!areDesktopNotificationsEnabled()) {
+            return;
         }
-    });
-    activeNotification = notification;
-    notification.show();
-});
+
+        if (activeNotification) {
+            activeNotification.close();
+        }
+
+        const notification = new Notification({
+            title,
+            body,
+            icon,
+            silent: !!silent
+        });
+        notification.on('close', () => {
+            if (activeNotification === notification) {
+                notification.removeAllListeners();
+                activeNotification = null;
+            }
+        });
+        activeNotification = notification;
+        notification.show();
+    }
+);
 
 ipcMain.handle('app:restart', () => {
     if (process.platform === 'linux') {
@@ -319,6 +323,14 @@ ipcMain.handle('app:getNoUpdater', () => {
 
 ipcMain.handle('app:setTrayIconNotification', (event, notify) => {
     setTrayIconNotification(notify);
+});
+
+ipcMain.handle('app:updateTrayNotifications', (event, snapshot) => {
+    trayNotificationSnapshot = normalizeTrayNotificationSnapshot(snapshot);
+    if (tray) {
+        tray.setToolTip(buildTrayToolTip());
+        tray.setContextMenu(buildTrayContextMenu());
+    }
 });
 
 ipcMain.handle('app:setDesktopNotificationsEnabled', (event, enabled) => {
@@ -619,13 +631,124 @@ function writeOverlayFrame(imageBuffer) {
     }
 }
 
-
 function destroyTray() {
     if (tray) {
         tray.destroy();
         tray = null;
     }
 }
+
+function normalizeTrayNotificationSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') {
+        return { total: 0, items: [] };
+    }
+    const items = Array.isArray(snapshot.items)
+        ? snapshot.items.slice(0, 4).map((item) => ({
+              id: String(item?.id || ''),
+              title: String(item?.title || '通知').slice(0, 80),
+              body: String(item?.body || '').slice(0, 180),
+              actions: Array.isArray(item?.actions)
+                  ? item.actions.slice(0, 3).map((action) => ({
+                        id: String(action?.id || ''),
+                        label: String(action?.label || '')
+                    }))
+                  : []
+          }))
+        : [];
+    return {
+        total: Number.isFinite(Number(snapshot.total))
+            ? Math.max(0, Number(snapshot.total))
+            : items.length,
+        items
+    };
+}
+
+function sendTrayNotificationAction(action, notificationId = '') {
+    if (!mainWindow || mainWindow.isDestroyed()) return;
+    if (action === 'open' || action === 'invite-accept') {
+        mainWindow.show();
+        mainWindow.focus();
+    }
+    mainWindow.webContents.send('tray-notification-action', {
+        action,
+        notificationId
+    });
+}
+
+function buildTrayToolTip() {
+    const { total, items } = trayNotificationSnapshot;
+    if (!items.length) return 'VRCX-Luo';
+    const lines = [`VRCX-Luo · ${total} 条待处理通知`];
+    for (const item of items.slice(0, 3)) {
+        lines.push(
+            `${item.title}${item.body ? `：${item.body}` : ''}`.slice(0, 100)
+        );
+    }
+    return lines.join('\n');
+}
+
+function buildTrayContextMenu() {
+    const template = [
+        { label: '打开 VRCX-Luo', click: () => mainWindow.show() },
+        { type: 'separator' },
+        {
+            label: areDesktopNotificationsEnabled()
+                ? '关闭桌面通知'
+                : '启用桌面通知',
+            type: 'checkbox',
+            checked: areDesktopNotificationsEnabled(),
+            click: () => {
+                const enabled = !areDesktopNotificationsEnabled();
+                VRCXStorage.Set(
+                    'VRCX_desktopNotificationsEnabled',
+                    String(enabled)
+                );
+                notifyDesktopNotificationsChanged(enabled);
+                tray?.setContextMenu(buildTrayContextMenu());
+            }
+        },
+        {
+            label: '静音模式',
+            type: 'checkbox',
+            checked: isTraySilentModeEnabled(),
+            click: () => {
+                const enabled = !isTraySilentModeEnabled();
+                VRCXStorage.Set('VRCX_traySilentMode', String(enabled));
+                notifyTraySilentModeChanged(enabled);
+                tray?.setContextMenu(buildTrayContextMenu());
+            }
+        },
+        {
+            label: 'V睡模式',
+            type: 'checkbox',
+            checked: isVSleepModeEnabled(),
+            click: () => {
+                const enabled = !isVSleepModeEnabled();
+                VRCXStorage.Set('VRCX_vSleepMode', String(enabled));
+                notifyVSleepModeChanged(enabled);
+                tray?.setContextMenu(buildTrayContextMenu());
+            }
+        }
+    ];
+    if (debug) {
+        template.push({
+            label: '开发者工具',
+            click: () => mainWindow.webContents.openDevTools()
+        });
+    }
+    template.push(
+        { type: 'separator' },
+        {
+            label: '退出 VRCX-Luo',
+            click: () => {
+                appIsQuitting = true;
+                app.quit();
+            }
+        }
+    );
+    return Menu.buildFromTemplate(template);
+}
+
 function createTray() {
     if (process.platform === 'darwin') {
         const image = nativeImage.createFromPath(
@@ -652,76 +775,8 @@ function createTray() {
         trayIconNotify = path.join(rootDir, 'images/VRCX_notify.ico');
     }
     tray = new Tray(trayIcon);
-    const desktopNotificationsEnabled = areDesktopNotificationsEnabled();
-    const traySilentModeEnabled = isTraySilentModeEnabled();
-    const vSleepModeEnabled = isVSleepModeEnabled();
-    const contextMenu = Menu.buildFromTemplate([
-        {
-            label: '打开 VRCX-Luo',
-            type: 'normal',
-            click: function () {
-                mainWindow.show();
-            }
-        },
-        {
-            label: desktopNotificationsEnabled
-                ? '关闭桌面通知'
-                : '启用桌面通知',
-            type: 'checkbox',
-            checked: desktopNotificationsEnabled,
-            click: function () {
-                const enabled = !areDesktopNotificationsEnabled();
-                VRCXStorage.Set(
-                    'VRCX_desktopNotificationsEnabled',
-                    String(enabled)
-                );
-                notifyDesktopNotificationsChanged(enabled);
-                destroyTray();
-                createTray();
-            }
-        },
-        {
-            label: '静音模式',
-            type: 'checkbox',
-            checked: traySilentModeEnabled,
-            click: function () {
-                const enabled = !isTraySilentModeEnabled();
-                VRCXStorage.Set('VRCX_traySilentMode', String(enabled));
-                notifyTraySilentModeChanged(enabled);
-                destroyTray();
-                createTray();
-            }
-        },
-        {
-            label: 'V睡模式',
-            type: 'checkbox',
-            checked: vSleepModeEnabled,
-            click: function () {
-                const enabled = !isVSleepModeEnabled();
-                VRCXStorage.Set('VRCX_vSleepMode', String(enabled));
-                notifyVSleepModeChanged(enabled);
-                destroyTray();
-                createTray();
-            }
-        },
-        {
-            label: '开发者工具',
-            type: 'normal',
-            click: function () {
-                mainWindow.webContents.openDevTools();
-            }
-        },
-        {
-            label: '退出 VRCX-Luo',
-            type: 'normal',
-            click: function () {
-                appIsQuitting = true;
-                app.quit();
-            }
-        }
-    ]);
-    tray.setToolTip('VRCX');
-    tray.setContextMenu(contextMenu);
+    tray.setToolTip(buildTrayToolTip());
+    tray.setContextMenu(buildTrayContextMenu());
 
     tray.on('click', () => {
         mainWindow.show();

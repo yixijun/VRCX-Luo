@@ -427,6 +427,7 @@
             "refresh_tooltip": "重新整理",
             "actions": {
                 "accept": "接受",
+                "accept_and_launch": "接受並啟動 VRChat",
                 "invite": "邀請",
                 "decline": "拒絕",
                 "delete_log": "刪除紀錄",
@@ -707,7 +708,9 @@
             },
             "social": {
                 "interaction": {
-                    "header": "互動"
+                    "header": "互動",
+                    "relationship_suggestion_prompts": "顯示推測關聯提示",
+                    "relationship_suggestion_prompts_description": "開啟玩家資料時，顯示可能存在好友關係的推測彈窗。"
                 },
                 "favorites": {
                     "header": "收藏"
@@ -1453,6 +1456,7 @@
             },
             "mutual_friends": {
                 "header": "共同好友",
+                "confirmed_date_tooltip": "最近一次從 VRChat 取得並確認此共同好友關係的日期，不是成為好友的日期。",
                 "sorting": {
                     "alphabetical": "按字母排序",
                     "last_active": "最後上線",
@@ -1697,6 +1701,10 @@
                 "visibility_friends": "能見度：好友",
                 "visibility_hidden": "能見度：隱藏",
                 "create_post": "創建貼文",
+                "create_content": "新增群組內容",
+                "create_event": "新增活動",
+                "create_announcement": "新增公告",
+                "create_gallery": "新增相簿",
                 "moderation_tools": "管理工具",
                 "leave": "離開群組",
                 "block": "封鎖群組",
@@ -1724,6 +1732,14 @@
                 "last_visited": "上次造訪",
                 "past_events": "過去的活動",
                 "upcoming_events": "即將到來的活動"
+            },
+            "events": {
+                "header": "活動"
+            },
+            "instances": {
+                "header": "房間",
+                "empty": "目前沒有活躍的群組房間",
+                "refresh_players": "重新整理玩家人數"
             },
             "posts": {
                 "header": "貼文",
@@ -1758,8 +1774,13 @@
                 "search": "搜尋"
             },
             "gallery": {
-                "header": "畫廊"
+                "header": "畫廊",
+                "refresh": "重新整理相簿",
+                "upload": "上傳照片到目前相簿",
+                "uploaded": "照片已上傳到群組相簿",
+                "upload_failed": "上傳群組相簿照片失敗"
             },
+            "resize_sidebar": "調整群組頁面左右區域大小",
             "json": {
                 "header": "原始資料"
             }
@@ -2339,6 +2360,50 @@
             "create_post": "創建貼文",
             "edit_post": "編輯貼文"
         },
+        "group_event_create": {
+            "header": "新增群組活動",
+            "title": "活動標題",
+            "starts_at": "開始時間",
+            "ends_at": "結束時間",
+            "access": "可見範圍",
+            "public": "公開",
+            "group_only": "僅群組成員",
+            "category": "活動類型",
+            "description": "活動描述",
+            "send_notification": "通知群組成員",
+            "cancel": "取消",
+            "create": "建立活動",
+            "required": "請填寫標題、描述與有效的活動時間",
+            "invalid_time": "結束時間必須晚於開始時間",
+            "success": "群組活動已建立",
+            "failed": "建立群組活動失敗",
+            "categories": {
+                "arts": "藝術",
+                "avatars": "虛擬化身",
+                "dance": "舞蹈",
+                "education": "教育",
+                "exploration": "探索",
+                "film_media": "影視媒體",
+                "gaming": "遊戲",
+                "hangout": "聚會閒聊",
+                "music": "音樂",
+                "other": "其他",
+                "performance": "演出",
+                "roleplaying": "角色扮演",
+                "wellness": "健康與放鬆"
+            }
+        },
+        "group_gallery_create": {
+            "header": "新增群組相簿",
+            "name": "相簿名稱",
+            "description": "相簿描述",
+            "members_only": "僅群組成員可見",
+            "cancel": "取消",
+            "create": "建立相簿",
+            "required": "請輸入相簿名稱",
+            "success": "群組相簿已建立",
+            "failed": "建立群組相簿失敗"
+        },
         "group_calendar": {
             "header": "群組行事曆",
             "list_view": "清單檢視",
@@ -2355,7 +2420,10 @@
                 "description": "描述",
                 "export_to_calendar": "匯出至行事曆",
                 "download_ics": "下載 .ics 檔案",
-                "copied_event_link": "行事曆活動網址已複製至剪貼簿"
+                "copied_event_link": "行事曆活動網址已複製至剪貼簿",
+                "delete": "刪除活動",
+                "deleted": "活動已刪除",
+                "delete_failed": "刪除活動失敗"
             },
             "featured_events": "精選活動"
         },
@@ -2452,6 +2520,7 @@
         "invite_group": "確定要邀請使用者加入群組嗎？",
         "delete_log": "確定要刪除紀錄嗎？",
         "accept_friend_request": "確定要接受好友邀請嗎？",
+        "accept_invite_and_launch": "接受這個邀請並在 VRChat 中開啟對應房間嗎？",
         "send_invite": "確定要送出邀請嗎？",
         "decline_type": "確定要拒絕 {type} 嗎？",
         "delete_type": "確定要刪除 {type} 嗎？",
@@ -2459,6 +2528,7 @@
         "clear_group": "確定要清空群組嗎？",
         "delete_group": "確定要刪除群組 {name} 嗎？",
         "delete_post": "確定要刪除這則貼文嗎？",
+        "delete_group_event": "確定要刪除活動「{title}」嗎？此操作無法復原。",
         "block_group": "確定要封鎖此群組嗎？",
         "unblock_group": "確定要解除封鎖此群組嗎？",
         "leave_group": "確定要離開此群組嗎？",
@@ -2752,7 +2822,9 @@
             "message_update_failed": "VRChat API 未能更新訊息，請再試一次",
             "message_updated": "邀請訊息已更新",
             "response_sent": "邀請回覆訊息已發送",
-            "response_photo_sent": "邀請回覆照片訊息已發送"
+            "response_photo_sent": "邀請回覆照片訊息已發送",
+            "location_unavailable": "這個邀請不包含有效的房間位置",
+            "accept_launch_failed": "接受邀請或啟動 VRChat 失敗"
         },
         "launch": {
             "invalid_path": "路徑無效，請輸入 VRChat 資料夾或 launch.exe"

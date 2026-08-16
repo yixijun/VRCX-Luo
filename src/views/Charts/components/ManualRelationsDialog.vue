@@ -7,14 +7,18 @@
 
             <Tabs default-value="list" class="flex-1 flex flex-col overflow-hidden">
                 <TabsList class="grid w-full grid-cols-2">
-                    <TabsTrigger value="list">{{ t('view.charts.mutual_friend.manual_relations.tab_list') }}</TabsTrigger>
-                    <TabsTrigger value="suggest">{{ t('view.charts.mutual_friend.manual_relations.tab_suggest') }}</TabsTrigger>
+                    <TabsTrigger value="list">{{
+                        t('view.charts.mutual_friend.manual_relations.tab_list')
+                    }}</TabsTrigger>
+                    <TabsTrigger value="suggest">{{
+                        t('view.charts.mutual_friend.manual_relations.tab_suggest')
+                    }}</TabsTrigger>
                 </TabsList>
 
                 <!-- List Tab -->
                 <TabsContent value="list" class="flex-1 flex flex-col gap-4 mt-4 overflow-hidden">
                     <!-- Manual Add Form -->
-                    <div class="flex flex-col gap-3 p-4 border rounded-md bg-muted/30">
+                    <div class="flex flex-col gap-3 rounded-md border-0 bg-muted/30 p-4">
                         <div class="grid grid-cols-2 gap-4">
                             <Field>
                                 <FieldLabel>{{ t('view.charts.mutual_friend.manual_relations.user_a') }}</FieldLabel>
@@ -56,32 +60,49 @@
 
                     <!-- Relations List -->
                     <div class="flex-1 overflow-y-auto pr-2">
-                        <div v-if="enrichedRelations.length === 0" class="text-center py-8 text-muted-foreground italic">
+                        <div
+                            v-if="enrichedRelations.length === 0"
+                            class="text-center py-8 text-muted-foreground italic">
                             {{ t('view.charts.mutual_friend.manual_relations.list_empty') }}
                         </div>
                         <div v-else class="flex flex-col gap-2">
                             <div
                                 v-for="rel in enrichedRelations"
                                 :key="`${rel.userIdA}-${rel.userIdB}`"
-                                class="flex items-center justify-between p-3 rounded-md border bg-card shadow-sm">
+                                class="flex items-center justify-between rounded-md border-0 bg-card p-3 shadow-sm">
                                 <div class="flex items-center gap-3 overflow-hidden">
-                                    <button class="font-medium underline underline-offset-2 truncate hover:text-primary transition-colors" @click="showUserDialog(rel.userIdA)">{{ rel.nameA }}</button>
+                                    <button
+                                        class="font-medium underline underline-offset-2 truncate hover:text-primary transition-colors"
+                                        @click="showUserDialog(rel.userIdA)">
+                                        {{ rel.nameA }}
+                                    </button>
                                     <span class="text-muted-foreground shrink-0 text-xs">↔</span>
-                                    <button class="font-medium underline underline-offset-2 truncate hover:text-primary transition-colors" @click="showUserDialog(rel.userIdB)">{{ rel.nameB }}</button>
+                                    <button
+                                        class="font-medium underline underline-offset-2 truncate hover:text-primary transition-colors"
+                                        @click="showUserDialog(rel.userIdB)">
+                                        {{ rel.nameB }}
+                                    </button>
                                 </div>
                                 <div class="flex items-center gap-4 shrink-0">
                                     <Tooltip v-if="rel.suggestion">
                                         <TooltipTrigger>
-                                            <div class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                                            <div
+                                                class="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
                                                 {{ rel.suggestion.displayScore }}
                                             </div>
                                         </TooltipTrigger>
                                         <TooltipContent>
-                                            <pre class="text-xs font-sans whitespace-pre-wrap leading-relaxed">{{ rel.suggestion.tooltip }}</pre>
+                                            <pre class="text-xs font-sans whitespace-pre-wrap leading-relaxed">{{
+                                                rel.suggestion.tooltip
+                                            }}</pre>
                                         </TooltipContent>
                                     </Tooltip>
                                     <span class="text-[11px] text-muted-foreground">{{ formatDate(rel.addedAt) }}</span>
-                                    <Button size="icon" variant="ghost" class="h-8 w-8 text-destructive hover:bg-destructive/10" @click="deleteRelation(rel.userIdA, rel.userIdB)">
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        class="h-8 w-8 text-destructive hover:bg-destructive/10"
+                                        @click="deleteRelation(rel.userIdA, rel.userIdB)">
                                         <Trash2 class="size-4" />
                                     </Button>
                                 </div>
@@ -101,10 +122,11 @@
                             {{ t('view.charts.mutual_friend.manual_relations.suggest_button') }}
                         </Button>
                     </div>
-                    
+
                     <div class="flex-1 overflow-y-auto pr-2 pb-4">
                         <div v-if="suggestions.length > 0" class="flex flex-col gap-1 mt-2">
-                            <div class="flex items-center gap-3 px-2 text-[10px] text-muted-foreground font-bold opacity-70 sticky top-0 bg-background z-10 py-1">
+                            <div
+                                class="flex items-center gap-3 px-2 text-[10px] text-muted-foreground font-bold opacity-70 sticky top-0 bg-background z-10 py-1">
                                 <div class="flex-1 min-w-0">关系人</div>
                                 <div class="w-[60px] text-right">得分</div>
                                 <div class="w-[60px]"></div>
@@ -114,24 +136,42 @@
                                 :key="s.key"
                                 class="flex items-center gap-3 p-2 hover:bg-accent/50 rounded-lg group">
                                 <div class="flex-1 flex items-center gap-1 text-sm overflow-hidden min-w-0">
-                                    <button class="underline underline-offset-2 truncate hover:text-primary max-w-[140px]" @click="showUserDialog(s.userIdA)">{{ s.nameA }}</button>
+                                    <button
+                                        class="underline underline-offset-2 truncate hover:text-primary max-w-[140px]"
+                                        @click="showUserDialog(s.userIdA)">
+                                        {{ s.nameA }}
+                                    </button>
                                     <span class="text-muted-foreground shrink-0">↔</span>
-                                    <button class="underline underline-offset-2 truncate hover:text-primary max-w-[140px]" @click="showUserDialog(s.userIdB)">{{ s.nameB }}</button>
+                                    <button
+                                        class="underline underline-offset-2 truncate hover:text-primary max-w-[140px]"
+                                        @click="showUserDialog(s.userIdB)">
+                                        {{ s.nameB }}
+                                    </button>
                                 </div>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <div class="text-[14px] font-mono font-medium text-foreground shrink-0 cursor-help w-[60px] text-right">
+                                        <div
+                                            class="text-[14px] font-mono font-medium text-foreground shrink-0 cursor-help w-[60px] text-right">
                                             {{ s.displayScore }}
                                         </div>
                                     </TooltipTrigger>
                                     <TooltipContent>
-                                        <pre class="text-xs font-sans whitespace-pre-wrap leading-relaxed">{{ s.tooltip }}</pre>
+                                        <pre class="text-xs font-sans whitespace-pre-wrap leading-relaxed">{{
+                                            s.tooltip
+                                        }}</pre>
                                     </TooltipContent>
                                 </Tooltip>
-                                <Button v-if="!s.isAdded" size="sm" variant="outline" class="w-[60px] h-8" @click="confirmSuggestion(s)">
+                                <Button
+                                    v-if="!s.isAdded"
+                                    size="sm"
+                                    variant="outline"
+                                    class="w-[60px] h-8"
+                                    @click="confirmSuggestion(s)">
                                     添加
                                 </Button>
-                                <div v-else class="text-xs text-muted-foreground w-[60px] flex items-center justify-center">
+                                <div
+                                    v-else
+                                    class="text-xs text-muted-foreground w-[60px] flex items-center justify-center">
                                     <CheckIcon class="w-3 h-3 mr-1" /> 已记录
                                 </div>
                             </div>
@@ -188,9 +228,9 @@
             const { item, selected } = this;
             return h('div', { class: 'flex w-full items-center p-1.5 text-[13px]' }, [
                 h('div', { class: 'flex-1 overflow-hidden' }, [
-                    h('span', { class: 'block truncate font-medium' }, item?.label || ''),
+                    h('span', { class: 'block truncate font-medium' }, item?.label || '')
                 ]),
-                h(CheckIcon, { class: ['ml-auto size-4', selected ? 'opacity-100' : 'opacity-0'] }),
+                h(CheckIcon, { class: ['ml-auto size-4', selected ? 'opacity-100' : 'opacity-0'] })
             ]);
         }
     });
@@ -224,7 +264,7 @@
     const enrichedRelations = computed(() =>
         relationsList.value.map((r) => {
             const key = manualRelationsStore.pairKey(r.userIdA, r.userIdB);
-            const suggestion = manualRelationsStore.cachedSuggestions.find(s => s.key === key);
+            const suggestion = manualRelationsStore.cachedSuggestions.find((s) => s.key === key);
             return {
                 ...r,
                 nameA: cachedUsers.get(r.userIdA)?.displayName || r.userIdA,
@@ -244,10 +284,7 @@
     const addError = ref('');
 
     const canAdd = computed(
-        () =>
-            selectedUserA.value &&
-            selectedUserB.value &&
-            selectedUserA.value !== selectedUserB.value
+        () => selectedUserA.value && selectedUserB.value && selectedUserA.value !== selectedUserB.value
     );
 
     async function addRelation() {
@@ -267,8 +304,9 @@
     }
 
     const suggestions = computed(() => {
-        return manualRelationsStore.cachedSuggestions
-            .filter(s => !s.isAdded && !manualRelationsStore.ignoredSuggestionKeys.has(s.key));
+        return manualRelationsStore.cachedSuggestions.filter(
+            (s) => !s.isAdded && !manualRelationsStore.ignoredSuggestionKeys.has(s.key)
+        );
     });
     const isSuggesting = ref(false);
     const hasSuggested = ref(false);

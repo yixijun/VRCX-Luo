@@ -11,11 +11,11 @@
 
                 <div
                     v-show="sidebarOpen"
-                    class="absolute top-0 bottom-0 z-30 w-1 cursor-ew-resize select-none"
+                    class="group/nav-resizer absolute top-0 bottom-0 z-30 w-2 -translate-x-1/2 cursor-ew-resize select-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:-translate-x-1/2 after:bg-transparent after:transition-colors hover:after:bg-ring/50"
                     :style="{ left: 'var(--sidebar-width)' }"
                     @pointerdown.prevent="startNavResize" />
 
-                <SidebarInset class="min-w-0 bg-sidebar">
+                <SidebarInset class="min-w-0 bg-[var(--surface-canvas)]">
                     <ResizablePanelGroup
                         direction="horizontal"
                         auto-save-id="vrcx-main-layout-right-sidebar"
@@ -26,10 +26,12 @@
                         @layout="handleLayout">
                         <template #default="{ layout }">
                             <ResizablePanel :default-size="mainDefaultSize" :order="1">
-                                <RouterView v-slot="{ Component }">
-                                    <KeepAlive exclude="ChartsInstance, ChartsMutual">
-                                        <component :is="Component" />
-                                    </KeepAlive>
+                                <RouterView v-slot="{ Component, route }">
+                                    <Transition name="main-route">
+                                        <KeepAlive exclude="ChartsInstance, ChartsMutual">
+                                            <component :is="Component" :key="route.path" />
+                                        </KeepAlive>
+                                    </Transition>
                                 </RouterView>
                             </ResizablePanel>
 
@@ -37,7 +39,7 @@
                                 with-handle
                                 :class="[
                                     isAsideCollapsed(layout) ? 'opacity-100' : 'opacity-0',
-                                    'z-20 [&>div]:-translate-x-1/2'
+                                    'z-20 transition-opacity duration-150 [&>div]:-translate-x-1/2'
                                 ]"></ResizableHandle>
                             <ResizablePanel
                                 ref="asidePanelRef"
@@ -213,3 +215,39 @@
         { immediate: true }
     );
 </script>
+
+<style scoped>
+    .main-route-enter-active {
+        transition:
+            opacity 160ms ease-out,
+            transform 180ms cubic-bezier(0.2, 0.75, 0.25, 1);
+    }
+
+    .main-route-leave-active {
+        transition:
+            opacity 100ms ease-in,
+            transform 120ms ease-in;
+    }
+
+    .main-route-enter-from {
+        opacity: 0;
+        transform: translateX(8px);
+    }
+
+    .main-route-leave-to {
+        opacity: 0;
+        transform: translateX(-5px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .main-route-enter-active,
+        .main-route-leave-active {
+            transition: opacity 80ms linear;
+        }
+
+        .main-route-enter-from,
+        .main-route-leave-to {
+            transform: none;
+        }
+    }
+</style>

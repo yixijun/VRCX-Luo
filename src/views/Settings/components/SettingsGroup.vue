@@ -1,17 +1,17 @@
 <template>
-    <div class="flex flex-col gap-3.5">
+    <section class="flex min-w-0 flex-col gap-3">
         <div v-if="title || $slots.description" class="flex flex-col gap-1.5 pl-0.5">
-            <h3 v-if="title" class="text-base font-semibold text-foreground m-0">{{ title }}</h3>
-            <div v-if="$slots.description" class="text-sm text-muted-foreground">
+            <h3 v-if="title" class="m-0 text-[0.95rem] leading-tight font-semibold text-foreground">{{ title }}</h3>
+            <div v-if="$slots.description" class="text-sm leading-relaxed text-muted-foreground">
                 <slot name="description" />
             </div>
         </div>
-        <Card class="p-0">
-            <CardContent class="flex flex-col gap-1 py-4.5 px-5.5">
+        <Card class="settings-group-card gap-0 overflow-hidden bg-card/80 p-0 shadow-sm">
+            <CardContent class="flex min-w-0 flex-col gap-1 px-4 py-3.5">
                 <slot />
             </CardContent>
         </Card>
-    </div>
+    </section>
 </template>
 
 <script setup>
@@ -21,3 +21,10 @@
         title: { type: String, default: '' }
     });
 </script>
+
+<style scoped>
+    .settings-group-card {
+        container-name: settings-group;
+        container-type: inline-size;
+    }
+</style>

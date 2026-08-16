@@ -46,6 +46,7 @@ public static class CloseToTrayDecisionTests
         }
 
         VerifyNonModalPromptCanBeDismissedWithoutClosingItsOwner();
+        TrayNotificationPreviewTests.Verify();
 
         Console.WriteLine("PASS: cancelling the close prompt keeps the main window open.");
         return 0;

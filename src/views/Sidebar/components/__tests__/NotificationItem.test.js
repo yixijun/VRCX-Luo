@@ -8,6 +8,7 @@ dayjs.extend(relativeTime);
 const mocks = vi.hoisted(() => ({
     notificationStore: {
         acceptFriendRequestNotification: vi.fn(),
+        acceptInviteAndLaunch: vi.fn(),
         acceptRequestInvite: vi.fn(),
         hideNotificationPrompt: vi.fn(),
         deleteNotificationLogPrompt: vi.fn(),
@@ -147,15 +148,22 @@ vi.mock('lucide-vue-next', () => {
         BellOff: icon('BellOff'),
         CalendarDays: icon('CalendarDays'),
         Check: icon('Check'),
+        Droplets: icon('Droplets'),
+        Flame: icon('Flame'),
+        Heart: icon('Heart'),
         Link: icon('Link'),
         Mail: icon('Mail'),
         MessageCircle: icon('MessageCircle'),
         Reply: icon('Reply'),
+        Rocket: icon('Rocket'),
         Send: icon('Send'),
+        Smile: icon('Smile'),
+        Sparkles: icon('Sparkles'),
         Tag: icon('Tag'),
         Trash2: icon('Trash2'),
         UserPlus: icon('UserPlus'),
         Users: icon('Users'),
+        Waves: icon('Waves'),
         X: icon('X')
     };
 });
@@ -178,6 +186,7 @@ function makeNotification(overrides = {}) {
 describe('NotificationItem.vue', () => {
     beforeEach(() => {
         mocks.notificationStore.acceptFriendRequestNotification.mockReset();
+        mocks.notificationStore.acceptInviteAndLaunch.mockReset();
         mocks.notificationStore.acceptRequestInvite.mockReset();
         mocks.notificationStore.hideNotificationPrompt.mockReset();
         mocks.notificationStore.deleteNotificationLogPrompt.mockReset();
@@ -216,6 +225,66 @@ describe('NotificationItem.vue', () => {
         expect(
             mocks.notificationStore.acceptFriendRequestNotification
         ).toHaveBeenCalledWith(expect.objectContaining({ id: 'noty_1' }));
+    });
+
+    test('clicking an invite accept icon starts the accept-and-launch flow', async () => {
+        const wrapper = mount(NotificationItem, {
+            props: {
+                notification: makeNotification({
+                    type: 'invite',
+                    details: {
+                        worldId: 'wrld_123:456~friends(usr_owner)'
+                    }
+                })
+            }
+        });
+
+        const acceptButton = wrapper.get('[data-testid="accept-invite"]');
+        await acceptButton.trigger('click');
+
+        expect(
+            mocks.notificationStore.acceptInviteAndLaunch
+        ).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'noty_1', type: 'invite' })
+        );
+    });
+
+    test('renders a boop emoji glyph beside its canonical label', () => {
+        const wrapper = mount(NotificationItem, {
+            props: {
+                notification: makeNotification({
+                    type: 'boop',
+                    message: 'Alice Booped You! splash',
+                    imageUrl: 'default_splash',
+                    details: { emojiId: 'default_splash' }
+                })
+            }
+        });
+
+        expect(wrapper.text()).toContain('Splash');
+        expect(wrapper.get('[data-testid="boop-emoji-glyph"]').text()).toBe('💦');
+    });
+
+    test.each([
+        ['thinking', '🤔', 'Thinking'],
+        ['bat', '🦇', 'Bats'],
+        ['kiss', '😘', 'Kiss'],
+        ['laugh', '😂', 'Laugh']
+    ])('renders the matching VRChat boop glyph and label for %s', (token, glyph, label) => {
+        const wrapper = mount(NotificationItem, {
+            props: {
+                notification: makeNotification({
+                    type: 'boop',
+                    message: `Alice Booped You! ${token}`,
+                    imageUrl: `default_${token}`,
+                    details: { emojiId: `default_${token}` }
+                })
+            }
+        });
+
+        expect(wrapper.get('[data-testid="boop-emoji-glyph"]').text()).toBe(glyph);
+        expect(wrapper.text()).toContain(label);
+        expect(wrapper.find('[data-icon="Sparkles"]').exists()).toBe(false);
     });
 
     test('link response calls openNotificationLink', async () => {

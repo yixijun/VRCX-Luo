@@ -49,6 +49,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
     const autoAcceptInviteGroups = ref([]);
     const recentActionCooldownEnabled = ref(false);
     const recentActionCooldownMinutes = ref(60);
+    const relationshipSuggestionPromptsEnabled = ref(true);
 
     async function initGeneralSettings() {
         const [
@@ -78,7 +79,8 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
             autoAcceptInviteRequestsConfig,
             autoAcceptInviteGroupsStrConfig,
             recentActionCooldownEnabledConfig,
-            recentActionCooldownMinutesConfig
+            recentActionCooldownMinutesConfig,
+            relationshipSuggestionPromptsEnabledConfig
         ] = await Promise.all([
             configRepository.getBool('VRCX_StartAtWindowsStartup', false),
             VRCXStorage.Get('VRCX_StartAsMinimizedState'),
@@ -121,7 +123,11 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
             configRepository.getString('VRCX_autoAcceptInviteRequests', 'Off'),
             configRepository.getString('VRCX_autoAcceptInviteGroups', '[]'),
             configRepository.getBool('VRCX_recentActionCooldownEnabled', false),
-            configRepository.getInt('VRCX_recentActionCooldownMinutes', 60)
+            configRepository.getInt('VRCX_recentActionCooldownMinutes', 60),
+            configRepository.getBool(
+                'VRCX_relationshipSuggestionPromptsEnabled',
+                true
+            )
         ]);
 
         isStartAtWindowsStartup.value = isStartAtWindowsStartupConfig;
@@ -174,6 +180,8 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         );
         recentActionCooldownEnabled.value = recentActionCooldownEnabledConfig;
         recentActionCooldownMinutes.value = recentActionCooldownMinutesConfig;
+        relationshipSuggestionPromptsEnabled.value =
+            relationshipSuggestionPromptsEnabledConfig;
     }
 
     initGeneralSettings();
@@ -468,6 +476,14 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         );
     }
 
+    function setRelationshipSuggestionPromptsEnabled(value) {
+        relationshipSuggestionPromptsEnabled.value = Boolean(value);
+        configRepository.setBool(
+            'VRCX_relationshipSuggestionPromptsEnabled',
+            relationshipSuggestionPromptsEnabled.value
+        );
+    }
+
     return {
         isStartAtWindowsStartup,
         isStartAsMinimizedState,
@@ -494,6 +510,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         autoAcceptInviteGroups,
         recentActionCooldownEnabled,
         recentActionCooldownMinutes,
+        relationshipSuggestionPromptsEnabled,
 
         setIsStartAtWindowsStartup,
         setIsStartAsMinimizedState,
@@ -521,6 +538,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         setAutoAcceptInviteGroups,
         promptProxySettings,
         setRecentActionCooldownEnabled,
-        setRecentActionCooldownMinutes
+        setRecentActionCooldownMinutes,
+        setRelationshipSuggestionPromptsEnabled
     };
 });

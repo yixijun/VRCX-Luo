@@ -100,7 +100,7 @@
             v-bind="$attrs">
             <div
                 data-sidebar="sidebar"
-                class="bg-sidebar group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm">
+                class="bg-sidebar/96 group-data-[variant=floating]:border-sidebar-border flex h-full w-full flex-col border-r border-sidebar-border/70 shadow-[1px_0_0_color-mix(in_oklch,var(--border)_35%,transparent)] group-data-[variant=floating]:rounded-lg group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm">
                 <slot />
             </div>
         </div>

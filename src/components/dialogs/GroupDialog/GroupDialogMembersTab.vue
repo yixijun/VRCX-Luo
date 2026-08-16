@@ -1,42 +1,44 @@
 <template>
-    <template v-if="groupDialog.visible">
-        <span v-if="hasGroupPermission(groupDialog.ref, 'group-members-viewall')" class="text-base font-bold">{{
-            t('dialog.group.members.all_members')
-        }}</span>
-        <span v-else class="text-base font-bold">{{ t('dialog.group.members.friends_only') }}</span>
-        <div style="margin-top: 8px">
-            <Button
-                class="rounded-full h-6 w-6"
-                variant="ghost"
-                size="icon-sm"
-                :loading="isGroupMembersLoading"
-                circle
-                @click="loadAllGroupMembers">
-                <Spinner v-if="isGroupMembersLoading" /><RefreshCcw v-else
-            /></Button>
-            <Button
-                class="rounded-full h-6 w-6 ml-2"
-                size="icon-sm"
-                variant="ghost"
-                style="margin-left: 6px"
-                @click="downloadAndSaveJson(`${groupDialog.id}_members`, groupDialog.members)">
-                <Download class="h-4 w-4" />
-            </Button>
-            <span v-if="groupDialog.memberSearch.length" class="text-sm mx-1.5"
-                >{{ groupDialog.memberSearchResults.length }}/{{ groupDialog.ref.memberCount }}</span
-            >
-            <span v-else class="text-sm mx-1.5"
-                >{{ groupDialog.members.length }}/{{ groupDialog.ref.memberCount }}</span
-            >
-            <div
-                v-if="hasGroupPermission(groupDialog.ref, 'group-members-manage')"
-                style="float: right"
-                class="flex items-center">
-                <span style="margin-right: 6px">{{ t('dialog.group.members.sort_by') }}</span>
+    <div v-if="groupDialog.visible" class="group-members-tab">
+        <div class="group-content-block group-members-toolbar">
+            <div class="group-members-toolbar__title">
+                <span
+                    v-if="hasGroupPermission(groupDialog.ref, 'group-members-viewall')"
+                    class="group-content-block__title"
+                    >{{ t('dialog.group.members.all_members') }}</span
+                >
+                <span v-else class="group-content-block__title">{{ t('dialog.group.members.friends_only') }}</span>
+                <span v-if="groupDialog.memberSearch.length" class="group-content-block__meta"
+                    >{{ groupDialog.memberSearchResults.length }}/{{ groupDialog.ref.memberCount }}</span
+                >
+                <span v-else class="group-content-block__meta"
+                    >{{ groupDialog.members.length }}/{{ groupDialog.ref.memberCount }}</span
+                >
+            </div>
+            <div class="group-members-toolbar__actions">
+                <Button
+                    class="rounded-full"
+                    variant="ghost"
+                    size="icon-sm"
+                    :loading="isGroupMembersLoading"
+                    circle
+                    @click="loadAllGroupMembers">
+                    <Spinner v-if="isGroupMembersLoading" /><RefreshCcw v-else
+                /></Button>
+                <Button
+                    class="rounded-full"
+                    size="icon-sm"
+                    variant="ghost"
+                    @click="downloadAndSaveJson(`${groupDialog.id}_members`, groupDialog.members)">
+                    <Download class="h-4 w-4" />
+                </Button>
+            </div>
+            <div v-if="hasGroupPermission(groupDialog.ref, 'group-members-manage')" class="group-members-filters">
+                <span class="group-content-block__meta">{{ t('dialog.group.members.sort_by') }}</span>
                 <Select
                     v-model="groupDialogMemberSortValue"
                     :disabled="isGroupMembersLoading || groupDialog.memberSearch.length > 0">
-                    <SelectTrigger class="h-8 w-45 mr-1">
+                    <SelectTrigger class="h-8 min-w-0 flex-1 sm:w-45">
                         <SelectValue :placeholder="t('dialog.group.members.sort_by')" />
                     </SelectTrigger>
                     <SelectContent>
@@ -45,8 +47,8 @@
                         </SelectItem>
                     </SelectContent>
                 </Select>
-                <span class="ml-2 mr-1">{{ t('dialog.group.members.filter') }}</span>
-                <div style="display: inline-block; width: 220px">
+                <span class="group-content-block__meta">{{ t('dialog.group.members.filter') }}</span>
+                <div class="group-members-filter-select">
                     <VirtualCombobox
                         v-model="groupDialogMemberFilterKey"
                         :groups="groupDialogMemberFilterGroups"
@@ -69,17 +71,13 @@
                 clearable
                 size="sm"
                 :placeholder="t('dialog.group.members.search')"
-                style="margin-top: 8px; margin-bottom: 8px"
                 @input="groupMembersSearch" />
         </div>
-        <div
-            v-if="groupDialog.memberSearch.length"
-            class="flex flex-wrap items-start"
-            style="margin-top: 8px; overflow: auto; max-height: 250px; min-width: 130px">
+        <div v-if="groupDialog.memberSearch.length" class="group-content-block group-members-grid">
             <div
                 v-for="user in groupDialog.memberSearchResults"
                 :key="user.id"
-                class="box-border flex items-center p-1.5 text-[13px] cursor-pointer w-[167px] hover:rounded-[25px_5px_5px_25px]"
+                class="group-member-item"
                 @click="showUserDialog(user.userId)">
                 <div class="relative inline-block flex-none size-9 mr-2.5">
                     <Avatar class="size-9">
@@ -134,14 +132,11 @@
                 </div>
             </div>
         </div>
-        <ul
-            v-else-if="groupDialog.members.length > 0"
-            class="infinite-list flex flex-wrap items-start"
-            style="margin-top: 8px; overflow: auto; max-height: 250px; min-width: 130px">
+        <ul v-else-if="groupDialog.members.length > 0" class="group-content-block group-members-grid infinite-list">
             <li
                 v-for="user in groupDialog.members"
                 :key="user.id"
-                class="infinite-list-item box-border flex items-center p-1.5 text-[13px] cursor-pointer w-[167px] hover:rounded-[25px_5px_5px_25px]"
+                class="group-member-item infinite-list-item"
                 @click="showUserDialog(user.userId)">
                 <div class="relative inline-block flex-none size-9 mr-2.5">
                     <Avatar class="size-9">
@@ -195,19 +190,15 @@
                     </span>
                 </div>
             </li>
-            <div
-                v-if="!isGroupMembersDone"
-                class="box-border flex items-center p-1.5 text-[13px] cursor-pointer"
-                style="width: 100%; height: 45px; text-align: center"
-                @click="loadMoreGroupMembers">
+            <li v-if="!isGroupMembersDone" class="group-members-load-more" @click="loadMoreGroupMembers">
                 <div v-if="!isGroupMembersLoading" class="flex-1 overflow-hidden">
                     <span class="block truncate font-medium leading-[18px]">{{
                         t('dialog.group.members.load_more')
                     }}</span>
                 </div>
-            </div>
+            </li>
         </ul>
-    </template>
+    </div>
 </template>
 
 <script setup>
@@ -251,3 +242,106 @@
         getGroupDialogGroupMembers
     });
 </script>
+
+<style scoped>
+    .group-members-tab {
+        display: flex;
+        min-width: 0;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .group-members-toolbar {
+        display: grid;
+        min-width: 0;
+        grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+        align-items: center;
+        gap: 0.625rem 0.875rem;
+        padding: 0.75rem;
+    }
+
+    .group-members-toolbar__title,
+    .group-members-toolbar__actions,
+    .group-members-filters {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .group-members-toolbar__actions {
+        justify-self: end;
+    }
+
+    .group-members-filters {
+        grid-column: 1 / -1;
+        flex-wrap: wrap;
+    }
+
+    .group-members-filter-select {
+        min-width: min(100%, 12rem);
+        flex: 1;
+    }
+
+    .group-members-toolbar :deep(.input-group-field) {
+        grid-column: 1 / -1;
+        min-width: 0;
+    }
+
+    .group-members-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
+        gap: 0.25rem;
+        max-height: min(28rem, 55vh);
+        overflow: auto;
+        margin: 0;
+        padding: 0.5rem;
+        list-style: none;
+    }
+
+    .group-member-item {
+        display: flex;
+        min-width: 0;
+        cursor: pointer;
+        align-items: center;
+        border-radius: var(--radius-lg);
+        padding: 0.375rem;
+        font-size: 0.8125rem;
+        transition:
+            background-color var(--motion-fast) ease,
+            transform var(--motion-fast) ease;
+    }
+
+    .group-member-item:hover {
+        background: var(--surface-hover);
+    }
+
+    .group-member-item:active {
+        transform: scale(0.985);
+    }
+
+    .group-members-load-more {
+        grid-column: 1 / -1;
+        min-height: 2.75rem;
+        cursor: pointer;
+        padding: 0.625rem;
+        text-align: center;
+    }
+
+    @media (max-width: 36rem) {
+        .group-members-toolbar {
+            grid-template-columns: minmax(0, 1fr) auto;
+        }
+
+        .group-members-filters {
+            align-items: stretch;
+            flex-direction: column;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .group-member-item {
+            transition: none;
+        }
+    }
+</style>

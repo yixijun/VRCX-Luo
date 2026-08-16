@@ -24,7 +24,7 @@
                     </div>
                     <VirtualCombobox
                         v-if="graphReady"
-                        class="min-w-60"
+                        class="w-64 shrink-0"
                         :model-value="selectedFriendId"
                         @update:modelValue="navigateToFriend"
                         :groups="excludePickerGroups"

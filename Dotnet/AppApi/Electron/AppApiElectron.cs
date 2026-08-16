@@ -133,6 +133,10 @@ namespace VRCX
         {
         }
 
+        public override void UpdateTrayNotifications(string json)
+        {
+        }
+
         public override void OpenCalendarFile(string icsContent)
         {
         }

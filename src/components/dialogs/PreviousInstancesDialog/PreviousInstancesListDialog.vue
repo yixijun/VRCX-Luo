@@ -1,14 +1,14 @@
 <template>
-    <div>
+    <div class="flex min-h-0 flex-1 flex-col">
         <DialogHeader>
             <DialogTitle>{{ t('dialog.previous_instances.header') }}</DialogTitle>
         </DialogHeader>
 
         <DataTableLayout
-            class="min-w-0 w-full"
+            class="min-h-0 min-w-0 w-full flex-1"
             :table="table"
             :loading="loading"
-            :table-style="tableStyle"
+            auto-height
             :page-sizes="pageSizes"
             :total-items="totalItems"
             :on-page-size-change="handlePageSizeChange"
@@ -105,7 +105,6 @@
             getListState().pageSize = value;
         }
     });
-    const tableStyle = { maxHeight: '100%' };
     const search = computed({
         get: () => getListState().search,
         set: (value) => {

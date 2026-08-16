@@ -4,9 +4,7 @@
             <DialogHeader>
                 <DialogTitle class="flex items-center gap-2">
                     <span>{{ t('view.tools.system_tools.memory_cleanup') }}</span>
-                    <TooltipWrapper
-                        side="right"
-                        :content="t('view.tools.system_tools.memory_cleanup_16gb_notice')">
+                    <TooltipWrapper side="right" :content="t('view.tools.system_tools.memory_cleanup_16gb_notice')">
                         <span
                             class="inline-flex size-5 items-center justify-center rounded-full border border-muted-foreground/40 text-xs text-muted-foreground">
                             !
@@ -17,7 +15,7 @@
 
             <div class="space-y-4">
                 <div class="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    <div class="rounded-md border bg-muted/20 p-3">
+                    <div class="rounded-md border-0 bg-muted/20 p-3 shadow-sm">
                         <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                             <span>{{ t('view.tools.system_tools.memory_cleanup_load') }}</span>
                             <span>{{ memoryLoadPercent }}%</span>
@@ -28,7 +26,7 @@
                             {{ formatBytes(snapshot?.TotalAvailableMemoryBytes) }}
                         </div>
                     </div>
-                    <div class="rounded-md border bg-muted/20 p-3">
+                    <div class="rounded-md border-0 bg-muted/20 p-3 shadow-sm">
                         <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                             <span>{{ t('view.tools.system_tools.memory_cleanup_available') }}</span>
                             <span>{{ availableMemoryPercent }}%</span>
@@ -36,7 +34,7 @@
                         <Progress :model-value="availableMemoryPercent" class="mt-3 h-2" />
                         <div class="mt-2 text-sm font-medium">{{ formatBytes(availableMemoryBytes) }}</div>
                     </div>
-                    <div class="rounded-md border bg-muted/20 p-3">
+                    <div class="rounded-md border-0 bg-muted/20 p-3 shadow-sm">
                         <div class="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                             <span>{{ t('view.tools.system_tools.memory_cleanup_target_total') }}</span>
                             <span>{{ targetProcessPercent }}%</span>
@@ -93,7 +91,10 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="process in snapshot?.Processes || []" :key="`${process.Name}-${process.Id}`" class="border-b">
+                            <tr
+                                v-for="process in snapshot?.Processes || []"
+                                :key="`${process.Name}-${process.Id}`"
+                                class="border-b">
                                 <td class="px-3 py-2">
                                     <div class="font-medium">{{ process.Name }}</div>
                                     <div class="text-xs text-muted-foreground">PID {{ process.Id }}</div>
@@ -122,11 +123,7 @@
                 <Button :disabled="loading" @click="cleanup(false)">
                     {{ t('view.tools.system_tools.memory_cleanup_run') }}
                 </Button>
-                <Button
-                    variant="destructive"
-                    :disabled="loading"
-                    :title="deepCleanupTitle"
-                    @click="handleDeepCleanup">
+                <Button variant="destructive" :disabled="loading" :title="deepCleanupTitle" @click="handleDeepCleanup">
                     {{ deepCleanupLabel }}
                 </Button>
             </DialogFooter>
@@ -160,11 +157,12 @@
         percent(snapshot.value?.MemoryLoadBytes, snapshot.value?.TotalAvailableMemoryBytes)
     );
     const availableMemoryBytes = computed(() =>
-        Math.max(0, Number(snapshot.value?.TotalAvailableMemoryBytes || 0) - Number(snapshot.value?.MemoryLoadBytes || 0))
+        Math.max(
+            0,
+            Number(snapshot.value?.TotalAvailableMemoryBytes || 0) - Number(snapshot.value?.MemoryLoadBytes || 0)
+        )
     );
-    const availableMemoryPercent = computed(() =>
-        Math.max(0, 100 - memoryLoadPercent.value)
-    );
+    const availableMemoryPercent = computed(() => Math.max(0, 100 - memoryLoadPercent.value));
     const targetProcessPercent = computed(() =>
         percent(snapshot.value?.TargetProcessWorkingSetBytes, snapshot.value?.TotalAvailableMemoryBytes)
     );

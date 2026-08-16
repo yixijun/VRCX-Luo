@@ -13,6 +13,7 @@ namespace VRCX
         public abstract Task<double> GetZoom();
         public abstract void DesktopNotification(string BoldText, string Text = "", string Image = "", bool Silent = false);
         public abstract void SetTrayIconNotification(bool notify);
+        public abstract void UpdateTrayNotifications(string json);
 
         public abstract void RestartApplication(bool isUpgrade);
         public abstract bool CheckForUpdateExe();

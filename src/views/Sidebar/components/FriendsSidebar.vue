@@ -199,9 +199,14 @@
             </div>
         </div>
         <QuickLaunchButton v-if="active" :target="scrollViewportRef" :teleport="false" />
-        <BackToTop v-if="active" :virtualizer="virtualizer" :target="scrollViewportRef" :tooltip="false" :teleport="false" />
+        <BackToTop
+            v-if="active"
+            :virtualizer="virtualizer"
+            :target="scrollViewportRef"
+            :tooltip="false"
+            :teleport="false" />
 
-<!-- <div class="absolute bottom-5 right-[70px] z-10">
+        <!-- <div class="absolute bottom-5 right-[70px] z-10">
             <button
                 class="auto-follow-btn"
                 :class="{ 'auto-follow-btn--active': autoFollowStore.isActive }"
@@ -1031,5 +1036,3 @@
         background: rgba(249, 115, 22, 0.65);
     }
 </style>
-
-

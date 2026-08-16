@@ -54,19 +54,23 @@ vi.mock('@/components/ui/button', () => ({
     Button: {
         emits: ['click'],
         template:
-            '<button data-testid="btn" @click="$emit(\'click\')"><slot /></button>'
+            '<button data-testid="btn" @click="$emit(\'click\', $event)"><slot /></button>'
     }
 }));
 vi.mock('lucide-vue-next', () => ({
     Calendar: { template: '<i />' },
     Download: { template: '<i />' },
     Share2: { template: '<i />' },
-    Star: { template: '<i />' }
+    Star: { template: '<i />' },
+    Trash2: { template: '<i class="delete-icon" />' }
+}));
+vi.mock('@/components/ui/tooltip', () => ({
+    TooltipWrapper: { template: '<div><slot /></div>' }
 }));
 
 import GroupCalendarEventCard from '../GroupCalendarEventCard.vue';
 
-function mountCard() {
+function mountCard(props = {}) {
     return mount(GroupCalendarEventCard, {
         props: {
             event: {
@@ -84,7 +88,8 @@ function mountCard() {
                 imageUrl: ''
             },
             mode: 'timeline',
-            isFollowing: false
+            isFollowing: false,
+            ...props
         }
     });
 }
@@ -112,5 +117,16 @@ describe('GroupCalendarEventCard.vue', () => {
             isFollowing: true
         });
         expect(wrapper.emitted('update-following-calendar-data')).toBeTruthy();
+    });
+
+    it('only offers deletion when enabled and emits the selected event', async () => {
+        expect(mountCard().find('.event-delete').exists()).toBe(false);
+
+        const wrapper = mountCard({ canDelete: true });
+        await wrapper.find('.event-delete').trigger('click');
+
+        expect(wrapper.emitted('delete')?.[0]?.[0]).toMatchObject({
+            id: 'evt_1'
+        });
     });
 });

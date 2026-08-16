@@ -73,140 +73,143 @@
                 <span v-else class="block truncate text-xs"> - </span>
             </div>
         </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.players') }}
-                </span>
-                <span class="block truncate text-xs">
-                    {{ commaNumber(worldDialog.ref.occupants) }}
-                </span>
-            </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.favorites') }}
-                </span>
-                <span class="block truncate text-xs">
-                    {{ commaNumber(worldDialog.ref.favorites)
-                    }}<span v-if="worldDialog.ref?.favorites > 0 && worldDialog.ref?.visits > 0" class="text-xs">
-                        ({{ favoriteRate }}%)
+        <div class="world-info-stat-grid">
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.players') }}
                     </span>
-                </span>
+                    <span class="block truncate text-xs">
+                        {{ commaNumber(worldDialog.ref.occupants) }}
+                    </span>
+                </div>
             </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.visits') }}
-                </span>
-                <span class="block truncate text-xs">
-                    {{ commaNumber(worldDialog.ref.visits) }}
-                </span>
-            </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.capacity') }}
-                </span>
-                <span class="block truncate text-xs">
-                    {{ commaNumber(worldDialog.ref.recommendedCapacity) }} ({{ commaNumber(worldDialog.ref.capacity) }})
-                </span>
-            </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.created_at') }}
-                </span>
-                <span class="block truncate text-xs">
-                    {{ formatDateFilter(worldDialog.ref.created_at, 'long') }}
-                </span>
-            </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]" style="display: inline">
-                    {{ t('dialog.world.info.last_updated') }}
-                </span>
-                <TooltipWrapper v-if="Object.keys(worldDialog.fileAnalysis).length" side="top" style="margin-left: 6px">
-                    <template #content>
-                        <template v-for="(created_at, platform) in worldDialogPlatformCreatedAt" :key="platform">
-                            <div class="flex justify-between w-full">
-                                <span class="mr-1">{{ platform }}:</span>
-                                <span>{{ formatDateFilter(created_at, 'long') }}</span>
-                            </div>
-                        </template>
-                    </template>
-                    <ChevronDown class="inline-block" />
-                </TooltipWrapper>
-                <span class="block truncate text-xs">
-                    {{ formatDateFilter(worldDialog.ref.updated_at, 'long') }}
-                </span>
-            </div>
-        </div>
-        <div
-            v-if="worldDialog.ref.labsPublicationDate !== 'none'"
-            class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.labs_publication_date') }}
-                </span>
-                <span class="block truncate text-xs">
-                    {{ formatDateFilter(worldDialog.ref.labsPublicationDate, 'long') }}
-                </span>
-            </div>
-        </div>
-        <div
-            v-if="worldDialog.ref.publicationDate !== 'none'"
-            class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]" style="display: inline">
-                    {{ t('dialog.world.info.publication_date') }}
-                </span>
-                <TooltipWrapper v-if="isTimeInLabVisible" side="top" style="margin-left: 6px">
-                    <template #content>
-                        <span>
-                            {{ t('dialog.world.info.time_in_labs') }}
-                            {{ timeInLab }}
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.favorites') }}
+                    </span>
+                    <span class="block truncate text-xs">
+                        {{ commaNumber(worldDialog.ref.favorites)
+                        }}<span v-if="worldDialog.ref?.favorites > 0 && worldDialog.ref?.visits > 0" class="text-xs">
+                            ({{ favoriteRate }}%)
                         </span>
-                    </template>
-                    <ChevronDown class="inline-block" />
-                </TooltipWrapper>
-                <span class="block truncate text-xs">
-                    {{ formatDateFilter(worldDialog.ref.publicationDate, 'long') }}
-                </span>
+                    </span>
+                </div>
             </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.version') }}
-                </span>
-                <span class="block truncate text-xs" v-text="worldDialog.ref.version" />
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.visits') }}
+                    </span>
+                    <span class="block truncate text-xs">
+                        {{ commaNumber(worldDialog.ref.visits) }}
+                    </span>
+                </div>
             </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.heat') }}
-                </span>
-                <span class="block truncate text-xs">
-                    {{ commaNumber(worldDialog.ref.heat) }} {{ '🔥'.repeat(worldDialog.ref.heat) }}
-                </span>
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.capacity') }}
+                    </span>
+                    <span class="block truncate text-xs">
+                        {{ commaNumber(worldDialog.ref.recommendedCapacity) }} ({{
+                            commaNumber(worldDialog.ref.capacity)
+                        }})
+                    </span>
+                </div>
             </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{ t('dialog.world.info.popularity') }}
-                </span>
-                <span class="block truncate text-xs">
-                    {{ commaNumber(worldDialog.ref.popularity) }}
-                    {{ '💖'.repeat(worldDialog.ref.popularity) }}
-                </span>
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.created_at') }}
+                    </span>
+                    <span class="block truncate text-xs">
+                        {{ formatDateFilter(worldDialog.ref.created_at, 'long') }}
+                    </span>
+                </div>
+            </div>
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]" style="display: inline">
+                        {{ t('dialog.world.info.last_updated') }}
+                    </span>
+                    <TooltipWrapper
+                        v-if="Object.keys(worldDialog.fileAnalysis).length"
+                        side="top"
+                        style="margin-left: 6px">
+                        <template #content>
+                            <template v-for="(created_at, platform) in worldDialogPlatformCreatedAt" :key="platform">
+                                <div class="flex justify-between w-full">
+                                    <span class="mr-1">{{ platform }}:</span>
+                                    <span>{{ formatDateFilter(created_at, 'long') }}</span>
+                                </div>
+                            </template>
+                        </template>
+                        <ChevronDown class="inline-block" />
+                    </TooltipWrapper>
+                    <span class="block truncate text-xs">
+                        {{ formatDateFilter(worldDialog.ref.updated_at, 'long') }}
+                    </span>
+                </div>
+            </div>
+            <div v-if="worldDialog.ref.labsPublicationDate !== 'none'" class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.labs_publication_date') }}
+                    </span>
+                    <span class="block truncate text-xs">
+                        {{ formatDateFilter(worldDialog.ref.labsPublicationDate, 'long') }}
+                    </span>
+                </div>
+            </div>
+            <div v-if="worldDialog.ref.publicationDate !== 'none'" class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]" style="display: inline">
+                        {{ t('dialog.world.info.publication_date') }}
+                    </span>
+                    <TooltipWrapper v-if="isTimeInLabVisible" side="top" style="margin-left: 6px">
+                        <template #content>
+                            <span>
+                                {{ t('dialog.world.info.time_in_labs') }}
+                                {{ timeInLab }}
+                            </span>
+                        </template>
+                        <ChevronDown class="inline-block" />
+                    </TooltipWrapper>
+                    <span class="block truncate text-xs">
+                        {{ formatDateFilter(worldDialog.ref.publicationDate, 'long') }}
+                    </span>
+                </div>
+            </div>
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.version') }}
+                    </span>
+                    <span class="block truncate text-xs" v-text="worldDialog.ref.version" />
+                </div>
+            </div>
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.heat') }}
+                    </span>
+                    <span class="block truncate text-xs">
+                        {{ commaNumber(worldDialog.ref.heat) }} {{ '🔥'.repeat(worldDialog.ref.heat) }}
+                    </span>
+                </div>
+            </div>
+            <div class="world-info-stat-card">
+                <div class="flex-1 overflow-hidden">
+                    <span class="block truncate font-medium leading-[18px]">
+                        {{ t('dialog.world.info.popularity') }}
+                    </span>
+                    <span class="block truncate text-xs">
+                        {{ commaNumber(worldDialog.ref.popularity) }}
+                        {{ '💖'.repeat(worldDialog.ref.popularity) }}
+                    </span>
+                </div>
             </div>
         </div>
         <div class="box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
@@ -304,3 +307,46 @@
         openPreviousInstancesListDialog('world', worldRef);
     }
 </script>
+
+<style scoped>
+    .world-info-stat-grid {
+        display: grid;
+        width: 100%;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+    }
+
+    .world-info-stat-card {
+        display: flex;
+        min-width: 0;
+        min-height: 3.5rem;
+        align-items: center;
+        overflow: hidden;
+        border: 0;
+        border-radius: var(--radius-lg);
+        background: var(--surface-panel);
+        box-shadow: var(--shadow-surface);
+        padding: 0.5rem 0.625rem;
+        font-size: 0.8125rem;
+        cursor: default;
+        transition:
+            box-shadow var(--motion-base) ease,
+            transform var(--motion-fast) ease;
+    }
+
+    .world-info-stat-card:hover {
+        box-shadow: var(--shadow-floating);
+        transform: translateY(-1px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .world-info-stat-card {
+            transition: none;
+        }
+
+        .world-info-stat-card:hover {
+            transform: none;
+        }
+    }
+</style>

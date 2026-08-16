@@ -5,6 +5,7 @@ using System.IO;
 using System.Windows.Forms;
 using CefSharp;
 using CefSharp.WinForms;
+using Newtonsoft.Json;
 using NLog;
 
 namespace VRCX
@@ -25,6 +26,14 @@ namespace VRCX
         private int LastSizeHeight;
         private bool _allowClose;
         private CloseToTrayPrompt _closeToTrayPrompt;
+        private TrayNotificationPreview _trayNotificationPreview;
+        private TrayNotificationSnapshot _trayNotificationSnapshot = new();
+        private readonly Timer _trayHoverTimer;
+        private readonly TrayHoverIntent _trayHoverIntent = new(
+            TimeSpan.FromMilliseconds(300),
+            TimeSpan.FromMilliseconds(1100)
+        );
+        private bool _trayMenuActive;
         private FormWindowState LastWindowStateToRestore = FormWindowState.Normal;
 
         public MainForm()
@@ -32,8 +41,33 @@ namespace VRCX
             Instance = this;
             InitializeComponent();
             nativeWindow = NativeWindow.FromHandle(this.Handle);
+            ConfigureTrayMenuAppearance();
             UpdateTraySettingsMenu();
-            TrayMenu.Opening += (_, _) => UpdateTraySettingsMenu();
+            TrayMenu.Opening += (_, _) =>
+            {
+                _trayMenuActive = true;
+                DismissTrayNotificationPreview();
+                UpdateTraySettingsMenu();
+            };
+            TrayMenu.Closed += (_, _) =>
+            {
+                _trayMenuActive = false;
+                _trayHoverIntent.Cancel();
+            };
+
+            _trayHoverTimer = new Timer { Interval = 100 };
+            _trayHoverTimer.Tick += (_, _) =>
+            {
+                if (
+                    !_trayMenuActive
+                    && !TrayMenu.Visible
+                    && _trayNotificationSnapshot.Items.Count > 0
+                    && _trayHoverIntent.ShouldShow(Cursor.Position, DateTime.UtcNow)
+                )
+                {
+                    ShowTrayNotificationPreview();
+                }
+            };
 
             // adding a 5s delay here to avoid excessive writes to disk
             _saveTimer = new Timer();
@@ -312,7 +346,6 @@ namespace VRCX
             VRCXStorage.Instance.Set("VRCX_SizeWidth", LastSizeWidth.ToString());
             VRCXStorage.Instance.Set("VRCX_SizeHeight", LastSizeHeight.ToString());
             VRCXStorage.Instance.Set("VRCX_WindowState", ((int)LastWindowStateToRestore).ToString());
-            VRCXStorage.Instance.Save();
         }
 
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
@@ -322,10 +355,59 @@ namespace VRCX
 
         private void TrayIcon_MouseClick(object sender, MouseEventArgs e)
         {
+            DismissTrayNotificationPreview();
             if (e.Button == MouseButtons.Left)
             {
                 Focus_Window();
             }
+        }
+
+        private void TrayIcon_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (_trayMenuActive || TrayMenu.Visible)
+            {
+                _trayHoverTimer.Stop();
+                return;
+            }
+            _trayHoverIntent.Track(Cursor.Position, DateTime.UtcNow);
+            _trayHoverTimer.Stop();
+            _trayHoverTimer.Start();
+        }
+
+        private void ShowTrayNotificationPreview()
+        {
+            _trayHoverTimer.Stop();
+            if (_trayMenuActive || TrayMenu.Visible) return;
+            if (_trayNotificationPreview == null || _trayNotificationPreview.IsDisposed)
+            {
+                _trayNotificationPreview = new TrayNotificationPreview();
+                _trayNotificationPreview.ActionRequested += DispatchTrayNotificationAction;
+            }
+            _trayNotificationPreview.UpdateSnapshot(_trayNotificationSnapshot);
+            _trayNotificationPreview.ShowNearTray();
+        }
+
+        private void DismissTrayNotificationPreview()
+        {
+            _trayHoverTimer.Stop();
+            _trayHoverIntent.Cancel();
+            _trayNotificationPreview?.DismissImmediately();
+        }
+
+        private void DispatchTrayNotificationAction(string action, string notificationId)
+        {
+            if (action == "open" || action == "invite-accept" || action == "boop-reply")
+            {
+                Focus_Window();
+            }
+            Browser?.ExecuteScriptAsync(
+                "window.dispatchEvent(new CustomEvent('vrcx-tray-notification-action', { detail: { action: " +
+                JsonConvert.SerializeObject(action) +
+                ", notificationId: " +
+                JsonConvert.SerializeObject(notificationId) +
+                " } }));"
+            );
+            DismissTrayNotificationPreview();
         }
 
         private void TrayMenu_Open_Click(object sender, System.EventArgs e)
@@ -357,6 +439,26 @@ namespace VRCX
 
             TrayMenu_SilentMode.Checked = IsTraySilentModeEnabled();
             TrayMenu_VSleepMode.Checked = IsVSleepModeEnabled();
+        }
+
+        private void ConfigureTrayMenuAppearance()
+        {
+            TrayMenu.AutoSize = true;
+            TrayMenu.BackColor = Color.FromArgb(24, 24, 27);
+            TrayMenu.ForeColor = Color.FromArgb(244, 244, 245);
+            TrayMenu.Font = new Font("Microsoft YaHei UI", 9.5F, FontStyle.Regular);
+            TrayMenu.Padding = new Padding(6);
+            TrayMenu.Renderer = new TrayMenuRenderer();
+            TrayMenu.ShowImageMargin = true;
+
+            foreach (ToolStripItem item in TrayMenu.Items)
+            {
+                if (item is ToolStripMenuItem menuItem)
+                {
+                    menuItem.AutoSize = true;
+                    menuItem.Padding = new Padding(5, 4, 5, 4);
+                }
+            }
         }
 
         private void TrayMenu_DesktopNotifications_Click(object sender, System.EventArgs e)
@@ -428,6 +530,23 @@ namespace VRCX
         public void SetTrayIconNotification(bool notify)
         {
             TrayIcon.Icon = notify ? _appIconNoty : _appIcon;
+        }
+
+        public void UpdateTrayNotifications(string json)
+        {
+            try
+            {
+                _trayNotificationSnapshot =
+                    JsonConvert.DeserializeObject<TrayNotificationSnapshot>(json) ?? new TrayNotificationSnapshot();
+                if (_trayNotificationSnapshot.Items.Count == 0)
+                {
+                    DismissTrayNotificationPreview();
+                }
+            }
+            catch (Exception ex)
+            {
+                logger.Warn(ex, "Failed to update tray notifications");
+            }
         }
 
     }

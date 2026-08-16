@@ -22,6 +22,7 @@ import {
     Link,
     MessageCircle,
     Reply,
+    Rocket,
     Tag,
     Trash2,
     X
@@ -69,6 +70,7 @@ export const createColumns = ({
     showSendInviteResponseDialog,
     showSendInviteRequestResponseDialog,
     acceptRequestInvite,
+    acceptInviteAndLaunch,
     sendNotificationResponse,
     hideNotification,
     hideNotificationPrompt,
@@ -273,7 +275,10 @@ export const createColumns = ({
                     original.senderUserId &&
                     !isGroupId(original.senderUserId)
                 ) {
-                    const userRef = resolveCachedUser(userStore, original.senderUserId);
+                    const userRef = resolveCachedUser(
+                        userStore,
+                        original.senderUserId
+                    );
                     return (
                         <span class="table-user-text block w-full min-w-0 truncate">
                             <span
@@ -306,7 +311,10 @@ export const createColumns = ({
                                 <UserIdentityInline
                                     user={userRef}
                                     userId={linkedUserId}
-                                    displayName={original.linkText || original.senderUsername}
+                                    displayName={
+                                        original.linkText ||
+                                        original.senderUsername
+                                    }
                                 />
                             </span>
                         </span>
@@ -317,7 +325,10 @@ export const createColumns = ({
                     original.senderUsername &&
                     !isGroupId(original.senderUserId)
                 ) {
-                    const userRef = resolveCachedUser(userStore, original.senderUserId);
+                    const userRef = resolveCachedUser(
+                        userStore,
+                        original.senderUserId
+                    );
                     return (
                         <span class="table-user-text block w-full min-w-0 truncate">
                             <UserIdentityInline
@@ -662,6 +673,32 @@ export const createColumns = ({
                                         <TooltipTrigger asChild>
                                             <button
                                                 type="button"
+                                                data-testid="accept-invite"
+                                                class="inline-flex h-6 ml-1 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                                                onClick={() =>
+                                                    acceptInviteAndLaunch(
+                                                        original
+                                                    )
+                                                }
+                                            >
+                                                <Rocket class="h-4 w-4" />
+                                            </button>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="top">
+                                            <span>
+                                                {t(
+                                                    'view.notification.actions.accept_and_launch'
+                                                )}
+                                            </span>
+                                        </TooltipContent>
+                                    </Tooltip>
+                                ) : null}
+
+                                {original.type === 'invite' ? (
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <button
+                                                type="button"
                                                 class="inline-flex h-6 ml-1 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
                                                 onClick={() =>
                                                     showSendInviteResponseDialog(
@@ -734,56 +771,72 @@ export const createColumns = ({
                                 ) : null}
 
                                 {hasResponses
-                                    ? original.responses.map((response) => {
-                                          const onClick = () => {
-                                              if (response.type === 'link') {
-                                                  openNotificationLink(
-                                                      response.data
+                                    ? original.responses
+                                          .filter(
+                                              (response) =>
+                                                  original.type !== 'invite' ||
+                                                  !(
+                                                      response?.type ===
+                                                          'accept' ||
+                                                      response?.type ===
+                                                          'join' ||
+                                                      response?.icon === 'check'
+                                                  )
+                                          )
+                                          .map((response) => {
+                                              const onClick = () => {
+                                                  if (
+                                                      response.type === 'link'
+                                                  ) {
+                                                      openNotificationLink(
+                                                          response.data
+                                                      );
+                                                      return;
+                                                  }
+                                                  if (
+                                                      response.icon ===
+                                                          'reply' &&
+                                                      original.type === 'boop'
+                                                  ) {
+                                                      showSendBoopDialog(
+                                                          original.senderUserId
+                                                      );
+                                                      return;
+                                                  }
+                                                  sendNotificationResponse(
+                                                      original.id,
+                                                      original.responses,
+                                                      response.type
                                                   );
-                                                  return;
-                                              }
-                                              if (
-                                                  response.icon === 'reply' &&
-                                                  original.type === 'boop'
-                                              ) {
-                                                  showSendBoopDialog(
-                                                      original.senderUserId
+                                              };
+
+                                              const ResponseIcon =
+                                                  getResponseIcon(
+                                                      response,
+                                                      original.type
                                                   );
-                                                  return;
-                                              }
-                                              sendNotificationResponse(
-                                                  original.id,
-                                                  original.responses,
-                                                  response.type
+
+                                              return (
+                                                  <Tooltip
+                                                      key={`${response.text}:${response.type}`}
+                                                  >
+                                                      <TooltipTrigger asChild>
+                                                          <button
+                                                              type="button"
+                                                              class="inline-flex h-6 ml-1 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+                                                              onClick={onClick}
+                                                          >
+                                                              <ResponseIcon class="h-4 w-4" />
+                                                          </button>
+                                                      </TooltipTrigger>
+                                                      <TooltipContent side="top">
+                                                          <span>
+                                                              {response.text}
+                                                          </span>
+                                                      </TooltipContent>
+                                                  </Tooltip>
                                               );
-                                          };
-
-                                          const ResponseIcon = getResponseIcon(
-                                              response,
-                                              original.type
-                                          );
-
-                                          return (
-                                              <Tooltip
-                                                  key={`${response.text}:${response.type}`}
-                                              >
-                                                  <TooltipTrigger asChild>
-                                                      <button
-                                                          type="button"
-                                                          class="inline-flex h-6 ml-1 items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
-                                                          onClick={onClick}
-                                                      >
-                                                          <ResponseIcon class="h-4 w-4" />
-                                                      </button>
-                                                  </TooltipTrigger>
-                                                  <TooltipContent side="top">
-                                                      <span>
-                                                          {response.text}
-                                                      </span>
-                                                  </TooltipContent>
-                                              </Tooltip>
-                                          );
-                                      })
+                                          })
                                     : null}
 
                                 {showDecline ? (

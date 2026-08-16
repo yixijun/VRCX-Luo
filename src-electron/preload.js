@@ -48,25 +48,30 @@ contextBridge.exposeInMainWorld('electron', {
     getNoUpdater: () => ipcRenderer.invoke('app:getNoUpdater'),
     setTrayIconNotification: (notify) =>
         ipcRenderer.invoke('app:setTrayIconNotification', notify),
+    updateTrayNotifications: (snapshot) =>
+        ipcRenderer.invoke('app:updateTrayNotifications', snapshot),
+    onTrayNotificationAction: (callback) =>
+        registerManagedListener('tray-notification-action', (_event, payload) =>
+            callback(payload)
+        ),
     setDesktopNotificationsEnabled: (enabled) =>
         ipcRenderer.invoke('app:setDesktopNotificationsEnabled', enabled),
     setTraySilentMode: (enabled) =>
         ipcRenderer.invoke('app:setTraySilentMode', enabled),
-    setVSleepMode: (enabled) => ipcRenderer.invoke('app:setVSleepMode', enabled),
+    setVSleepMode: (enabled) =>
+        ipcRenderer.invoke('app:setVSleepMode', enabled),
     onDesktopNotificationsUpdated: (callback) =>
         registerManagedListener(
             'desktop-notifications-updated',
             (_event, enabled) => callback(enabled)
         ),
     onTraySilentModeUpdated: (callback) =>
-        registerManagedListener(
-            'tray-silent-mode-updated',
-            (_event, enabled) => callback(enabled)
+        registerManagedListener('tray-silent-mode-updated', (_event, enabled) =>
+            callback(enabled)
         ),
     onVSleepModeUpdated: (callback) =>
-        registerManagedListener(
-            'v-sleep-mode-updated',
-            (_event, enabled) => callback(enabled)
+        registerManagedListener('v-sleep-mode-updated', (_event, enabled) =>
+            callback(enabled)
         ),
     openFileDialog: (filters) => ipcRenderer.invoke('dialog:openFile', filters),
     openDirectoryDialog: () => ipcRenderer.invoke('dialog:openDirectory'),

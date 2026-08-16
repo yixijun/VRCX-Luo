@@ -87,6 +87,12 @@ vi.mock('../../../../api', () => ({
     queryRequest: {
         fetch: vi.fn().mockResolvedValue({ json: [], params: {} })
     },
+    groupRequest: {
+        addGroupGalleryImage: vi.fn()
+    },
+    vrcPlusImageRequest: {
+        uploadGalleryImage: vi.fn()
+    },
     userRequest: {}
 }));
 
@@ -150,7 +156,8 @@ function mountComponent(overrides = {}) {
             id: 'grp_1',
             visible: true,
             ref: {
-                galleries: [...MOCK_GALLERIES]
+                galleries: [...MOCK_GALLERIES],
+                myMember: { permissions: [], roleIds: [] }
             },
             galleries: { ...MOCK_GALLERY_IMAGES },
             ...overrides
@@ -161,7 +168,8 @@ function mountComponent(overrides = {}) {
         global: {
             plugins: [pinia],
             stubs: {
-                RefreshCw: { template: '<svg class="refresh-icon" />' }
+                RefreshCw: { template: '<svg class="refresh-icon" />' },
+                TooltipWrapper: { template: '<div><slot /></div>' }
             }
         }
     });
@@ -202,6 +210,37 @@ describe('GroupDialogPhotosTab.vue', () => {
             const wrapper = mountComponent();
             const button = wrapper.find('button');
             expect(button.exists()).toBe(true);
+        });
+
+        test('shows upload button for gallery managers', () => {
+            const wrapper = mountComponent({
+                ref: {
+                    galleries: [...MOCK_GALLERIES],
+                    myMember: {
+                        permissions: ['group-galleries-manage'],
+                        roleIds: []
+                    }
+                }
+            });
+            expect(wrapper.find('input[type="file"]').exists()).toBe(true);
+            expect(wrapper.find('.group-gallery-upload').exists()).toBe(true);
+            expect(
+                wrapper
+                    .find(
+                        '.group-gallery-content-actions .group-gallery-upload'
+                    )
+                    .exists()
+            ).toBe(true);
+            expect(
+                wrapper
+                    .find('.group-gallery-toolbar .group-gallery-upload')
+                    .exists()
+            ).toBe(false);
+        });
+
+        test('hides upload button without submit permission', () => {
+            const wrapper = mountComponent();
+            expect(wrapper.find('.group-gallery-upload').exists()).toBe(false);
         });
 
         test('renders zero count for empty gallery', () => {

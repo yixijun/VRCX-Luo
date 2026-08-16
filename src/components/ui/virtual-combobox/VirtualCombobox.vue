@@ -1,7 +1,11 @@
 <template>
     <Popover v-model:open="isOpen">
         <PopoverTrigger as-child>
-            <Button variant="outline" role="combobox" class="w-full justify-between" :disabled="disabled">
+            <Button
+                variant="outline"
+                role="combobox"
+                :class="cn('w-full justify-between', props.class)"
+                :disabled="disabled">
                 <slot name="trigger" :text="selectionSummaryText" :clear="clearSelection">
                     <span class="truncate">
                         {{ selectionSummaryText || placeholder }}
@@ -85,6 +89,7 @@
     import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
+    import { cn } from '@/lib/utils';
     import { X } from 'lucide-vue-next';
     import { useVirtualizer } from '@tanstack/vue-virtual';
 
@@ -95,6 +100,7 @@
         multiple: { type: Boolean, default: false },
         disabled: { type: Boolean, default: false },
         clearable: { type: Boolean, default: true },
+        class: { type: null, required: false },
 
         placeholder: { type: String, default: 'Select…' },
         searchPlaceholder: { type: String, default: 'Search…' },

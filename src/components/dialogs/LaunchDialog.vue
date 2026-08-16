@@ -68,33 +68,29 @@
                     </FieldContent>
                 </Field>
             </FieldGroup>
-            <DialogFooter>
+            <DialogFooter data-testid="launch-dialog-footer" class="flex-row flex-wrap items-center justify-end">
                 <Button
-                    class="mr-1.5"
+                    class="h-9"
                     variant="outline"
                     :disabled="!checkCanInvite(launchDialog.location)"
                     @click="showInviteDialog(launchDialog.location)">
                     {{ t('dialog.launch.invite') }}
                 </Button>
                 <Button
-                    v-if="canOpenInstanceInGame"
+                    v-if="!canOpenInstanceInGame"
+                    class="h-9"
                     variant="outline"
-                    :disabled="!launchDialog.secureOrShortName"
-                    @click="handleAttachGame(launchDialog.location, launchDialog.shortName)">
-                    {{ t('dialog.launch.open_ingame') }}
-                </Button>
-                <Button
-                    v-else
-                    variant="outline"
-                    class="mr-1.25"
                     :disabled="!launchDialog.secureOrShortName"
                     @click="selfInvite(launchDialog.location, launchDialog.shortName)">
                     {{ t('dialog.launch.self_invite') }}
                 </Button>
-                <ButtonGroup class="w-auto flex-none cursor-default">
+                <ButtonGroup
+                    data-testid="launch-button-group"
+                    class="h-9 max-w-full flex-none cursor-default overflow-hidden">
                     <Button
                         data-testid="launch-default-button"
-                        class="w-auto flex-none"
+                        class="h-9 min-w-0 flex-1"
+                        :variant="canOpenInstanceInGame ? 'secondary' : 'default'"
                         :disabled="!launchDialog.secureOrShortName"
                         @click="handleLaunchDefault(launchDialog.location, launchDialog.shortName)">
                         {{ launchModeLabel }}
@@ -103,8 +99,9 @@
                         <DropdownMenuTrigger as-child>
                             <Button
                                 data-testid="launch-more-button"
-                                class="flex-none"
+                                class="h-9 flex-none"
                                 size="icon"
+                                :variant="canOpenInstanceInGame ? 'secondary' : 'default'"
                                 :disabled="!launchDialog.secureOrShortName"
                                 aria-label="More options"
                                 @click.stop>
@@ -129,6 +126,15 @@
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </ButtonGroup>
+                <Button
+                    v-if="canOpenInstanceInGame"
+                    data-testid="open-ingame-button"
+                    class="h-9"
+                    variant="default"
+                    :disabled="!launchDialog.secureOrShortName"
+                    @click="handleAttachGame(launchDialog.location, launchDialog.shortName)">
+                    {{ t('dialog.launch.open_ingame') }}
+                </Button>
             </DialogFooter>
 
             <InviteDialog :invite-dialog="inviteDialog" @closeInviteDialog="closeInviteDialog" />
@@ -318,14 +324,14 @@
         }
 
         try {
-            const { ok } = await modalStore.confirm({
+            const { ok, reason } = await modalStore.confirm({
                 description: t('dialog.launch.steamvr_not_running_warning'),
                 title: t('dialog.launch.steamvr_not_running_title'),
                 confirmText: t('dialog.launch.open_steamvr'),
                 cancelText: t('dialog.launch.confirm_no')
             });
             if (!ok) {
-                return true;
+                return reason === 'cancel';
             }
 
             const started = await AppApi.StartSteamVR();

@@ -19,7 +19,7 @@
 
 .group-item {
     border-radius: var(--radius-lg);
-    border: 1px solid var(--border);
+    border: 0;
     padding: 8px;
     cursor: pointer;
 }
@@ -29,16 +29,10 @@
     box-shadow: var(--shadow-sm);
 }
 
-.group-item--public {
-    border-left: 3px solid var(--visibility-public);
-}
-
-.group-item--friends {
-    border-left: 3px solid var(--visibility-friends);
-}
-
+.group-item--public,
+.group-item--friends,
 .group-item--private {
-    border-left: 3px solid var(--visibility-private);
+    border: 0;
 }
 
 /* ============ Grid Layouts ============ */

@@ -61,4 +61,39 @@ function checkCanInviteSelf(location, deps) {
     return true;
 }
 
-export { checkCanInvite, checkCanInviteSelf };
+const DEFAULT_INVITE_RESPONSE_SLOT = 0;
+
+/**
+ * @param {Array<{slot?: number | string}>} responseMessages
+ * @returns {number | string}
+ */
+function getInviteResponseSlot(responseMessages) {
+    const message = Array.isArray(responseMessages)
+        ? responseMessages.find(
+              (item) =>
+                  item?.slot !== undefined &&
+                  item?.slot !== null &&
+                  item?.slot !== ''
+          )
+        : null;
+    return message?.slot ?? DEFAULT_INVITE_RESPONSE_SLOT;
+}
+
+/**
+ * @param {boolean} rsvp
+ * @param {Array<{slot?: number | string}>} responseMessages
+ * @returns {{responseSlot: number | string, rsvp: boolean}}
+ */
+function createInviteResponseParams(rsvp, responseMessages) {
+    return {
+        responseSlot: getInviteResponseSlot(responseMessages),
+        rsvp
+    };
+}
+
+export {
+    checkCanInvite,
+    checkCanInviteSelf,
+    createInviteResponseParams,
+    getInviteResponseSlot
+};

@@ -143,9 +143,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div v-else class="px-2 py-5 text-sm text-muted-foreground">
-                                    暂无本地等级变更记录。
-                                </div>
+                                <div v-else class="px-2 py-5 text-sm text-muted-foreground">暂无本地等级变更记录。</div>
                             </div>
                             <div class="border-t px-4 py-2 text-xs text-muted-foreground">
                                 只显示 VRCX 本地记录到的好友等级变化。
@@ -300,6 +298,77 @@
                 <div class="mt-1 min-w-0">
                     <span class="break-words text-xs" v-text="userDialog.ref.statusDescription"></span>
                 </div>
+                <div data-testid="user-summary-context" class="user-summary-context">
+                    <div data-testid="avatar-info-card" class="user-summary-context-item">
+                        <div class="user-summary-context-icon" aria-hidden="true">
+                            <Box class="size-3.5" />
+                        </div>
+                        <div class="user-summary-context-copy">
+                            <div class="flex min-w-0 items-center gap-1">
+                                <span class="truncate text-[11px] font-medium text-muted-foreground">
+                                    {{
+                                        userDialog.id !== currentUser.id &&
+                                        userDialog.ref.profilePicOverride &&
+                                        userDialog.ref.currentAvatarImageUrl
+                                            ? t('dialog.user.info.avatar_info_last_seen')
+                                            : t('dialog.user.info.avatar_info')
+                                    }}
+                                </span>
+                                <TooltipWrapper
+                                    v-if="userDialog.ref.profilePicOverride && !userDialog.ref.currentAvatarImageUrl"
+                                    side="top"
+                                    :content="t('dialog.user.info.vrcplus_hides_avatar')">
+                                    <Info class="size-3.5 text-muted-foreground" />
+                                </TooltipWrapper>
+                            </div>
+                            <AvatarInfo
+                                :key="userDialog.id"
+                                :imageurl="userDialog.ref.currentAvatarImageUrl"
+                                :userid="userDialog.id"
+                                :avatartags="userDialog.ref.currentAvatarTags"
+                                :showtags="false"
+                                class="block min-w-0 max-w-full text-xs" />
+                        </div>
+                    </div>
+
+                    <div data-testid="represented-group-card" class="user-summary-context-item">
+                        <Avatar
+                            class="size-7! shrink-0 rounded-md!"
+                            :class="userDialog.representedGroup?.iconUrl ? 'cursor-pointer' : ''"
+                            :style="{
+                                background: userDialog.isRepresentedGroupLoading ? 'var(--muted)' : ''
+                            }"
+                            @click="showRepresentedGroupImage">
+                            <AvatarImage
+                                :src="userDialog.representedGroup?.$thumbnailUrl"
+                                @load="userDialog.isRepresentedGroupLoading = false"
+                                @error="userDialog.isRepresentedGroupLoading = false" />
+                            <AvatarFallback class="rounded-md!">
+                                <Users class="size-3.5 text-muted-foreground" />
+                            </AvatarFallback>
+                        </Avatar>
+                        <div class="user-summary-context-copy">
+                            <div class="truncate text-[11px] font-medium text-muted-foreground">
+                                {{ t('dialog.user.info.represented_group') }}
+                            </div>
+                            <button
+                                v-if="userDialog.representedGroup?.isRepresenting"
+                                type="button"
+                                :title="userDialog.representedGroup.name"
+                                class="block max-w-full cursor-pointer truncate text-left text-xs font-medium hover:underline"
+                                @click="showGroupDialog(userDialog.representedGroup.groupId)">
+                                <span v-if="userDialog.representedGroup.ownerId === userDialog.id"
+                                    >&#x1F451;&nbsp;</span
+                                >
+                                <span>{{ userDialog.representedGroup.name }}</span>
+                                <span class="text-muted-foreground">
+                                    ({{ userDialog.representedGroup.memberCount }})</span
+                                >
+                            </button>
+                            <span v-else class="text-xs text-muted-foreground">-</span>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div v-if="userDialog.ref.userIcon" class="shrink-0">
@@ -319,14 +388,14 @@
                 </div>
             </div>
 
-            <div data-testid="user-summary-actions" class="ml-auto flex shrink-0 items-center gap-2 self-start">
+            <div data-testid="user-summary-actions" class="user-summary-actions ml-auto self-start">
                 <TooltipWrapper v-if="canShowAutoFollow" side="top" :content="autoFollowTooltip">
                     <Button
                         class="rounded-full"
                         :variant="isCurrentUserAutoFollowTarget ? 'default' : 'outline'"
-                        size="icon-lg"
+                        size="icon-sm"
                         @click="toggleAutoFollow">
-                        <Navigation class="size-5" />
+                        <Navigation />
                     </Button>
                 </TooltipWrapper>
                 <UserActionDropdown :user-dialog-command="userDialogCommand" />
@@ -338,9 +407,11 @@
 <script setup>
     import {
         Apple,
+        Box,
         ChevronDown,
         IdCard,
         Image,
+        Info,
         Monitor,
         Navigation,
         Shield,
@@ -352,7 +423,13 @@
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
-    import { formatDateFilter, isFriendOnline, isRealInstance, languageClass, openDiscordProfile } from '../../../shared/utils';
+    import {
+        formatDateFilter,
+        isFriendOnline,
+        isRealInstance,
+        languageClass,
+        openDiscordProfile
+    } from '../../../shared/utils';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
     import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
     import { useAutoFollowStore, useGalleryStore, useUserStore } from '../../../stores';
@@ -360,9 +437,12 @@
     import { Badge } from '../../ui/badge';
     import { Button } from '../../ui/button';
     import { Checkbox } from '../../ui/checkbox';
+    import { Avatar, AvatarFallback, AvatarImage } from '../../ui/avatar';
 
+    import AvatarInfo from '../../AvatarInfo.vue';
     import UserActionDropdown from './UserActionDropdown.vue';
     import { buildTrustLevelTimeline } from './trustLevelHistory';
+    import { showGroupDialog } from '../../../coordinators/groupCoordinator';
 
     const props = defineProps({
         getUserStateText: {
@@ -437,6 +517,13 @@
         await autoFollowStore.toggleFollow(userDialog.value.ref);
     }
 
+    function showRepresentedGroupImage() {
+        const imageUrl = userDialog.value.representedGroup?.iconUrl;
+        if (imageUrl) {
+            showFullscreenImageDialog(imageUrl);
+        }
+    }
+
     async function handleTrustHistoryOpen(open) {
         if (!open) {
             return;
@@ -464,3 +551,62 @@
         }
     }
 </script>
+
+<style scoped>
+    .user-summary-context {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        min-width: 0;
+        align-items: start;
+        column-gap: 1.25rem;
+        row-gap: 0.625rem;
+        margin-top: 0.625rem;
+        max-width: 42rem;
+    }
+
+    .user-summary-context-item {
+        display: flex;
+        min-height: 2.25rem;
+        min-width: 0;
+        align-items: center;
+        gap: 0.5rem;
+        padding-block: 0.125rem;
+    }
+
+    .user-summary-context-copy {
+        min-width: 0;
+        width: 100%;
+    }
+
+    .user-summary-context-icon {
+        display: flex;
+        width: 1.75rem;
+        height: 1.75rem;
+        flex: none;
+        align-items: center;
+        justify-content: center;
+        color: var(--muted-foreground);
+    }
+
+    @media (max-width: 48rem) {
+        .user-summary-context {
+            grid-template-columns: minmax(0, 1fr);
+        }
+    }
+
+    .user-summary-actions {
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: 0.125rem;
+        padding: 0.1875rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--muted) 58%, transparent);
+    }
+
+    .user-summary-actions :deep(button) {
+        margin: 0;
+        border-color: transparent;
+        box-shadow: none;
+    }
+</style>

@@ -502,22 +502,9 @@
                         @click="showInviteDialog(newInstanceDialog.location)"
                         >{{ t('dialog.new_instance.invite') }}</Button
                     >
-                    <template v-if="canOpenInstanceInGame">
-                        <Button
-                            variant="secondary"
-                            class="mr-2"
-                            @click="showLaunchDialog(newInstanceDialog.location, newInstanceDialog.shortName)"
-                            >{{ t('dialog.new_instance.launch') }}</Button
-                        >
-                        <Button @click="handleAttachGame(newInstanceDialog.location, newInstanceDialog.shortName)">
-                            {{ t('dialog.new_instance.open_ingame') }}
-                        </Button>
-                    </template>
-                    <template v-else>
-                        <Button @click="showLaunchDialog(newInstanceDialog.location, newInstanceDialog.shortName)">{{
-                            t('dialog.new_instance.launch')
-                        }}</Button>
-                    </template>
+                    <Button @click="showLaunchDialog(newInstanceDialog.location, newInstanceDialog.shortName)">{{
+                        t('dialog.new_instance.launch')
+                    }}</Button>
                 </template>
                 <template v-else>
                     <Button @click="handleCreateNewInstance">{{ t('dialog.new_instance.create_instance') }}</Button>
@@ -539,22 +526,9 @@
                     @click="showInviteDialog(newInstanceDialog.location)"
                     >{{ t('dialog.new_instance.invite') }}</Button
                 >
-                <template v-if="canOpenInstanceInGame">
-                    <Button
-                        variant="secondary"
-                        class="mr-2"
-                        @click="showLaunchDialog(newInstanceDialog.location, newInstanceDialog.shortName)"
-                        >{{ t('dialog.new_instance.launch') }}</Button
-                    >
-                    <Button @click="handleAttachGame(newInstanceDialog.location, newInstanceDialog.shortName)">
-                        {{ t('dialog.new_instance.open_ingame') }}
-                    </Button>
-                </template>
-                <template v-else>
-                    <Button @click="showLaunchDialog(newInstanceDialog.location, newInstanceDialog.shortName)">{{
-                        t('dialog.new_instance.launch')
-                    }}</Button>
-                </template>
+                <Button @click="showLaunchDialog(newInstanceDialog.location, newInstanceDialog.shortName)">{{
+                    t('dialog.new_instance.launch')
+                }}</Button>
             </DialogFooter>
         </DialogContent>
 
@@ -593,7 +567,6 @@
     import {
         useFriendStore,
         useGroupStore,
-        useInviteStore,
         useLaunchStore,
         useLocationStore,
         useUserStore
@@ -624,9 +597,8 @@
     const { friends, vipFriends, onlineFriends, activeFriends, offlineFriends } = storeToRefs(useFriendStore());
     const { currentUserGroups } = storeToRefs(useGroupStore());
     const { lastLocation } = storeToRefs(useLocationStore());
-    const { showLaunchDialog, tryOpenInstanceInVrc } = useLaunchStore();
+    const { showLaunchDialog } = useLaunchStore();
     const { currentUser } = storeToRefs(useUserStore());
-    const { canOpenInstanceInGame } = useInviteStore();
 
     const {
         newInstanceDialog,
@@ -821,16 +793,6 @@
                 }
                 D.visible = true;
             });
-    }
-
-    /**
-     *
-     * @param location
-     * @param shortName
-     */
-    function handleAttachGame(location, shortName) {
-        tryOpenInstanceInVrc(location, shortName);
-        closeInviteDialog();
     }
 
     /**

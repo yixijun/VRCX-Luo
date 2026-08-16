@@ -2,7 +2,7 @@
     <Popover :open="eventPopoverOpen">
         <PopoverTrigger as-child>
             <Card
-                class="event-card x-hover-card p-0 gap-0 hover:bg-accent hover:shadow-sm"
+                class="event-card p-0 gap-0"
                 :class="cardClass"
                 @mouseenter="openEventPopover"
                 @mouseleave="scheduleCloseEventPopover">
@@ -34,6 +34,16 @@
                     </div>
                 </div>
                 <div class="badges">
+                    <TooltipWrapper v-if="canDelete" :content="t('dialog.group_calendar.event_card.delete')" side="top">
+                        <Button
+                            class="event-delete rounded-full badge"
+                            size="icon"
+                            variant="destructive"
+                            :aria-label="t('dialog.group_calendar.event_card.delete')"
+                            @click.stop="emit('delete', event)">
+                            <Trash2 />
+                        </Button>
+                    </TooltipWrapper>
                     <Button @click="copyEventLink(event)" size="icon" variant="secondary" class="rounded-full badge">
                         <Share2 />
                     </Button>
@@ -114,11 +124,12 @@
 </template>
 
 <script setup>
-    import { Calendar, Download, Image, Share2, Star } from 'lucide-vue-next';
+    import { Calendar, Download, Image, Share2, Star, Trash2 } from 'lucide-vue-next';
     import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
     import { computed, ref } from 'vue';
     import { Button } from '@/components/ui/button';
     import { Card } from '@/components/ui/card';
+    import { TooltipWrapper } from '@/components/ui/tooltip';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
 
@@ -150,10 +161,14 @@
         cardClass: {
             type: [String, Object, Array],
             default: ''
+        },
+        canDelete: {
+            type: Boolean,
+            default: false
         }
     });
 
-    const emit = defineEmits(['update-following-calendar-data', 'click-action']);
+    const emit = defineEmits(['update-following-calendar-data', 'click-action', 'delete']);
 
     const showGroupName = computed(() => props.mode === 'timeline');
 
@@ -286,9 +301,20 @@
 <style scoped>
     .event-card {
         position: relative;
-        overflow: visible;
+        overflow: hidden;
+        border: 0;
         border-radius: var(--radius-lg);
         width: 100%;
+        background: var(--surface-raised);
+        box-shadow: none;
+        transition:
+            box-shadow var(--motion-base) ease,
+            transform var(--motion-fast) ease;
+    }
+
+    .event-card:hover {
+        box-shadow: var(--shadow-surface);
+        transform: translateY(-1px);
     }
 
     .event-card.grouped-card {
@@ -301,8 +327,7 @@
     }
 
     .event-card.group-dialog-grid-card {
-        flex: 0 0 320px;
-        max-width: 320px;
+        max-width: none;
     }
 
     .event-card .banner {
@@ -310,6 +335,7 @@
         width: 100%;
         object-fit: cover;
         border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        transition: transform 220ms ease;
     }
 
     .timeline-view .event-card .banner {
@@ -323,10 +349,22 @@
     .event-card .badges {
         display: inline-flex;
         position: absolute;
-        top: -8px;
-        right: -9px;
+        top: 0.5rem;
+        right: 0.5rem;
         z-index: 10;
+        gap: 0.25rem;
         font-size: 15px;
+        opacity: 0;
+        transform: translateY(-0.25rem);
+        transition:
+            opacity var(--motion-fast) ease,
+            transform var(--motion-fast) ease;
+    }
+
+    .event-card:hover .badges,
+    .event-card:focus-within .badges {
+        opacity: 1;
+        transform: translateY(0);
     }
 
     .event-card .badges .badge {
@@ -337,7 +375,8 @@
         height: 24px;
         gap: 4px;
         cursor: pointer;
-        margin-left: 6px;
+        margin-left: 0;
+        box-shadow: 0 1px 5px rgb(0 0 0 / 18%);
     }
 
     .event-card .event-content {
@@ -371,7 +410,7 @@
 
     .event-card .event-title-content {
         font-size: 14px;
-        font-weight: bold;
+        font-weight: 600;
         line-height: 1.2;
         cursor: pointer;
     }
@@ -396,5 +435,17 @@
 
     .event-card .event-time {
         font-weight: 500;
+    }
+
+    .event-card:hover .banner {
+        transform: scale(1.018);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .event-card,
+        .event-card .banner,
+        .event-card .badges {
+            transition: none;
+        }
     }
 </style>

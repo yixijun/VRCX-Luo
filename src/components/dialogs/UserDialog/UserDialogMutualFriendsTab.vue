@@ -34,6 +34,15 @@
                     </SelectItem>
                 </SelectContent>
             </Select>
+            <TooltipWrapper side="top" :content="t('dialog.user.mutual_friends.confirmed_date_tooltip')">
+                <button
+                    type="button"
+                    class="ml-1 inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    :aria-label="t('dialog.user.mutual_friends.confirmed_date_tooltip')"
+                    @click.stop>
+                    <CircleAlert class="size-3.5" />
+                </button>
+            </TooltipWrapper>
         </div>
     </div>
     <ul class="flex flex-wrap items-start" style="margin-top: 8px; overflow: auto; max-height: 250px; min-width: 130px">
@@ -57,8 +66,12 @@
                     v-text="user.displayName"></span>
                 <span
                     v-if="mutualDateMap.get(user.id)"
-                    class="block truncate text-[11px] leading-[15px] rounded px-1"
-                    :class="isLinkStale(mutualDateMap.get(user.id)) ? 'bg-gray-400/30 text-gray-500' : 'bg-green-500/20 text-green-700 dark:text-green-400'">
+                    class="block truncate rounded px-1 text-[11px] leading-[15px]"
+                    :class="
+                        isLinkStale(mutualDateMap.get(user.id))
+                            ? 'bg-gray-400/30 text-gray-500'
+                            : 'bg-green-500/20 text-green-700 dark:text-green-400'
+                    ">
                     {{ formatDateFilter(mutualDateMap.get(user.id), 'date') }}
                 </span>
             </div>
@@ -70,14 +83,20 @@
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { Button } from '@/components/ui/button';
-    import { RefreshCw, User, Users } from 'lucide-vue-next';
+    import { CircleAlert, RefreshCw, User, Users } from 'lucide-vue-next';
     import { Spinner } from '@/components/ui/spinner';
     import { Input } from '@/components/ui/input';
+    import { TooltipWrapper } from '@/components/ui/tooltip';
     import { computed, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
-    import { compareByDisplayName, compareByFriendOrder, compareByLastActiveRef, formatDateFilter } from '../../../shared/utils';
+    import {
+        compareByDisplayName,
+        compareByFriendOrder,
+        compareByLastActiveRef,
+        formatDateFilter
+    } from '../../../shared/utils';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
     import { database } from '../../../services/database';
     import { processBulk } from '../../../services/request';
@@ -134,7 +153,7 @@
         if (isNaN(lastUpdatedMs) || isNaN(linkDateMs)) {
             return false;
         }
-        return (lastUpdatedMs - linkDateMs) > ONE_DAY_MS;
+        return lastUpdatedMs - linkDateMs > ONE_DAY_MS;
     }
 
     /**

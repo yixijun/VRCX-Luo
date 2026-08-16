@@ -10,7 +10,8 @@ import {
     SEARCH_LIMIT_MIN
 } from '../shared/constants';
 import { avatarRequest, queryRequest } from '../api';
-import { debounce, parseLocation } from '../shared/utils';
+import { parseLocation } from '../shared/utils';
+import { createWindowStateSaver } from '../shared/utils/windowStatePersistence';
 import { AppDebug } from '../services/appConfig';
 import { database } from '../services/database';
 import { refreshCustomScript } from '../shared/utils/base/ui';
@@ -71,6 +72,10 @@ export const useVrcxStore = defineStore('Vrcx', () => {
         windowState: '',
         externalNotifierVersion: 0
     });
+    const saveWindowOptionDebounced = createWindowStateSaver(
+        (windowState) => saveVRCXWindowOption(windowState),
+        300
+    );
     const databaseUpgradeState = ref({
         visible: false,
         fromVersion: 0,
@@ -111,19 +116,37 @@ export const useVrcxStore = defineStore('Vrcx', () => {
                         (event, position) => {
                             state.locationX = position.x;
                             state.locationY = position.y;
-                            debounce(saveVRCXWindowOption, 300)();
+                            saveWindowOptionDebounced({
+                                x: state.locationX,
+                                y: state.locationY,
+                                width: state.sizeWidth,
+                                height: state.sizeHeight,
+                                windowState: state.windowState
+                            });
                         }
                     );
 
                     window.electron.onWindowSizeChanged((event, size) => {
                         state.sizeWidth = size.width;
                         state.sizeHeight = size.height;
-                        debounce(saveVRCXWindowOption, 300)();
+                        saveWindowOptionDebounced({
+                            x: state.locationX,
+                            y: state.locationY,
+                            width: state.sizeWidth,
+                            height: state.sizeHeight,
+                            windowState: state.windowState
+                        });
                     });
 
                     window.electron.onWindowStateChange((event, newState) => {
                         state.windowState = newState.toString();
-                        debounce(saveVRCXWindowOption, 300)();
+                        saveWindowOptionDebounced({
+                            x: state.locationX,
+                            y: state.locationY,
+                            width: state.sizeWidth,
+                            height: state.sizeHeight,
+                            windowState: state.windowState
+                        });
                     });
 
                     window.electron.onBrowserFocus(() => {
@@ -373,13 +396,13 @@ export const useVrcxStore = defineStore('Vrcx', () => {
     /**
      *
      */
-    async function saveVRCXWindowOption() {
+    async function saveVRCXWindowOption(windowState = state) {
         if (LINUX) {
-            VRCXStorage.Set('VRCX_LocationX', state.locationX.toString());
-            VRCXStorage.Set('VRCX_LocationY', state.locationY.toString());
-            VRCXStorage.Set('VRCX_SizeWidth', state.sizeWidth.toString());
-            VRCXStorage.Set('VRCX_SizeHeight', state.sizeHeight.toString());
-            VRCXStorage.Set('VRCX_WindowState', state.windowState);
+            VRCXStorage.Set('VRCX_LocationX', windowState.x.toString());
+            VRCXStorage.Set('VRCX_LocationY', windowState.y.toString());
+            VRCXStorage.Set('VRCX_SizeWidth', windowState.width.toString());
+            VRCXStorage.Set('VRCX_SizeHeight', windowState.height.toString());
+            VRCXStorage.Set('VRCX_WindowState', windowState.windowState);
         }
     }
 

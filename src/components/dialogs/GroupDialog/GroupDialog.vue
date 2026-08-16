@@ -1,117 +1,180 @@
 <template>
-    <div class="w-223 flex-1 min-h-0 flex flex-col">
+    <div class="group-dialog flex min-h-0 w-full min-w-0 flex-1 flex-col">
         <DialogHeader class="sr-only">
             <DialogTitle>{{ groupDialog.ref?.name || t('dialog.group.info.header') }}</DialogTitle>
             <DialogDescription>
                 {{ groupDialog.ref?.description || groupDialog.ref?.name || t('dialog.group.info.header') }}
             </DialogDescription>
         </DialogHeader>
-        <div class="flex-1 min-h-0 flex flex-col">
-            <div class="flex-shrink-0" style="display: flex">
-                <div style="flex: none; width: 120px; height: 120px">
-                    <img
-                        v-if="!groupDialog.loading && !imageError"
-                        :src="groupDialog.ref.iconUrl"
-                        style="width: 120px; height: 120px; border-radius: var(--radius-xl)"
-                        class="cursor-pointer"
-                        @click="showFullscreenImageDialog(groupDialog.ref.iconUrl)"
-                        @error="imageError = true"
-                        loading="lazy" />
-                    <div
-                        v-else-if="!groupDialog.loading"
-                        class="flex items-center justify-center bg-muted"
-                        style="width: 120px; height: 120px; border-radius: var(--radius-xl)">
-                        <Image class="size-8 text-muted-foreground" />
-                    </div>
-                </div>
-                <div class="ml-4" style="flex: 1; display: flex; align-items: flex-start">
-                    <div class="group-header" style="flex: 1">
-                        <span class="mr-1.5" v-if="groupDialog.ref.ownerId === currentUser.id">👑</span>
-                        <span
-                            class="font-bold mr-1.5"
-                            style="cursor: pointer"
-                            v-text="groupDialog.ref.name"
-                            @click="copyToClipboard(groupDialog.ref.name)"></span>
-                        <span class="group-discriminator x-grey mr-1.5 font-mono text-xs">
-                            {{ groupDialog.ref.shortCode }}.{{ groupDialog.ref.discriminator }}
-                        </span>
-                        <TooltipWrapper v-for="item in groupDialog.ref.$languages" :key="item.key" side="top">
-                            <template #content>
-                                <span>{{ item.value }} ({{ item.key }})</span>
-                            </template>
+        <div
+            ref="workspaceRef"
+            class="group-dialog__workspace"
+            :style="{ '--group-sidebar-width': `${sidebarWidth}px` }">
+            <div class="group-dialog__summary">
+                <div class="group-dialog__body">
+                    <div class="group-header min-w-0 flex-1">
+                        <div class="group-dialog__title-row">
+                            <span v-if="groupDialog.ref.ownerId === currentUser.id" class="shrink-0">👑</span>
+                            <button
+                                type="button"
+                                class="group-dialog__title"
+                                @click="copyToClipboard(groupDialog.ref.name)"
+                                v-text="groupDialog.ref.name"></button>
+                            <span class="group-discriminator shrink-0 font-mono text-xs text-muted-foreground">
+                                {{ groupDialog.ref.shortCode }}.{{ groupDialog.ref.discriminator }}
+                            </span>
+                            <span class="group-dialog__languages">
+                                <TooltipWrapper v-for="item in groupDialog.ref.$languages" :key="item.key" side="top">
+                                    <template #content>
+                                        <span>{{ item.value }} ({{ item.key }})</span>
+                                    </template>
+                                    <span class="flags" :class="languageClass(item.key)"></span>
+                                </TooltipWrapper>
+                            </span>
+                        </div>
+                        <div class="group-dialog__owner-row mt-1">
                             <span
-                                class="flags"
-                                :class="languageClass(item.key)"
-                                style="display: inline-block; margin-right: 6px"></span>
-                        </TooltipWrapper>
-                        <div style="margin-top: 6px">
-                            <span
-                                class="cursor-pointer x-grey font-mono"
+                                class="cursor-pointer text-sm text-muted-foreground"
                                 @click="showUserDialog(groupDialog.ref.ownerId)"
                                 v-text="groupDialog.ownerDisplayName"></span>
+                            <div v-if="groupDialog.ref.links?.length" class="group-dialog__links">
+                                <TooltipWrapper
+                                    v-for="(link, index) in groupDialog.ref.links"
+                                    :key="`${link}-${index}`"
+                                    side="top">
+                                    <template #content>
+                                        <span v-text="link" />
+                                    </template>
+                                    <button
+                                        v-if="link"
+                                        type="button"
+                                        class="group-dialog__link"
+                                        @click="openExternalLink(link)">
+                                        <img :src="getFaviconUrl(link)" alt="" loading="lazy" />
+                                    </button>
+                                </TooltipWrapper>
+                            </div>
                         </div>
-                        <div class="group-tags flex flex-wrap items-center">
-                            <Badge v-if="groupDialog.ref.isVerified" variant="outline" class="mr-1.5 mt-1.5">
+                        <div class="group-tags mt-1 flex flex-wrap items-center">
+                            <Badge v-if="groupDialog.ref.isVerified" variant="outline" class="group-dialog__tag">
                                 {{ t('dialog.group.tags.verified') }}
                             </Badge>
-                            <Badge v-if="groupDialog.ref.privacy === 'private'" variant="outline" class="mr-1.5 mt-1.5">
+                            <Badge
+                                v-if="groupDialog.ref.privacy === 'private'"
+                                variant="outline"
+                                class="group-dialog__tag">
                                 {{ t('dialog.group.tags.private') }}
                             </Badge>
-                            <Badge v-if="groupDialog.ref.privacy === 'default'" variant="outline" class="mr-1.5 mt-1.5">
+                            <Badge
+                                v-if="groupDialog.ref.privacy === 'default'"
+                                variant="outline"
+                                class="group-dialog__tag">
                                 {{ t('dialog.group.tags.public') }}
                             </Badge>
-                            <Badge v-if="groupDialog.ref.joinState === 'open'" variant="outline" class="mr-1.5 mt-1.5">
+                            <Badge
+                                v-if="groupDialog.ref.joinState === 'open'"
+                                variant="outline"
+                                class="group-dialog__tag">
                                 {{ t('dialog.group.tags.open') }}
                             </Badge>
-                            <Badge v-else-if="groupDialog.ref.joinState === 'request'" variant="outline" class="mr-1.5 mt-1.5">
+                            <Badge
+                                v-else-if="groupDialog.ref.joinState === 'request'"
+                                variant="outline"
+                                class="group-dialog__tag">
                                 {{ t('dialog.group.tags.request') }}
                             </Badge>
-                            <Badge v-else-if="groupDialog.ref.joinState === 'invite'" variant="outline" class="mr-1.5 mt-1.5">
+                            <Badge
+                                v-else-if="groupDialog.ref.joinState === 'invite'"
+                                variant="outline"
+                                class="group-dialog__tag">
                                 {{ t('dialog.group.tags.invite') }}
                             </Badge>
-                            <Badge v-else-if="groupDialog.ref.joinState === 'closed'" variant="outline" class="mr-1.5 mt-1.5">
+                            <Badge
+                                v-else-if="groupDialog.ref.joinState === 'closed'"
+                                variant="outline"
+                                class="group-dialog__tag">
                                 {{ t('dialog.group.tags.closed') }}
                             </Badge>
-                            <Badge v-if="groupDialog.inGroup" variant="outline" class="mr-1.5 mt-1.5">
+                            <Badge v-if="groupDialog.inGroup" variant="outline" class="group-dialog__tag">
                                 {{ t('dialog.group.tags.joined') }}
                             </Badge>
-                            <Badge v-if="groupDialog.ref.myMember && groupDialog.ref.myMember.bannedAt" variant="outline" class="mr-1.5 mt-1.5">
+                            <Badge
+                                v-if="groupDialog.ref.myMember && groupDialog.ref.myMember.bannedAt"
+                                variant="outline"
+                                class="group-dialog__tag">
                                 {{ t('dialog.group.tags.banned') }}
                             </Badge>
                             <template v-if="groupDialog.inGroup && groupDialog.ref.myMember">
-                                <Badge v-if="groupDialog.ref.myMember.visibility === 'visible'" variant="outline" class="mr-1.5 mt-1.5">
+                                <Badge
+                                    v-if="groupDialog.ref.myMember.visibility === 'visible'"
+                                    variant="outline"
+                                    class="group-dialog__tag">
                                     {{ t('dialog.group.tags.visible') }}
                                 </Badge>
-                                <Badge v-else-if="groupDialog.ref.myMember.visibility === 'friends'" variant="outline" class="mr-1.5 mt-1.5">
+                                <Badge
+                                    v-else-if="groupDialog.ref.myMember.visibility === 'friends'"
+                                    variant="outline"
+                                    class="group-dialog__tag">
                                     {{ t('dialog.group.tags.friends') }}
                                 </Badge>
-                                <Badge v-else-if="groupDialog.ref.myMember.visibility === 'hidden'" variant="outline" class="mr-1.5 mt-1.5">
+                                <Badge
+                                    v-else-if="groupDialog.ref.myMember.visibility === 'hidden'"
+                                    variant="outline"
+                                    class="group-dialog__tag">
                                     {{ t('dialog.group.tags.hidden') }}
                                 </Badge>
-                                <Badge v-if="groupDialog.ref.myMember.isSubscribedToAnnouncements" variant="outline" class="mr-1.5 mt-1.5">
+                                <Badge
+                                    v-if="groupDialog.ref.myMember.isSubscribedToAnnouncements"
+                                    variant="outline"
+                                    class="group-dialog__tag">
                                     {{ t('dialog.group.tags.subscribed') }}
                                 </Badge>
                             </template>
                         </div>
-                        <div style="margin-top: 6px">
+                        <div class="mt-2">
                             <pre
                                 v-show="groupDialog.ref.name !== groupDialog.ref.description"
-                                class="text-xs font-[inherit]"
-                                style="white-space: pre-wrap; max-height: 40vh; overflow-y: auto"
+                                class="group-dialog__description font-[inherit] text-xs"
                                 v-text="groupDialog.ref.description"></pre>
                         </div>
                     </div>
-                    <div class="ml-2 mt-12">
+                    <div class="group-dialog__actions">
+                        <DropdownMenu v-if="canCreateGroupContent">
+                            <DropdownMenuTrigger as-child>
+                                <Button
+                                    class="rounded-full"
+                                    variant="outline"
+                                    size="icon-sm"
+                                    :aria-label="t('dialog.group.actions.create_content')">
+                                    <Plus />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem v-if="canManageCalendar" @click="showGroupEventCreateDialog">
+                                    <CalendarPlus class="size-4" />
+                                    {{ t('dialog.group.actions.create_event') }}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    v-if="canManageAnnouncements"
+                                    @click="showGroupPostEditDialog(groupDialog.id, null)">
+                                    <Megaphone class="size-4" />
+                                    {{ t('dialog.group.actions.create_announcement') }}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem v-if="canManageGalleries" @click="showGroupGalleryCreateDialog">
+                                    <Images class="size-4" />
+                                    {{ t('dialog.group.actions.create_gallery') }}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                         <template v-if="groupDialog.inGroup && groupDialog.ref?.myMember">
                             <TooltipWrapper
                                 v-if="groupDialog.ref.myMember?.isRepresenting"
                                 side="top"
                                 :content="t('dialog.group.actions.unrepresent_tooltip')">
                                 <Button
-                                    class="rounded-full mr-2"
+                                    class="mr-1 rounded-full"
                                     variant="secondary"
-                                    size="icon-lg"
-                                    style="margin-left: 6px"
+                                    size="icon-sm"
                                     @click="clearGroupRepresentation(groupDialog.id)">
                                     <BookmarkCheck />
                                 </Button>
@@ -119,9 +182,9 @@
                             <TooltipWrapper v-else side="top" :content="t('dialog.group.actions.represent_tooltip')">
                                 <span>
                                     <Button
-                                        class="rounded-full mr-2"
+                                        class="mr-1 rounded-full"
                                         variant="outline"
-                                        size="icon-lg"
+                                        size="icon-sm"
                                         :disabled="groupDialog.ref.privacy === 'private'"
                                         @click="setGroupRepresentation(groupDialog.id)">
                                         <Bookmark />
@@ -133,9 +196,9 @@
                             <TooltipWrapper side="top" :content="t('dialog.group.actions.cancel_join_request_tooltip')">
                                 <span>
                                     <Button
-                                        class="rounded-full mr-2"
+                                        class="mr-1 rounded-full"
                                         variant="outline"
-                                        size="icon-lg"
+                                        size="icon-sm"
                                         @click="cancelGroupRequest(groupDialog.id)">
                                         <X />
                                     </Button>
@@ -146,9 +209,9 @@
                             <TooltipWrapper side="top" :content="t('dialog.group.actions.pending_request_tooltip')">
                                 <span>
                                     <Button
-                                        class="rounded-full mr-2"
+                                        class="mr-1 rounded-full"
                                         variant="outline"
-                                        size="icon-lg"
+                                        size="icon-sm"
                                         @click="joinGroup(groupDialog.id)">
                                         <Check />
                                     </Button>
@@ -161,9 +224,9 @@
                                 side="top"
                                 :content="t('dialog.group.actions.request_join_tooltip')">
                                 <Button
-                                    class="rounded-full mr-2"
+                                    class="mr-1 rounded-full"
                                     variant="outline"
-                                    size="icon-lg"
+                                    size="icon-sm"
                                     @click="joinGroup(groupDialog.id)">
                                     <MessageSquare />
                                 </Button>
@@ -173,7 +236,7 @@
                                 side="top"
                                 :content="t('dialog.group.actions.invite_required_tooltip')">
                                 <span>
-                                    <Button class="rounded-full mr-2" variant="outline" size="icon-lg" disabled>
+                                    <Button class="mr-1 rounded-full" variant="outline" size="icon-sm" disabled>
                                         <MessageSquare />
                                     </Button>
                                 </span>
@@ -183,9 +246,9 @@
                                 side="top"
                                 :content="t('dialog.group.actions.join_group_tooltip')">
                                 <Button
-                                    class="rounded-full mr-2"
+                                    class="mr-1 rounded-full"
                                     variant="outline"
-                                    size="icon-lg"
+                                    size="icon-sm"
                                     @click="joinGroup(groupDialog.id)">
                                     <Check />
                                 </Button>
@@ -198,7 +261,7 @@
                                     :variant="
                                         groupDialog.ref.membershipStatus === 'userblocked' ? 'destructive' : 'outline'
                                     "
-                                    size="icon-lg">
+                                    size="icon-sm">
                                     <MoreHorizontal />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -232,13 +295,6 @@
                                             <MessageSquare class="size-4" />
                                             {{ t('dialog.group.actions.invite_to_group') }}
                                         </DropdownMenuItem>
-                                        <template
-                                            v-if="hasGroupPermission(groupDialog.ref, 'group-announcement-manage')">
-                                            <DropdownMenuItem @click="groupDialogCommand('Create Post')">
-                                                <Ticket class="size-4" />
-                                                {{ t('dialog.group.actions.create_post') }}
-                                            </DropdownMenuItem>
-                                        </template>
                                         <DropdownMenuItem
                                             :disabled="!hasGroupModerationPermission(groupDialog.ref)"
                                             @click="groupDialogCommand('Moderation Tools')">
@@ -298,39 +354,94 @@
                     </div>
                 </div>
             </div>
-            <TabsUnderline
-                v-model="groupDialog.activeTab"
-                :items="groupDialogTabs"
-                :unmount-on-hide="false"
-                fill
-                @update:modelValue="groupDialogTabClick">
-                <template #Info>
-                    <GroupDialogInfoTab
-                        :show-group-post-edit-dialog="showGroupPostEditDialog"
-                        :confirm-delete-group-post="confirmDeleteGroupPost" />
-                </template>
-                <template #Posts>
-                    <GroupDialogPostsTab
-                        :show-group-post-edit-dialog="showGroupPostEditDialog"
-                        :confirm-delete-group-post="confirmDeleteGroupPost" />
-                </template>
-                <template #Members>
-                    <GroupDialogMembersTab ref="membersTabRef" />
-                </template>
-                <template #Photos>
-                    <GroupDialogPhotosTab ref="photosTabRef" />
-                </template>
-                <template #JSON>
-                    <DialogJsonTab
-                        :tree-data="treeData"
-                        :tree-data-key="treeData?.group?.id"
-                        :dialog-id="groupDialog.id"
-                        :dialog-ref="groupDialog.ref"
-                        @refresh="refreshGroupDialogTreeData()" />
-                </template>
-            </TabsUnderline>
+            <div
+                class="group-dialog__splitter"
+                role="separator"
+                aria-orientation="vertical"
+                :aria-label="t('dialog.group.resize_sidebar')"
+                :aria-valuenow="sidebarWidth"
+                tabindex="0"
+                @pointerdown="startSidebarResize"
+                @keydown.left.prevent="resizeSidebarBy(16)"
+                @keydown.right.prevent="resizeSidebarBy(-16)">
+                <div class="group-dialog__splitter-grip"></div>
+            </div>
+            <div class="group-dialog__main">
+                <div class="group-dialog__hero">
+                    <img
+                        v-if="!groupDialog.loading && !bannerError"
+                        :src="groupDialog.ref.bannerUrl"
+                        class="group-dialog__banner"
+                        @click="showFullscreenImageDialog(groupDialog.ref.bannerUrl)"
+                        @error="bannerError = true"
+                        loading="lazy" />
+                    <div v-else-if="!groupDialog.loading" class="group-dialog__banner-fallback">
+                        <Image class="size-8 text-muted-foreground" />
+                    </div>
+                    <div class="group-dialog__icon">
+                        <img
+                            v-if="!groupDialog.loading && !imageError"
+                            :src="groupDialog.ref.iconUrl"
+                            class="size-full cursor-pointer object-cover"
+                            @click="showFullscreenImageDialog(groupDialog.ref.iconUrl)"
+                            @error="imageError = true"
+                            loading="lazy" />
+                        <div
+                            v-else-if="!groupDialog.loading"
+                            class="flex size-full items-center justify-center bg-muted">
+                            <Image class="size-7 text-muted-foreground" />
+                        </div>
+                    </div>
+                </div>
+                <TabsUnderline
+                    v-model="groupDialog.activeTab"
+                    class="group-dialog__tabs"
+                    :items="groupDialogTabs"
+                    :unmount-on-hide="false"
+                    fill
+                    @update:modelValue="groupDialogTabClick">
+                    <template #Info>
+                        <GroupDialogInfoTab
+                            :show-group-post-edit-dialog="showGroupPostEditDialog"
+                            :confirm-delete-group-post="confirmDeleteGroupPost" />
+                    </template>
+                    <template #Events>
+                        <GroupDialogEventsTab :confirm-delete-group-event="confirmDeleteGroupEvent" />
+                    </template>
+                    <template #Instances>
+                        <GroupDialogInstancesTab />
+                    </template>
+                    <template #Posts>
+                        <GroupDialogPostsTab
+                            :show-group-post-edit-dialog="showGroupPostEditDialog"
+                            :confirm-delete-group-post="confirmDeleteGroupPost" />
+                    </template>
+                    <template #Members>
+                        <GroupDialogMembersTab ref="membersTabRef" />
+                    </template>
+                    <template #Photos>
+                        <GroupDialogPhotosTab ref="photosTabRef" />
+                    </template>
+                    <template #JSON>
+                        <DialogJsonTab
+                            :tree-data="treeData"
+                            :tree-data-key="treeData?.group?.id"
+                            :dialog-id="groupDialog.id"
+                            :dialog-ref="groupDialog.ref"
+                            @refresh="refreshGroupDialogTreeData()" />
+                    </template>
+                </TabsUnderline>
+            </div>
         </div>
         <GroupPostEditDialog :dialog-data="groupPostEditDialog" :selected-gallery-file="selectedGalleryFile" />
+        <GroupEventCreateDialog
+            :dialog-data="groupEventCreateDialog"
+            :group-name="groupDialog.ref.name"
+            @created="handleGroupEventCreated" />
+        <GroupGalleryCreateDialog
+            :dialog-data="groupGalleryCreateDialog"
+            :group-name="groupDialog.ref.name"
+            @created="handleGroupGalleryCreated" />
     </div>
 </template>
 
@@ -340,21 +451,24 @@
         BellOff,
         Bookmark,
         BookmarkCheck,
+        CalendarPlus,
         Check,
         CheckCircle,
         Eye,
         Image,
+        Images,
+        Megaphone,
         MessageSquare,
         MoreHorizontal,
+        Plus,
         RefreshCw,
         Settings,
         Share2,
-        Ticket,
         Trash2,
         X,
         XCircle
     } from 'lucide-vue-next';
-    import { computed, reactive, ref, watch } from 'vue';
+    import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
     import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import { Button } from '@/components/ui/button';
     import { TabsUnderline } from '@/components/ui/tabs';
@@ -371,9 +485,11 @@
     } from '../../ui/dropdown-menu';
     import {
         copyToClipboard,
+        getFaviconUrl,
         hasGroupModerationPermission,
         hasGroupPermission,
         languageClass,
+        openExternalLink,
         removeFromArray
     } from '../../../shared/utils';
     import { useGalleryStore, useGroupStore, useModalStore, useUserStore } from '../../../stores';
@@ -391,17 +507,24 @@
 
     import DialogJsonTab from '../DialogJsonTab.vue';
     import GroupDialogInfoTab from './GroupDialogInfoTab.vue';
+    import GroupDialogEventsTab from './GroupDialogEventsTab.vue';
+    import GroupDialogInstancesTab from './GroupDialogInstancesTab.vue';
+    import GroupEventCreateDialog from './GroupEventCreateDialog.vue';
+    import GroupGalleryCreateDialog from './GroupGalleryCreateDialog.vue';
     import { useGroupDialogCommands } from './useGroupDialogCommands';
     import GroupDialogMembersTab from './GroupDialogMembersTab.vue';
     import GroupDialogPhotosTab from './GroupDialogPhotosTab.vue';
     import GroupDialogPostsTab from './GroupDialogPostsTab.vue';
     import GroupPostEditDialog from './GroupPostEditDialog.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
+    import configRepository from '../../../services/config';
 
     const { t } = useI18n();
     const groupDialogTabs = computed(() => [
         { value: 'Info', label: t('dialog.group.info.header') },
         { value: 'Posts', label: t('dialog.group.posts.header') },
+        { value: 'Instances', label: t('dialog.group.instances.header') },
+        { value: 'Events', label: t('dialog.group.events.header') },
         { value: 'Members', label: t('dialog.group.members.header') },
         { value: 'Photos', label: t('dialog.group.gallery.header') },
         { value: 'JSON', label: t('dialog.group.json.header') }
@@ -414,6 +537,20 @@
     const { updateGroupPostSearch, showGroupMemberModerationDialog } = useGroupStore();
 
     const { showFullscreenImageDialog } = useGalleryStore();
+    const sidebarWidth = ref(288);
+    const workspaceRef = ref(null);
+    let resizingSidebar = false;
+
+    const canManageCalendar = computed(() => hasGroupPermission(groupDialog.value.ref, 'group-calendar-manage'));
+    const canManageAnnouncements = computed(
+        () =>
+            hasGroupPermission(groupDialog.value.ref, 'group-announcements-manage') ||
+            hasGroupPermission(groupDialog.value.ref, 'group-announcement-manage')
+    );
+    const canManageGalleries = computed(() => hasGroupPermission(groupDialog.value.ref, 'group-galleries-manage'));
+    const canCreateGroupContent = computed(
+        () => canManageCalendar.value || canManageAnnouncements.value || canManageGalleries.value
+    );
 
     const { groupDialogCommand } = useGroupDialogCommands(groupDialog, {
         t,
@@ -440,11 +577,13 @@
     const groupDialogTabCurrentName = ref('0');
     const treeData = ref({});
     const imageError = ref(false);
+    const bannerError = ref(false);
 
     watch(
         () => groupDialog.value.id,
         () => {
             imageError.value = false;
+            bannerError.value = false;
         }
     );
     const membersTabRef = ref(null);
@@ -465,6 +604,122 @@
         postId: '',
         groupId: ''
     });
+    const groupEventCreateDialog = reactive({
+        visible: false,
+        groupId: '',
+        title: '',
+        description: '',
+        startsAt: '',
+        endsAt: '',
+        accessType: 'public',
+        category: 'other',
+        sendCreationNotification: true
+    });
+    const groupGalleryCreateDialog = reactive({
+        visible: false,
+        groupId: '',
+        name: '',
+        description: '',
+        membersOnly: false
+    });
+
+    onMounted(async () => {
+        const storedWidth = await configRepository.getInt('VRCX_groupDialogSidebarWidth', 288);
+        if (Number.isFinite(storedWidth)) {
+            sidebarWidth.value = Math.min(420, Math.max(240, storedWidth));
+        }
+    });
+
+    onBeforeUnmount(() => stopSidebarResize(false));
+
+    function startSidebarResize(event) {
+        if (window.matchMedia('(max-width: 60rem)').matches) {
+            return;
+        }
+        resizingSidebar = true;
+        event.currentTarget.setPointerCapture?.(event.pointerId);
+        document.body.classList.add('group-dialog-is-resizing');
+        window.addEventListener('pointermove', handleSidebarResize);
+        window.addEventListener('pointerup', finishSidebarResize, { once: true });
+    }
+
+    function handleSidebarResize(event) {
+        if (!resizingSidebar || !workspaceRef.value) {
+            return;
+        }
+        const rect = workspaceRef.value.getBoundingClientRect();
+        const maxWidth = Math.min(420, Math.max(240, rect.width - 420));
+        sidebarWidth.value = Math.round(Math.min(maxWidth, Math.max(240, rect.right - event.clientX)));
+    }
+
+    function finishSidebarResize() {
+        stopSidebarResize(true);
+    }
+
+    function stopSidebarResize(save) {
+        if (!resizingSidebar) {
+            return;
+        }
+        resizingSidebar = false;
+        document.body.classList.remove('group-dialog-is-resizing');
+        window.removeEventListener('pointermove', handleSidebarResize);
+        window.removeEventListener('pointerup', finishSidebarResize);
+        if (save) {
+            configRepository.setInt('VRCX_groupDialogSidebarWidth', sidebarWidth.value);
+        }
+    }
+
+    function resizeSidebarBy(delta) {
+        sidebarWidth.value = Math.min(420, Math.max(240, sidebarWidth.value + delta));
+        configRepository.setInt('VRCX_groupDialogSidebarWidth', sidebarWidth.value);
+    }
+
+    function toLocalDateTimeInput(date) {
+        const pad = (value) => String(value).padStart(2, '0');
+        return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function showGroupEventCreateDialog() {
+        const startsAt = new Date(Date.now() + 60 * 60 * 1000);
+        startsAt.setMinutes(Math.ceil(startsAt.getMinutes() / 15) * 15, 0, 0);
+        const endsAt = new Date(startsAt.getTime() + 2 * 60 * 60 * 1000);
+        Object.assign(groupEventCreateDialog, {
+            visible: true,
+            groupId: groupDialog.value.id,
+            title: '',
+            description: '',
+            startsAt: toLocalDateTimeInput(startsAt),
+            endsAt: toLocalDateTimeInput(endsAt),
+            accessType: 'public',
+            category: 'other',
+            sendCreationNotification: true
+        });
+    }
+
+    function showGroupGalleryCreateDialog() {
+        Object.assign(groupGalleryCreateDialog, {
+            visible: true,
+            groupId: groupDialog.value.id,
+            name: '',
+            description: '',
+            membersOnly: false
+        });
+    }
+
+    function handleGroupEventCreated(event) {
+        groupDialog.value.calendar = [event, ...(groupDialog.value.calendar ?? [])];
+        groupDialog.value.activeTab = 'Events';
+    }
+
+    async function handleGroupGalleryCreated(gallery) {
+        const galleries = groupDialog.value.ref.galleries ?? [];
+        if (!galleries.some((item) => item.id === gallery.id)) {
+            groupDialog.value.ref.galleries = [...galleries, gallery];
+        }
+        groupDialog.value.activeTab = 'Photos';
+        await nextTick();
+        photosTabRef.value?.getGroupGalleries();
+    }
 
     watch(
         () => groupDialog.value.isGetGroupDialogGroupLoading,
@@ -575,6 +830,32 @@
                     });
             })
             .catch(() => {});
+    }
+
+    async function confirmDeleteGroupEvent(event) {
+        const { ok } = await modalStore.confirm({
+            description: t('confirm.delete_group_event', { title: event.title }),
+            title: t('confirm.title'),
+            destructive: true
+        });
+        if (!ok) {
+            return;
+        }
+
+        try {
+            const args = await groupRequest.deleteGroupEvent({
+                groupId: groupDialog.value.id,
+                eventId: event.id
+            });
+            if (groupDialog.value.id === args.params.groupId) {
+                groupDialog.value.calendar = (groupDialog.value.calendar ?? []).filter(
+                    (item) => item.id !== args.params.eventId
+                );
+            }
+            toast.success(t('dialog.group_calendar.event_card.deleted'));
+        } catch (error) {
+            toast.error(error?.message || t('dialog.group_calendar.event_card.delete_failed'));
+        }
     }
 
     /**
@@ -714,3 +995,363 @@
         };
     }
 </script>
+
+<style scoped>
+    .group-dialog {
+        position: relative;
+    }
+
+    .group-dialog__summary {
+        grid-area: sidebar;
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+        gap: 0.875rem;
+        align-items: start;
+        overflow: visible;
+        border-left: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+        padding: 3.25rem 0 0 1rem;
+        scrollbar-width: thin;
+    }
+
+    .group-dialog__workspace {
+        display: grid;
+        grid-template-areas: 'main splitter sidebar';
+        grid-template-columns: minmax(0, 1fr) 0.625rem var(--group-sidebar-width, 18rem);
+        min-height: 0;
+        flex: 1;
+        gap: 0;
+    }
+
+    .group-dialog__icon {
+        position: absolute;
+        bottom: -1.625rem;
+        left: 1rem;
+        z-index: 1;
+        width: 4.75rem;
+        aspect-ratio: 1;
+        overflow: hidden;
+        border-radius: var(--radius-lg);
+        border: 3px solid var(--background);
+        background: var(--muted);
+        box-shadow:
+            0 5px 16px color-mix(in srgb, black 32%, transparent),
+            inset 0 0 0 1px color-mix(in srgb, var(--border) 70%, transparent);
+    }
+
+    .group-dialog__body {
+        display: flex;
+        height: 100%;
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .group-dialog__summary .group-header {
+        width: 100%;
+        min-height: 0;
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+
+    .group-dialog__title-row {
+        display: flex;
+        min-width: 0;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem 0.5rem;
+    }
+
+    .group-dialog__title {
+        min-width: 0;
+        max-width: 100%;
+        cursor: pointer;
+        overflow: hidden;
+        padding: 0;
+        color: var(--foreground);
+        font: inherit;
+        font-size: 1.125rem;
+        font-weight: 600;
+        line-height: 1.3;
+        text-align: left;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        background: transparent;
+        border: 0;
+        border-radius: var(--radius-sm);
+    }
+
+    .group-dialog__title:hover {
+        color: var(--primary);
+    }
+
+    .group-dialog__title:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 2px;
+    }
+
+    .group-dialog__languages {
+        display: inline-flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .group-dialog__languages .flags {
+        display: inline-block;
+        margin: 0;
+    }
+
+    .group-dialog__owner-row {
+        display: flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .group-dialog__links {
+        display: inline-flex;
+        min-width: 0;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .group-dialog__link {
+        display: inline-flex;
+        width: 1.5rem;
+        height: 1.5rem;
+        flex: none;
+        cursor: pointer;
+        align-items: center;
+        justify-content: center;
+        border: 0;
+        border-radius: var(--radius-sm);
+        padding: 0.25rem;
+        background: transparent;
+    }
+
+    .group-dialog__link img {
+        width: 1rem;
+        height: 1rem;
+        object-fit: contain;
+    }
+
+    .group-dialog__link:hover {
+        background: var(--accent);
+    }
+
+    .group-dialog__link:focus-visible {
+        outline: 2px solid var(--ring);
+        outline-offset: 1px;
+    }
+
+    .group-tags {
+        gap: 0.375rem;
+    }
+
+    .group-dialog__tag {
+        min-height: 1.375rem;
+        margin-top: 0.25rem;
+        border-color: transparent;
+        padding-inline: 0.5rem;
+        color: var(--muted-foreground);
+        background: color-mix(in srgb, var(--muted) 62%, transparent);
+        font-weight: 500;
+    }
+
+    .group-dialog__description {
+        width: 100%;
+        max-height: none;
+        margin: 0;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        line-height: 1.5;
+    }
+
+    .group-dialog__actions {
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 2;
+        display: flex;
+        flex: none;
+        align-items: center;
+        gap: 0.125rem;
+        padding: 0.1875rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--muted) 58%, transparent);
+    }
+
+    .group-dialog__actions :deep(button) {
+        margin: 0;
+        border-color: transparent;
+        box-shadow: none;
+    }
+
+    .group-dialog__tabs :deep([role='tablist']) {
+        padding-inline: 0.125rem;
+        background: color-mix(in srgb, var(--background) 92%, transparent);
+    }
+
+    .group-dialog__main {
+        grid-area: main;
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+        padding-right: 0.75rem;
+    }
+
+    .group-dialog__splitter {
+        grid-area: splitter;
+        position: relative;
+        z-index: 3;
+        display: flex;
+        width: 0.625rem;
+        cursor: col-resize;
+        touch-action: none;
+        align-items: center;
+        justify-content: center;
+        outline: none;
+    }
+
+    .group-dialog__splitter::before {
+        position: absolute;
+        inset-block: 0;
+        left: 50%;
+        width: 1px;
+        content: '';
+        background: color-mix(in srgb, var(--border) 74%, transparent);
+        transform: translateX(-50%);
+        transition: background-color 140ms ease-out;
+    }
+
+    .group-dialog__splitter-grip {
+        position: relative;
+        z-index: 1;
+        width: 0.25rem;
+        height: 2.25rem;
+        border-radius: 999px;
+        background: color-mix(in srgb, var(--muted-foreground) 42%, transparent);
+        opacity: 0;
+        transform: scaleY(0.75);
+        transition:
+            opacity 140ms ease-out,
+            transform 140ms ease-out,
+            background-color 140ms ease-out;
+    }
+
+    .group-dialog__splitter:hover::before,
+    .group-dialog__splitter:focus-visible::before {
+        background: var(--primary);
+    }
+
+    .group-dialog__splitter:hover .group-dialog__splitter-grip,
+    .group-dialog__splitter:focus-visible .group-dialog__splitter-grip {
+        background: var(--primary);
+        opacity: 1;
+        transform: scaleY(1);
+    }
+
+    .group-dialog__hero {
+        position: relative;
+        flex: none;
+        margin-bottom: 1.75rem;
+    }
+
+    .group-dialog__banner,
+    .group-dialog__banner-fallback {
+        width: 100%;
+        aspect-ratio: 6 / 1;
+        border-radius: var(--radius-md);
+    }
+
+    .group-dialog__banner {
+        display: block;
+        cursor: pointer;
+        object-fit: cover;
+    }
+
+    .group-dialog__banner-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--muted);
+    }
+
+    .group-dialog__tabs {
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .group-dialog__tabs :deep([role='tab']) {
+        height: 2.375rem;
+        padding-inline: 0.75rem;
+    }
+
+    .group-dialog__tabs :deep([role='tabpanel']) {
+        padding-top: 0.75rem;
+    }
+
+    @media (max-width: 60rem) {
+        .group-dialog__workspace {
+            grid-template-areas:
+                'sidebar'
+                'main';
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto minmax(0, 1fr);
+        }
+
+        .group-dialog__summary {
+            max-height: min(13rem, 30vh);
+            overflow-y: auto;
+            border-left: 0;
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+            padding: 3.25rem 0 0.75rem;
+        }
+
+        .group-dialog__main {
+            padding-right: 0;
+        }
+
+        .group-dialog__splitter {
+            display: none;
+        }
+    }
+
+    @media (max-width: 44rem) {
+        .group-dialog__summary {
+            padding-top: 0;
+        }
+
+        .group-dialog__actions {
+            position: static;
+            align-self: flex-end;
+        }
+
+        .group-dialog__hero {
+            margin-bottom: 1.5rem;
+        }
+
+        .group-dialog__icon {
+            bottom: -1.375rem;
+            left: 0.75rem;
+            width: 4.25rem;
+        }
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+        .group-dialog__title {
+            transition: color 140ms ease-out;
+        }
+    }
+
+    :global(body.group-dialog-is-resizing) {
+        cursor: col-resize;
+        user-select: none;
+    }
+</style>

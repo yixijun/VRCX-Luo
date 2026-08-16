@@ -42,14 +42,18 @@ vi.mock('vue-sonner', () => ({
 vi.mock('@/components/ui/button', () => ({
     Button: {
         props: ['class', 'disabled', 'variant', 'size'],
-        template: '<button :class="$props.class" :data-variant="variant" :data-size="size" :disabled="disabled"><slot /></button>'
+        template:
+            '<button :class="$props.class" :data-variant="variant" :data-size="size" :disabled="disabled"><slot /></button>'
     }
 }));
 
 vi.mock('@/components/ui/dropdown-menu', () => ({
     DropdownMenu: { template: '<div><slot /></div>' },
     DropdownMenuContent: { template: '<div><slot /></div>' },
-    DropdownMenuItem: { template: '<button type="button" @click="$emit(\'click\', $event)"><slot /></button>' },
+    DropdownMenuItem: {
+        template:
+            '<button type="button" @click="$emit(\'click\', $event)"><slot /></button>'
+    },
     DropdownMenuLabel: { template: '<div><slot /></div>' },
     DropdownMenuSeparator: { template: '<hr />' },
     DropdownMenuTrigger: { template: '<div><slot /></div>' }
@@ -93,7 +97,9 @@ describe('QuickLaunchButton', () => {
     test('renders quick launch menu actions', () => {
         mountComponent();
 
-        expect(document.body.textContent).toContain('quick_launch.vrchat_desktop');
+        expect(document.body.textContent).toContain(
+            'quick_launch.vrchat_desktop'
+        );
         expect(document.body.textContent).toContain('quick_launch.vrchat_vr');
         expect(document.body.textContent).toContain('quick_launch.steamvr');
     });
@@ -101,7 +107,9 @@ describe('QuickLaunchButton', () => {
     test('uses the same compact round button style as BackToTop', () => {
         mountComponent();
 
-        const trigger = document.body.querySelector('[data-testid="quick-launch-button"]');
+        const trigger = document.body.querySelector(
+            '[data-testid="quick-launch-button"]'
+        );
         const wrapper = trigger.closest('div[style]');
 
         expect(trigger.dataset.variant).toBe('secondary');
@@ -113,7 +121,9 @@ describe('QuickLaunchButton', () => {
         expect(wrapper.getAttribute('style')).toContain('position: fixed');
         expect(wrapper.getAttribute('style')).toContain('right: 20px');
         expect(wrapper.getAttribute('style')).toContain('bottom: 20px');
-        expect(wrapper.getAttribute('style')).toContain('transition: bottom 160ms ease');
+        expect(wrapper.getAttribute('style')).toContain(
+            'transition: bottom 160ms ease'
+        );
     });
 
     test('moves above BackToTop when the target scrolls past the visibility threshold', async () => {
@@ -131,7 +141,9 @@ describe('QuickLaunchButton', () => {
         target.dispatchEvent(new Event('scroll'));
         await Promise.resolve();
 
-        const trigger = document.body.querySelector('[data-testid="quick-launch-button"]');
+        const trigger = document.body.querySelector(
+            '[data-testid="quick-launch-button"]'
+        );
         const wrapper = trigger.closest('div[style]');
 
         expect(wrapper.getAttribute('style')).toContain('bottom: 68px');
@@ -139,8 +151,10 @@ describe('QuickLaunchButton', () => {
 
     test('starts VRChat in desktop mode', async () => {
         mountComponent();
-        const desktopItem = [...document.body.querySelectorAll('button')]
-            .find((button) => button.textContent.includes('quick_launch.vrchat_desktop'));
+        const desktopItem = [...document.body.querySelectorAll('button')].find(
+            (button) =>
+                button.textContent.includes('quick_launch.vrchat_desktop')
+        );
 
         desktopItem.click();
 
@@ -149,8 +163,9 @@ describe('QuickLaunchButton', () => {
 
     test('starts SteamVR before launching VRChat in VR mode', async () => {
         mountComponent();
-        const vrItem = [...document.body.querySelectorAll('button')]
-            .find((button) => button.textContent.includes('quick_launch.vrchat_vr'));
+        const vrItem = [...document.body.querySelectorAll('button')].find(
+            (button) => button.textContent.includes('quick_launch.vrchat_vr')
+        );
 
         vrItem.click();
         await vi.runAllTimersAsync();
@@ -161,15 +176,30 @@ describe('QuickLaunchButton', () => {
     });
 
     test('continues VR launch when SteamVR prompt is declined', async () => {
-        mocks.confirm.mockResolvedValue({ ok: false });
+        mocks.confirm.mockResolvedValue({ ok: false, reason: 'cancel' });
         mountComponent();
-        const vrItem = [...document.body.querySelectorAll('button')]
-            .find((button) => button.textContent.includes('quick_launch.vrchat_vr'));
+        const vrItem = [...document.body.querySelectorAll('button')].find(
+            (button) => button.textContent.includes('quick_launch.vrchat_vr')
+        );
 
         vrItem.click();
         await vi.runAllTimersAsync();
 
         expect(mocks.startSteamVR).not.toHaveBeenCalled();
         expect(mocks.launchVRChat).toHaveBeenCalledWith(false);
+    });
+
+    test('cancels VR launch when SteamVR prompt is dismissed', async () => {
+        mocks.confirm.mockResolvedValue({ ok: false, reason: 'dismiss' });
+        mountComponent();
+        const vrItem = [...document.body.querySelectorAll('button')].find(
+            (button) => button.textContent.includes('quick_launch.vrchat_vr')
+        );
+
+        vrItem.click();
+        await vi.runAllTimersAsync();
+
+        expect(mocks.startSteamVR).not.toHaveBeenCalled();
+        expect(mocks.launchVRChat).not.toHaveBeenCalled();
     });
 });

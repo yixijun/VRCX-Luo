@@ -62,7 +62,7 @@ export const useInviteStore = defineStore('Invite', () => {
      * @param {'message' | 'request' | 'response' | 'requestResponse'} mode
      */
     function refreshInviteMessageTableData(mode) {
-        inviteMessagesRequest
+        return inviteMessagesRequest
             .refreshInviteMessageTableData(mode)
             .then(({ json }) => {
                 switch (mode) {

@@ -461,76 +461,77 @@
                                 >
                             </div>
                         </div>
-                        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-                            <div class="flex-1 overflow-hidden">
-                                <span class="block truncate font-medium leading-[18px]">{{
-                                    t('dialog.avatar.info.created_at')
-                                }}</span>
-                                <span class="block truncate text-xs">{{
-                                    formatDateFilter(avatarDialog.ref.created_at, 'long')
-                                }}</span>
+                        <div class="avatar-info-stat-grid">
+                            <div class="avatar-info-stat-card">
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="block truncate font-medium leading-[18px]">{{
+                                        t('dialog.avatar.info.created_at')
+                                    }}</span>
+                                    <span class="block truncate text-xs">{{
+                                        formatDateFilter(avatarDialog.ref.created_at, 'long')
+                                    }}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-                            <div class="flex-1 overflow-hidden">
-                                <span class="block font-medium leading-[18px]" style="display: inline">{{
-                                    t('dialog.avatar.info.last_updated')
-                                }}</span>
-                                <TooltipWrapper
-                                    v-if="Object.keys(avatarDialog.fileAnalysis).length"
-                                    side="top"
-                                    style="margin-left: 6px">
-                                    <template #content>
-                                        <template
-                                            v-for="(created_at, platform) in avatarDialogPlatformCreatedAt"
-                                            :key="platform">
-                                            <div class="flex justify-between w-full">
-                                                <span class="mr-1">{{ platform }}:</span>
-                                                <span>{{ formatDateFilter(created_at, 'long') }}</span>
-                                            </div>
+                            <div class="avatar-info-stat-card">
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="block font-medium leading-[18px]" style="display: inline">{{
+                                        t('dialog.avatar.info.last_updated')
+                                    }}</span>
+                                    <TooltipWrapper
+                                        v-if="Object.keys(avatarDialog.fileAnalysis).length"
+                                        side="top"
+                                        style="margin-left: 6px">
+                                        <template #content>
+                                            <template
+                                                v-for="(created_at, platform) in avatarDialogPlatformCreatedAt"
+                                                :key="platform">
+                                                <div class="flex justify-between w-full">
+                                                    <span class="mr-1">{{ platform }}:</span>
+                                                    <span>{{ formatDateFilter(created_at, 'long') }}</span>
+                                                </div>
+                                            </template>
                                         </template>
-                                    </template>
-                                    <ChevronDown class="inline-block" />
-                                </TooltipWrapper>
-                                <span class="block truncate text-xs">{{
-                                    formatDateFilter(avatarDialog.ref.updated_at, 'long')
-                                }}</span>
+                                        <ChevronDown class="inline-block size-4" />
+                                    </TooltipWrapper>
+                                    <span class="block truncate text-xs">{{
+                                        formatDateFilter(avatarDialog.ref.updated_at, 'long')
+                                    }}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-                            <div class="flex-1 overflow-hidden">
-                                <span class="block truncate font-medium leading-[18px]">{{
-                                    t('dialog.avatar.info.version')
-                                }}</span>
-                                <span
-                                    v-if="avatarDialog.ref.version !== 0"
-                                    class="block truncate text-xs"
-                                    v-text="avatarDialog.ref.version"></span>
-                                <span v-else class="block truncate text-xs">-</span>
+                            <div class="avatar-info-stat-card">
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="block truncate font-medium leading-[18px]">{{
+                                        t('dialog.avatar.info.version')
+                                    }}</span>
+                                    <span
+                                        v-if="avatarDialog.ref.version !== 0"
+                                        class="block truncate text-xs"
+                                        v-text="avatarDialog.ref.version"></span>
+                                    <span v-else class="block truncate text-xs">-</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="box-border flex items-center p-1.5 text-[13px] cursor-default w-[167px]">
-                            <div class="flex-1 overflow-hidden">
-                                <span class="block truncate font-medium leading-[18px]">{{
-                                    t('dialog.avatar.info.time_spent')
-                                }}</span>
-
-                                <span v-if="avatarDialog.timeSpent === 0" class="block truncate text-xs">-</span>
-                                <span v-else class="block truncate text-xs">{{
-                                    timeToText(avatarDialog.timeSpent)
-                                }}</span>
+                            <div class="avatar-info-stat-card">
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="block truncate font-medium leading-[18px]">{{
+                                        t('dialog.avatar.info.time_spent')
+                                    }}</span>
+                                    <span v-if="avatarDialog.timeSpent === 0" class="block truncate text-xs">-</span>
+                                    <span v-else class="block truncate text-xs">{{
+                                        timeToText(avatarDialog.timeSpent)
+                                    }}</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
-                            <div class="flex-1 overflow-hidden">
-                                <span class="block truncate font-medium leading-[18px]">{{
-                                    t('dialog.avatar.info.platform')
-                                }}</span>
-                                <span
-                                    v-if="avatarDialogPlatform"
-                                    class="block truncate text-xs"
-                                    v-text="avatarDialogPlatform"></span>
-                                <span v-else class="block truncate text-xs">-</span>
+                            <div class="avatar-info-stat-card avatar-info-stat-card--wide">
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="block truncate font-medium leading-[18px]">{{
+                                        t('dialog.avatar.info.platform')
+                                    }}</span>
+                                    <span
+                                        v-if="avatarDialogPlatform"
+                                        class="block text-xs break-words"
+                                        v-text="avatarDialogPlatform"></span>
+                                    <span v-else class="block truncate text-xs">-</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -1041,3 +1042,50 @@
         }
     }
 </script>
+
+<style scoped>
+    .avatar-info-stat-grid {
+        display: grid;
+        width: 100%;
+        grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+        gap: 0.5rem;
+        padding: 0.25rem 0;
+    }
+
+    .avatar-info-stat-card {
+        display: flex;
+        min-width: 0;
+        min-height: 3.5rem;
+        align-items: center;
+        overflow: hidden;
+        border: 0;
+        border-radius: var(--radius-lg);
+        background: var(--surface-panel);
+        box-shadow: var(--shadow-surface);
+        padding: 0.5rem 0.625rem;
+        font-size: 0.8125rem;
+        cursor: default;
+        transition:
+            box-shadow var(--motion-base) ease,
+            transform var(--motion-fast) ease;
+    }
+
+    .avatar-info-stat-card--wide {
+        grid-column: 1 / -1;
+    }
+
+    .avatar-info-stat-card:hover {
+        box-shadow: var(--shadow-floating);
+        transform: translateY(-1px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .avatar-info-stat-card {
+            transition: none;
+        }
+
+        .avatar-info-stat-card:hover {
+            transform: none;
+        }
+    }
+</style>

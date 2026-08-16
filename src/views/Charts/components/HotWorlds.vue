@@ -46,21 +46,25 @@
 
             <template v-else>
                 <div class="mx-auto mt-3 flex max-w-[1100px] items-center gap-3">
-                    <div class="flex items-center gap-2 rounded-lg border px-3 py-2">
+                    <div class="flex items-center gap-2 rounded-lg border-0 bg-card px-3 py-2 shadow-sm">
                         <MapPin class="size-3.5 text-muted-foreground" />
                         <span class="text-sm font-medium">{{ totalVisits.toLocaleString() }}</span>
                         <span class="text-xs text-muted-foreground">{{
                             t('view.charts.hot_worlds.stats.total_visits')
                         }}</span>
                     </div>
-                    <div v-if="risingCount > 0" class="flex items-center gap-2 rounded-lg border px-3 py-2">
+                    <div
+                        v-if="risingCount > 0"
+                        class="flex items-center gap-2 rounded-lg border-0 bg-card px-3 py-2 shadow-sm">
                         <TrendingUp class="size-3.5 text-green-500/50" />
                         <span class="text-sm font-medium">{{ risingCount }}</span>
                         <span class="text-xs text-muted-foreground">{{
                             t('view.charts.hot_worlds.stats.rising')
                         }}</span>
                     </div>
-                    <div v-if="coolingCount > 0" class="flex items-center gap-2 rounded-lg border px-3 py-2">
+                    <div
+                        v-if="coolingCount > 0"
+                        class="flex items-center gap-2 rounded-lg border-0 bg-card px-3 py-2 shadow-sm">
                         <TrendingDown class="size-3.5 text-blue-400/50" />
                         <span class="text-sm font-medium">{{ coolingCount }}</span>
                         <span class="text-xs text-muted-foreground">{{

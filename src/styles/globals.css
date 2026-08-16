@@ -51,6 +51,29 @@
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
 
+    /* Structural surfaces stay derived from the active theme, including custom themes. */
+    --surface-canvas: color-mix(
+        in oklch,
+        var(--background) 96%,
+        var(--foreground) 4%
+    );
+    --surface-panel: color-mix(in oklch, var(--card) 98%, var(--foreground) 2%);
+    --surface-raised: color-mix(in oklch, var(--popover) 96%, white 4%);
+    --surface-hover: color-mix(
+        in oklch,
+        var(--accent) 84%,
+        var(--foreground) 4%
+    );
+    --border-subtle: color-mix(in oklch, var(--border) 70%, transparent);
+    --shadow-surface:
+        0 1px 2px color-mix(in oklch, black 8%, transparent),
+        0 5px 18px color-mix(in oklch, black 5%, transparent);
+    --shadow-floating:
+        0 8px 30px color-mix(in oklch, black 16%, transparent),
+        0 2px 8px color-mix(in oklch, black 8%, transparent);
+    --motion-fast: 120ms;
+    --motion-base: 160ms;
+
     /* VRChat Status Colors (Official) */
     --status-online: #2ed319;
     --status-joinme: #00b8ff;
@@ -70,6 +93,129 @@
     --visibility-public: #22c55e;
     --visibility-friends: #0ea5e9;
     --visibility-private: #ef4444;
+}
+
+/* Shared content blocks used by the dense group views. */
+.group-content-block {
+    min-width: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--surface-panel);
+    box-shadow: var(--shadow-surface);
+    transition:
+        box-shadow var(--motion-base) ease,
+        transform var(--motion-fast) ease;
+}
+
+.group-content-block:hover {
+    box-shadow: var(--shadow-floating);
+    transform: translateY(-1px);
+}
+
+.group-content-block__header {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 0.875rem 0;
+}
+
+.group-content-block__body {
+    min-width: 0;
+    padding: 0.625rem 0.875rem 0.875rem;
+}
+
+.group-content-block__title {
+    min-width: 0;
+    overflow: hidden;
+    color: var(--foreground);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.group-content-block__meta {
+    min-width: 0;
+    color: var(--muted-foreground);
+    font-size: 0.6875rem;
+    line-height: 1.4;
+}
+
+.group-content-block__actions {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    gap: 0.125rem;
+}
+
+.group-content-block__empty {
+    padding: 1.5rem 0.875rem;
+    color: var(--muted-foreground);
+    font-size: 0.8125rem;
+    text-align: center;
+}
+
+/* User details use the same visual hierarchy as the group information cards. */
+.user-info-card-grid {
+    display: grid;
+    min-width: 0;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 10.5rem), 1fr));
+    align-items: stretch;
+    gap: 0.5rem;
+    max-height: none;
+    padding: 0.125rem 0;
+}
+
+.user-info-card-grid > div {
+    width: 100%;
+    min-width: 0;
+    min-height: 3.25rem;
+    overflow: hidden;
+    border: 0;
+    border-radius: var(--radius-lg);
+    background: var(--surface-panel);
+    box-shadow: var(--shadow-surface);
+    padding: 0.5rem 0.625rem;
+    transition:
+        box-shadow var(--motion-base) ease,
+        transform var(--motion-fast) ease;
+}
+
+.user-info-card-grid > div:hover {
+    box-shadow: var(--shadow-floating);
+    transform: translateY(-1px);
+}
+
+.user-info-card-grid > .user-info-card--wide {
+    grid-column: 1 / -1;
+}
+
+.user-info-card-grid > div > .flex-1 > .font-medium {
+    color: var(--foreground);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+.user-info-card-grid > div .text-xs {
+    color: var(--muted-foreground);
+    font-size: 0.6875rem;
+    line-height: 1.4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .group-content-block,
+    .user-info-card-grid > div {
+        transition: none;
+    }
+
+    .user-info-card-grid > div:hover {
+        transform: none;
+    }
 }
 
 /* VRCX adjusted status colors (when official colors are disabled) */
@@ -115,6 +261,15 @@
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
+
+    --surface-canvas: color-mix(in oklch, var(--background) 86%, black 14%);
+    --surface-panel: color-mix(in oklch, var(--card) 91%, white 9%);
+    --surface-raised: color-mix(in oklch, var(--popover) 86%, white 14%);
+    --surface-hover: color-mix(in oklch, var(--accent) 86%, white 5%);
+    --border-subtle: color-mix(in oklch, var(--border) 82%, white 4%);
+    --shadow-surface: 0 1px 2px rgb(0 0 0 / 18%), 0 6px 18px rgb(0 0 0 / 16%);
+    --shadow-floating:
+        0 12px 38px rgb(0 0 0 / 42%), 0 2px 10px rgb(0 0 0 / 26%);
 }
 
 @theme inline {
@@ -178,6 +333,8 @@
 
 html {
     overflow: hidden;
+    font-size: 100%;
+    font-optical-sizing: auto;
 }
 
 .lucide.is-loading {
@@ -186,15 +343,18 @@ html {
 
 .x-container {
     position: relative;
-    padding: 8px;
+    padding: clamp(0.5rem, 1.4cqi, 0.875rem);
     overflow: hidden auto;
     box-sizing: border-box;
     min-width: 0;
-    background: var(--background);
-    height: calc(100% - 20px);
-    margin: 8px 0 8px 0;
-    border-radius: var(--radius);
-    border: 1px solid var(--border);
+    min-height: 0;
+    background: var(--surface-canvas);
+    height: calc(100% - 1rem);
+    margin: 0.5rem 0;
+    border-radius: min(var(--radius), 0.5rem);
+    border: 1px solid var(--border-subtle);
+    box-shadow: inset 0 1px 0 color-mix(in oklch, white 7%, transparent);
+    container-type: inline-size;
 }
 
 .x-container--auto-height {
@@ -204,11 +364,7 @@ html {
 }
 
 .aside-collapsed .x-container {
-    margin-right: 8px;
-}
-
-html.dark .x-container {
-    background: var(--sidebar);
+    margin-right: 0.5rem;
 }
 
 [data-sonner-toast] [data-content] [data-description] {
@@ -227,11 +383,29 @@ body {
         var(--font-western), var(--font-symbol), var(--font-primary-cjk),
         var(--font-fallback-cjk);
     margin: 0;
+    line-height: 1.45;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    background: var(--surface-canvas);
+}
+
+button,
+[role='button'],
+a,
+input,
+textarea,
+select {
+    -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+    color: var(--primary-foreground);
+    background: color-mix(in oklch, var(--primary) 78%, transparent);
 }
 
 ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
+    width: 0.625rem;
+    height: 0.625rem;
 }
 
 ::-webkit-scrollbar-track {
@@ -239,10 +413,22 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--border);
+    background-color: color-mix(
+        in oklch,
+        var(--muted-foreground) 48%,
+        transparent
+    );
     border-radius: var(--rounded-full);
     border: 2px solid transparent;
     background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: color-mix(
+        in oklch,
+        var(--muted-foreground) 70%,
+        transparent
+    );
 }
 
 .scrollbar-hidden {
@@ -277,7 +463,7 @@ body {
  * Use on gallery items, avatar cards, and similar selectable surfaces.
  */
 .x-highlight-ring {
-    @apply ring-[3px] ring-ring border-ring;
+    @apply border-0 ring-0 bg-accent/70 shadow-sm;
 }
 
 /* Hover Transitions
@@ -288,16 +474,156 @@ body {
  */
 .x-hover-card {
     transition:
-        background-color 0.2s ease,
-        box-shadow 0.2s ease;
+        background-color var(--motion-base) ease,
+        box-shadow var(--motion-base) ease,
+        transform var(--motion-base) ease;
+}
+
+.x-hover-card:hover {
+    box-shadow: var(--shadow-surface);
+    transform: translateY(-1px);
+}
+
+.x-hover-card:active {
+    transform: translateY(0) scale(0.99);
+    transition-duration: var(--motion-fast);
+}
+
+/* Card surfaces are separated by background, spacing and elevation, never outlines. */
+[data-slot='card'],
+.group-content-block,
+.user-info-card-grid > div,
+.favorites-search-card,
+.group-item,
+.world-info-stat-card,
+.instance-room,
+.instance-player,
+.event-card,
+.group-post,
+.group-post__image,
+.group-gallery-image,
+.friend-card,
+.avatar-card,
+.dashboard-panel {
+    border: 0 !important;
+    outline: 0 !important;
+}
+
+[data-slot='card']:hover,
+[data-slot='card']:focus-visible,
+.group-content-block:hover,
+.group-content-block:focus-visible,
+.user-info-card-grid > div:hover,
+.user-info-card-grid > div:focus-visible,
+.favorites-search-card:hover,
+.favorites-search-card:focus-visible,
+.group-item:hover,
+.group-item:focus-visible,
+.world-info-stat-card:hover,
+.world-info-stat-card:focus-visible,
+.instance-room:hover,
+.instance-room:focus-visible,
+.instance-player:hover,
+.instance-player:focus-visible,
+.event-card:hover,
+.event-card:focus-visible,
+.group-post:hover,
+.group-post:focus-visible,
+.group-gallery-image:hover,
+.group-gallery-image:focus-visible,
+.friend-card:hover,
+.friend-card:focus-visible,
+.avatar-card:hover,
+.avatar-card:focus-visible,
+.dashboard-panel:hover,
+.dashboard-panel:focus-visible {
+    border: 0 !important;
+    outline: 0 !important;
 }
 
 .x-hover-list {
-    transition: background-color 0.15s ease;
+    transition:
+        background-color var(--motion-fast) ease,
+        color var(--motion-fast) ease;
 }
 
 .x-hover-icon {
     transition:
-        background-color 0.1s ease,
-        color 0.1s ease;
+        background-color var(--motion-fast) ease,
+        color var(--motion-fast) ease,
+        transform var(--motion-fast) ease;
+}
+
+.x-hover-icon:active {
+    transform: scale(0.9);
+}
+
+[data-slot='card'] {
+    box-shadow: var(--shadow-surface);
+}
+
+[data-slot='popover-content'],
+[data-slot='dropdown-menu-content'],
+[data-slot='context-menu-content'],
+[data-slot='select-content'] {
+    background: color-mix(in oklch, var(--surface-raised) 94%, transparent);
+    box-shadow: var(--shadow-floating);
+    backdrop-filter: blur(18px) saturate(135%);
+}
+
+[data-slot='button'],
+[data-slot='sidebar-menu-button'],
+[data-slot='tabs-trigger'] {
+    touch-action: manipulation;
+}
+
+[data-slot='button']:active:not(:disabled):not([data-disabled]),
+[data-slot='sidebar-menu-button']:active:not(:disabled),
+[data-slot='tabs-trigger']:active:not(:disabled) {
+    transform: scale(0.98);
+    transition-duration: var(--motion-fast);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .x-hover-card:hover,
+    .x-hover-card:active,
+    [data-slot='button']:active,
+    [data-slot='sidebar-menu-button']:active,
+    [data-slot='tabs-trigger']:active {
+        transform: none;
+    }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='context-menu-content'],
+    [data-slot='select-content'] {
+        background: var(--popover);
+        backdrop-filter: none;
+    }
+}
+
+@media (prefers-contrast: more) {
+    :root,
+    .dark {
+        --border-subtle: var(--border);
+    }
+
+    [data-slot='card'],
+    [data-slot='popover-content'],
+    [data-slot='dropdown-menu-content'],
+    [data-slot='context-menu-content'],
+    [data-slot='select-content'] {
+        border-color: var(--foreground);
+    }
 }

@@ -40,7 +40,11 @@
                             <span v-show="!isCollapsed">{{ t('nav_tooltip.manage') }}</span>
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent side="right" align="start" class="w-54">
+                    <DropdownMenuContent
+                        side="right"
+                        align="end"
+                        :collision-padding="{ top: 12, right: 12, bottom: 48, left: 12 }"
+                        class="w-54">
                         <div class="flex items-center gap-2 px-2 py-1.5">
                             <img
                                 class="h-6 w-6 cursor-pointer"
@@ -73,70 +77,86 @@
                             <DropdownMenuSubTrigger>
                                 <span>{{ t('view.settings.appearance.appearance.theme_mode') }}</span>
                             </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent side="right" align="start" class="w-54">
-                                <DropdownMenuCheckboxItem
-                                    v-for="theme in themes"
-                                    :key="theme"
-                                    :model-value="themeMode === theme"
-                                    indicator-position="right"
-                                    @select="emit('theme-select', theme)">
-                                    <span>{{ themeDisplayName(theme) }}</span>
-                                </DropdownMenuCheckboxItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuLabel class="px-2 py-2 font-normal">
-                                    <div class="flex items-center justify-around">
-                                        <TooltipWrapper
-                                            v-for="theme in themeColors"
-                                            :key="theme.key"
-                                            side="top"
-                                            :content="themeColorDisplayName(theme)"
-                                            :delay-duration="600">
-                                            <button
-                                                type="button"
-                                                :disabled="isApplyingThemeColor"
-                                                :aria-pressed="currentThemeColor === theme.key"
-                                                :aria-label="themeColorDisplayName(theme)"
-                                                :title="themeColorDisplayName(theme)"
-                                                @click="emit('theme-color-select', theme)"
-                                                class="h-3.5 w-3.5 shrink-0 rounded-sm transition-transform hover:scale-125 cursor-pointer"
-                                                :class="
-                                                    currentThemeColor === theme.key
-                                                        ? 'ring-1 ring-ring ring-offset-1 ring-offset-background'
-                                                        : ''
-                                                "
-                                                :style="{ backgroundColor: theme.swatch }"></button>
-                                        </TooltipWrapper>
-                                    </div>
-                                </DropdownMenuLabel>
-                            </DropdownMenuSubContent>
+                            <DropdownMenuPortal>
+                                <DropdownMenuSubContent
+                                    side="right"
+                                    align="start"
+                                    :collision-padding="{ top: 12, right: 12, bottom: 48, left: 12 }"
+                                    class="w-54">
+                                    <DropdownMenuCheckboxItem
+                                        v-for="theme in themes"
+                                        :key="theme"
+                                        :model-value="themeMode === theme"
+                                        indicator-position="right"
+                                        @select="emit('theme-select', theme)">
+                                        <span>{{ themeDisplayName(theme) }}</span>
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel class="px-2 py-2 font-normal">
+                                        <div class="flex items-center justify-around">
+                                            <TooltipWrapper
+                                                v-for="theme in themeColors"
+                                                :key="theme.key"
+                                                side="top"
+                                                :content="themeColorDisplayName(theme)"
+                                                :delay-duration="600">
+                                                <button
+                                                    type="button"
+                                                    :disabled="isApplyingThemeColor"
+                                                    :aria-pressed="currentThemeColor === theme.key"
+                                                    :aria-label="themeColorDisplayName(theme)"
+                                                    :title="themeColorDisplayName(theme)"
+                                                    @click="emit('theme-color-select', theme)"
+                                                    class="h-3.5 w-3.5 shrink-0 rounded-sm transition-transform hover:scale-125 cursor-pointer"
+                                                    :class="
+                                                        currentThemeColor === theme.key
+                                                            ? 'ring-1 ring-ring ring-offset-1 ring-offset-background'
+                                                            : ''
+                                                    "
+                                                    :style="{ backgroundColor: theme.swatch }"></button>
+                                            </TooltipWrapper>
+                                        </div>
+                                    </DropdownMenuLabel>
+                                </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
                         </DropdownMenuSub>
 
                         <DropdownMenuSub>
                             <DropdownMenuSubTrigger>
                                 <span>{{ t('view.settings.appearance.appearance.table_density') }}</span>
                             </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent side="right" align="start" class="w-54">
-                                <DropdownMenuCheckboxItem
-                                    :model-value="tableDensity === 'standard'"
-                                    indicator-position="right"
-                                    @select="emit('table-density-select', 'standard')">
-                                    <span>{{
-                                        t('view.settings.appearance.appearance.table_density_comfortable')
-                                    }}</span>
-                                </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem
-                                    :model-value="tableDensity === 'comfortable'"
-                                    indicator-position="right"
-                                    @select="emit('table-density-select', 'comfortable')">
-                                    <span>{{ t('view.settings.appearance.appearance.table_density_standard') }}</span>
-                                </DropdownMenuCheckboxItem>
-                                <DropdownMenuCheckboxItem
-                                    :model-value="tableDensity === 'compact'"
-                                    indicator-position="right"
-                                    @select="emit('table-density-select', 'compact')">
-                                    <span>{{ t('view.settings.appearance.appearance.table_density_compact') }}</span>
-                                </DropdownMenuCheckboxItem>
-                            </DropdownMenuSubContent>
+                            <DropdownMenuPortal>
+                                <DropdownMenuSubContent
+                                    side="right"
+                                    align="start"
+                                    :collision-padding="{ top: 12, right: 12, bottom: 48, left: 12 }"
+                                    class="w-54">
+                                    <DropdownMenuCheckboxItem
+                                        :model-value="tableDensity === 'standard'"
+                                        indicator-position="right"
+                                        @select="emit('table-density-select', 'standard')">
+                                        <span>{{
+                                            t('view.settings.appearance.appearance.table_density_comfortable')
+                                        }}</span>
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        :model-value="tableDensity === 'comfortable'"
+                                        indicator-position="right"
+                                        @select="emit('table-density-select', 'comfortable')">
+                                        <span>{{
+                                            t('view.settings.appearance.appearance.table_density_standard')
+                                        }}</span>
+                                    </DropdownMenuCheckboxItem>
+                                    <DropdownMenuCheckboxItem
+                                        :model-value="tableDensity === 'compact'"
+                                        indicator-position="right"
+                                        @select="emit('table-density-select', 'compact')">
+                                        <span>{{
+                                            t('view.settings.appearance.appearance.table_density_compact')
+                                        }}</span>
+                                    </DropdownMenuCheckboxItem>
+                                </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
                         </DropdownMenuSub>
                         <DropdownMenuItem @click="emit('open-custom-nav')">
                             <span>{{ t('nav_menu.custom_nav.header') }}</span>
@@ -175,6 +195,7 @@
         DropdownMenuContent,
         DropdownMenuItem,
         DropdownMenuLabel,
+        DropdownMenuPortal,
         DropdownMenuSeparator,
         DropdownMenuSub,
         DropdownMenuSubContent,

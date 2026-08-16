@@ -791,6 +791,48 @@ const groupReq = {
         });
     },
 
+    /**
+     * @param {{
+     * groupId: string,
+     * name: string,
+     * description: string,
+     * membersOnly: boolean,
+     * roleIdsToAutoApprove?: Array<string> | null,
+     * roleIdsToManage?: Array<string> | null,
+     * roleIdsToSubmit?: Array<string> | null,
+     * roleIdsToView?: Array<string> | null
+     * }} params
+     * @returns {Promise<{json: any, params: any}>}
+     */
+    createGroupGallery(params) {
+        return request(`groups/${params.groupId}/galleries`, {
+            method: 'POST',
+            params
+        }).then((json) => {
+            const args = { json, params };
+            refetchActiveGroupScope(params.groupId);
+            return args;
+        });
+    },
+
+    /**
+     * @param {{groupId: string, galleryId: string, fileId: string}} params
+     * @returns {Promise<{json: any, params: any}>}
+     */
+    addGroupGalleryImage(params) {
+        return request(
+            `groups/${params.groupId}/galleries/${params.galleryId}/images`,
+            {
+                method: 'POST',
+                params: { fileId: params.fileId }
+            }
+        ).then((json) => {
+            const args = { json, params };
+            refetchActiveGroupScope(params.groupId);
+            return args;
+        });
+    },
+
     getGroupCalendar(groupId) {
         return request(`calendar/${groupId}`, {
             method: 'GET'
@@ -876,6 +918,7 @@ const groupReq = {
                 json,
                 params
             };
+            refetchActiveGroupScope(params.groupId);
             return args;
         });
     },
@@ -914,6 +957,7 @@ const groupReq = {
                 json,
                 params
             };
+            refetchActiveGroupScope(params.groupId);
             return args;
         });
     },

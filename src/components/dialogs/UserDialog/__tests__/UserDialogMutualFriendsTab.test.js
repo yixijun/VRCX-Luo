@@ -148,7 +148,12 @@ function mountComponent(overrides = {}) {
         global: {
             plugins: [pinia],
             stubs: {
-                RefreshCw: { template: '<svg class="refresh-icon" />' }
+                RefreshCw: { template: '<svg class="refresh-icon" />' },
+                TooltipWrapper: {
+                    props: ['content'],
+                    template:
+                        '<span data-testid="date-help" :data-content="content"><slot /></span>'
+                }
             }
         }
     });
@@ -198,6 +203,15 @@ describe('UserDialogMutualFriendsTab.vue', () => {
             expect(items).toHaveLength(0);
             expect(wrapper.text()).toContain('0');
         });
+
+        test('renders a date explanation icon in the toolbar', () => {
+            const wrapper = mountComponent();
+            const help = wrapper.get('[data-testid="date-help"]');
+            expect(help.attributes('data-content')).toBe(
+                'dialog.user.mutual_friends.confirmed_date_tooltip'
+            );
+            expect(help.find('button').exists()).toBe(true);
+        });
     });
 
     describe('loading state', () => {
@@ -237,7 +251,12 @@ describe('UserDialogMutualFriendsTab.vue', () => {
                 global: {
                     plugins: [pinia],
                     stubs: {
-                        RefreshCw: { template: '<svg class="refresh-icon" />' }
+                        RefreshCw: { template: '<svg class="refresh-icon" />' },
+                        TooltipWrapper: {
+                            props: ['content'],
+                            template:
+                                '<span data-testid="date-help" :data-content="content"><slot /></span>'
+                        }
                     }
                 }
             });

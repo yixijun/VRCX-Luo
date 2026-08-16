@@ -19,7 +19,7 @@
         v-bind="delegatedProps"
         :class="
             cn(
-                'bg-muted text-muted-foreground inline-flex h-9 w-fit items-center justify-center rounded-lg p-[3px]',
+                'bg-muted/80 text-muted-foreground inline-flex min-h-9 max-w-full w-fit items-center justify-start overflow-x-auto rounded-lg border border-border/60 p-[3px] scrollbar-hidden',
                 props.class
             )
         ">

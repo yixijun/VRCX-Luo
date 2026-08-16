@@ -41,8 +41,28 @@
                             :grouphint="notification.groupName || ''"
                             link />
                     </ItemDescription>
-                    <ItemDescription v-if="displayMessage" class="text-xs select-none truncate">
-                        {{ displayMessage }}
+                    <ItemDescription v-if="displayMessage || hasBoopEmoji" class="text-xs select-none truncate">
+                        <span v-if="displayMessage">{{ displayMessage }}</span>
+                        <span v-if="hasBoopEmoji" class="ml-1 inline-flex items-center align-text-bottom">
+                            <span
+                                v-if="boopEmojiGlyph"
+                                data-testid="boop-emoji-glyph"
+                                class="inline-flex size-4 shrink-0 items-center justify-center text-xs leading-none"
+                                role="img"
+                                :aria-label="boopEmojiLabel"
+                                :title="boopEmojiLabel">
+                                {{ boopEmojiGlyph }}
+                            </span>
+                            <img
+                                v-else-if="boopEmojiImageUrl"
+                                :src="boopEmojiImageUrl"
+                                :alt="boopEmojiLabel"
+                                :title="boopEmojiLabel"
+                                class="size-4 shrink-0 rounded object-contain" />
+                            <span v-if="boopEmojiLabel" class="ml-1 text-[10px] text-muted-foreground">
+                                {{ boopEmojiLabel }}
+                            </span>
+                        </span>
                     </ItemDescription>
                 </ItemContent>
 
@@ -63,6 +83,19 @@
                                     class="inline-flex size-5 items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
                                     @click.stop="notificationStore.acceptFriendRequestNotification(notification)">
                                     <Check class="size-3" />
+                                </button>
+                            </TooltipWrapper>
+
+                            <TooltipWrapper
+                                v-if="notification.type === 'invite'"
+                                side="top"
+                                :content="t('view.notification.actions.accept_and_launch')">
+                                <button
+                                    type="button"
+                                    data-testid="accept-invite"
+                                    class="inline-flex size-5 cursor-pointer items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
+                                    @click.stop="notificationStore.acceptInviteAndLaunch(notification)">
+                                    <Rocket class="size-3" />
                                 </button>
                             </TooltipWrapper>
 
@@ -102,9 +135,9 @@
                                 </TooltipWrapper>
                             </template>
 
-                            <template v-if="hasResponses">
+                            <template v-if="visibleResponses.length">
                                 <TooltipWrapper
-                                    v-for="response in notification.responses"
+                                    v-for="response in visibleResponses"
                                     :key="`${response.text}:${response.type}`"
                                     side="top"
                                     :content="response.text">
@@ -189,7 +222,29 @@
                         :grouphint="notification.details.groupName || ''"
                         link />
                 </div>
-                <p v-if="friendMessage" class="text-xs text-muted-foreground warp-break-words leading-relaxed">
+                <template v-if="notification.type === 'boop'">
+                    <p v-if="boopMessage" class="text-xs text-muted-foreground warp-break-words leading-relaxed">
+                        {{ boopMessage }}
+                    </p>
+                    <div v-if="hasBoopEmoji" class="mt-2 inline-flex items-center gap-1 text-xs text-muted-foreground">
+                        <span
+                            v-if="boopEmojiGlyph"
+                            class="inline-flex size-5 items-center justify-center text-sm leading-none"
+                            role="img"
+                            :aria-label="boopEmojiLabel"
+                            :title="boopEmojiLabel">
+                            {{ boopEmojiGlyph }}
+                        </span>
+                        <img
+                            v-else-if="boopEmojiImageUrl"
+                            :src="boopEmojiImageUrl"
+                            :alt="boopEmojiLabel"
+                            :title="boopEmojiLabel"
+                            class="size-5 rounded object-contain" />
+                        <span v-if="boopEmojiLabel">{{ boopEmojiLabel }}</span>
+                    </div>
+                </template>
+                <p v-else-if="friendMessage" class="text-xs text-muted-foreground warp-break-words leading-relaxed">
                     {{ friendMessage }}
                 </p>
             </template>
@@ -235,6 +290,7 @@
         Mail,
         MessageCircle,
         Reply,
+        Rocket,
         Send,
         Tag,
         Trash2,
@@ -259,6 +315,7 @@
     import { showUserDialog } from '../../../coordinators/userCoordinator';
     import { useInviteChecks } from '../../../composables/useInviteChecks';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
+    import { getDefaultBoopEmoji } from '../../../shared/constants/boopEmoji';
 
     import Location from '../../../components/Location.vue';
 
@@ -329,8 +386,46 @@
         return Bell;
     });
 
+    const boopEmojiToken = computed(() => {
+        const n = props.notification;
+        if (n.type !== 'boop') return '';
+        const emojiId = n.details?.emojiId || n.imageUrl || '';
+        return emojiId.startsWith('default_')
+            ? emojiId.slice('default_'.length).toLowerCase()
+            : '';
+    });
+
+    const defaultBoopEmoji = computed(() => getDefaultBoopEmoji(boopEmojiToken.value));
+
+    const boopEmojiLabel = computed(
+        () => defaultBoopEmoji.value?.label || boopEmojiToken.value.replaceAll('_', ' ')
+    );
+
+    const boopEmojiGlyph = computed(() => defaultBoopEmoji.value?.glyph || '');
+
+    const boopEmojiImageUrl = computed(() => {
+        const n = props.notification;
+        if (n.type !== 'boop') return '';
+        const imageUrl = n.imageUrl || n.details?.imageUrl || '';
+        return imageUrl && !imageUrl.startsWith('default_') ? imageUrl : '';
+    });
+
+    const hasBoopEmoji = computed(() => Boolean(boopEmojiGlyph.value || boopEmojiImageUrl.value));
+
+    const boopMessage = computed(() => {
+        const n = props.notification;
+        const message = String(n.message || '');
+        const token = boopEmojiToken.value;
+        if (n.type !== 'boop' || !token) return message;
+        const suffix = ` ${token}`;
+        return message.toLowerCase().endsWith(suffix.toLowerCase())
+            ? message.slice(0, -suffix.length).trimEnd()
+            : message;
+    });
+
     const displayMessage = computed(() => {
         const n = props.notification;
+        if (n.type === 'boop') return boopMessage.value;
         if (n.message) return n.message;
         if (n.details?.inviteMessage) return n.details.inviteMessage;
         if (n.details?.requestMessage) return n.details.requestMessage;
@@ -367,7 +462,18 @@
         );
     });
 
-    const hasResponses = computed(() => Array.isArray(props.notification.responses));
+    function isInviteAcceptResponse(response) {
+        return (
+            props.notification.type === 'invite' &&
+            (response?.type === 'accept' || response?.type === 'join' || response?.icon === 'check')
+        );
+    }
+
+    const visibleResponses = computed(() =>
+        Array.isArray(props.notification.responses)
+            ? props.notification.responses.filter((response) => !isInviteAcceptResponse(response))
+            : []
+    );
 
     const showDeleteLog = computed(() => {
         const n = props.notification;

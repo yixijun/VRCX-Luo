@@ -192,7 +192,16 @@ const stubs = {
  *
  * @param storeOverrides
  */
-function mountStatusBar(storeOverrides = {}) {
+function mountStatusBar(storeOverrides = {}, { realNumberField = false } = {}) {
+    const componentStubs = { ...stubs };
+    if (realNumberField) {
+        delete componentStubs.NumberField;
+        delete componentStubs.NumberFieldContent;
+        delete componentStubs.NumberFieldDecrement;
+        delete componentStubs.NumberFieldIncrement;
+        delete componentStubs.NumberFieldInput;
+    }
+
     return mount(StatusBar, {
         global: {
             plugins: [
@@ -237,7 +246,7 @@ function mountStatusBar(storeOverrides = {}) {
                     }
                 })
             ],
-            stubs
+            stubs: componentStubs
         }
     });
 }
@@ -412,7 +421,26 @@ describe('StatusBar.vue - Servers indicator', () => {
         expect(wrapper.text()).toContain('125.60%');
     });
 
-    test('applies zoom when typing a number and pressing Enter', async () => {
+    test('applies typed zoom on Enter through the production number field', async () => {
+        const wrapper = mountStatusBar({}, { realNumberField: true });
+        await nextTick();
+
+        const zoomItem = wrapper
+            .findAll('.cursor-pointer')
+            .find((item) => item.text().includes('Zoom') && item.text().includes('100.00%'));
+        await zoomItem.trigger('click');
+        await nextTick();
+
+        const input = wrapper.find('input[role="spinbutton"]');
+        await input.setValue('120');
+        await input.trigger('keydown', { key: 'Enter' });
+        await nextTick();
+
+        expect(AppApi.SetZoom).toHaveBeenLastCalledWith(1);
+        expect(wrapper.text()).toContain('120.00%');
+    });
+
+    test('applies the typed value when Enter arrives before the number field updates its model', async () => {
         const wrapper = mountStatusBar();
         await nextTick();
 
@@ -424,9 +452,50 @@ describe('StatusBar.vue - Servers indicator', () => {
 
         const input = wrapper.find('input');
         input.element.value = '120';
-        await input.trigger('keydown.enter');
+        await input.trigger('input');
+        await input.trigger('keydown', { key: 'Enter' });
 
-        expect(AppApi.SetZoom).toHaveBeenCalledWith(1);
+        expect(AppApi.SetZoom).toHaveBeenLastCalledWith(1);
         expect(wrapper.text()).toContain('120.00%');
+    });
+
+    test('keeps the typed zoom when Enter is immediately followed by a stale blur value', async () => {
+        const wrapper = mountStatusBar({}, { realNumberField: true });
+        await nextTick();
+
+        const zoomItem = wrapper
+            .findAll('.cursor-pointer')
+            .find((item) => item.text().includes('Zoom') && item.text().includes('100.00%'));
+        await zoomItem.trigger('click');
+        await nextTick();
+
+        const input = wrapper.find('input[role="spinbutton"]');
+        input.element.value = '120';
+        input.element.dispatchEvent(new InputEvent('input', { bubbles: true }));
+        input.element.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+        input.element.value = '100';
+        input.element.dispatchEvent(new FocusEvent('blur'));
+        await nextTick();
+
+        expect(AppApi.SetZoom).toHaveBeenLastCalledWith(1);
+        expect(wrapper.text()).toContain('120.00%');
+    });
+
+    test('does not overwrite typed zoom while the field is being edited', async () => {
+        const wrapper = mountStatusBar({}, { realNumberField: true });
+        await nextTick();
+
+        const zoomItem = wrapper
+            .findAll('.cursor-pointer')
+            .find((item) => item.text().includes('Zoom') && item.text().includes('100.00%'));
+        await zoomItem.trigger('click');
+        await nextTick();
+
+        const input = wrapper.find('input[role="spinbutton"]');
+        await input.setValue('135');
+        zoomLevelChangedCallback?.({}, 0);
+        await nextTick();
+
+        expect(input.element.value).toBe('135');
     });
 });

@@ -29,7 +29,15 @@ vi.mock('@/components/ui/sidebar', () => ({
 vi.mock('@/components/ui/dropdown-menu', () => ({
     DropdownMenu: { template: '<div><slot /></div>' },
     DropdownMenuTrigger: { template: '<div><slot /></div>' },
-    DropdownMenuContent: { template: '<div><slot /></div>' },
+    DropdownMenuContent: {
+        name: 'DropdownMenuContent',
+        props: ['align', 'collisionPadding'],
+        template: '<div><slot /></div>'
+    },
+    DropdownMenuPortal: {
+        name: 'DropdownMenuPortal',
+        template: '<div><slot /></div>'
+    },
     DropdownMenuItem: {
         emits: ['click', 'select'],
         template:
@@ -39,7 +47,11 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
     DropdownMenuSeparator: { template: '<div />' },
     DropdownMenuSub: { template: '<div><slot /></div>' },
     DropdownMenuSubTrigger: { template: '<div><slot /></div>' },
-    DropdownMenuSubContent: { template: '<div><slot /></div>' },
+    DropdownMenuSubContent: {
+        name: 'DropdownMenuSubContent',
+        props: ['collisionPadding'],
+        template: '<div><slot /></div>'
+    },
     DropdownMenuCheckboxItem: {
         emits: ['select'],
         template:
@@ -67,14 +79,51 @@ const baseProps = {
 };
 
 describe('NavMenuFooter', () => {
-    it('renders version and emits toggle-theme click', async () => {
+    it('opens the management menu upward and clear of the bottom status bar', () => {
+        const wrapper = mount(NavMenuFooter, { props: baseProps });
+        const menus = wrapper.findAllComponents({
+            name: 'DropdownMenuContent'
+        });
+        const managementMenu = menus[1];
+
+        expect(managementMenu.props('align')).toBe('end');
+        expect(managementMenu.props('collisionPadding')).toEqual({
+            top: 12,
+            right: 12,
+            bottom: 48,
+            left: 12
+        });
+    });
+
+    it('portals management submenus outside the scroll-clipped parent menu', () => {
+        const wrapper = mount(NavMenuFooter, { props: baseProps });
+        const portals = wrapper.findAllComponents({
+            name: 'DropdownMenuPortal'
+        });
+        const submenus = wrapper.findAllComponents({
+            name: 'DropdownMenuSubContent'
+        });
+
+        expect(portals).toHaveLength(2);
+        expect(submenus).toHaveLength(2);
+        submenus.forEach((submenu) => {
+            expect(submenu.props('collisionPadding')).toEqual({
+                top: 12,
+                right: 12,
+                bottom: 48,
+                left: 12
+            });
+        });
+    });
+
+    it('renders version and emits the navigation collapse action', async () => {
         const wrapper = mount(NavMenuFooter, { props: baseProps });
 
         expect(wrapper.text()).toContain('2026.01.01');
 
         const buttons = wrapper.findAll('[data-testid="sidebar-menu-btn"]');
-        await buttons[1].trigger('click');
+        await buttons[2].trigger('click');
 
-        expect(wrapper.emitted('toggle-theme')).toHaveLength(1);
+        expect(wrapper.emitted('toggle-nav-collapse')).toHaveLength(1);
     });
 });

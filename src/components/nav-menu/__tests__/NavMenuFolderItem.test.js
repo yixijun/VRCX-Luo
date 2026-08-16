@@ -94,6 +94,24 @@ describe('NavMenuFolderItem', () => {
         expect(wrapper.emitted('submenu-click')).toBeTruthy();
     });
 
+    it('uses the animated content container for expanded folders', () => {
+        const wrapper = mount(NavMenuFolderItem, {
+            props: {
+                item: folderItem,
+                isCollapsed: false,
+                activeMenuIndex: '',
+                collapsedDropdownOpenId: null,
+                hasNotifications: false,
+                isEntryNotified: () => false,
+                isNavItemNotified: () => false,
+                isDashboardItem: () => false,
+                isToolItem: () => false
+            }
+        });
+
+        expect(wrapper.find('.nav-submenu-motion').exists()).toBe(true);
+    });
+
     it('emits collapsed-dropdown-open-change in collapsed mode', async () => {
         const wrapper = mount(NavMenuFolderItem, {
             props: {

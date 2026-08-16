@@ -24,7 +24,7 @@
             <div class="flex flex-wrap items-start" style="flex: 1; margin-top: 8px; max-height: 150px; overflow: auto">
                 <div
                     v-if="userDialog.$location?.userId"
-                    class="box-border flex items-center p-1.5 text-[13px] cursor-pointer w-[167px] hover:rounded-[25px_5px_5px_25px]"
+                    class="user-instance-creator box-border flex w-[167px] cursor-pointer items-center p-1.5 text-[13px]"
                     @click="showUserDialog(userDialog.$location.userId)">
                     <template v-if="userDialog.$location?.user">
                         <div
@@ -50,7 +50,7 @@
                 <div
                     v-for="user in userDialog.users || []"
                     :key="user.id"
-                    class="box-border flex items-center p-1.5 text-[13px] cursor-pointer w-[167px] hover:rounded-[25px_5px_5px_25px]"
+                    class="user-instance-member box-border flex w-[167px] cursor-pointer items-center p-1.5 text-[13px] hover:rounded-[25px_5px_5px_25px]"
                     @click="showUserDialog(user.id)">
                     <div class="relative inline-block flex-none size-9 mr-2.5" :class="userStatusClass(user)">
                         <Avatar class="size-9">
@@ -78,10 +78,10 @@
         </div>
     </template>
 
-    <div class="flex flex-wrap items-start px-2.5" style="max-height: none">
+    <div class="user-info-card-grid">
         <div
             v-if="userDialog.note && !hideUserNotes"
-            class="box-border flex items-center p-1.5 text-[13px] w-full cursor-pointer">
+            class="user-info-card--wide box-border flex items-center p-1.5 text-[13px] w-full cursor-pointer">
             <div class="flex-1 overflow-hidden" @click="isEditNoteAndMemoDialogVisible = true">
                 <span class="block truncate font-medium leading-[18px]">{{ t('dialog.user.info.note') }}</span>
                 <pre
@@ -93,7 +93,7 @@
         </div>
         <div
             v-if="userDialog.memo && !hideUserMemos"
-            class="box-border flex items-center p-1.5 text-[13px] w-full cursor-pointer">
+            class="user-info-card--wide box-border flex items-center p-1.5 text-[13px] w-full cursor-pointer">
             <div class="flex-1 overflow-hidden" @click="isEditNoteAndMemoDialogVisible = true">
                 <span class="block truncate font-medium leading-[18px]">{{ t('dialog.user.info.memo') }}</span>
                 <pre
@@ -103,86 +103,14 @@
                 >
             </div>
         </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]">
-                    {{
-                        userDialog.id !== currentUser.id &&
-                        userDialog.ref.profilePicOverride &&
-                        userDialog.ref.currentAvatarImageUrl
-                            ? t('dialog.user.info.avatar_info_last_seen')
-                            : t('dialog.user.info.avatar_info')
-                    }}
-                    <TooltipWrapper
-                        v-if="userDialog.ref.profilePicOverride && !userDialog.ref.currentAvatarImageUrl"
-                        side="top"
-                        :content="t('dialog.user.info.vrcplus_hides_avatar')">
-                        <Info class="inline-block" />
-                    </TooltipWrapper>
-                </span>
-                <div class="text-xs">
-                    <AvatarInfo
-                        :key="userDialog.id"
-                        :imageurl="userDialog.ref.currentAvatarImageUrl"
-                        :userid="userDialog.id"
-                        :avatartags="userDialog.ref.currentAvatarTags"
-                        style="display: inline-block" />
-                </div>
-            </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
-            <div class="flex-1 overflow-hidden">
-                <span class="block truncate font-medium leading-[18px]" style="margin-bottom: 6px">{{
-                    t('dialog.user.info.represented_group')
-                }}</span>
-                <div
-                    v-if="
-                        userDialog.isRepresentedGroupLoading ||
-                        (userDialog.representedGroup && userDialog.representedGroup.isRepresenting)
-                    "
-                    class="text-xs">
-                    <div style="display: inline-block; flex: none; margin-right: 6px">
-                        <Avatar
-                            class="cursor-pointer size-15! rounded-lg!"
-                            :style="{
-                                background: userDialog.isRepresentedGroupLoading ? 'var(--muted)' : ''
-                            }"
-                            @click="
-                                userDialog.representedGroup?.iconUrl &&
-                                showFullscreenImageDialog(userDialog.representedGroup.iconUrl)
-                            ">
-                            <AvatarImage
-                                :src="userDialog.representedGroup?.$thumbnailUrl"
-                                @load="userDialog.isRepresentedGroupLoading = false"
-                                @error="userDialog.isRepresentedGroupLoading = false" />
-                            <AvatarFallback class="rounded-lg!">
-                                <Image class="size-5 text-muted-foreground" />
-                            </AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <span
-                        v-if="userDialog.representedGroup?.isRepresenting"
-                        style="vertical-align: top; cursor: pointer"
-                        @click="showGroupDialog(userDialog.representedGroup.groupId)">
-                        <span v-if="userDialog.representedGroup.ownerId === userDialog.id" style="margin-right: 6px"
-                            >👑</span
-                        >
-                        <span style="margin-right: 6px" v-text="userDialog.representedGroup.name"></span>
-                        <span>({{ userDialog.representedGroup.memberCount }})</span>
-                    </span>
-                </div>
-                <div v-else class="text-xs">-</div>
-            </div>
-        </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
+        <div class="user-info-card--wide box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
             <div class="flex-1 overflow-hidden">
                 <span class="block truncate font-medium leading-[18px]">{{ t('dialog.user.info.bio') }}</span>
                 <pre
                     v-if="bioDiffEnabled && bioDiffHtml"
                     class="text-xs leading-5.5 font-[inherit]"
                     style="white-space: pre-wrap; margin: 0 0.5em 0 0; max-height: 210px; overflow-y: auto"
-                    v-html="bioDiffHtml"
-                ></pre>
+                    v-html="bioDiffHtml"></pre>
                 <pre
                     v-else
                     class="text-xs truncate font-[inherit]"
@@ -453,7 +381,7 @@
         </div>
         <div
             v-if="userDialog.ref.id === currentUser.id && currentUser.homeLocation"
-            class="box-border flex items-center p-1.5 text-[13px] w-full cursor-pointer"
+            class="user-info-card--wide box-border flex items-center p-1.5 text-[13px] w-full cursor-pointer"
             @click="showWorldDialog(currentUser.homeLocation)">
             <div class="flex-1 overflow-hidden">
                 <span class="block truncate font-medium leading-[18px]">{{ t('dialog.user.info.home_location') }}</span>
@@ -465,7 +393,7 @@
                 </span>
             </div>
         </div>
-        <div class="box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
+        <div class="user-info-card--wide box-border flex items-center p-1.5 text-[13px] w-full cursor-default">
             <div class="flex-1 overflow-hidden">
                 <span class="block truncate font-medium leading-[18px]">{{ t('dialog.user.info.id') }}</span>
                 <span class="block truncate text-xs">
@@ -512,7 +440,7 @@
                 <div
                     v-for="(record, index) in bioArchiveRecords"
                     :key="`${record.createdAt}-${index}`"
-                    class="rounded-md border border-border p-3">
+                    class="bio-archive-record rounded-md border border-border/60 bg-card p-3 shadow-sm">
                     <div class="mb-2 text-xs text-muted-foreground">
                         {{ formatDateFilter(record.createdAt, 'long') }}
                     </div>
@@ -531,18 +459,7 @@
 </template>
 
 <script setup>
-    import {
-        Archive,
-        Copy,
-        History,
-        Image,
-        Info,
-        Languages,
-        MoreHorizontal,
-        Pencil,
-        Trash2,
-        User
-    } from 'lucide-vue-next';
+    import { Archive, Copy, History, Languages, MoreHorizontal, Pencil, Trash2, User } from 'lucide-vue-next';
     import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import {
         DropdownMenu,
@@ -575,7 +492,6 @@
     import {
         useAdvancedSettingsStore,
         useAppearanceSettingsStore,
-        useGalleryStore,
         useInstanceStore,
         useLocationStore,
         useModalStore,
@@ -586,11 +502,10 @@
 
     import InstanceActionBar from '../../InstanceActionBar.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
-    import { showGroupDialog } from '../../../coordinators/groupCoordinator';
 
     import EditNoteAndMemoDialog from './EditNoteAndMemoDialog.vue';
     import { database } from '../../../services/database';
-    import { formatBioArchiveDiff } from '../../../shared/utils/bioArchiveDiff';
+    import { formatBioArchiveDiff, formatLatestBioDiff } from '../../../shared/utils/bioArchiveDiff';
     import { formatDifference } from '../../../views/Feed/columns.jsx';
 
     defineEmits(['showBioDialog']);
@@ -606,7 +521,6 @@
     const { toggleSharedConnectionsOptOut, toggleDiscordFriendsOptOut } = useUserStore();
 
     const { lastLocation } = storeToRefs(useLocationStore());
-    const { showFullscreenImageDialog } = useGalleryStore();
     const { userImage, userStatusClass } = useUserDisplay();
 
     const bioCache = ref({
@@ -637,28 +551,11 @@
             return;
         }
 
-        const latestRecord = records[0];
-        let baseBio = latestRecord.previousBio || '';
-        const DAY_IN_MS = 24 * 60 * 60 * 1000;
-
-        for (let i = 1; i < records.length; i++) {
-            if (i + 1 < records.length) {
-                const prevChange = records[i];
-                const olderChange = records[i + 1];
-                const t1 = new Date(prevChange.createdAt).getTime();
-                const t2 = new Date(olderChange.createdAt).getTime();
-
-                if (t1 - t2 <= DAY_IN_MS) {
-                    baseBio = olderChange.previousBio || '';
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
-
-        bioDiffHtml.value = formatDifference(baseBio, latestRecord.bio || '');
+        bioDiffHtml.value = formatLatestBioDiff(
+            records[0],
+            userDialog.value.ref?.bio,
+            formatDifference
+        );
     }
 
     function toggleBioDiff() {
@@ -682,14 +579,7 @@
         const previousArchiveRecord = bioArchiveRecords.value[index + 1];
         const previousBio = previousArchiveRecord?.bio ?? record.previousBio ?? '';
         const currentBio = record.bio || '';
-        return formatBioArchiveDiff(previousBio, currentBio, formatDifference, {
-            component: 'UserDialogInfoTabJirai',
-            area: 'archive',
-            index,
-            recordCreatedAt: record.createdAt,
-            previousArchiveCreatedAt: previousArchiveRecord?.createdAt || null,
-            source: previousArchiveRecord ? 'previous archive record' : 'record.previousBio fallback'
-        });
+        return formatBioArchiveDiff(previousBio, currentBio, formatDifference);
     }
 
     watch(
@@ -855,6 +745,26 @@
 </script>
 
 <style scoped>
+    .user-instance-creator {
+        border: 0;
+        border-radius: 0.5rem;
+        background: color-mix(in oklch, var(--primary) 6%, transparent);
+        transition:
+            background-color 140ms ease,
+            box-shadow 140ms ease,
+            transform 140ms ease;
+    }
+
+    .user-instance-creator:hover {
+        background: var(--surface-hover);
+        box-shadow: 0 2px 8px rgb(0 0 0 / 8%);
+        transform: translateY(-1px);
+    }
+
+    .user-instance-creator:active {
+        transform: scale(0.98);
+    }
+
     :deep(.x-text-removed) {
         text-decoration: line-through;
         color: #ff0000;
@@ -868,5 +778,16 @@
         background-color: rgba(76, 255, 80, 0.2);
         padding: 2px 2px;
         border-radius: 4px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .user-instance-creator {
+            transition: none;
+        }
+
+        .user-instance-creator:hover,
+        .user-instance-creator:active {
+            transform: none;
+        }
     }
 </style>

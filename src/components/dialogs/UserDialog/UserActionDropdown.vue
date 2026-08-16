@@ -1,24 +1,24 @@
 <template>
-    <div style="flex: none" class="flex items-center">
+    <div class="flex flex-none items-center gap-0.5">
         <template v-if="(currentUser.id !== userDialog.ref.id && userDialog.isFriend) || userDialog.isFavorite">
             <TooltipWrapper
                 v-if="userDialog.isFavorite"
                 side="top"
                 :content="t('dialog.user.actions.favorites_tooltip')">
-                <Button class="rounded-full" size="icon-lg" @click="userDialogCommand('Add Favorite')"><Star /></Button>
+                <Button class="rounded-full" size="icon-sm" @click="userDialogCommand('Add Favorite')"><Star /></Button>
             </TooltipWrapper>
             <TooltipWrapper v-else side="top" :content="t('dialog.user.actions.favorites_tooltip')">
-                <Button class="rounded-full" size="icon-lg" variant="outline" @click="userDialogCommand('Add Favorite')"
+                <Button class="rounded-full" size="icon-sm" variant="outline" @click="userDialogCommand('Add Favorite')"
                     ><Star
                 /></Button>
             </TooltipWrapper>
         </template>
         <DropdownMenu>
             <DropdownMenuTrigger as-child>
-                <div class="ml-2">
+                <div>
                     <Button
                         :variant="hasRisk ? 'destructive' : 'outline'"
-                        size="icon-lg"
+                        size="icon-sm"
                         class="rounded-full"
                         :class="{ 'dot-indicator': hasRequest }">
                         <MoreHorizontal />

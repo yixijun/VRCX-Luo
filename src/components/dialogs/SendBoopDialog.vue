@@ -6,21 +6,60 @@
             </DialogHeader>
             <span>{{ displayName }}</span>
 
-            <div v-if="sendBoopDialog.visible" style="width: 100%">
-                <VirtualCombobox
-                    v-model="emojiModel"
-                    :groups="emojiPickerGroups"
-                    :placeholder="t('dialog.boop_dialog.select_default_emoji')"
-                    :search-placeholder="t('dialog.boop_dialog.select_default_emoji')"
-                    :clearable="true"
-                    :close-on-select="true"
-                    :deselect-on-reselect="true"
-                    :maxHeight="230">
-                    <template #item="{ item, selected }">
-                        <span v-text="item.label"></span>
-                        <CheckIcon :class="['ml-auto size-4', selected ? 'opacity-100' : 'opacity-0']" />
-                    </template>
-                </VirtualCombobox>
+            <div v-if="sendBoopDialog.visible" class="mt-2">
+                <Popover v-model:open="emojiPickerOpen">
+                    <PopoverTrigger as-child>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            :aria-expanded="emojiPickerOpen"
+                            class="w-full justify-between">
+                            <span v-if="selectedDefaultEmoji" class="flex items-center gap-2">
+                                <span
+                                    class="inline-flex size-6 items-center justify-center text-lg leading-none"
+                                    role="img"
+                                    :aria-label="selectedDefaultEmoji.label"
+                                    :title="selectedDefaultEmoji.label">
+                                    {{ selectedDefaultEmoji.glyph }}
+                                </span>
+                                <span class="truncate">{{ selectedDefaultEmoji.label }}</span>
+                            </span>
+                            <span v-else class="truncate text-muted-foreground">
+                                {{ t('dialog.boop_dialog.select_default_emoji') }}
+                            </span>
+                            <ChevronDown class="size-4 shrink-0 opacity-60" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent class="w-[--reka-popover-trigger-width] min-w-60 p-2">
+                        <Input
+                            v-model="emojiSearch"
+                            :placeholder="t('dialog.boop_dialog.select_default_emoji')"
+                            type="search"
+                            class="mb-2 h-9" />
+                        <div
+                            class="grid max-h-60 grid-cols-[repeat(auto-fill,minmax(54px,1fr))] gap-1.5 overflow-y-auto rounded-md bg-muted/30 p-1.5">
+                            <button
+                                v-for="item in filteredDefaultEmojiItems"
+                                :key="item.value"
+                                type="button"
+                                class="relative flex aspect-square min-w-0 cursor-pointer items-center justify-center rounded-md text-lg leading-none transition-colors duration-100 hover:bg-muted"
+                                :class="item.value === fileId ? 'bg-muted ring-1 ring-primary/60' : ''"
+                                :aria-label="item.label"
+                                :title="item.label"
+                                @click="selectDefaultEmoji(item.value)">
+                                <span role="img" :aria-label="item.label">{{ item.glyph }}</span>
+                                <CheckIcon
+                                    v-if="item.value === fileId"
+                                    class="absolute right-1 bottom-1 size-3.5 text-primary" />
+                            </button>
+                            <span
+                                v-if="filteredDefaultEmojiItems.length === 0"
+                                class="col-span-full px-2 py-5 text-center text-xs text-muted-foreground">
+                                {{ t('side_panel.search_no_results') }}
+                            </span>
+                        </div>
+                    </PopoverContent>
+                </Popover>
             </div>
 
             <div
@@ -71,14 +110,16 @@
     import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import { computed, ref, watch } from 'vue';
     import { Button } from '@/components/ui/button';
-    import { Check as CheckIcon } from 'lucide-vue-next';
+    import { Input } from '@/components/ui/input';
+    import { Check as CheckIcon, ChevronDown } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
     import { miscRequest, notificationRequest, queryRequest } from '../../api';
     import { useGalleryStore, useNotificationStore, useUserStore } from '../../stores';
-    import { VirtualCombobox } from '../ui/virtual-combobox';
+    import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
     import { photonEmojis } from '../../shared/constants/photon.js';
+    import { getDefaultBoopEmoji, toDefaultBoopEmojiId } from '../../shared/constants/boopEmoji.js';
 
     import Emoji from '../Emoji.vue';
 
@@ -93,12 +134,16 @@
 
     const fileId = ref('');
     const displayName = ref('');
+    const emojiSearch = ref('');
+    const emojiPickerOpen = ref(false);
 
     watch(
         () => sendBoopDialog.value.visible,
         (visible) => {
             if (visible) {
                 displayName.value = '';
+                emojiSearch.value = '';
+                emojiPickerOpen.value = false;
                 queryRequest.fetch('user.dialog', { userId: sendBoopDialog.value.userId }).then((user) => {
                     displayName.value = user.ref.displayName;
                 });
@@ -116,13 +161,6 @@
         sendBoopDialog.value.visible = false;
     }
 
-    const emojiModel = computed({
-        get: () => (fileId.value ? String(fileId.value) : null),
-        set: (value) => {
-            fileId.value = value ? String(value) : '';
-        }
-    });
-
     /**
      *
      * @param emojiName
@@ -131,20 +169,33 @@
         if (!emojiName) {
             return '';
         }
-        return `default_${emojiName.replace(/ /g, '_').toLowerCase()}`;
+        return toDefaultBoopEmojiId(emojiName);
     }
 
-    const emojiPickerGroups = computed(() => [
-        {
-            key: 'defaultEmojis',
-            label: t('dialog.boop_dialog.default_emojis'),
-            items: photonEmojis.map((emojiName) => ({
-                value: getEmojiValue(emojiName),
-                label: emojiName,
-                search: emojiName
-            }))
-        }
-    ]);
+    const defaultEmojiItems = computed(() =>
+        photonEmojis.map((emojiName) => ({
+            value: getEmojiValue(emojiName),
+            label: emojiName,
+            search: emojiName,
+            glyph: getDefaultBoopEmoji(getEmojiValue(emojiName))?.glyph || '✨'
+        }))
+    );
+
+    const selectedDefaultEmoji = computed(() =>
+        defaultEmojiItems.value.find((item) => item.value === fileId.value)
+    );
+
+    const filteredDefaultEmojiItems = computed(() => {
+        const search = emojiSearch.value.trim().toLowerCase();
+        if (!search) return defaultEmojiItems.value;
+        return defaultEmojiItems.value.filter((item) => item.search.toLowerCase().includes(search));
+    });
+
+    function selectDefaultEmoji(value) {
+        fileId.value = fileId.value === value ? '' : value;
+        emojiPickerOpen.value = false;
+        emojiSearch.value = '';
+    }
 
     /**
      *

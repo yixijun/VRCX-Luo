@@ -210,6 +210,20 @@ describe('AvatarInfo.vue', () => {
             });
             expect(wrapper.find('.tooltip').exists()).toBe(false);
         });
+
+        test('can hide raw avatar tags in compact profile layouts', () => {
+            const wrapper = mountAvatarInfo({
+                imageurl: 'https://example.com/avatar.png',
+                hintownerid: 'usr_123',
+                hintavatarname: 'Test Avatar',
+                avatartags: ['author_quest_fallback', 'system_approved'],
+                showtags: false
+            });
+
+            expect(wrapper.text()).toContain('Test Avatar');
+            expect(wrapper.text()).not.toContain('author_quest_fallback');
+            expect(wrapper.text()).not.toContain('system_approved');
+        });
     });
 
     describe('click behavior', () => {

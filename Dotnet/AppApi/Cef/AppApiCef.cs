@@ -243,6 +243,11 @@ namespace VRCX
             MainForm.Instance.BeginInvoke(new MethodInvoker(() => { MainForm.Instance.SetTrayIconNotification(notify); }));
         }
 
+        public override void UpdateTrayNotifications(string json)
+        {
+            MainForm.Instance.BeginInvoke(new MethodInvoker(() => { MainForm.Instance.UpdateTrayNotifications(json); }));
+        }
+
         public override void OpenCalendarFile(string icsContent)
         {
             // validate content

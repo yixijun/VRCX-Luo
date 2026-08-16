@@ -109,19 +109,19 @@
     const dialogClass = computed(() => {
         switch (activeType.value) {
             case 'world':
-                return 'x-dialog translate-y-0 sm:max-w-235 overflow-hidden flex flex-col';
+                return 'x-dialog main-entity-dialog sm:max-w-235 overflow-hidden flex flex-col';
             case 'avatar':
-                return 'x-dialog sm:max-w-235 translate-y-0 overflow-hidden flex flex-col';
+                return 'x-dialog main-entity-dialog sm:max-w-235 overflow-hidden flex flex-col';
             case 'group':
-                return 'x-dialog translate-y-0 sm:max-w-235 overflow-hidden flex flex-col';
+                return 'x-dialog main-entity-dialog group-main-dialog w-[calc(100vw-2rem)] sm:max-w-[60rem] overflow-hidden flex flex-col';
             case 'previous-instances-info':
             case 'previous-instances-user':
             case 'previous-instances-world':
             case 'previous-instances-group':
-                return 'x-dialog translate-y-0 sm:max-w-250';
+                return 'x-dialog previous-instances-dialog h-[calc(100dvh-3rem)] sm:max-w-250 overflow-hidden flex flex-col';
             case 'user':
             default:
-                return 'x-dialog sm:max-w-235 translate-y-0 overflow-hidden flex flex-col';
+                return 'x-dialog main-entity-dialog sm:max-w-235 overflow-hidden flex flex-col';
         }
     });
 
@@ -144,11 +144,18 @@
     function handleBreadcrumbClick(index) {
         uiStore.handleBreadcrumbClick(index);
     }
+
+    function handlePointerDownOutside(event) {
+        const target = event.detail?.originalEvent?.target;
+        if (target instanceof Element && target.closest('[data-main-dialog-interactive]')) {
+            event.preventDefault();
+        }
+    }
 </script>
 
 <template>
     <Dialog v-if="isOpen" v-model:open="isOpen">
-        <DialogContent :class="dialogClass" style="top: 10vh" :show-close-button="false">
+        <DialogContent :class="dialogClass" :show-close-button="false" @pointerDownOutside="handlePointerDownOutside">
             <Breadcrumb v-if="shouldShowBreadcrumbs" class="mb-2 flex-shrink-0">
                 <BreadcrumbList>
                     <TooltipWrapper :content="backCrumbLabel" :disabled="!backCrumbLabel" :delayDuration="500">
@@ -255,3 +262,33 @@
         </DialogContent>
     </Dialog>
 </template>
+
+<style scoped>
+    :deep(.main-entity-dialog) {
+        max-height: calc(100dvh - 3rem);
+        border-color: color-mix(in oklch, var(--border) 78%, var(--foreground) 8%);
+        box-shadow:
+            0 24px 70px rgb(0 0 0 / 32%),
+            0 4px 16px rgb(0 0 0 / 18%);
+    }
+
+    :deep(.group-main-dialog) {
+        width: min(60rem, calc(100vw - 2rem));
+    }
+
+    :deep(.previous-instances-dialog) {
+        max-height: calc(100dvh - 3rem);
+        background: var(--background);
+    }
+
+    @media (max-height: 42rem) {
+        :deep(.main-entity-dialog) {
+            max-height: calc(100dvh - 1.5rem);
+        }
+
+        :deep(.previous-instances-dialog) {
+            height: calc(100dvh - 1.5rem);
+            max-height: calc(100dvh - 1.5rem);
+        }
+    }
+</style>

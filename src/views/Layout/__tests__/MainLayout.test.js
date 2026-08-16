@@ -1,11 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
-import { ref } from 'vue';
+import { markRaw, ref } from 'vue';
 
 const mocks = vi.hoisted(() => ({
     replace: vi.fn(),
     setNavCollapsed: vi.fn(),
-    setNavWidth: vi.fn()
+    setNavWidth: vi.fn(),
+    watchState: { isLoggedIn: false }
 }));
 
 vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
@@ -17,7 +18,7 @@ vi.mock('vue-router', async (importOriginal) => {
     };
 });
 vi.mock('../../../services/watchState', () => ({
-    watchState: { isLoggedIn: false }
+    watchState: mocks.watchState
 }));
 vi.mock('../../../stores', () => ({
     useAppearanceSettingsStore: () => ({
@@ -105,6 +106,7 @@ import MainLayout from '../MainLayout.vue';
 
 describe('MainLayout.vue', () => {
     it('redirects to login when not logged in', () => {
+        mocks.watchState.isLoggedIn = false;
         mount(MainLayout, {
             global: {
                 stubs: {
@@ -114,5 +116,32 @@ describe('MainLayout.vue', () => {
             }
         });
         expect(mocks.replace).toHaveBeenCalledWith({ name: 'login' });
+    });
+
+    it('keeps routed pages visible while the main content transition runs', () => {
+        mocks.watchState.isLoggedIn = true;
+        const wrapper = mount(MainLayout, {
+            global: {
+                stubs: {
+                    RouterView: {
+                        template: '<slot :Component="Page" :route="route" />',
+                        data: () => ({
+                            Page: markRaw({ template: '<main data-testid="route-page" />' }),
+                            route: { path: '/feed' }
+                        })
+                    },
+                    KeepAlive: { template: '<div><slot /></div>' },
+                    AutoFollowDialog: true,
+                    GlobalToolsDialogs: true,
+                    WhatsNewDialog: true,
+                    SpotlightDialog: true
+                }
+            }
+        });
+
+        const transition = wrapper.get('transition-stub');
+        expect(transition.attributes('name')).toBe('main-route');
+        expect(transition.attributes('mode')).toBeUndefined();
+        expect(wrapper.get('[data-testid="route-page"]').exists()).toBe(true);
     });
 });

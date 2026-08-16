@@ -1,6 +1,6 @@
 <template>
     <div
-        class="shrink-0 h-[22px] flex items-center bg-sidebar border-t border-border text-xs select-none overflow-hidden"
+        class="shrink-0 min-h-[24px] flex items-center bg-sidebar/94 border-t border-border/70 text-xs select-none overflow-hidden shadow-[0_-1px_8px_rgb(0_0_0/0.04)] backdrop-blur-md"
         style="font-family: var(--font-mono-cjk)"
         @contextmenu.prevent>
         <ContextMenu>
@@ -31,13 +31,19 @@
                                     v-for="[id, session] in allSessions"
                                     :key="id"
                                     class="flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer hover:bg-accent text-xs"
-                                    :class="{ 'bg-accent': currentViewMode === `account:${id}` || (id === primaryId && currentViewMode === 'primary') }"
+                                    :class="{
+                                        'bg-accent':
+                                            currentViewMode === `account:${id}` ||
+                                            (id === primaryId && currentViewMode === 'primary')
+                                    }"
                                     @click="selectViewMode(id)">
                                     <span
                                         class="inline-block size-2 rounded-full shrink-0"
                                         :style="{ background: getAccountColor(id) }" />
                                     {{ session.label || session.userInfo?.displayName || id }}
-                                    <span v-if="id === primaryId" class="text-muted-foreground ml-auto text-[10px]">★</span>
+                                    <span v-if="id === primaryId" class="text-muted-foreground ml-auto text-[10px]"
+                                        >★</span
+                                    >
                                 </div>
                             </PopoverContent>
                         </Popover>
@@ -167,9 +173,9 @@
                                 <span class="text-foreground text-[11px]">{{ t('status_bar.auto_follow') }}</span>
                                 <span
                                     v-if="autoFollowStore.isActive && autoFollowStore.targetFriendName"
-                                    class="text-[10px] text-foreground max-w-[120px] truncate">{{
-                                    autoFollowStore.targetFriendName
-                                }}</span>
+                                    class="text-[10px] text-foreground max-w-[120px] truncate"
+                                    >{{ autoFollowStore.targetFriendName }}</span
+                                >
                             </div>
                         </TooltipWrapper>
 
@@ -327,12 +333,13 @@
                                         :format-options="{ minimumFractionDigits: 0, maximumFractionDigits: 2 }"
                                         class="w-20"
                                         @click.stop
-                                        @update:modelValue="setZoomLevel">
+                                        @update:modelValue="handleZoomModelValue">
                                         <NumberFieldContent>
                                             <NumberFieldDecrement />
                                             <NumberFieldInput
                                                 ref="zoomInputRef"
                                                 class="h-[18px] text-[11px] px-0.5 text-center"
+                                                @input="updateZoomEditDraft"
                                                 @blur="commitZoomEdit"
                                                 @keydown.enter="commitZoomEdit"
                                                 @keydown.escape="zoomEditing = false" />
@@ -347,10 +354,7 @@
                             </div>
                         </TooltipWrapper>
 
-                        <TooltipWrapper
-                            v-if="visibility.profileInfoSync"
-                            :content="infoFetchTooltip"
-                            side="top">
+                        <TooltipWrapper v-if="visibility.profileInfoSync" :content="infoFetchTooltip" side="top">
                             <div
                                 class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
                                 :style="statusBarItemStyle('profileInfoSync')"
@@ -361,8 +365,18 @@
                                     class="size-3 shrink-0 animate-spin"
                                     viewBox="0 0 16 16"
                                     fill="none">
-                                    <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="2" class="text-muted-foreground/30" />
-                                    <path d="M14 8a6 6 0 0 0-6-6" stroke="#eab308" stroke-width="2" stroke-linecap="round" />
+                                    <circle
+                                        cx="8"
+                                        cy="8"
+                                        r="6"
+                                        stroke="currentColor"
+                                        stroke-width="2"
+                                        class="text-muted-foreground/30" />
+                                    <path
+                                        d="M14 8a6 6 0 0 0-6-6"
+                                        stroke="#eab308"
+                                        stroke-width="2"
+                                        stroke-linecap="round" />
                                 </svg>
                                 <!-- Done: green check -->
                                 <svg
@@ -371,16 +385,17 @@
                                     viewBox="0 0 16 16"
                                     fill="none">
                                     <circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" />
-                                    <path d="M5 8.5l2 2 4-4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                                    <path
+                                        d="M5 8.5l2 2 4-4.5"
+                                        stroke="currentColor"
+                                        stroke-width="1.5"
+                                        stroke-linecap="round"
+                                        stroke-linejoin="round" />
                                 </svg>
                                 <!-- Idle: grey circle -->
-                                <span
-                                    v-else
-                                    class="inline-block size-2 rounded-full shrink-0 bg-status-offline-alt" />
+                                <span v-else class="inline-block size-2 rounded-full shrink-0 bg-status-offline-alt" />
                                 <span class="text-[10px] text-foreground">{{ t('status_bar.info_sync') }}</span>
-                                <span
-                                    v-if="infoFetchState.status === 'running'"
-                                    class="text-[10px] text-foreground">
+                                <span v-if="infoFetchState.status === 'running'" class="text-[10px] text-foreground">
                                     {{ infoFetchState.done }}/{{ infoFetchState.total }}
                                 </span>
                             </div>
@@ -756,7 +771,9 @@
                 index,
                 label: statusBarLabels.value[key] ?? key
             }))
-            .filter((item) => (item.key !== 'vrchat' && item.key !== 'steamvr' && item.key !== 'zoom') || !isMacOS.value)
+            .filter(
+                (item) => (item.key !== 'vrchat' && item.key !== 'steamvr' && item.key !== 'zoom') || !isMacOS.value
+            )
     );
 
     /**
@@ -1042,6 +1059,8 @@
     const zoomLevel = ref(100);
     const formattedZoomLevel = computed(() => Number(zoomLevel.value || 0).toFixed(2));
     const zoomEditing = ref(false);
+    const zoomEditDraft = ref('100');
+    const zoomEditDraftDirty = ref(false);
     const zoomInputRef = ref(null);
     let zoomWheelTimer = null;
     let zoomRefreshTimer = null;
@@ -1052,11 +1071,9 @@
         window.addEventListener('wheel', handleZoomWheel, { passive: true });
         window.addEventListener('focus', initZoom);
         zoomRefreshTimer = setInterval(initZoom, 1000);
-        cleanupZoomLevelListener = window.electron?.onZoomLevelChanged?.(
-            (_event, level) => {
-                updateZoomLevel(level);
-            }
-        );
+        cleanupZoomLevelListener = window.electron?.onZoomLevelChanged?.((_event, level) => {
+            updateZoomLevel(level);
+        });
     }
 
     /**
@@ -1064,6 +1081,9 @@
      * @param level
      */
     function updateZoomLevel(level) {
+        if (zoomEditing.value) {
+            return;
+        }
         const value = Number(level);
         if (Number.isFinite(value)) {
             const nextZoomLevel = zoomLevelToPercent(value);
@@ -1087,9 +1107,10 @@
     /**
      *
      */
-    function setZoomLevel() {
+    function setZoomLevel(value = zoomLevel.value) {
         try {
-            zoomLevel.value = normalizeZoomPercent(zoomLevel.value);
+            zoomLevel.value = normalizeZoomPercent(value);
+            zoomEditDraft.value = String(zoomLevel.value);
             AppApi.SetZoom(zoomPercentToLevel(zoomLevel.value));
         } catch {
             // AppApi not available
@@ -1109,15 +1130,39 @@
     }
 
     /**
+     * Ignore the stale formatted value emitted by the number field when an
+     * Enter commit is immediately followed by blur in CEF.
      *
+     * @param value
      */
-    function commitZoomEdit() {
-        const inputValue = zoomInputRef.value?.$el?.value ?? zoomInputRef.value?.value;
-        if (inputValue !== undefined && inputValue !== '') {
-            zoomLevel.value = inputValue;
+    function handleZoomModelValue(value) {
+        const nextValue = normalizeZoomPercent(value);
+        const draftValue = normalizeZoomPercent(zoomEditDraft.value);
+        if (zoomEditDraftDirty.value && nextValue !== draftValue) {
+            zoomLevel.value = draftValue;
+            return;
         }
-        setZoomLevel();
+        setZoomLevel(nextValue);
+    }
+
+    /**
+     * @param event
+     */
+    function updateZoomEditDraft(event) {
+        zoomEditDraft.value = event.target.value;
+        zoomEditDraftDirty.value = true;
+    }
+
+    /**
+     * @param event
+     */
+    async function commitZoomEdit(event) {
+        setZoomLevel(zoomEditDraft.value);
         zoomEditing.value = false;
+        if (event?.type === 'keydown') {
+            await nextTick();
+        }
+        zoomEditDraftDirty.value = false;
     }
 
     /**
@@ -1142,6 +1187,8 @@
             return;
         }
         await initZoom();
+        zoomEditDraft.value = String(zoomLevel.value);
+        zoomEditDraftDirty.value = false;
         zoomEditing.value = true;
         await nextTick();
         zoomInputRef.value?.$el?.focus?.();

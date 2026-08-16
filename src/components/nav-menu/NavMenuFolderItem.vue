@@ -67,11 +67,11 @@
 
                                     <ChevronRight
                                         v-show="!isCollapsed"
-                                        class="ml-auto transition-transform"
+                                        class="ml-auto transition-transform duration-180 ease-out motion-reduce:transition-none"
                                         :class="open ? 'rotate-90' : ''" />
                                 </SidebarMenuButton>
                             </CollapsibleTrigger>
-                            <CollapsibleContent>
+                            <CollapsibleContent class="nav-submenu-motion">
                                 <SidebarMenuSub>
                                     <SidebarMenuSubItem v-for="entry in item.children" :key="entry.index">
                                         <ContextMenu>
@@ -228,5 +228,53 @@
         height: 6px;
         border-radius: 50%;
         transform: translateY(-50%);
+    }
+
+    .nav-submenu-motion {
+        overflow: hidden;
+        transform-origin: top;
+        will-change: height, opacity, transform;
+    }
+
+    .nav-submenu-motion[data-state='open'] {
+        animation: nav-submenu-expand 180ms cubic-bezier(0.2, 0.75, 0.25, 1);
+    }
+
+    .nav-submenu-motion[data-state='closed'] {
+        animation: nav-submenu-collapse 150ms cubic-bezier(0.4, 0, 1, 1);
+    }
+
+    @keyframes nav-submenu-expand {
+        from {
+            height: 0;
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+        to {
+            height: var(--reka-collapsible-content-height);
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes nav-submenu-collapse {
+        from {
+            height: var(--reka-collapsible-content-height);
+            opacity: 1;
+            transform: translateY(0);
+        }
+        to {
+            height: 0;
+            opacity: 0;
+            transform: translateY(-4px);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .nav-submenu-motion[data-state='open'],
+        .nav-submenu-motion[data-state='closed'] {
+            animation-duration: 1ms;
+            transform: none;
+        }
     }
 </style>

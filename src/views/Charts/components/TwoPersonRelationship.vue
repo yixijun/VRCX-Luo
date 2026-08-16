@@ -29,7 +29,8 @@
                             :close-on-select="true"
                             :deselect-on-reselect="true">
                             <template #item="{ item, selected }">
-                                <div class="flex w-full items-center p-1.5 in-[.is-compact-table]:p-1! text-[13px] in-[.is-compact-table]:text-[12px]!">
+                                <div
+                                    class="flex w-full items-center p-1.5 in-[.is-compact-table]:p-1! text-[13px] in-[.is-compact-table]:text-[12px]!">
                                     <template v-if="item.user">
                                         <div
                                             class="relative mr-2.5 in-[.is-compact-table]:mr-1.5! inline-block size-9 in-[.is-compact-table]:size-7! in-[.is-comfortable-table]:size-8! flex-none"
@@ -50,8 +51,7 @@
                                     <template v-else>
                                         <span>{{ item.label }}</span>
                                     </template>
-                                    <Check
-                                        :class="['ml-auto size-4', selected ? 'opacity-100' : 'opacity-0']" />
+                                    <Check :class="['ml-auto size-4', selected ? 'opacity-100' : 'opacity-0']" />
                                 </div>
                             </template>
                         </VirtualCombobox>
@@ -79,7 +79,8 @@
                             :close-on-select="true"
                             :deselect-on-reselect="true">
                             <template #item="{ item, selected }">
-                                <div class="flex w-full items-center p-1.5 in-[.is-compact-table]:p-1! text-[13px] in-[.is-compact-table]:text-[12px]!">
+                                <div
+                                    class="flex w-full items-center p-1.5 in-[.is-compact-table]:p-1! text-[13px] in-[.is-compact-table]:text-[12px]!">
                                     <template v-if="item.user">
                                         <div
                                             class="relative mr-2.5 in-[.is-compact-table]:mr-1.5! inline-block size-9 in-[.is-compact-table]:size-7! in-[.is-comfortable-table]:size-8! flex-none"
@@ -100,8 +101,7 @@
                                     <template v-else>
                                         <span>{{ item.label }}</span>
                                     </template>
-                                    <Check
-                                        :class="['ml-auto size-4', selected ? 'opacity-100' : 'opacity-0']" />
+                                    <Check :class="['ml-auto size-4', selected ? 'opacity-100' : 'opacity-0']" />
                                 </div>
                             </template>
                         </VirtualCombobox>
@@ -132,39 +132,51 @@
                 <RefreshCcw class="size-6 animate-spin text-muted-foreground" />
             </div>
 
-            <div v-else-if="!selectedFriendAId || !selectedFriendBId" class="mt-[100px] flex flex-col items-center justify-center gap-2 text-muted-foreground">
+            <div
+                v-else-if="!selectedFriendAId || !selectedFriendBId"
+                class="mt-[100px] flex flex-col items-center justify-center gap-2 text-muted-foreground">
                 <Users class="size-12 opacity-20" />
                 <p>{{ t('view.charts.two_person_relationship.no_friend_selected') }}</p>
             </div>
 
-            <div v-else-if="sharedInstances.length === 0" class="mt-[100px] flex flex-col items-center justify-center gap-2 text-muted-foreground">
+            <div
+                v-else-if="sharedInstances.length === 0"
+                class="mt-[100px] flex flex-col items-center justify-center gap-2 text-muted-foreground">
                 <DataTableEmpty type="nodata" />
             </div>
 
             <template v-else>
-                <div class="mx-auto mt-3 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2! flex max-w-[900px] items-center gap-3">
-                    <div class="flex items-center gap-2 rounded-lg border px-3 py-2 in-[.is-compact-table]:py-1! in-[.is-comfortable-table]:py-1.5!">
+                <div
+                    class="mx-auto mt-3 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2! flex max-w-[900px] items-center gap-3">
+                    <div
+                        class="flex items-center gap-2 rounded-lg border-0 px-3 py-2 in-[.is-compact-table]:py-1! in-[.is-comfortable-table]:py-1.5!">
                         <Clock class="size-3.5 text-muted-foreground" />
-                        <span class="text-sm in-[.is-compact-table]:text-xs! font-medium">{{ timeToText(totalCoexistenceTime, true) }}</span>
+                        <span class="text-sm in-[.is-compact-table]:text-xs! font-medium">{{
+                            timeToText(totalCoexistenceTime, true)
+                        }}</span>
                         <span class="text-xs text-muted-foreground">
                             {{ t('view.charts.two_person_relationship.total_coexistence_time') }}
                         </span>
                     </div>
-                    <div class="flex items-center gap-2 rounded-lg border px-3 py-2 in-[.is-compact-table]:py-1! in-[.is-comfortable-table]:py-1.5!">
+                    <div
+                        class="flex items-center gap-2 rounded-lg border-0 px-3 py-2 in-[.is-compact-table]:py-1! in-[.is-comfortable-table]:py-1.5!">
                         <Hash class="size-3.5 text-muted-foreground" />
-                        <span class="text-sm in-[.is-compact-table]:text-xs! font-medium">{{ sharedInstances.length }}</span>
+                        <span class="text-sm in-[.is-compact-table]:text-xs! font-medium">{{
+                            sharedInstances.length
+                        }}</span>
                         <span class="text-xs text-muted-foreground">
                             {{ t('view.charts.two_person_relationship.instance_count') }}
                         </span>
                     </div>
                 </div>
 
-                <div class="mx-auto mt-3 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2! max-w-[900px] flex flex-col gap-3 pb-8">
+                <div
+                    class="mx-auto mt-3 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2! max-w-[900px] flex flex-col gap-3 pb-8">
                     <button
                         v-for="item in sharedInstances"
                         :key="item.location + '_' + item.friendALeave"
                         type="button"
-                        class="group flex w-full items-center gap-3 rounded-lg border p-3 text-left transition-all hover:bg-accent hover:shadow-sm"
+                        class="group flex w-full items-center gap-3 rounded-lg border-0 p-3 text-left transition-all hover:bg-accent hover:shadow-sm"
                         @click="openInstanceDialog(item.location)">
                         <div class="w-32 shrink-0 text-xs text-muted-foreground tabular-nums">
                             {{ item.formattedDate }}
@@ -196,11 +208,15 @@
 
                         <div class="flex shrink-0 flex-col items-end gap-1.5">
                             <div class="flex items-center gap-1.5 text-xs text-muted-foreground mr-1">
-                                <span v-if="item.joinLeavesCount > 1" class="text-[10px] bg-muted px-1.5 py-0.5 rounded opacity-80 leading-none tabular-nums">
+                                <span
+                                    v-if="item.joinLeavesCount > 1"
+                                    class="text-[10px] bg-muted px-1.5 py-0.5 rounded opacity-80 leading-none tabular-nums">
                                     {{ item.joinLeavesCount }} 次进出
                                 </span>
                                 <Clock class="size-3 shrink-0" />
-                                <span class="font-medium tabular-nums">{{ timeToText(item.coexistenceTime, true) }}</span>
+                                <span class="font-medium tabular-nums">{{
+                                    timeToText(item.coexistenceTime, true)
+                                }}</span>
                             </div>
 
                             <div class="flex items-center gap-2">
@@ -224,14 +240,22 @@
                                         item.initiator === 'mutual'
                                             ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
                                             : item.initiator === 'unknown'
-                                                ? 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800'
-                                                : 'text-orange-600 dark:text-orange-400'
+                                              ? 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800'
+                                              : 'text-orange-600 dark:text-orange-400'
                                     ]"
-                                    :style="item.initiator === 'leftPlayer'
-                                        ? { background: 'linear-gradient(to right, rgb(249 115 22 / 0.3), rgb(249 115 22 / 0))' }
-                                        : item.initiator === 'rightPlayer'
-                                            ? { background: 'linear-gradient(to left, rgb(249 115 22 / 0.3), rgb(249 115 22 / 0))' }
-                                            : {}">
+                                    :style="
+                                        item.initiator === 'leftPlayer'
+                                            ? {
+                                                  background:
+                                                      'linear-gradient(to right, rgb(249 115 22 / 0.3), rgb(249 115 22 / 0))'
+                                              }
+                                            : item.initiator === 'rightPlayer'
+                                              ? {
+                                                    background:
+                                                        'linear-gradient(to left, rgb(249 115 22 / 0.3), rgb(249 115 22 / 0))'
+                                                }
+                                              : {}
+                                    ">
                                     {{ t('view.charts.two_person_relationship.initiator_' + item.initiator) }}
                                 </span>
                             </div>
@@ -247,16 +271,7 @@
     defineOptions({ name: 'ChartsTwoPersonRelationship' });
 
     import { computed, onMounted, ref } from 'vue';
-    import {
-        ArrowLeftRight,
-        Check,
-        Clock,
-        Crown,
-        Hash,
-        Info,
-        RefreshCcw,
-        Users
-    } from 'lucide-vue-next';
+    import { ArrowLeftRight, Check, Clock, Crown, Hash, Info, RefreshCcw, Users } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
     import dayjs from 'dayjs';
@@ -410,7 +425,7 @@
                 const instanceCreatorName = resolveDisplayName(instanceCreatorId);
                 const maxPlayerCount = maxPlayerCountMap.value.get(row.location) ?? null;
                 const selfPresent = computeSelfPresent(row.location, overlapStart, overlapEnd);
-                
+
                 const first = firstMeetingByLocation.get(row.location);
                 let initiator = 'mutual';
                 if (first) {
@@ -422,12 +437,15 @@
                         const mySessions = selfPresenceMap.value.get(row.location) || [];
                         for (const my of mySessions) {
                             const myJoin = dayjs(my.selfLeave).valueOf() - Math.max(0, my.selfTime);
-                            if (Math.abs(first.aJoin - myJoin) <= THREE_MINUTES && Math.abs(first.bJoin - myJoin) <= THREE_MINUTES) {
+                            if (
+                                Math.abs(first.aJoin - myJoin) <= THREE_MINUTES &&
+                                Math.abs(first.bJoin - myJoin) <= THREE_MINUTES
+                            ) {
                                 isSnapshot = true;
                                 break;
                             }
                         }
-                        
+
                         if (isSnapshot) {
                             initiator = 'unknown';
                         }
@@ -450,7 +468,8 @@
                 existing.coexistenceTime += coexistenceTime;
                 existing.joinLeavesCount += 1;
                 // selfPresent should be true if it was true in ANY of the segments
-                existing.selfPresent = existing.selfPresent || computeSelfPresent(row.location, overlapStart, overlapEnd);
+                existing.selfPresent =
+                    existing.selfPresent || computeSelfPresent(row.location, overlapStart, overlapEnd);
                 if (friendALeaveMs > existing.friendALeave) {
                     existing.friendALeave = friendALeaveMs;
                     existing.formattedDate = dayjs(friendALeaveMs).format(dateFormat);

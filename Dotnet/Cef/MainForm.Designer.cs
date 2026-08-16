@@ -37,6 +37,7 @@ namespace VRCX
             this.components = new Container();
             this.TrayMenu = new ContextMenuStrip(this.components);
             this.TrayMenu_Open = new ToolStripMenuItem();
+            this.TrayMenu_SettingsSeparator = new ToolStripSeparator();
             this.TrayMenu_DesktopNotifications = new ToolStripMenuItem();
             this.TrayMenu_SilentMode = new ToolStripMenuItem();
             this.TrayMenu_VSleepMode = new ToolStripMenuItem();
@@ -45,7 +46,7 @@ namespace VRCX
             this.TrayMenu_Separator = new ToolStripSeparator();
             this.TrayMenu_Quit = new ToolStripMenuItem();
             this.TrayIcon = new NotifyIcon(this.components);
-            this.TrayMenu.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
+            this.TrayMenu.Font = new Font("Microsoft YaHei UI", 9.5F, FontStyle.Regular, GraphicsUnit.Point, ((byte)(0)));
 
             this.TrayMenu.SuspendLayout();
             this.SuspendLayout();
@@ -53,6 +54,7 @@ namespace VRCX
             // TrayMenu
             //
             this.TrayMenu.Items.Add(this.TrayMenu_Open);
+            this.TrayMenu.Items.Add(this.TrayMenu_SettingsSeparator);
             this.TrayMenu.Items.Add(this.TrayMenu_DesktopNotifications);
             this.TrayMenu.Items.Add(this.TrayMenu_SilentMode);
             this.TrayMenu.Items.Add(this.TrayMenu_VSleepMode);
@@ -124,6 +126,7 @@ namespace VRCX
             this.TrayIcon.Text = "VRCX";
             this.TrayIcon.Visible = true;
             this.TrayIcon.MouseClick += new MouseEventHandler(this.TrayIcon_MouseClick);
+            this.TrayIcon.MouseMove += new MouseEventHandler(this.TrayIcon_MouseMove);
             //
             // MainForm
             //
@@ -147,6 +150,7 @@ namespace VRCX
 
         private ContextMenuStrip TrayMenu;
         private ToolStripMenuItem TrayMenu_Open;
+        private ToolStripSeparator TrayMenu_SettingsSeparator;
         private ToolStripMenuItem TrayMenu_DesktopNotifications;
         private ToolStripMenuItem TrayMenu_SilentMode;
         private ToolStripMenuItem TrayMenu_VSleepMode;

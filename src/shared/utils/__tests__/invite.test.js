@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { checkCanInvite, checkCanInviteSelf } from '../invite';
+import {
+    checkCanInvite,
+    checkCanInviteSelf,
+    createInviteResponseParams,
+    getInviteResponseSlot
+} from '../invite';
 
 const storeMocks = vi.hoisted(() => ({
     useUserStore: vi.fn(() => ({ currentUser: { id: 'usr_me' } })),
@@ -181,6 +186,25 @@ describe('Invite Utils', () => {
                     defaultSelfDeps
                 )
             ).toBe(true);
+        });
+    });
+
+    describe('invite response params', () => {
+        test('uses the first available response slot', () => {
+            const messages = [{ slot: 3 }, { slot: 7 }];
+
+            expect(getInviteResponseSlot(messages)).toBe(3);
+            expect(createInviteResponseParams(true, messages)).toEqual({
+                responseSlot: 3,
+                rsvp: true
+            });
+        });
+
+        test('includes the default slot when response messages are unavailable', () => {
+            expect(createInviteResponseParams(false, [])).toEqual({
+                responseSlot: 0,
+                rsvp: false
+            });
         });
     });
 });

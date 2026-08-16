@@ -249,6 +249,59 @@ describe('UserDialogInfoTab.vue', () => {
             expect(wrapper.find('spinner-stub').exists()).toBe(true);
         });
 
+        test('renders user details with the same responsive card layout as group info', () => {
+            const wrapper = mountComponent({
+                userDialog: {
+                    isRepresentedGroupLoading: true,
+                    representedGroup: {
+                        groupId: 'grp_test',
+                        isRepresenting: true,
+                        name: 'Test Group',
+                        memberCount: 12,
+                        $thumbnailUrl: 'https://example.com/group.png'
+                    }
+                }
+            });
+
+            expect(wrapper.find('.user-info-card-grid').exists()).toBe(true);
+            expect(
+                wrapper.findAll('.user-info-card--wide').length
+            ).toBeGreaterThanOrEqual(2);
+            expect(wrapper.find('.user-info-card--theme-border').exists()).toBe(
+                false
+            );
+            expect(
+                wrapper.find('[data-testid="avatar-info-card"]').exists()
+            ).toBe(false);
+            expect(
+                wrapper.find('[data-testid="represented-group-card"]').exists()
+            ).toBe(false);
+        });
+
+        test('highlights only the instance creator in the room member list', () => {
+            const wrapper = mountComponent({
+                userDialog: {
+                    $location: {
+                        tag: 'wrld_test:123',
+                        shortName: 'Test',
+                        userId: 'usr_owner',
+                        user: {
+                            id: 'usr_owner',
+                            displayName: 'Room Owner',
+                            $userColour: '#ffffff'
+                        }
+                    }
+                }
+            });
+
+            expect(wrapper.findAll('.user-instance-creator')).toHaveLength(1);
+            expect(
+                wrapper
+                    .find('.user-instance-member.user-instance-creator')
+                    .exists()
+            ).toBe(false);
+        });
+
         test('renders info body when instance details are still missing', () => {
             const wrapper = mountComponent({
                 userDialog: {

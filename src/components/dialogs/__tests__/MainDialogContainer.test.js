@@ -11,7 +11,9 @@ const mocks = vi.hoisted(() => ({
             { type: 'world', id: 'w1', label: 'World' }
         ]
     },
-    userVisible: { value: true }
+    userVisible: { value: true },
+    previousInstancesInfoVisible: { value: false },
+    previousInstancesVisible: { value: false }
 }));
 
 vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
@@ -26,13 +28,22 @@ vi.mock('@/stores', () => ({
     useAvatarStore: () => ({ avatarDialog: { visible: false } }),
     useGroupStore: () => ({ groupDialog: { visible: false } }),
     useInstanceStore: () => ({
-        previousInstancesInfoDialog: ref({ visible: false }),
-        previousInstancesListDialog: ref({ visible: false, variant: 'user' })
+        previousInstancesInfoDialog: ref({
+            visible: mocks.previousInstancesInfoVisible.value
+        }),
+        previousInstancesListDialog: ref({
+            visible: mocks.previousInstancesVisible.value,
+            variant: 'user'
+        })
     })
 }));
 vi.mock('@/components/ui/dialog', () => ({
     Dialog: { template: '<div><slot /></div>' },
-    DialogContent: { template: '<div><slot /></div>' }
+    DialogContent: {
+        inheritAttrs: false,
+        template:
+            '<div data-testid="dialog-content" :class="$attrs.class"><slot /></div>'
+    }
 }));
 vi.mock('@/components/ui/breadcrumb', () => ({
     Breadcrumb: { template: '<div><slot /></div>' },
@@ -88,6 +99,9 @@ import MainDialogContainer from '../MainDialogContainer.vue';
 describe('MainDialogContainer.vue', () => {
     beforeEach(() => {
         mocks.handleBreadcrumbClick.mockClear();
+        mocks.userVisible.value = true;
+        mocks.previousInstancesInfoVisible.value = false;
+        mocks.previousInstancesVisible.value = false;
     });
 
     it('renders active dialog and handles breadcrumb back click', async () => {
@@ -96,5 +110,42 @@ describe('MainDialogContainer.vue', () => {
 
         await wrapper.get('[data-testid="btn"]').trigger('click');
         expect(mocks.handleBreadcrumbClick).toHaveBeenCalled();
+    });
+
+    it('gives previous instances a definite viewport height for the nested scroll area', () => {
+        mocks.userVisible.value = false;
+        mocks.previousInstancesVisible.value = true;
+
+        const wrapper = mount(MainDialogContainer);
+        const dialog = wrapper.get('[data-testid="dialog-content"]');
+
+        expect(dialog.classes()).toEqual(
+            expect.arrayContaining([
+                'previous-instances-dialog',
+                'h-[calc(100dvh-3rem)]',
+                'overflow-hidden',
+                'flex',
+                'flex-col'
+            ])
+        );
+        expect(dialog.classes()).not.toContain('translate-y-0');
+    });
+
+    it('keeps the previous-instance details on the same bounded scroll layout', () => {
+        mocks.userVisible.value = false;
+        mocks.previousInstancesInfoVisible.value = true;
+
+        const wrapper = mount(MainDialogContainer);
+        const dialog = wrapper.get('[data-testid="dialog-content"]');
+
+        expect(dialog.classes()).toEqual(
+            expect.arrayContaining([
+                'previous-instances-dialog',
+                'h-[calc(100dvh-3rem)]',
+                'overflow-hidden',
+                'flex',
+                'flex-col'
+            ])
+        );
     });
 });

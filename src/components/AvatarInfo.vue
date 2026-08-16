@@ -1,12 +1,12 @@
 <template>
-    <div @click="confirm" class="cursor-pointer w-fit align-top flex items-center">
-        <span v-if="avatarName" class="flex items-center mr-1"
+    <div @click="confirm" class="flex min-w-0 max-w-full cursor-pointer items-center align-top">
+        <span v-if="avatarName" class="flex min-w-0 items-center truncate" :title="avatarName"
             >{{ avatarName }} <Lock v-if="avatarType && avatarType === '(own)'" class="h-4 w-4 ml-1"
         /></span>
-        <span v-else class="flex items-center mr-1 text-muted-foreground">{{
+        <span v-else class="flex min-w-0 items-center truncate text-muted-foreground">{{
             t('dialog.user.info.unknown_avatar')
         }}</span>
-        <TooltipWrapper v-if="avatarTags">
+        <TooltipWrapper v-if="showtags && avatarTags" class="ml-1 min-w-0">
             <template #content>
                 <span class="truncate">{{ avatarTags }}</span>
             </template>
@@ -30,7 +30,11 @@
         userid: String,
         hintownerid: String,
         hintavatarname: [String, Object],
-        avatartags: Array
+        avatartags: Array,
+        showtags: {
+            type: Boolean,
+            default: true
+        }
     });
 
     const avatarName = ref('');

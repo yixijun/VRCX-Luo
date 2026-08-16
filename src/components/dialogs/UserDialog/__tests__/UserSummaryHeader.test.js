@@ -5,38 +5,52 @@ const stores = vi.hoisted(() => ({
     userDialog: {
         __v_isRef: true,
         value: {
-        id: 'usr_target',
-        loading: false,
-        isFriend: false,
-        friend: null,
-        mutualFriendCount: 3,
-        previousDisplayNames: [],
-        ref: {
             id: 'usr_target',
-            displayName: 'Very Long Display Name That Should Remain Visible At High Zoom',
-            status: 'active',
-            statusDescription: 'A status description that should wrap instead of disappearing.',
-            pronouns: 'they/them',
-            profilePicOverrideThumbnail: '',
-            profilePicOverride: '',
-            currentAvatarThumbnailImageUrl: 'https://example.com/avatar.png',
-            currentAvatarImageUrl: 'https://example.com/avatar-full.png',
-            userIcon: 'https://example.com/icon.png',
-            $languages: [{ key: 'eng', value: 'English' }],
-            $trustClass: 'x-tag-known',
-            $trustLevel: 'Known User',
-            $platform: 'standalonewindows',
-            $customTag: '',
-            badges: [
-                {
-                    badgeId: 'bdg_1',
-                    badgeName: 'Test Badge',
-                    badgeDescription: 'Badge description',
-                    badgeImageUrl: 'https://example.com/badge.png',
-                    hidden: false
-                }
-            ]
-        }
+            loading: false,
+            isFriend: false,
+            friend: null,
+            mutualFriendCount: 3,
+            previousDisplayNames: [],
+            ref: {
+                id: 'usr_target',
+                displayName:
+                    'Very Long Display Name That Should Remain Visible At High Zoom',
+                status: 'active',
+                statusDescription:
+                    'A status description that should wrap instead of disappearing.',
+                pronouns: 'they/them',
+                profilePicOverrideThumbnail: '',
+                profilePicOverride: '',
+                currentAvatarThumbnailImageUrl:
+                    'https://example.com/avatar.png',
+                currentAvatarImageUrl: 'https://example.com/avatar-full.png',
+                currentAvatarTags: ['content_gore'],
+                userIcon: 'https://example.com/icon.png',
+                $languages: [{ key: 'eng', value: 'English' }],
+                $trustClass: 'x-tag-known',
+                $trustLevel: 'Known User',
+                $platform: 'standalonewindows',
+                $customTag: '',
+                badges: [
+                    {
+                        badgeId: 'bdg_1',
+                        badgeName: 'Test Badge',
+                        badgeDescription: 'Badge description',
+                        badgeImageUrl: 'https://example.com/badge.png',
+                        hidden: false
+                    }
+                ]
+            },
+            isRepresentedGroupLoading: false,
+            representedGroup: {
+                groupId: 'grp_test',
+                ownerId: 'usr_target',
+                isRepresenting: true,
+                name: 'Test Group',
+                memberCount: 12,
+                iconUrl: 'https://example.com/group-full.png',
+                $thumbnailUrl: 'https://example.com/group.png'
+            }
         }
     },
     currentUser: {
@@ -88,6 +102,10 @@ vi.mock('../../../../services/database', () => ({
     }
 }));
 
+vi.mock('../../../../coordinators/groupCoordinator', () => ({
+    showGroupDialog: vi.fn()
+}));
+
 vi.mock('../../../../shared/utils', async (importOriginal) => ({
     ...(await importOriginal()),
     formatDateFilter: (value) => value,
@@ -99,9 +117,11 @@ vi.mock('../../../../shared/utils', async (importOriginal) => ({
 
 vi.mock('lucide-vue-next', () => ({
     Apple: { template: '<i />' },
+    Box: { template: '<i />' },
     ChevronDown: { template: '<i />' },
     IdCard: { template: '<i />' },
     Image: { template: '<i />' },
+    Info: { template: '<i />' },
     Monitor: { template: '<i />' },
     Navigation: { template: '<i />' },
     Shield: { template: '<i />' },
@@ -124,28 +144,52 @@ describe('UserSummaryHeader.vue', () => {
             },
             global: {
                 stubs: {
-                    TooltipWrapper: { template: '<span><slot /><slot name="content" /></span>' },
+                    TooltipWrapper: {
+                        template: '<span><slot /><slot name="content" /></span>'
+                    },
                     Badge: { template: '<span><slot /></span>' },
                     Button: { template: '<button><slot /></button>' },
                     Checkbox: { template: '<input type="checkbox" />' },
                     Popover: { template: '<div><slot /></div>' },
                     PopoverContent: { template: '<div><slot /></div>' },
                     PopoverTrigger: { template: '<div><slot /></div>' },
-                    UserActionDropdown: { template: '<div data-testid="user-summary-dropdown" />' }
+                    AvatarInfo: {
+                        template: '<div data-testid="avatar-info" />'
+                    },
+                    UserActionDropdown: {
+                        template: '<div data-testid="user-summary-dropdown" />'
+                    }
                 }
             }
         });
 
-        expect(wrapper.find('[data-testid="user-summary-media"]').exists()).toBe(true);
-        expect(wrapper.find('[data-testid="user-summary-details"]').text()).toContain('Very Long Display Name');
-        expect(wrapper.find('[data-testid="user-summary-badges"]').exists()).toBe(true);
-        expect(wrapper.find('[data-testid="user-summary-actions"]').exists()).toBe(true);
+        expect(
+            wrapper.find('[data-testid="user-summary-media"]').exists()
+        ).toBe(true);
+        expect(
+            wrapper.find('[data-testid="user-summary-details"]').text()
+        ).toContain('Very Long Display Name');
+        expect(
+            wrapper.find('[data-testid="user-summary-badges"]').exists()
+        ).toBe(true);
+        expect(
+            wrapper.find('[data-testid="user-summary-actions"]').exists()
+        ).toBe(true);
+        expect(
+            wrapper.find('[data-testid="user-summary-context"]').exists()
+        ).toBe(true);
+        expect(wrapper.find('[data-testid="avatar-info-card"]').exists()).toBe(
+            true
+        );
+        expect(
+            wrapper.find('[data-testid="represented-group-card"]').text()
+        ).toContain('Test Group');
 
-        expect(wrapper.find('[data-testid="user-summary-header"]').classes()).toEqual(
-            expect.arrayContaining(['flex-wrap', 'min-w-0'])
-        );
-        expect(wrapper.find('[data-testid="user-summary-details"]').classes()).toEqual(
-            expect.arrayContaining(['min-w-0', 'basis-72'])
-        );
+        expect(
+            wrapper.find('[data-testid="user-summary-header"]').classes()
+        ).toEqual(expect.arrayContaining(['flex-wrap', 'min-w-0']));
+        expect(
+            wrapper.find('[data-testid="user-summary-details"]').classes()
+        ).toEqual(expect.arrayContaining(['min-w-0', 'basis-72']));
     });
 });
