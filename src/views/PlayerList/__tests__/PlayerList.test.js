@@ -128,6 +128,22 @@ vi.mock('@/components/ui/data-table', () => ({
     }
 }));
 
+vi.mock('@/components/ui/resizable', () => ({
+    ResizablePanelGroup: {
+        props: ['direction', 'autoSaveId'],
+        template:
+            '<div data-testid="player-list-split" :data-direction="direction" :data-auto-save-id="autoSaveId"><slot /></div>'
+    },
+    ResizablePanel: {
+        props: ['defaultSize', 'minSize', 'maxSize', 'order'],
+        template:
+            '<section data-testid="player-list-panel" :data-order="order" :data-default-size="defaultSize" :data-min-size="minSize" :data-max-size="maxSize"><slot /></section>'
+    },
+    ResizableHandle: {
+        template: '<div data-testid="player-list-resize-handle"><slot /></div>'
+    }
+}));
+
 vi.mock('@/components/ui/badge', () => ({
     Badge: { template: '<span><slot /></span>' }
 }));
@@ -168,6 +184,7 @@ import PlayerList from '../PlayerList.vue';
 
 describe('PlayerList.vue', () => {
     beforeEach(() => {
+        localStorage.clear();
         mocks.randomUserColours = ref(false);
         mocks.photonLoggingEnabled = ref(false);
         mocks.chatboxUserBlacklist = ref(
@@ -226,6 +243,79 @@ describe('PlayerList.vue', () => {
         expect(mocks.getCurrentInstanceUserList).toHaveBeenCalledTimes(1);
         expect(mocks.tableSetOptions).toHaveBeenCalledTimes(1);
         expect(mocks.photonColumnToggleVisibility).toHaveBeenCalledWith(false);
+    });
+
+    test('keeps room details and the player table in a resizable vertical split', () => {
+        mocks.currentInstanceWorld.value.ref.id = 'wrld_123';
+
+        const wrapper = mount(PlayerList);
+
+        const split = wrapper.get('[data-testid="player-list-split"]');
+        expect(split.attributes('data-direction')).toBe('vertical');
+        expect(split.attributes('data-auto-save-id')).toBeUndefined();
+        expect(
+            wrapper.get('[data-testid="player-list-resize-handle"]').exists()
+        ).toBe(true);
+
+        const panels = wrapper.findAll('[data-testid="player-list-panel"]');
+        expect(panels).toHaveLength(2);
+        expect(panels[0].attributes('data-max-size')).toBe('68');
+        expect(panels[1].attributes('data-min-size')).toBe('32');
+    });
+
+    test('uses the full player table when there is no resizable summary content', () => {
+        const wrapper = mount(PlayerList);
+
+        expect(wrapper.find('[data-testid="player-list-split"]').exists()).toBe(
+            false
+        );
+        expect(
+            wrapper.find('[data-testid="player-list-resize-handle"]').exists()
+        ).toBe(false);
+        expect(wrapper.find('.current-instance-table').exists()).toBe(true);
+    });
+
+    test('clears the manual layout when the room instance changes', async () => {
+        localStorage.setItem(
+            'VRCX_playerListSummaryOffset',
+            JSON.stringify({
+                roomTag: 'wrld_123:instance_1',
+                offset: 120
+            })
+        );
+        mocks.currentInstanceWorld.value.ref.id = 'wrld_123';
+        mocks.currentInstanceLocation.value = {
+            tag: 'wrld_123:instance_1'
+        };
+        const wrapper = mount(PlayerList);
+        await nextTick();
+
+        expect(
+            localStorage.getItem('VRCX_playerListSummaryOffset')
+        ).not.toBeNull();
+
+        mocks.currentInstanceLocation.value = {
+            tag: 'wrld_456:instance_2'
+        };
+        await nextTick();
+        await nextTick();
+
+        expect(localStorage.getItem('VRCX_playerListSummaryOffset')).toBeNull();
+        wrapper.unmount();
+    });
+
+    test('discards a legacy global manual layout', async () => {
+        localStorage.setItem('VRCX_playerListSummaryOffset', '120');
+        mocks.currentInstanceWorld.value.ref.id = 'wrld_123';
+        mocks.currentInstanceLocation.value = {
+            tag: 'wrld_123:instance_1'
+        };
+
+        const wrapper = mount(PlayerList);
+        await nextTick();
+
+        expect(localStorage.getItem('VRCX_playerListSummaryOffset')).toBeNull();
+        wrapper.unmount();
     });
 
     test('row click opens user dialog when id exists, otherwise lookups user', async () => {

@@ -1,178 +1,212 @@
 <template>
     <div class="x-container x-container--auto-height" ref="playerListRef">
-        <div class="flex h-full min-h-0 flex-col overflow-y-auto overflow-x-hidden">
-            <div
-                v-if="currentInstanceWorld.ref.id"
-                ref="playerListHeaderRef"
-                style="display: flex; min-height: 120px"
-                class="mb-7">
-                <img
-                    v-if="!worldImageError"
-                    :src="currentInstanceWorld.ref.thumbnailImageUrl"
-                    class="cursor-pointer"
-                    style="flex: none; width: 160px; height: 120px; border-radius: var(--radius-md)"
-                    @click="showFullscreenImageDialog(currentInstanceWorld.ref.imageUrl)"
-                    @error="worldImageError = true"
-                    loading="lazy" />
-                <div
-                    v-else
-                    class="flex items-center justify-center bg-muted"
-                    style="flex: none; width: 160px; height: 120px; border-radius: var(--radius-md)">
-                    <Image class="size-8 text-muted-foreground" />
-                </div>
-                <div class="ml-2" style="display: flex; flex-direction: column; min-width: 320px; width: 100%">
-                    <div class="flex items-center">
-                        <span
+        <ResizablePanelGroup
+            v-if="hasSummaryContent"
+            ref="playerListLayoutRef"
+            direction="vertical"
+            class="player-list__layout min-h-0"
+            @layout="handlePlayerListLayout">
+            <ResizablePanel
+                ref="playerListSummaryPanelRef"
+                :default-size="summarySize"
+                :min-size="summaryMinSize"
+                :max-size="summaryMaxSize"
+                :order="1">
+                <div class="player-list__summary h-full min-h-0 overflow-y-auto overflow-x-hidden pr-1">
+                    <div
+                        v-if="currentInstanceWorld.ref.id"
+                        ref="playerListHeaderRef"
+                        style="display: flex; min-height: 120px"
+                        class="mb-3">
+                        <img
+                            v-if="!worldImageError"
+                            :src="currentInstanceWorld.ref.thumbnailImageUrl"
                             class="cursor-pointer"
-                            style="
-                                font-weight: bold;
-                                overflow: hidden;
-                                text-overflow: ellipsis;
-                                display: -webkit-box;
-                                -webkit-box-orient: vertical;
-                                line-clamp: 1;
-                            "
-                            @click="showWorldDialog(currentInstanceWorld.ref.id)">
-                            <Home
-                                v-if="
-                                    currentUser.$homeLocation &&
-                                    currentUser.$homeLocation.worldId === currentInstanceWorld.ref.id
-                                "
-                                class="inline-block" />
-                            {{ currentInstanceWorld.ref.name }}
-                        </span>
-                    </div>
-                    <div>
-                        <span
-                            class="cursor-pointer x-grey font-mono"
-                            @click="showUserDialog(currentInstanceWorld.ref.authorId)"
-                            v-text="currentInstanceWorld.ref.authorName"></span>
-                    </div>
-                    <div class="mt-1.5">
-                        <Badge class="mr-1.5" v-if="currentInstanceWorld.ref.$isLabs" variant="outline">
-                            {{ t('dialog.world.tags.labs') }}
-                        </Badge>
-                        <Badge
-                            class="mr-1.5"
-                            v-else-if="currentInstanceWorld.ref.releaseStatus === 'public'"
-                            variant="outline">
-                            {{ t('dialog.world.tags.public') }}
-                        </Badge>
-                        <Badge
-                            class="mr-1.5"
-                            v-else-if="currentInstanceWorld.ref.releaseStatus === 'private'"
-                            variant="outline">
-                            {{ t('dialog.world.tags.private') }}
-                        </Badge>
-                        <TooltipWrapper v-if="currentInstanceWorld.isPC" side="top" content="PC">
-                            <Badge class="text-platform-pc border-platform-pc! mr-1.5" variant="outline"
-                                ><Monitor class="h-4 w-4" />
+                            style="flex: none; width: 160px; height: 120px; border-radius: var(--radius-md)"
+                            @click="showFullscreenImageDialog(currentInstanceWorld.ref.imageUrl)"
+                            @error="worldImageError = true"
+                            loading="lazy" />
+                        <div
+                            v-else
+                            class="flex items-center justify-center bg-muted"
+                            style="flex: none; width: 160px; height: 120px; border-radius: var(--radius-md)">
+                            <Image class="size-8 text-muted-foreground" />
+                        </div>
+                        <div class="ml-2" style="display: flex; flex-direction: column; min-width: 320px; width: 100%">
+                            <div class="flex items-center">
                                 <span
-                                    v-if="currentInstanceWorld.fileAnalysis.standalonewindows?._fileSize"
-                                    class="x-grey text-platform-pc border-l-[0.8px] border-solid ml-1.5 pl-1.5 pb-px"
-                                    >{{ currentInstanceWorld.fileAnalysis.standalonewindows._fileSize }}</span
-                                >
-                            </Badge>
-                        </TooltipWrapper>
-                        <TooltipWrapper v-if="currentInstanceWorld.isQuest" side="top" content="Android">
-                            <Badge class="text-platform-quest border-platform-quest! mr-1.5" variant="outline"
-                                ><Smartphone class="h-4 w-4" />
+                                    class="cursor-pointer"
+                                    style="
+                                        font-weight: bold;
+                                        overflow: hidden;
+                                        text-overflow: ellipsis;
+                                        display: -webkit-box;
+                                        -webkit-box-orient: vertical;
+                                        line-clamp: 1;
+                                    "
+                                    @click="showWorldDialog(currentInstanceWorld.ref.id)">
+                                    <Home
+                                        v-if="
+                                            currentUser.$homeLocation &&
+                                            currentUser.$homeLocation.worldId === currentInstanceWorld.ref.id
+                                        "
+                                        class="inline-block" />
+                                    {{ currentInstanceWorld.ref.name }}
+                                </span>
+                            </div>
+                            <div>
                                 <span
-                                    v-if="currentInstanceWorld.fileAnalysis.android?._fileSize"
-                                    class="x-grey text-platform-quest border-l-[0.8px] border-solid ml-1.5 pl-1.5 pb-px"
-                                    >{{ currentInstanceWorld.fileAnalysis.android._fileSize }}</span
-                                >
-                            </Badge>
-                        </TooltipWrapper>
-                        <TooltipWrapper v-if="currentInstanceWorld.isIos" side="top" content="iOS">
-                            <Badge class="text-platform-ios border-platform-ios mr-1.5" variant="outline"
-                                ><Apple class="h-4 w-4 text-platform-ios" />
+                                    class="cursor-pointer x-grey font-mono"
+                                    @click="showUserDialog(currentInstanceWorld.ref.authorId)"
+                                    v-text="currentInstanceWorld.ref.authorName"></span>
+                            </div>
+                            <div class="mt-1.5">
+                                <Badge class="mr-1.5" v-if="currentInstanceWorld.ref.$isLabs" variant="outline">
+                                    {{ t('dialog.world.tags.labs') }}
+                                </Badge>
+                                <Badge
+                                    class="mr-1.5"
+                                    v-else-if="currentInstanceWorld.ref.releaseStatus === 'public'"
+                                    variant="outline">
+                                    {{ t('dialog.world.tags.public') }}
+                                </Badge>
+                                <Badge
+                                    class="mr-1.5"
+                                    v-else-if="currentInstanceWorld.ref.releaseStatus === 'private'"
+                                    variant="outline">
+                                    {{ t('dialog.world.tags.private') }}
+                                </Badge>
+                                <TooltipWrapper v-if="currentInstanceWorld.isPC" side="top" content="PC">
+                                    <Badge class="text-platform-pc border-platform-pc! mr-1.5" variant="outline"
+                                        ><Monitor class="h-4 w-4" />
+                                        <span
+                                            v-if="currentInstanceWorld.fileAnalysis.standalonewindows?._fileSize"
+                                            class="x-grey text-platform-pc border-l-[0.8px] border-solid ml-1.5 pl-1.5 pb-px"
+                                            >{{ currentInstanceWorld.fileAnalysis.standalonewindows._fileSize }}</span
+                                        >
+                                    </Badge>
+                                </TooltipWrapper>
+                                <TooltipWrapper v-if="currentInstanceWorld.isQuest" side="top" content="Android">
+                                    <Badge class="text-platform-quest border-platform-quest! mr-1.5" variant="outline"
+                                        ><Smartphone class="h-4 w-4" />
+                                        <span
+                                            v-if="currentInstanceWorld.fileAnalysis.android?._fileSize"
+                                            class="x-grey text-platform-quest border-l-[0.8px] border-solid ml-1.5 pl-1.5 pb-px"
+                                            >{{ currentInstanceWorld.fileAnalysis.android._fileSize }}</span
+                                        >
+                                    </Badge>
+                                </TooltipWrapper>
+                                <TooltipWrapper v-if="currentInstanceWorld.isIos" side="top" content="iOS">
+                                    <Badge class="text-platform-ios border-platform-ios mr-1.5" variant="outline"
+                                        ><Apple class="h-4 w-4 text-platform-ios" />
+                                        <span
+                                            v-if="currentInstanceWorld.fileAnalysis.ios?._fileSize"
+                                            class="x-grey text-platform-ios border-platform-ios border-l-[0.8px] border-solid ml-1.5 pl-1.5 pb-px"
+                                            >{{ currentInstanceWorld.fileAnalysis.ios._fileSize }}</span
+                                        >
+                                    </Badge>
+                                </TooltipWrapper>
+                                <Badge
+                                    class="mr-1.5 mt-1.5"
+                                    v-if="currentInstanceWorld.avatarScalingDisabled"
+                                    variant="outline">
+                                    {{ t('dialog.world.tags.avatar_scaling_disabled') }}
+                                </Badge>
+                                <Badge class="mr-1.5" v-if="currentInstanceWorld.inCache" variant="outline">
+                                    <span>{{ currentInstanceWorld.cacheSize }} {{ t('dialog.world.tags.cache') }}</span>
+                                </Badge>
+                            </div>
+                            <div class="mt-1.5">
+                                <LocationWorld
+                                    :locationobject="currentInstanceLocation"
+                                    :currentuserid="currentUser.id" />
+                                <span class="ml-1.5" v-if="lastLocation.playerList.size > 0">
+                                    {{ lastLocation.playerList.size }}
+                                    <template v-if="lastLocation.friendList.size > 0"
+                                        >({{ lastLocation.friendList.size }})</template
+                                    >
+                                    &nbsp;&horbar; <Timer v-if="lastLocation.date" :epoch="lastLocation.date" />
+                                </span>
+                            </div>
+                            <div class="mt-1.5">
                                 <span
-                                    v-if="currentInstanceWorld.fileAnalysis.ios?._fileSize"
-                                    class="x-grey text-platform-ios border-platform-ios border-l-[0.8px] border-solid ml-1.5 pl-1.5 pb-px"
-                                    >{{ currentInstanceWorld.fileAnalysis.ios._fileSize }}</span
-                                >
-                            </Badge>
-                        </TooltipWrapper>
-                        <Badge
-                            class="mr-1.5 mt-1.5"
-                            v-if="currentInstanceWorld.avatarScalingDisabled"
-                            variant="outline">
-                            {{ t('dialog.world.tags.avatar_scaling_disabled') }}
-                        </Badge>
-                        <Badge class="mr-1.5" v-if="currentInstanceWorld.inCache" variant="outline">
-                            <span>{{ currentInstanceWorld.cacheSize }} {{ t('dialog.world.tags.cache') }}</span>
-                        </Badge>
+                                    v-show="currentInstanceWorld.ref.name !== currentInstanceWorld.ref.description"
+                                    class="inline-block max-w-full align-middle text-xs break-words"
+                                    v-text="currentInstanceWorld.ref.description"></span>
+                            </div>
+                        </div>
+                        <div class="ml-5" style="display: flex; flex-direction: column">
+                            <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="block truncate font-medium leading-[18px]">{{
+                                        t('dialog.world.info.capacity')
+                                    }}</span>
+                                    <span class="block truncate text-xs"
+                                        >{{ commaNumber(currentInstanceWorld.ref.recommendedCapacity) }} ({{
+                                            commaNumber(currentInstanceWorld.ref.capacity)
+                                        }})</span
+                                    >
+                                </div>
+                            </div>
+                            <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="block truncate font-medium leading-[18px]">{{
+                                        t('dialog.world.info.last_updated')
+                                    }}</span>
+                                    <span class="block truncate text-xs">{{
+                                        formatDateFilter(
+                                            currentInstanceWorld.fileAnalysis.standalonewindows?.created_at,
+                                            'long'
+                                        )
+                                    }}</span>
+                                </div>
+                            </div>
+                            <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
+                                <div class="flex-1 overflow-hidden">
+                                    <span class="block truncate font-medium leading-[18px]">{{
+                                        t('dialog.world.info.created_at')
+                                    }}</span>
+                                    <span class="block truncate text-xs">{{
+                                        formatDateFilter(currentInstanceWorld.ref.created_at, 'long')
+                                    }}</span>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="mt-1.5">
-                        <LocationWorld :locationobject="currentInstanceLocation" :currentuserid="currentUser.id" />
-                        <span class="ml-1.5" v-if="lastLocation.playerList.size > 0">
-                            {{ lastLocation.playerList.size }}
-                            <template v-if="lastLocation.friendList.size > 0"
-                                >({{ lastLocation.friendList.size }})</template
-                            >
-                            &nbsp;&horbar; <Timer v-if="lastLocation.date" :epoch="lastLocation.date" />
-                        </span>
-                    </div>
-                    <div class="mt-1.5">
-                        <span
-                            v-show="currentInstanceWorld.ref.name !== currentInstanceWorld.ref.description"
-                            class="inline-block max-w-full align-middle text-xs break-words"
-                            v-text="currentInstanceWorld.ref.description"></span>
+
+                    <div class="mb-2" v-if="photonLoggingEnabled" ref="playerListPhotonRef">
+                        <PhotonEventTable @show-chatbox-blacklist="showChatboxBlacklistDialog" />
                     </div>
                 </div>
-                <div class="ml-5" style="display: flex; flex-direction: column">
-                    <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
-                        <div class="flex-1 overflow-hidden">
-                            <span class="block truncate font-medium leading-[18px]">{{
-                                t('dialog.world.info.capacity')
-                            }}</span>
-                            <span class="block truncate text-xs"
-                                >{{ commaNumber(currentInstanceWorld.ref.recommendedCapacity) }} ({{
-                                    commaNumber(currentInstanceWorld.ref.capacity)
-                                }})</span
-                            >
-                        </div>
-                    </div>
-                    <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
-                        <div class="flex-1 overflow-hidden">
-                            <span class="block truncate font-medium leading-[18px]">{{
-                                t('dialog.world.info.last_updated')
-                            }}</span>
-                            <span class="block truncate text-xs">{{
-                                formatDateFilter(
-                                    currentInstanceWorld.fileAnalysis.standalonewindows?.created_at,
-                                    'long'
-                                )
-                            }}</span>
-                        </div>
-                    </div>
-                    <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
-                        <div class="flex-1 overflow-hidden">
-                            <span class="block truncate font-medium leading-[18px]">{{
-                                t('dialog.world.info.created_at')
-                            }}</span>
-                            <span class="block truncate text-xs">{{
-                                formatDateFilter(currentInstanceWorld.ref.created_at, 'long')
-                            }}</span>
-                        </div>
-                    </div>
+            </ResizablePanel>
+
+            <ResizableHandle
+                class="player-list__splitter"
+                title="双击恢复自适应"
+                @dragging="handlePlayerListSplitterDragging"
+                @dblclick="resetPlayerListAdaptiveLayout" />
+
+            <ResizablePanel :default-size="100 - summarySize" :min-size="tableMinSize" :order="2">
+                <div class="current-instance-table flex h-full min-h-0 min-w-0">
+                    <DataTableLayout
+                        class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75! [&_tr]:h-7!"
+                        :table="playerListTable"
+                        auto-height
+                        :loading="false"
+                        :show-pagination="false"
+                        :on-row-click="handlePlayerListRowClick" />
                 </div>
-            </div>
+            </ResizablePanel>
+        </ResizablePanelGroup>
 
-            <div class="mb-2" v-if="photonLoggingEnabled" ref="playerListPhotonRef">
-                <PhotonEventTable @show-chatbox-blacklist="showChatboxBlacklistDialog" />
-            </div>
-
-            <div class="current-instance-table flex min-h-0 min-w-0 flex-1">
-                <DataTableLayout
-                    class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75! [&_tr]:h-7!"
-                    :table="playerListTable"
-                    auto-height
-                    :loading="false"
-                    :show-pagination="false"
-                    :on-row-click="handlePlayerListRowClick" />
-            </div>
+        <div v-else class="current-instance-table flex h-full min-h-0 min-w-0">
+            <DataTableLayout
+                class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75! [&_tr]:h-7!"
+                :table="playerListTable"
+                auto-height
+                :loading="false"
+                :show-pagination="false"
+                :on-row-click="handlePlayerListRowClick" />
         </div>
         <ChatboxBlacklistDialog
             :chatbox-blacklist-dialog="chatboxBlacklistDialog"
@@ -181,7 +215,7 @@
 </template>
 
 <script setup>
-    import { computed, onActivated, onMounted, ref, watch } from 'vue';
+    import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
     import { Apple, Home, Image, Monitor, Smartphone } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
@@ -197,8 +231,10 @@
     import { commaNumber, formatDateFilter } from '../../shared/utils';
     import { Badge } from '../../components/ui/badge';
     import { DataTableLayout } from '../../components/ui/data-table';
+    import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable';
     import { createColumns } from './columns.jsx';
     import { useVrcxVueTable } from '../../lib/table/useVrcxVueTable';
+    import { calculatePlayerListLayout } from './playerListLayout';
 
     import ChatboxBlacklistDialog from './dialogs/ChatboxBlacklistDialog.vue';
     import Timer from '../../components/Timer.vue';
@@ -230,8 +266,117 @@
     const { currentUser } = storeToRefs(useUserStore());
 
     const playerListRef = ref(null);
+    const playerListLayoutRef = ref(null);
+    const playerListSummaryPanelRef = ref(null);
     const playerListHeaderRef = ref(null);
     const playerListPhotonRef = ref(null);
+    const summarySize = ref(42);
+    const summaryMinSize = ref(20);
+    const summaryMaxSize = ref(68);
+    const tableMinSize = ref(32);
+    const currentSummarySize = ref(42);
+    const isPlayerListSplitterDragging = ref(false);
+    const summaryOffset = ref(0);
+    const summaryOffsetStorageKey = 'VRCX_playerListSummaryOffset';
+    const legacyManualLayoutStorageKey = 'VRCX_playerListLayoutManual';
+    const legacyPanelLayoutStorageKey = 'reka:player-list-layout';
+    let playerListResizeObserver = null;
+
+    const hasSummaryContent = computed(
+        () => Boolean(currentInstanceWorld.value?.ref?.id) || Boolean(photonLoggingEnabled.value)
+    );
+
+    function getElement(componentRef) {
+        return componentRef?.$el ?? componentRef ?? null;
+    }
+
+    function getSummaryContentHeight() {
+        const headerHeight = playerListHeaderRef.value?.scrollHeight || 0;
+        const photonHeight = playerListPhotonRef.value?.scrollHeight || 0;
+        return headerHeight + photonHeight + (headerHeight ? 12 : 0) + (photonHeight ? 8 : 0);
+    }
+
+    function updatePlayerListAdaptiveLayout() {
+        const layoutElement = getElement(playerListLayoutRef.value);
+        const containerHeight = layoutElement?.getBoundingClientRect?.().height || 0;
+        const layout = calculatePlayerListLayout({
+            containerHeight,
+            summaryContentHeight: getSummaryContentHeight(),
+            summaryOffset: summaryOffset.value
+        });
+
+        summaryMinSize.value = layout.summaryMinSize;
+        summaryMaxSize.value = layout.summaryMaxSize;
+        tableMinSize.value = layout.tableMinSize;
+
+        summarySize.value = layout.summarySize;
+        if (!isPlayerListSplitterDragging.value) {
+            playerListSummaryPanelRef.value?.resize?.(layout.summarySize);
+        }
+    }
+
+    function refreshPlayerListResizeObserver() {
+        playerListResizeObserver?.disconnect();
+        playerListResizeObserver = null;
+
+        if (typeof ResizeObserver === 'undefined') {
+            updatePlayerListAdaptiveLayout();
+            return;
+        }
+
+        playerListResizeObserver = new ResizeObserver(updatePlayerListAdaptiveLayout);
+        for (const element of [
+            getElement(playerListLayoutRef.value),
+            playerListHeaderRef.value,
+            playerListPhotonRef.value
+        ]) {
+            if (element) {
+                playerListResizeObserver.observe(element);
+            }
+        }
+        updatePlayerListAdaptiveLayout();
+    }
+
+    function handlePlayerListLayout(sizes) {
+        if (Array.isArray(sizes) && Number.isFinite(sizes[0])) {
+            currentSummarySize.value = sizes[0];
+        }
+    }
+
+    function handlePlayerListSplitterDragging(dragging) {
+        const isDragging = Boolean(dragging?.detail ?? dragging?.dragging ?? dragging);
+        if (isPlayerListSplitterDragging.value && !isDragging) {
+            const layoutElement = getElement(playerListLayoutRef.value);
+            const containerHeight = layoutElement?.getBoundingClientRect?.().height || 0;
+            if (containerHeight > 0) {
+                const adaptiveLayout = calculatePlayerListLayout({
+                    containerHeight,
+                    summaryContentHeight: getSummaryContentHeight(),
+                    summaryOffset: 0
+                });
+                const actualHeight = (currentSummarySize.value / 100) * containerHeight;
+                const adaptiveHeight = (adaptiveLayout.summarySize / 100) * containerHeight;
+                summaryOffset.value = actualHeight - adaptiveHeight;
+                const roomTag = currentInstanceLocation.value?.tag;
+                if (roomTag) {
+                    localStorage.setItem(
+                        summaryOffsetStorageKey,
+                        JSON.stringify({
+                            roomTag,
+                            offset: summaryOffset.value
+                        })
+                    );
+                }
+            }
+        }
+        isPlayerListSplitterDragging.value = isDragging;
+    }
+
+    function resetPlayerListAdaptiveLayout() {
+        summaryOffset.value = 0;
+        localStorage.removeItem(summaryOffsetStorageKey);
+        updatePlayerListAdaptiveLayout();
+    }
 
     const { t } = useI18n();
 
@@ -339,17 +484,96 @@
         { immediate: true }
     );
 
-    const playerListTotalItems = computed(() => playerListTable.getRowModel().rows.length);
-
     const handlePlayerListRowClick = (row) => {
         selectCurrentInstanceRow(row?.original ?? null);
     };
 
-    onMounted(() => {
+    onMounted(async () => {
         getCurrentInstanceUserList();
+        try {
+            const storedLayout = JSON.parse(localStorage.getItem(summaryOffsetStorageKey) ?? 'null');
+            const roomTag = currentInstanceLocation.value?.tag;
+            if (storedLayout?.roomTag === roomTag && Number.isFinite(storedLayout?.offset)) {
+                summaryOffset.value = storedLayout.offset;
+            } else {
+                localStorage.removeItem(summaryOffsetStorageKey);
+            }
+        } catch {
+            localStorage.removeItem(summaryOffsetStorageKey);
+        }
+        localStorage.removeItem(legacyManualLayoutStorageKey);
+        localStorage.removeItem(legacyPanelLayoutStorageKey);
+        await nextTick();
+        refreshPlayerListResizeObserver();
     });
 
-    onActivated(() => {
+    onActivated(async () => {
         getCurrentInstanceUserList();
+        await nextTick();
+        refreshPlayerListResizeObserver();
+    });
+
+    watch(
+        () => [
+            currentInstanceWorld.value?.ref?.id,
+            currentInstanceWorld.value?.ref?.description,
+            photonLoggingEnabled.value
+        ],
+        async () => {
+            await nextTick();
+            refreshPlayerListResizeObserver();
+        }
+    );
+
+    watch(
+        () => currentInstanceLocation.value?.tag,
+        async (roomTag, previousRoomTag) => {
+            if (roomTag === previousRoomTag) {
+                return;
+            }
+            summaryOffset.value = 0;
+            localStorage.removeItem(summaryOffsetStorageKey);
+            await nextTick();
+            refreshPlayerListResizeObserver();
+        }
+    );
+
+    onBeforeUnmount(() => {
+        playerListResizeObserver?.disconnect();
+        playerListResizeObserver = null;
     });
 </script>
+
+<style scoped>
+    .player-list__splitter {
+        position: relative;
+        z-index: 2;
+        width: 100% !important;
+        height: 0.625rem !important;
+        flex: 0 0 0.625rem;
+        cursor: row-resize;
+        background: transparent !important;
+        outline: none;
+    }
+
+    .player-list__splitter::before {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        left: 0;
+        height: 1px;
+        content: '';
+        background: color-mix(in srgb, var(--border) 74%, transparent);
+        transform: translateY(-50%);
+        transition:
+            background-color 140ms ease-out,
+            box-shadow 140ms ease-out;
+    }
+
+    .player-list__splitter:hover::before,
+    .player-list__splitter:focus-visible::before,
+    .player-list__splitter[data-resize-handle-active]::before {
+        background: var(--primary);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+    }
+</style>
