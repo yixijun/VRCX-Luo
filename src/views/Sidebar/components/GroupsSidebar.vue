@@ -12,19 +12,29 @@
                             :style="rowStyle(item)">
                             <template v-if="item.row.type === 'group-header'">
                                 <div
-                                    class="cursor-pointer pt-4 pb-1.5 text-xs"
+                                    class="pt-4 pb-1.5 text-xs"
                                     :style="
                                         item.row.headerPaddingTop
                                             ? { paddingTop: item.row.headerPaddingTop }
                                             : undefined
                                     ">
-                                    <div
-                                        @click="toggleGroupSidebarCollapse(item.row.groupId)"
-                                        class="flex items-center">
-                                        <ChevronDown
-                                            class="transition-transform duration-200 ease-in-out"
-                                            :class="{ '-rotate-90': item.row.isCollapsed }" />
-                                        <span class="ml-1.5"> {{ item.row.label }} – {{ item.row.count }} </span>
+                                    <div class="flex min-w-0 items-center">
+                                        <button
+                                            type="button"
+                                            class="flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                                            :aria-expanded="!item.row.isCollapsed"
+                                            @click="toggleGroupSidebarCollapse(item.row.groupId)">
+                                            <ChevronDown
+                                                class="size-4 transition-transform duration-200 ease-in-out"
+                                                :class="{ '-rotate-90': item.row.isCollapsed }" />
+                                        </button>
+                                        <button
+                                            type="button"
+                                            data-testid="group-heading"
+                                            class="min-w-0 flex-1 truncate rounded-md px-1.5 py-1 text-left font-medium hover:bg-muted/50"
+                                            @click="showGroupDialog(item.row.groupId)">
+                                            {{ item.row.label }} – {{ item.row.count }}
+                                        </button>
                                     </div>
                                 </div>
                             </template>
@@ -33,8 +43,9 @@
                                 <ContextMenu>
                                     <ContextMenuTrigger as-child>
                                         <div
+                                            data-testid="group-room"
                                             class="box-border flex items-center p-1.5 text-[13px] cursor-pointer hover:bg-muted/50 hover:rounded-lg"
-                                            @click="showGroupDialog(item.row.ownerId)">
+                                            @click="showWorldDialog(item.row.location)">
                                             <template v-if="item.row.isVisible">
                                                 <div class="relative inline-block flex-none size-9 mr-2.5">
                                                     <Avatar class="size-9">
@@ -81,7 +92,12 @@
             </div>
         </div>
         <QuickLaunchButton v-if="active" :target="scrollViewportRef" :teleport="false" />
-        <BackToTop v-if="active" :virtualizer="virtualizer" :target="scrollViewportRef" :tooltip="false" :teleport="false" />
+        <BackToTop
+            v-if="active"
+            :virtualizer="virtualizer"
+            :target="scrollViewportRef"
+            :tooltip="false"
+            :teleport="false" />
     </div>
 </template>
 
@@ -105,6 +121,7 @@
     import { useInviteChecks } from '../../../composables/useInviteChecks';
     import { useAppearanceSettingsStore, useGroupStore, useLaunchStore } from '../../../stores';
     import { showGroupDialog } from '../../../coordinators/groupCoordinator';
+    import { showWorldDialog } from '../../../coordinators/worldCoordinator';
     import { instanceRequest } from '../../../api';
 
     import BackToTop from '../../../components/BackToTop.vue';

@@ -3,7 +3,11 @@ import { mount } from '@vue/test-utils';
 
 vi.mock('@/components/ui/popover', () => ({
     Popover: { template: '<div><slot /></div>' },
-    PopoverContent: { template: '<div><slot /></div>' },
+    PopoverContent: {
+        props: ['class'],
+        template:
+            '<div data-testid="popover-content" :class="$props.class"><slot /></div>'
+    },
     PopoverTrigger: { template: '<div><slot /></div>' }
 }));
 
@@ -46,5 +50,23 @@ describe('VirtualCombobox.vue', () => {
         const trigger = wrapper.get('[role="combobox"]');
         expect(trigger.classes()).toContain('w-64');
         expect(trigger.classes()).toContain('shrink-0');
+    });
+
+    test('constrains the option list to the available viewport height', () => {
+        const wrapper = mount(VirtualCombobox, {
+            props: {
+                groups: [],
+                maxHeight: 320
+            }
+        });
+
+        expect(
+            wrapper.get('[data-testid="popover-content"]').classes()
+        ).toContain('overflow-hidden');
+        expect(
+            wrapper
+                .get('[data-testid="virtual-combobox-scroll"]')
+                .attributes('style')
+        ).toContain('--reka-popover-content-available-height');
     });
 });

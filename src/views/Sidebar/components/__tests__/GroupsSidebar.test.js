@@ -27,6 +27,7 @@ const mocks = vi.hoisted(() => ({
     checkCanInviteSelf: vi.fn(() => true),
     selfInvite: vi.fn().mockResolvedValue({}),
     showGroupDialog: vi.fn(),
+    showWorldDialog: vi.fn(),
     toastSuccess: vi.fn()
 }));
 
@@ -81,6 +82,10 @@ vi.mock('../../../../coordinators/groupCoordinator', () => ({
     showGroupDialog: (...a) => mocks.showGroupDialog(...a)
 }));
 
+vi.mock('../../../../coordinators/worldCoordinator', () => ({
+    showWorldDialog: (...a) => mocks.showWorldDialog(...a)
+}));
+
 vi.mock('../../../../api', () => ({
     instanceRequest: {
         selfInvite: (...a) => mocks.selfInvite(...a)
@@ -108,14 +113,16 @@ vi.mock('../../../../components/ui/context-menu', () => ({
 vi.mock('../../../../components/BackToTop.vue', () => ({
     default: {
         props: ['teleport'],
-        template: '<div data-testid="back-to-top" :data-teleport="String(teleport)" />'
+        template:
+            '<div data-testid="back-to-top" :data-teleport="String(teleport)" />'
     }
 }));
 
 vi.mock('../../../../components/QuickLaunchButton.vue', () => ({
     default: {
         props: ['teleport'],
-        template: '<div data-testid="quick-launch-button" :data-teleport="String(teleport)" />'
+        template:
+            '<div data-testid="quick-launch-button" :data-teleport="String(teleport)" />'
     }
 }));
 
@@ -138,16 +145,24 @@ describe('GroupsSidebar.vue', () => {
         mocks.showLaunchDialog.mockClear();
         mocks.selfInvite.mockClear();
         mocks.showGroupDialog.mockClear();
+        mocks.showWorldDialog.mockClear();
         mocks.toastSuccess.mockClear();
     });
 
-    it('renders group rows and handles launch/self-invite actions', async () => {
+    it('opens the group from its heading and the room from its card', async () => {
         const wrapper = mount(GroupsSidebar);
 
         expect(wrapper.text()).toContain('Group One');
 
-        await wrapper.get('[data-testid="location"]').trigger('click');
-        expect(mocks.showGroupDialog).toHaveBeenCalledWith('usr_owner');
+        await wrapper.get('[data-testid="group-heading"]').trigger('click');
+        expect(mocks.showGroupDialog).toHaveBeenCalledWith('grp_1');
+
+        await wrapper.get('[data-testid="group-room"]').trigger('click');
+        expect(mocks.showWorldDialog).toHaveBeenCalledWith('wrld_1:123');
+    });
+
+    it('handles launch/self-invite actions', async () => {
+        const wrapper = mount(GroupsSidebar);
 
         const items = wrapper.findAll('[data-testid="ctx-item"]');
         await items[0].trigger('click');
@@ -167,8 +182,16 @@ describe('GroupsSidebar.vue', () => {
     it('keeps floating controls inside the visible sidebar tab', () => {
         const wrapper = mount(GroupsSidebar);
 
-        expect(wrapper.get('[data-testid="quick-launch-button"]').attributes('data-teleport')).toBe('false');
-        expect(wrapper.get('[data-testid="back-to-top"]').attributes('data-teleport')).toBe('false');
+        expect(
+            wrapper
+                .get('[data-testid="quick-launch-button"]')
+                .attributes('data-teleport')
+        ).toBe('false');
+        expect(
+            wrapper
+                .get('[data-testid="back-to-top"]')
+                .attributes('data-teleport')
+        ).toBe('false');
     });
 
     it('does not render floating controls while the tab is inactive', () => {
@@ -176,7 +199,11 @@ describe('GroupsSidebar.vue', () => {
             props: { active: false }
         });
 
-        expect(wrapper.find('[data-testid="quick-launch-button"]').exists()).toBe(false);
-        expect(wrapper.find('[data-testid="back-to-top"]').exists()).toBe(false);
+        expect(
+            wrapper.find('[data-testid="quick-launch-button"]').exists()
+        ).toBe(false);
+        expect(wrapper.find('[data-testid="back-to-top"]').exists()).toBe(
+            false
+        );
     });
 });

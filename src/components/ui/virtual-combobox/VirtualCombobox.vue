@@ -25,13 +25,15 @@
             </Button>
         </PopoverTrigger>
 
-        <PopoverContent class="w-[--reka-popover-trigger-width] min-w-[200px] p-2">
+        <PopoverContent
+            class="w-[--reka-popover-trigger-width] min-w-[200px] max-h-[var(--reka-popover-content-available-height)] overflow-hidden p-2">
             <Input v-if="searchable" v-model="searchText" :placeholder="searchPlaceholder" class="mb-2" />
 
             <div
                 ref="scrollContainerRef"
+                data-testid="virtual-combobox-scroll"
                 class="overflow-auto rounded-md border"
-                :style="{ maxHeight: `${maxHeight}px` }">
+                :style="{ maxHeight: optionListMaxHeight }">
                 <div
                     :style="{
                         height: `${virtualizer.getTotalSize()}px`,
@@ -122,6 +124,10 @@
     const scrollContainerRef = shallowRef(null);
 
     const normalizedGroups = computed(() => /** @type {Array<any>} */ (props.groups ?? []));
+    const optionListMaxHeight = computed(() => {
+        const reservedSpace = props.searchable ? '4.5rem' : '1rem';
+        return `clamp(6rem, calc(var(--reka-popover-content-available-height, ${props.maxHeight + 72}px) - ${reservedSpace}), ${props.maxHeight}px)`;
+    });
 
     const selectedValueSet = computed(() => {
         if (props.multiple) {
