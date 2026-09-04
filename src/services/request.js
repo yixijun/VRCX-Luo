@@ -91,9 +91,22 @@ export function parseResponse(response) {
 }
 
 /**
+ * @typedef {object} RequestUploadOptions
+ * @property {boolean} [uploadImage]
+ * @property {boolean} [uploadFilePUT]
+ * @property {boolean} [uploadImageLegacy]
+ * @property {boolean} [uploadImagePrint]
+ * @property {boolean} [matchingDimensions]
+ * @property {boolean} [cropWhiteBorder]
+ * @property {string} [postData]
+ * @property {string} [inviteId]
+ * @property {unknown} [imageData]
+ */
+
+/**
  * @template T
  * @param {string} endpoint
- * @param {RequestInit & { params?: any } & {customMsg?: string}} [options]
+ * @param {RequestInit & RequestUploadOptions & { params?: any, customMsg?: string }} [options]
  * @returns {Promise<T>}
  */
 export function request(endpoint, options) {
