@@ -90,18 +90,18 @@ if (props.bio && props.bio[0] && props.bio[1]) {
 
 ### 2.3 L3 — 短周期轮询 (5 分钟)
 
-- **控制文件**：[`src/stores/updateLoop.js`](../src/stores/updateLoop.js)。
-- **计时器变量**：
-  - `state.nextCurrentUserRefresh`：初始值 **300 秒 (5 分钟)**。
-  - `state.nextGroupInstanceRefresh`：初始值 **300 秒 (5 分钟)**。
+- **控制文件**：[`src/stores/updateLoop.js`](../src/stores/updateLoop.js) 负责组装，调度由 [`updateLoopScheduler.js`](../src/stores/updateLoopTasks/updateLoopScheduler.js) 负责。
+- **任务计数器**：
+  - [`currentUserTask.js`](../src/stores/updateLoopTasks/currentUserTask.js) 的 `CURRENT_USER_REFRESH_SECONDS`：**300 秒 (5 分钟)**。
+  - [`groupInstanceTask.js`](../src/stores/updateLoopTasks/groupInstanceTask.js) 首次 tick 即检查；好友加载完成后按 **300 秒 (5 分钟)** 重置。
 - **触发动作**：
   - 调用 `getCurrentUser()` 刷新自身状态。
   - 刷新群组实例列表
 
 ### 2.4 L4 — 全量好友同步 (1 小时)
 
-- **控制文件**：同 `updateLoop.js`。
-- **计时器变量**：`state.nextFriendsRefresh`，初始值 **3600 秒 (1 小时)**。
+- **控制文件**：[`friendSyncTask.js`](../src/stores/updateLoopTasks/friendSyncTask.js)，由 `updateLoop.js` 注入 API、用户和 moderation 依赖。
+- **计时器常量**：`FRIENDS_REFRESH_SECONDS`，初始值 **3600 秒 (1 小时)**。
 - **触发动作**：调用 `runRefreshFriendsListFlow()`，走到 [`src/coordinators/friendSyncCoordinator.js`](../src/coordinators/friendSyncCoordinator.js)。
 - **具体流程**：
   1. 调用 VRChat API 批量拉取好友列表（并发 5、限速 60 req/min）。
@@ -172,7 +172,7 @@ WebSocket 断开后 **5 秒**自动尝试重连。
 
 ### 5.3 轮询计时器的实现方式
 
-`updateLoop.js` 使用 `workerTimers`（基于 Web Worker 的定时器），避免浏览器后台标签页节流导致计时器不准确。主循环每 **1 秒**检查一次各计时器是否到期。
+`updateLoopScheduler.js` 使用注入的 `workerTimers`（基于 Web Worker 的定时器）每 **1 秒**调度一次任务，避免浏览器后台标签页节流导致计时器不准确。各 task 自己维护倒计时；调度器只负责登录门控、顺序、异常转发和下一次 tick。
 
 ---
 
@@ -180,7 +180,14 @@ WebSocket 断开后 **5 秒**自动尝试重连。
 
 | 文件 | 职责 |
 |:---|:---|
-| [`src/stores/updateLoop.js`](../src/stores/updateLoop.js) | 主循环"心跳"，管理所有轮询计时器 |
+| [`src/stores/updateLoop.js`](../src/stores/updateLoop.js) | 兼容入口、依赖组装、任务注册和启动/停止 |
+| [`src/stores/updateLoopTasks/updateLoopScheduler.js`](../src/stores/updateLoopTasks/updateLoopScheduler.js) | 1 秒调度、登录门控、任务顺序和错误转发 |
+| [`src/stores/updateLoopTasks/currentUserTask.js`](../src/stores/updateLoopTasks/currentUserTask.js) | 当前用户 5 分钟刷新 |
+| [`src/stores/updateLoopTasks/friendSyncTask.js`](../src/stores/updateLoopTasks/friendSyncTask.js) | 好友列表 1 小时同步和 moderation 刷新 |
+| [`src/stores/updateLoopTasks/groupInstanceTask.js`](../src/stores/updateLoopTasks/groupInstanceTask.js) | Group 实例同步和旧版游戏检查触发 |
+| [`src/stores/updateLoopTasks/gameStateTask.js`](../src/stores/updateLoopTasks/gameStateTask.js) | Linux 日志、游戏/SteamVR 状态检测 |
+| [`src/stores/updateLoopTasks/updateCheckTask.js`](../src/stores/updateLoopTasks/updateCheckTask.js) | 更新检查和注册表备份 |
+| [`src/stores/updateLoopTasks/discordTask.js`](../src/stores/updateLoopTasks/discordTask.js) | Discord presence 更新 |
 | [`src/services/websocket.js`](../src/services/websocket.js) | WebSocket 连接管理和事件分发 |
 | [`src/coordinators/userCoordinator.js`](../src/coordinators/userCoordinator.js) | `applyUser()` — 用户信息应用与 diff 检测 |
 | [`src/coordinators/userEventCoordinator.js`](../src/coordinators/userEventCoordinator.js) | `runHandleUserUpdateFlow()` — 处理 diff 结果，写入 Feed |

@@ -1,6 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文是只读诊断，不代表已经实施重构。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；除已标注的 updateLoop 第一刀外，其余内容仍是只读建议。
+
+> 实施状态（2026-09-04）：`updateLoop` 调度器和独立任务模块已落地，保留旧入口并按任务粒度提交到本地 Git；其他架构风险尚未改动。
 
 ## 结论摘要
 
@@ -73,7 +75,7 @@
 | `src/services/database/gameLog.js` | 约 2200 行，写入、查询、媒体解析、聚合、统计全混在一起 | Major | 先拆只读查询，再拆写入和 parser，避免一次性重写 SQL |
 | `src/services/aggregatedView.js` | 使用 `accountHub.allSessions` / `primaryPrefix`，但对应 getter 不存在 | Major | 定义明确的账号元数据 interface，并为标签、颜色和 primary 判断增加契约测试 |
 | `src/api/index.js`、`src/queries` | API、Query cache、Pinia 可能重复持有实体数据 | Major | 统一请求、缓存和失效策略，明确实体数据的唯一来源 |
-| `src/stores/updateLoop.js` | 1 秒、5 分钟、1 小时任务、游戏检测、更新、Discord、数据库优化集中 | Major | 保留旧入口，提取独立 task module 和 scheduler；每个任务单独测试 |
+| `src/stores/updateLoop.js` | 兼容入口和依赖组装仍集中；任务实现已移到独立模块 | Major | 已完成第一刀；后续可把宿主 capability 注入进一步收窄，继续保留兼容 facade |
 | `src-electron/preload.js`、`src-electron/main.js`、`src/ipc-electron/interopApi.js` | 动态 class/method IPC，缺少 allowlist 和参数 schema | Major | 改为 capability adapter；主进程校验 class、method 和参数 |
 | `src-electron/main.js` | 主进程约 1062 行，窗口、托盘、通知、IPC、Dotnet 启动集中 | Major | 以 main.js 作为 composition root，拆分 window、tray、notification、Dotnet、IPC module |
 | `Dotnet/VRCX-Cef.csproj`、`Dotnet/VRCX-Electron.csproj` | CEF/Electron 目标框架和依赖版本漂移 | Major | 建立共享宿主 contract、版本矩阵和双宿主 contract test |
@@ -183,7 +185,7 @@ flowchart LR
 
 在动业务代码前，先让 `typecheck`、前端测试、C# 测试发现和 schema 校验可以被 CI 可靠执行。这些改动不改变运行时行为，却能显著降低后续回归风险。
 
-### 1）拆分 `updateLoop` 调度器
+### 1）拆分 `updateLoop` 调度器（已完成）
 
 目标：`src/stores/updateLoop.js`。
 
@@ -191,8 +193,10 @@ flowchart LR
 - 将当前任务拆成当前用户、好友同步、Group 实例、游戏状态、更新检查、Discord 状态等 task module。
 - timer 只负责调度，不直接访问 `AppApi`、数据库和多个 store。
 - 用 fake clock 测试每个任务的触发周期。
+- 实际落地文件为 `src/stores/updateLoopTasks/` 下的任务模块和 `updateLoopScheduler.js`；`updateLoop.js` 只负责依赖组装、注册、启动/停止和兼容 setter。
+- 除六个目标任务外，非好友同步、IPC 超时、缓存清理、自动状态和数据库优化也已独立，避免遗留业务分支继续堆回 store。
 
-这是最安全的第一刀：不改数据库结构、路由或 UI 接口，局部性高。
+这是最安全的第一刀：不改数据库结构、路由或 UI 接口，局部性高。每个提取步骤均单独提交并验证。
 
 ### 2）为 CEF/Electron 建立宿主 capability adapter
 
@@ -223,7 +227,9 @@ flowchart LR
 | 检查项 | 结果 |
 |---|---|
 | `npm run prod` | 成功；存在 router 动态导入警告和 Node deprecation 警告 |
-| `npm test` | 失败：211 个测试文件中 24 个失败，88 个断言失败 |
+| `npm test` | 当前 223 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；失败数量与重构前基线相同 |
+| updateLoop/task 定向测试 | 13 个测试文件、28 个测试通过 |
+| 变更文件 `oxlint` | 0 warning、0 error |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | 失败：找不到 `tsc` |
 | `dotnet test` | 进程成功，但未发现实际测试 |
@@ -233,4 +239,3 @@ flowchart LR
 ### 术语说明
 
 本文的“模块（module）”指可独立维护的代码边界；“接口（interface）”是调用方依赖的稳定契约；“adapter”用于隔离不同宿主实现；“接缝（seam）”允许新旧实现并存；“高 leverage”表示一次改动能降低多个调用方的复杂度；“局部性”表示修改影响范围可控。
-
