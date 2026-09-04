@@ -107,14 +107,17 @@ export const useAppearanceSettingsStore = defineStore(
         const isNavCollapsed = ref(true);
         const isSideBarTabShow = computed(() => {
             const currentRouteName = router.currentRoute.value?.name;
-            return ![
-                'friends-locations',
-                'friend-list',
-                'charts-instance',
-                'charts-mutual',
-                'charts-hot-worlds',
-                'charts-two-person'
-            ].includes(currentRouteName);
+            return (
+                typeof currentRouteName !== 'string' ||
+                ![
+                    'friends-locations',
+                    'friend-list',
+                    'charts-instance',
+                    'charts-mutual',
+                    'charts-hot-worlds',
+                    'charts-two-person'
+                ].includes(currentRouteName)
+            );
         });
 
         const isDataTableStriped = ref(false);
