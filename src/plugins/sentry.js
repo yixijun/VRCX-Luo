@@ -49,30 +49,33 @@ export async function initSentry(app) {
             tracesSampleRate: 0.0001,
             beforeSend(event, hint) {
                 const error = hint.originalException;
-                if (error && typeof error.message === 'string') {
+                const errorMessage =
+                    error &&
+                    /** @type {{ message?: unknown }} */ (error).message;
+                if (typeof errorMessage === 'string') {
                     if (
-                        error.message.includes('401') ||
-                        error.message.includes('403') ||
-                        error.message.includes('404') ||
-                        error.message.includes('500') ||
-                        error.message.includes('503') ||
-                        error.message.includes('No such host is known') ||
-                        error.message.includes(
+                        errorMessage.includes('401') ||
+                        errorMessage.includes('403') ||
+                        errorMessage.includes('404') ||
+                        errorMessage.includes('500') ||
+                        errorMessage.includes('503') ||
+                        errorMessage.includes('No such host is known') ||
+                        errorMessage.includes(
                             'The SSL connection could not be established'
                         ) ||
-                        error.message.includes('A connection attempt failed') ||
-                        error.message.includes(
+                        errorMessage.includes('A connection attempt failed') ||
+                        errorMessage.includes(
                             'no data of the requested type was found'
                         ) ||
-                        error.message.includes(
+                        errorMessage.includes(
                             'An error occurred while sending the request'
                         ) ||
-                        error.message.includes('database or disk is full') ||
-                        error.message.includes('disk I/O error') ||
-                        error.message.includes(
+                        errorMessage.includes('database or disk is full') ||
+                        errorMessage.includes('disk I/O error') ||
+                        errorMessage.includes(
                             'There is not enough space on the disk.'
                         ) ||
-                        error.message.includes(
+                        errorMessage.includes(
                             'The requested address is not valid in its context.'
                         )
                     ) {
