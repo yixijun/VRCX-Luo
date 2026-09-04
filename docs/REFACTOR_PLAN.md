@@ -21,7 +21,7 @@
 | Major | M-00 测试与 CI 门禁 | 基础切片完成 | 补齐 JS typecheck 工具链；评估现有 lint/format 债务后再收紧 CI |
 | Major | M-01 宿主 capability adapter | 未开始 | 依赖 B-01 方法清单；保留旧 facade |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
-| Major | M-03 编排层纯化 | **已完成：M-03.5** | 进入 M-00；M-06 低风险 seam 已完成 |
+| Major | M-03 编排层纯化 | **已完成：M-03.6** | 进入 M-00；M-06 低风险 seam 已完成 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
 | Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | 进入 M-00；M-01/M-04 解锁后再收窄宿主/数据库 capability |
