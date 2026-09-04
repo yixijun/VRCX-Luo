@@ -1,5 +1,5 @@
 import { storeToRefs } from 'pinia';
-import { toast } from 'vue-sonner';
+import { toast } from '../services/toastAdapter';
 
 import {
     useAuthStore,

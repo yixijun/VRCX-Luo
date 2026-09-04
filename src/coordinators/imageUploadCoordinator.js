@@ -1,4 +1,4 @@
-import { toast } from 'vue-sonner';
+import { toast } from '../services/toastAdapter';
 
 import { $throw } from '../services/request';
 import { AppDebug } from '../services/appConfig.js';

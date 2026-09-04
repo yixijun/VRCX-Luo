@@ -1,4 +1,4 @@
-import { toast } from 'vue-sonner';
+import { toast } from '../services/toastAdapter';
 
 import { AppDebug } from '../services/appConfig';
 import { migrateMemos } from './memoCoordinator';

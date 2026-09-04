@@ -21,7 +21,7 @@ import {
 import { getGroupName } from '../shared/utils';
 import { userRequest } from '../api';
 import { watchState } from '../services/watchState';
-import { toast } from 'vue-sonner';
+import { toast } from '../services/toastAdapter';
 
 import { useAdvancedSettingsStore } from '../stores/settings/advanced';
 import { useFriendStore } from '../stores/friend';

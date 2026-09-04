@@ -1,4 +1,4 @@
-import { toast } from 'vue-sonner';
+import { toast } from '../services/toastAdapter';
 import { i18n } from '../plugins/i18n';
 
 import { instanceRequest } from '../api';

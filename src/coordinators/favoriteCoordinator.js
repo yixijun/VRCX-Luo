@@ -1,4 +1,4 @@
-import { toast } from 'vue-sonner';
+import { toast } from '../services/toastAdapter';
 import { useFavoriteStore } from '../stores/favorite';
 import { useAppearanceSettingsStore } from '../stores/settings/appearance';
 import { useAvatarStore } from '../stores/avatar';

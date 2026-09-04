@@ -1,4 +1,4 @@
-import { toast } from 'vue-sonner';
+import { toast } from '../services/toastAdapter';
 
 import {
     deleteVRChatCache as _deleteVRChatCache,
