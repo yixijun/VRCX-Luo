@@ -21,6 +21,9 @@ vi.mock('../../queries', () => ({
     queryCache: {
         invalidateActive: (...args) => mockInvalidateActive(...args)
     },
+    queryKeys: {
+        groupScope: (groupId) => ['group', groupId]
+    },
     entityQueryPolicies: {
         user: {},
         avatar: {},

@@ -22,6 +22,9 @@ vi.mock('../../queries', () => ({
     queryCache: {
         invalidateActive: (...args) => mockInvalidateActive(...args)
     },
+    queryKeys: {
+        friendScope: () => ['friends']
+    },
     entityQueryPolicies: {
         user: {},
         avatar: {},

@@ -20,6 +20,7 @@ vi.mock('../../queries', () => ({
         removeExact: (...args) => mockRemoveExact(...args)
     },
     queryKeys: {
+        galleryScope: () => ['gallery'],
         galleryFiles: (params) => ['gallery', 'files', params],
         prints: (params) => ['gallery', 'prints', params],
         print: (printId) => ['gallery', 'print', printId],

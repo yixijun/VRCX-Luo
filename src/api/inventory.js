@@ -1,4 +1,4 @@
-import { queryCache } from '../queries';
+import { queryCache, queryKeys } from '../queries';
 import { request } from '../services/request';
 
 /**
@@ -6,7 +6,7 @@ import { request } from '../services/request';
  */
 function refetchActiveInventoryQueries() {
     queryCache
-        .invalidateActive(['inventory'])
+        .invalidateActive(queryKeys.inventoryScope())
         .catch((err) => {
             console.error('Failed to refresh inventory queries:', err);
         });

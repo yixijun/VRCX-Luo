@@ -1,4 +1,9 @@
 export const queryKeys = Object.freeze({
+    favoriteScope: () => ['favorite'],
+    friendScope: () => ['friends'],
+    groupScope: (groupId) => ['group', groupId],
+    inventoryScope: () => ['inventory'],
+    galleryScope: () => ['gallery'],
     user: (userId) => ['user', userId],
     avatar: (avatarId) => ['avatar', avatarId],
     world: (worldId) => ['world', worldId],

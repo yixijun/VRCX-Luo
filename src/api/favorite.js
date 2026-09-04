@@ -4,7 +4,7 @@ import {
     handleFavoriteDelete,
     handleFavoriteGroupClear
 } from '../coordinators/favoriteCoordinator';
-import { queryCache } from '../queries';
+import { queryCache, queryKeys } from '../queries';
 import { request } from '../services/request';
 
 /**
@@ -19,7 +19,7 @@ function getCurrentUserId() {
  */
 function refetchActiveFavoriteQueries() {
     queryCache
-        .invalidateActive(['favorite'])
+        .invalidateActive(queryKeys.favoriteScope())
         .catch((err) => {
             console.error('Failed to refresh favorite queries:', err);
         });

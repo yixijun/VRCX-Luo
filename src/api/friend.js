@@ -1,4 +1,4 @@
-import { queryCache } from '../queries';
+import { queryCache, queryKeys } from '../queries';
 import { request } from '../services/request';
 import { useUserStore } from '../stores/user';
 import { applyUser } from '../coordinators/userCoordinator';
@@ -9,7 +9,7 @@ import { watchState } from '../services/watchState';
  */
 function refetchActiveFriendListQueries() {
     queryCache
-        .invalidateActive(['friends'])
+        .invalidateActive(queryKeys.friendScope())
         .catch((err) => {
             console.error('Failed to refresh friend list queries:', err);
         });

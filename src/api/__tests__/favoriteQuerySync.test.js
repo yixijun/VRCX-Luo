@@ -25,6 +25,9 @@ vi.mock('../../coordinators/favoriteCoordinator', () => ({
 vi.mock('../../queries', () => ({
     queryCache: {
         invalidateActive: (...args) => mockInvalidateActive(...args)
+    },
+    queryKeys: {
+        favoriteScope: () => ['favorite']
     }
 }));
 

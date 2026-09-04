@@ -1,4 +1,4 @@
-import { queryCache } from '../queries';
+import { queryCache, queryKeys } from '../queries';
 import { request } from '../services/request';
 import { useUserStore } from '../stores';
 
@@ -14,7 +14,7 @@ function getCurrentUserId() {
  */
 function refetchActiveGalleryQueries() {
     queryCache
-        .invalidateActive(['gallery'])
+        .invalidateActive(queryKeys.galleryScope())
         .catch((err) => {
             console.error('Failed to refresh gallery queries:', err);
         });
