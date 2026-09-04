@@ -18,7 +18,7 @@
 |---|---|---|---|
 | Blocker 条件项 | B-01 宿主桥安全封口 | 条件性 Major；暂缓 | 先完成 Electron/CEF 方法清单和可信内容判定 |
 | Blocker 条件项 | B-02 多账户数据隔离 | **按要求暂缓** | 不改 `dbVars`、`accountHub` 和次号生命周期 |
-| Major | M-00 测试与 CI 门禁 | **M-00.1 工具链已补齐；门禁仍为红** | 先分批收敛现有 typecheck 诊断，再评估 lint/format 债务和 CI 硬门禁 |
+| Major | M-00 测试与 CI 门禁 | **M-00.1 工具链已补齐；M-00.2 进行中；门禁仍为红** | 继续分批收敛现有 typecheck 诊断，再评估 lint/format 债务和 CI 硬门禁 |
 | Major | M-01 宿主 capability adapter | 未开始 | 依赖 B-01 方法清单；保留旧 facade |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
 | Major | M-03 编排层纯化 | **已完成：M-03.6** | 进入 M-00；M-06 低风险 seam 已完成 |
@@ -136,10 +136,10 @@ M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决�
 ## 当前 M-00 细分任务
 
 1. **M-00.1 JavaScript typecheck 工具链（已完成）**：将 `typescript@^5.9.3` 加入 `devDependencies` 并锁定到 `package-lock.json`，修复 `typecheck:js` 过去因找不到 `tsc` 而无法执行的问题。提交：`7fddf930`。
-2. **M-00.2 现有类型债务分批收敛（待开始）**：工具链启用后，当前检查暴露 210 条既有诊断，主要集中在 API response 类型、宿主 bridge 类型、store 推断和旧 JSDoc；按模块 seam 分批处理，每批保持定向测试和生产构建通过。
+2. **M-00.2 现有类型债务分批收敛（进行中）**：工具链启用后，当前检查暴露 210 条既有诊断，已通过低风险契约切片降至 132 条；主要剩余项集中在 API response 类型、宿主 bridge 类型、store 推断和旧 JSDoc。按模块 seam 分批处理，每批保持定向测试和生产构建通过。
 3. **M-00.3 CI 硬门禁（待 M-00.2）**：在 typecheck 诊断降到可控范围前，不把该命令直接改成阻断式 CI；先保留可见报告，再逐步收紧 lint/format/test 的失败策略。
 
-M-00.2 已开始：首个低风险切片修正 `gameStateTask` 的 `getLogLines` 注释契约，使其准确表达同步数组/Promise 双路径，并完成原文件格式化；`updateLoop.js(65,28)` 误报已消失，整体诊断数仍为 210。提交：`8961b676`。第二个切片修正 Group API 的 `bool` JSDoc 类型名称，诊断数降至 209，提交：`8c34f3f2`。第三个切片修复 Avatar 上传方法的空参数 JSDoc，诊断数降至 207，提交：`26513e2c`。第四个切片将 Notification API 的损坏 typedef 改为标准 `@typedef/@property` 声明，解析错误消失，当前诊断数为 206，提交：`23be21b4`。第五个切片移除 Notification V2 projection 中不存在的 `endpointDomain` 参数注释，诊断数降至 205，提交：`5ee0da85`。第六个切片对齐 Feed 差异格式化函数的四个参数名与真实签名，诊断数降至 201，提交：`1fa5e8f9`。第七个切片修正通知邀请辅助函数的 `rsvp` 参数注释，诊断数降至 200，提交：`2e412fa8`。第八个切片为 `request()` 建立显式上传扩展 interface，清零 13 个上传选项误报，诊断数降至 189，提交：`950185fb`。第九个切片修正 World API `ref` 返回对象的静态推断并保持属性顺序，诊断数降至 188，提交：`c4fc3a58`。第十个切片修正 Instance API `ref` 返回对象的静态推断并保持属性顺序，诊断数降至 187，提交：`33f9c4c6`。第十一个切片为 request 自定义 Error 字段加入表达式级静态类型，诊断数降至 182，提交：`fb93b448`。第十二个切片为 Query key `groupMember` 解构参数声明可选 id，诊断数降至 180，提交：`b1999fa2`。第十三个切片补齐其余 Group/World/File Query key 的解构参数声明，诊断数降至 171，提交：`cb03eb6c`。第十四个切片同步 C# WebApi 二级账号方法到全局 bridge interface，诊断数降至 165，提交：`7e67caa4`。第十五个切片为 Sentry 原始异常 message 增加安全静态 narrowing，诊断数降至 150，提交：`d7a0e479`。下一刀优先处理同类不改变运行时的 JSDoc/声明契约问题。
+M-00.2 已开始：首个低风险切片修正 `gameStateTask` 的 `getLogLines` 注释契约，使其准确表达同步数组/Promise 双路径，并完成原文件格式化；`updateLoop.js(65,28)` 误报已消失，整体诊断数仍为 210。提交：`8961b676`。第二个切片修正 Group API 的 `bool` JSDoc 类型名称，诊断数降至 209，提交：`8c34f3f2`。第三个切片修复 Avatar 上传方法的空参数 JSDoc，诊断数降至 207，提交：`26513e2c`。第四个切片将 Notification API 的损坏 typedef 改为标准 `@typedef/@property` 声明，解析错误消失，当前诊断数为 206，提交：`23be21b4`。第五个切片移除 Notification V2 projection 中不存在的 `endpointDomain` 参数注释，诊断数降至 205，提交：`5ee0da85`。第六个切片对齐 Feed 差异格式化函数的四个参数名与真实签名，诊断数降至 201，提交：`1fa5e8f9`。第七个切片修正通知邀请辅助函数的 `rsvp` 参数注释，诊断数降至 200，提交：`2e412fa8`。第八个切片为 `request()` 建立显式上传扩展 interface，清零 13 个上传选项误报，诊断数降至 189，提交：`950185fb`。第九个切片修正 World API `ref` 返回对象的静态推断并保持属性顺序，诊断数降至 188，提交：`c4fc3a58`。第十个切片修正 Instance API `ref` 返回对象的静态推断并保持属性顺序，诊断数降至 187，提交：`33f9c4c6`。第十一个切片为 request 自定义 Error 字段加入表达式级静态类型，诊断数降至 182，提交：`fb93b448`。第十二个切片为 Query key `groupMember` 解构参数声明可选 id，诊断数降至 180，提交：`b1999fa2`。第十三个切片补齐其余 Group/World/File Query key 的解构参数声明，诊断数降至 171，提交：`cb03eb6c`。第十四个切片同步 C# WebApi 二级账号方法到全局 bridge interface，诊断数降至 165，提交：`7e67caa4`。第十五个切片为 Sentry 原始异常 message 增加安全静态 narrowing，诊断数降至 150，提交：`d7a0e479`。第十六个切片将 WorldDialog commands 的 toast 注释从普通函数收窄为现有 `success/error` 方法契约，未改变运行时调用，诊断数降至 132，提交：`ae24f1b0`。下一刀优先处理同类不改变运行时的 JSDoc/声明契约问题。
 
 当前 M-00 的安全边界是“先让检查可执行，再逐批降低诊断数”。本切片没有修改运行时代码、公共 interface、序列化格式或并发逻辑。
 

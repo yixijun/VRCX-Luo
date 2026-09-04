@@ -84,7 +84,7 @@
 | `src-electron/main.js` | 主进程约 1062 行，窗口、托盘、通知、IPC、Dotnet 启动集中 | Major | 以 main.js 作为 composition root，拆分 window、tray、notification、Dotnet、IPC module |
 | `Dotnet/VRCX-Cef.csproj`、`Dotnet/VRCX-Electron.csproj` | CEF/Electron 目标框架和依赖版本漂移 | Major | 建立共享宿主 contract、版本矩阵和双宿主 contract test |
 | `src` 多处生产文件 | 大量文件直接绕过边界访问 database 或宿主全局对象 | Major | 用 lint boundary 限制跨层 import，逐步迁移到 use-case/adapter |
-| `.github/workflows/ci.yaml`、`package.json` | CI 偏手工触发，检查允许失败；`typecheck:js` 找不到 `tsc` | Major | 补齐工具链，把 test、lint、typecheck、schema 校验设为硬门禁 |
+| `.github/workflows/ci.yaml`、`package.json` | CI 偏手工触发，检查允许失败；`typecheck:js` 已可执行但仍有既有诊断 | Major | 先收敛类型债务，再逐步把 test、lint、typecheck、schema 校验设为硬门禁 |
 | `src/**/*.test.*` | 当前前端测试有大量失败和脆弱 mock | Major | 先修公共组件、图标、数据库 contract mock，再增加新测试 |
 | `Dotnet.Tests/VRCX.Cef.Tests.csproj` | C# 测试发现曾被 `OutputType=Exe` 绕过 | Major | 已改为正式测试项目，`dotnet test` 当前发现并通过 3 个测试，且由 Windows CI job 执行 |
 | `docs/schemas/screenshotMetadata-schema.json` | Schema 结构校验此前缺失 | Major | 已增加 `check:schema` 脚本并接入 CI，后续补字段语义/样例校验 |
@@ -246,7 +246,7 @@ flowchart LR
 | M-08 新增 Query module `oxlint` | 0 warning、0 error；既有 API lint debt 未扩大 |
 | M-06 Notification Store 定向测试 | 5 个测试文件、30 个测试通过 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
-| `npm run typecheck:js` | 工具链已补齐并可执行；当前仍有 150 条既有 TypeScript/JavaScript 诊断，已先消除 `updateLoop.js(65,28)`、Group API `bool`、Avatar 空参数、Notification typedef、V2 projection 误标参数、Feed 差异函数旧参数名、邀请 `rsvp` 误标参数、13 个上传选项误报、World/Instance API `ref` 推断误报、request 自定义 Error 字段误报、全部 Query key 解构参数误报、WebApi 二级账号 bridge 方法误报及 Sentry 原始异常 message 误报，尚未作为阻断式 CI 门禁 |
+| `npm run typecheck:js` | 工具链已补齐并可执行；当前仍有 132 条既有 TypeScript/JavaScript 诊断，已先消除 `updateLoop.js(65,28)`、Group API `bool`、Avatar 空参数、Notification typedef、V2 projection 误标参数、Feed 差异函数旧参数名、邀请 `rsvp` 误标参数、13 个上传选项误报、World/Instance API `ref` 推断误报、request 自定义 Error 字段误报、全部 Query key 解构参数误报、WebApi 二级账号 bridge 方法误报、Sentry 原始异常 message 误报及 WorldDialog commands toast 属性误报，尚未作为阻断式 CI 门禁 |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
 | C# 测试项目构建 | 通过：0 警告、0 错误 |
 | `screenshotMetadata-schema.json` | JSON 解析和 5 属性结构检查通过 |
