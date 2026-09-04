@@ -25,6 +25,7 @@ import { watchState } from '../services/watchState';
 
 import * as workerTimers from 'worker-timers';
 import { createCurrentUserTask } from './updateLoopTasks/currentUserTask';
+import { createFriendSyncTask } from './updateLoopTasks/friendSyncTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -35,6 +36,14 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const vrcxUpdaterStore = useVRCXUpdaterStore();
     const vrStore = useVrStore();
     const currentUserTask = createCurrentUserTask({ getCurrentUser });
+    const friendSyncTask = createFriendSyncTask({
+        refreshFriends: runRefreshFriendsListFlow,
+        getCurrentUser: () => userStore.currentUser,
+        updateStoredUser: (currentUser) =>
+            authStore.updateStoredUser(currentUser),
+        refreshPlayerModerations: runRefreshPlayerModerationsFlow,
+        now: () => Date.now()
+    });
     const state = {
         nextCurrentUserRefresh: 300,
         nextFriendsRefresh: 3600,
@@ -56,6 +65,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
             state.nextCurrentUserRefresh = 300;
             currentUserTask.reset();
             state.nextFriendsRefresh = 3600;
+            friendSyncTask.reset();
             state.nextNonFriendRefresh = 3600;
             state.nextGroupInstanceRefresh = 0;
         },
@@ -77,18 +87,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         try {
             if (watchState.isLoggedIn) {
                 currentUserTask.tick();
-                if (--state.nextFriendsRefresh <= 0) {
-                    state.nextFriendsRefresh = 3600; // 1hour
-                    runRefreshFriendsListFlow();
-                    authStore.updateStoredUser(userStore.currentUser);
-                    if (
-                        userStore.currentUser.last_activity &&
-                        new Date(userStore.currentUser.last_activity) >
-                            new Date(Date.now() - 3600 * 1000) // 1hour
-                    ) {
-                        runRefreshPlayerModerationsFlow();
-                    }
-                }
+                friendSyncTask.tick();
                 if (--state.nextNonFriendRefresh <= 0) {
                     state.nextNonFriendRefresh = 3600; // 1hour
                     refreshTrackedNonFriendsFlow();
