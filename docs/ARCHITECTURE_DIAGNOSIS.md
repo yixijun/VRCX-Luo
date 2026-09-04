@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；除已标注的 updateLoop 第一刀外，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀及 M-03 编排层适配器切片已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-04）：`updateLoop` 调度器和独立任务模块已落地，保留旧入口并按任务粒度提交到本地 Git；其他架构风险尚未改动。
+> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module，以及 M-03 的 DOM input、Toast、Router、关系建议 Noty、登出欢迎 Noty adapter 已落地；coordinator 公共 interface 保持不变，其他架构风险尚未改动。
 
 ## 结论摘要
 
@@ -28,7 +28,7 @@
 | `src/components` | 对话框、列表、卡片、表格等可复用 UI | 复用组件大量依赖全局 store、router、toast、DOM；不少组件实际承担完整业务流程 |
 | `src/stores` | Pinia 状态、派生数据、部分业务命令 | 同时访问 API、数据库、Electron、DOM 和 coordinator；存在上帝 store 与循环依赖 |
 | `src/services` | 数据库、账号会话、配置、SQLite、聚合视图 | database facade 过宽；`dbVars` 是可变全局上下文；数据模块反向依赖 UI |
-| `src/coordinators` | WebSocket/API/数据库事件编排 | 部分模块直接操作 DOM、Noty、Toast、router 和 store；不是纯编排层 |
+| `src/coordinators` | WebSocket/API/数据库事件编排 | store/API/database 耦合仍在；M-03 已把 DOM、Noty、Toast、router implementation 收敛到 services adapter seam，后续继续深化 use-case |
 | `src/api` | REST/API endpoint 请求封装 | `window.request` 全局暴露；请求、缓存策略和 `src/queries` 有重复 |
 | `src/queries` | Query key、实体缓存、查询策略 | 新旧两套数据获取模型并存，Pinia 与 Query 的数据所有权不够清晰 |
 | `src/shared` | 常量、工具函数、基础 UI 操作 | 目录过于宽泛；部分工具直接调用 `AppApi` 或修改 UI，容易形成反向依赖 |
@@ -64,8 +64,9 @@
 | 文件路径 | 问题类型 | 严重程度 | 建议 |
 |---|---|---:|---|
 | `src/stores` ↔ `src/coordinators` | 双向依赖、编排循环 | Major | 先选 friend/favorite 一条链路，引入 use-case 或事件 port；store 消费结果，coordinator 负责编排 |
-| `src/coordinators/userCoordinator.js` | coordinator 拼接 HTML、`querySelector`、注册 DOM 事件 | Major | coordinator 只发布语义事件；通知内容和点击行为移到 Vue 组件 |
-| `src/coordinators/imageUploadCoordinator.js` | 直接查找 input，同时调用 Toast、AppApi、Web API | Major | 由 UI 传入文件或回调；协调器只返回上传结果和错误 |
+| `src/coordinators/userCoordinator.js` | 原先拼接关系建议 HTML、`querySelector`、注册 DOM 事件 | Major → 已完成 M-03.4 | 关系建议已通过 `relationSuggestionNotification` adapter；后续仍可继续拆 user use-case 与 notification domain |
+| `src/coordinators/imageUploadCoordinator.js` | 原先直接查找 input，同时调用 Toast、AppApi、Web API | Major → 已完成 M-03.1 | input 查询已通过 `domInputAdapter` seam；后续再收窄上传 capability 和错误返回 |
+| `src/coordinators/authCoordinator.js` | 原先直接创建登出 Noty 并执行 router 跳转 | Major → 已完成 M-03.3/M-03.5 | Router 和登出欢迎通知均经 adapter；保留旧 `runLogoutFlow` interface |
 | `src/stores/ui.js` | store 同时管理状态、router、DOM drop 事件、开发者工具和窗口行为 | Major | 拆成 UI state 与 window actions；平台操作通过 adapter |
 | `src/stores/settings/appearance.js` | store 直接修改 `document.documentElement`，并访问 API/数据库 | Major | 提取主题 adapter/composable；store 只保存偏好和派生状态 |
 | `src/stores/notification/index.js` | 通知状态、数据库、API、托盘、Electron、router、dialog、Toast 混合 | Major | 拆成通知领域模块、持久化模块、托盘 adapter，保留旧 action 作为兼容入口 |
@@ -154,7 +155,8 @@ flowchart LR
     Coords --> Api
     Coords --> Db
     Coords --> Services
-    Coords -. DOM / Toast / Noty .-> UI
+    Coords --> UiAdapters["UI side-effect adapters"]
+    UiAdapters -. DOM / Toast / Noty / Router implementation .-> UI
 
     Services --> Db
     Services --> Bridge
@@ -227,8 +229,9 @@ flowchart LR
 | 检查项 | 结果 |
 |---|---|
 | `npm run prod` | 成功；存在 router 动态导入警告和 Node deprecation 警告 |
-| `npm test` | 当前 223 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；失败数量与重构前基线相同 |
+| `npm test` | 当前 234 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-03 最终切片前后失败数量保持不变 |
 | updateLoop/task 定向测试 | 13 个测试文件、28 个测试通过 |
+| M-03 adapter 定向测试 | DOM input、Toast、Router、关系建议通知、登出欢迎通知及 coordinator 回归测试通过 |
 | 变更文件 `oxlint` | 0 warning、0 error |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | 失败：找不到 `tsc` |

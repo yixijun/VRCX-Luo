@@ -21,7 +21,7 @@
 | Major | M-00 测试与 CI 门禁 | 基础切片完成 | 补齐 JS typecheck 工具链；评估现有 lint/format 债务后再收紧 CI |
 | Major | M-01 宿主 capability adapter | 未开始 | 依赖 B-01 方法清单；保留旧 facade |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
-| Major | M-03 编排层纯化 | 待开始 | 先处理 DOM/Toast/Router 反向依赖 |
+| Major | M-03 编排层纯化 | **已完成：M-03.5** | 进入 M-06/M-09；继续沿同一 seam 拆分剩余上帝模块 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
 | Major | M-06 Notification Store 拆分 | 待 M-01/M-04 | 先补 characterization tests |
@@ -50,6 +50,11 @@
 | `bb50eb52` | 提取 friend-location payload normalization module，保留 WebSocket fallback 与 `applyUser` 调用顺序，并补齐双路径测试 |
 | `70f2703f` | 为 pending-offline tick 提取显式依赖核心，保留默认 adapter 兼容入口，并用 fake clock 固化到期、提前和状态竞态行为 |
 | `283251e2` | 提取 WebSocket 5 秒重连调度 module，保留登录、好友加载和 socket 空位三重运行时守卫，并补齐 fake-clock 测试 |
+| `9dcd07f7` | M-03.1：提取 DOM input adapter，保留图片上传兼容入口并允许注入 input resolver |
+| `ca373374` | M-03.2：统一 coordinator Toast adapter，移除 12 个 coordinator 的直接 `vue-sonner` 依赖 |
+| `36f91180` | M-03.3：提取 Router adapter，保留登出后跳转行为和动态加载语义 |
+| `02b494b9` | M-03.4：提取关系建议 Noty/DOM 通知 adapter，保留提示文案、样式和点击副作用顺序 |
+| `c04e3e3d` | M-03.5：提取登出欢迎 Noty adapter，移除 auth coordinator 的直接 Noty 依赖 |
 
 ## 当前 M-02 细分任务
 
@@ -68,7 +73,17 @@
 - **M-02.5.2 WebSocket reconnect**：新增纯 `scheduleWebSocketReconnect` module，固定 5 秒延迟并在回调时读取登录、好友加载和 socket 空位守卫；`websocket.js` 仅负责组装默认 adapter，兼容原有断线行为。提交为 `283251e2`。
 - **M-02.5.3 polling cancellation**：沿用 `updateLoopScheduler` 的 start/stop interface，现有 fake-clock 测试验证 stop 会清理 pending timer，未改生产逻辑。
 
-M-02 已完成。下一主线：**M-03 编排层纯化**，优先处理 DOM/Toast/Router 反向依赖；多账户 B-02/M-05 继续按要求暂缓。
+M-02 已完成，M-03 编排层纯化已完成。下一主线：**M-06 Notification Store 拆分**或 **M-09 其余上帝模块**；多账户 B-02/M-05 继续按要求暂缓。
+
+## 当前 M-03 细分任务
+
+1. **M-03.1 DOM input adapter（已完成）**：`imageUploadCoordinator` 通过 `resolveInputElement` 接缝解析文件 input；默认实现保持 `document.querySelector` 行为，测试可注入 fake document。提交：`9dcd07f7`。
+2. **M-03.2 Toast adapter（已完成）**：新增 `toastAdapter` module，统一 `dismiss/error/info/loading/success/warning` interface；12 个 coordinator 改为依赖 adapter，Toast implementation 仍由服务层绑定 `vue-sonner`。提交：`ca373374`。
+3. **M-03.3 Router adapter（已完成）**：`authCoordinator` 通过 `redirectToLogin` adapter 触发登录路由，保留动态加载、已在登录页不重复跳转和吞掉导航失败的行为。提交：`36f91180`。
+4. **M-03.4 关系建议通知 adapter（已完成）**：`userCoordinator` 只负责关系建议 use-case 和语义回调；Noty、HTML、DOM 样式与按钮监听收敛到 `relationSuggestionNotification` module。提交：`02b494b9`。
+5. **M-03.5 登出欢迎通知 adapter（已完成）**：`authCoordinator` 只传入显示名和翻译 interface；Noty、HTML 转义和展示 implementation 收敛到 `logoutNotification` module。提交：`c04e3e3d`。
+
+M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，也不再直接访问 `document`、`querySelector` 或 router implementation；跨层 UI 副作用均经过浅入口背后的 adapter seam。剩余的 store/API/database 深化仍属于 M-06、M-08、M-09，不在本批次扩大范围。
 
 ## 每个切片的回滚协议
 
