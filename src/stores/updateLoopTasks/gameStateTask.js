@@ -7,7 +7,7 @@
  *
  * @param {object} dependencies
  * @param {boolean} dependencies.isLinux
- * @param {() => Promise<string[] | undefined>} dependencies.getLogLines
+ * @param {() => string[] | undefined | Promise<string[] | undefined>} dependencies.getLogLines
  * @param {(logLine: string) => void} dependencies.addGameLogEvent
  * @param {() => Promise<boolean>} dependencies.getIsGameRunning
  * @param {() => Promise<boolean>} dependencies.getIsSteamVRRunning
@@ -51,8 +51,8 @@ export function createGameStateTask({
                 }
 
                 nextGameRunningCheck = 1;
-                return Promise.resolve(getIsGameRunning()).then(
-                    (isGameRunning) =>
+                return Promise.resolve(getIsGameRunning())
+                    .then((isGameRunning) =>
                         Promise.resolve(getIsSteamVRRunning()).then(
                             (isSteamVRRunning) =>
                                 Promise.resolve(
@@ -62,7 +62,8 @@ export function createGameStateTask({
                                     )
                                 )
                         )
-                ).then(() => initVr());
+                    )
+                    .then(() => initVr());
             };
 
             if (--nextGetLogCheck <= 0) {
