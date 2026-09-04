@@ -32,6 +32,7 @@ import * as workerTimers from 'worker-timers';
 import { deriveGroupRoleChangeMessages } from './groupRoleChangeDecision';
 import { createGroupLanguageEntries } from './groupLanguageProjection';
 import { deriveGroupPresenceChanges } from './groupPresenceDecision';
+import { serializeCurrentUserGroups } from './groupPersistenceProjection';
 
 /**
  * @param ref
@@ -536,17 +537,9 @@ export function saveCurrentUserGroups() {
     if (!groupStore.currentUserGroupsInit) {
         return;
     }
-    const groups = [];
-    for (const ref of groupStore.currentUserGroups.values()) {
-        groups.push({
-            id: ref.id,
-            name: ref.name,
-            ownerId: ref.ownerId,
-            iconUrl: ref.iconUrl,
-            roles: ref.roles,
-            roleIds: ref.myMember?.roleIds
-        });
-    }
+    const groups = serializeCurrentUserGroups(
+        groupStore.currentUserGroups.values()
+    );
     configRepository.setString(
         `VRCX_currentUserGroups_${userStore.currentUser.id}`,
         JSON.stringify(groups)
