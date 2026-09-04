@@ -1731,7 +1731,10 @@ export const useNotificationStore = defineStore("Notification", () => {
     });
 
     window.addEventListener("vrcx-tray-notification-action", (event) => {
-        const { action, notificationId } = event.detail || {};
+        const customEvent = /** @type {CustomEvent<{action?: string, notificationId?: string}>} */ (
+            event
+        );
+        const { action, notificationId } = customEvent.detail || {};
         handleTrayNotificationAction(action, notificationId).catch((error) => {
             console.error("Failed to handle tray notification action:", error);
         });
