@@ -20,7 +20,7 @@
 | Blocker 条件项 | B-02 多账户数据隔离 | **按要求暂缓** | 不改 `dbVars`、`accountHub` 和次号生命周期 |
 | Major | M-00 测试与 CI 门禁 | 基础切片完成 | 补齐 JS typecheck 工具链；评估现有 lint/format 债务后再收紧 CI |
 | Major | M-01 宿主 capability adapter | 未开始 | 依赖 B-01 方法清单；保留旧 facade |
-| Major | M-02 数据刷新链路契约化 | **进行中：M-02.4.3 已完成** | 补齐取消、重连、竞态（M-02.5） |
+| Major | M-02 数据刷新链路契约化 | **进行中：M-02.5.1 已完成** | 提取 WebSocket 重连 seam（M-02.5.2） |
 | Major | M-03 编排层纯化 | 待 M-02 | 先处理 DOM/Toast/Router 反向依赖 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
@@ -48,6 +48,7 @@
 | `9e987ab8` | 为 `friend-update` 建立显式依赖入口，保留旧 `runHandleUserUpdateFlow` interface，并补齐 Bio 事件测试 |
 | `ead6a2f5` | 为 online/offline/active presence flow 建立显式依赖入口，保留 `runUpdateFriendFlow` 兼容 interface，并补齐 pending-offline 测试 |
 | `bb50eb52` | 提取 friend-location payload normalization module，保留 WebSocket fallback 与 `applyUser` 调用顺序，并补齐双路径测试 |
+| `70f2703f` | 为 pending-offline tick 提取显式依赖核心，保留默认 adapter 兼容入口，并用 fake clock 固化到期、提前和状态竞态行为 |
 
 ## 当前 M-02 细分任务
 
@@ -55,15 +56,16 @@
 2. **M-02.2 纯 diff/记录决策函数（已完成）**：提取 `createFriendPresenceFeed` 输入→Feed 决策 module，不改变调用顺序和写入时机；验证结果已固化在 `909685bc`。
 3. **M-02.3 注入接口（已完成）**：把 Friend Store、Feed、Shared Feed、通知和数据库 capability 作为显式依赖；旧入口继续组装默认 adapter；验证结果已固化在 `bfbfbddf`。
 4. **M-02.4 事件迁移（已完成）**：`friend-update`、online/offline/active presence 和 `friend-location` 均已有可测试的显式 seam；下一步处理取消、重连和竞态。
-5. **M-02.5 取消、重连、竞态**：覆盖 pending-offline、WebSocket 重连和轮询取消。
+5. **M-02.5 取消、重连、竞态**：覆盖 pending-offline、WebSocket 重连和轮询取消；当前已完成 pending-offline seam，下一步提取重连 seam。
 
 已完成切片：
 
 - **M-02.4.1 `friend-update` seam**：`runHandleUserUpdateFlow` 仍是兼容入口，新增的依赖核心可注入 Store、Feed、通知、共享 Feed 和数据库 adapter；Bio 变更的副作用顺序由测试固化。提交为 `9e987ab8`。
 - **M-02.4.2 online/offline/active presence seam**：`runUpdateFriendFlow` 仍是兼容入口，新增的依赖核心可注入好友状态、用户缓存、重取用户、搜索索引、登录状态和延迟 transition capability；pending-offline 行为由测试固化。提交为 `ead6a2f5`。
 - **M-02.4.3 `friend-location`**：新增纯 payload normalization module，完整用户和 fallback 两条路径均保持字段、解析顺序与 `applyUser` 调用行为；提交为 `bb50eb52`。
+- **M-02.5.1 pending-offline tick**：`runPendingOfflineTickFlow` 仍是兼容入口，新增 `runPendingOfflineTickFlowWithDependencies` 核心，可注入好友状态和 delayed transition capability；fake clock 固化到期、提前返回和状态已匹配取消路径。提交为 `70f2703f`。
 
-下一切片：**M-02.5 取消、重连、竞态**。开始前仍需先运行同一组受影响测试，完成后立即验证并单独提交。
+下一切片：**M-02.5.2 WebSocket 重连 seam**。开始前仍需先运行同一组受影响测试，完成后立即验证并单独提交；轮询取消由现有 `updateLoopScheduler` fake-clock stop 测试持续守护。
 
 ## 每个切片的回滚协议
 
