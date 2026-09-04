@@ -19,6 +19,7 @@ export const queryKeys = Object.freeze({
         'member',
         userId
     ],
+    /** @param {{ groupId?: string, n?: number, offset?: number, sort?: string, roleId?: string }} [params] */
     groupMembers: ({
         groupId,
         n = 100,
@@ -36,6 +37,7 @@ export const queryKeys = Object.freeze({
             roleId: String(roleId || '')
         }
     ],
+    /** @param {{ groupId?: string, galleryId?: string, n?: number, offset?: number }} [params] */
     groupGallery: ({ groupId, galleryId, n = 100, offset = 0 } = {}) => [
         'group',
         groupId,
@@ -47,6 +49,7 @@ export const queryKeys = Object.freeze({
         }
     ],
     groupCalendar: (groupId) => ['group', groupId, 'calendar'],
+    /** @param {{ groupId?: string, eventId?: string }} [params] */
     groupCalendarEvent: ({ groupId, eventId } = {}) => [
         'group',
         groupId,
@@ -54,6 +57,7 @@ export const queryKeys = Object.freeze({
         eventId
     ],
     avatarGallery: (avatarId) => ['avatar', avatarId, 'gallery'],
+    /** @param {{ userId?: string, n?: number, offset?: number, sort?: string, order?: string, user?: string, releaseStatus?: string, option?: string }} [params] */
     worldsByUser: ({
         userId,
         n = 50,
@@ -84,6 +88,7 @@ export const queryKeys = Object.freeze({
         userId,
         inventoryId
     ],
+    /** @param {{ fileId?: string, version?: number, variant?: string }} [params] */
     fileAnalysis: ({ fileId, version, variant } = {}) => [
         'analysis',
         fileId,
