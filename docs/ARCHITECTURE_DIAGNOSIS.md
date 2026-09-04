@@ -37,7 +37,7 @@
 | `src/ipc-electron` | Renderer 到 Electron 的 IPC 代理 | 动态 Proxy 缺少方法、参数类型和 allowlist |
 | `src-electron` | 主进程、窗口、托盘、IPC、C# 启动 | `main.js` 约 1062 行，窗口、托盘、通知、IPC、Dotnet 全部集中 |
 | `Dotnet` | CEF/Electron C# 宿主、SQLite、日志、VR overlay | CEF/Electron 两套项目目标框架和依赖版本存在漂移；部分 C# 类过大 |
-| `Dotnet.Tests` | C# WinForms 测试项目 | 已接入 xUnit 与正式测试发现；测试通过 STA 辅助器执行，尚未接入 CI job |
+| `Dotnet.Tests` | C# WinForms 测试项目 | 已接入 xUnit、正式测试发现和 Windows CI job；测试通过 STA 辅助器执行 |
 | `src/vr` | VR overlay 和 VR 页面 | `Vr.vue` 超过 2000 行，VR UI、状态和平台行为混杂 |
 | `src/workers` | 后台任务和定时 worker | 异步边界较隐蔽，独立测试接缝不足 |
 | `src/localization` | 多语言 JSON 和翻译辅助 | translation key 漂移风险，缺少自动一致性检查 |
@@ -82,7 +82,7 @@
 | `src` 多处生产文件 | 大量文件直接绕过边界访问 database 或宿主全局对象 | Major | 用 lint boundary 限制跨层 import，逐步迁移到 use-case/adapter |
 | `.github/workflows/ci.yaml`、`package.json` | CI 偏手工触发，检查允许失败；`typecheck:js` 找不到 `tsc` | Major | 补齐工具链，把 test、lint、typecheck、schema 校验设为硬门禁 |
 | `src/**/*.test.*` | 当前前端测试有大量失败和脆弱 mock | Major | 先修公共组件、图标、数据库 contract mock，再增加新测试 |
-| `Dotnet.Tests/VRCX.Cef.Tests.csproj` | C# 测试发现曾被 `OutputType=Exe` 绕过 | Major | 已改为正式测试项目，`dotnet test` 当前发现并通过 3 个测试；下一步接入 CI |
+| `Dotnet.Tests/VRCX.Cef.Tests.csproj` | C# 测试发现曾被 `OutputType=Exe` 绕过 | Major | 已改为正式测试项目，`dotnet test` 当前发现并通过 3 个测试，且由 Windows CI job 执行 |
 | `docs/schemas/screenshotMetadata-schema.json` | Schema 结构校验此前缺失 | Major | 已增加 `check:schema` 脚本并接入 CI，后续补字段语义/样例校验 |
 | `docs/DATABASE_SCHEMA.md`、`docs/JIRAI_FEATURES.md` | 文档与代码状态、表结构、行数不一致 | Minor | 描述稳定契约；易变的统计信息改为脚本生成 |
 | `package.json`、`Version` | 版本号来源不一致 | Minor | 明确唯一版本源，构建时统一注入 |

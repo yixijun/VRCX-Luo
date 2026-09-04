@@ -51,7 +51,7 @@
 ### 质量门禁
 
 - `typecheck:js`：先决定正式的 JavaScript 类型检查入口，再补齐工具和配置；不要把一个不可执行的脚本直接设为强制门禁。
-- `Dotnet.Tests`：已引入正式测试框架和可发现的测试项目；后续将把该命令纳入 CI，并继续保留 WinForms 的 STA 线程约束。
+- `Dotnet.Tests`：已引入正式测试框架和可发现的测试项目，并接入 Windows CI job；继续保留 WinForms 的 STA 线程约束。
 - Oxlint / Oxfmt：先建立“新增代码不得增加错误”的增量规则，不在本任务中一次性重排全仓文件。
 - Schema：增加单独的解析/结构检查，防止文件再次出现语法漂移。
 
