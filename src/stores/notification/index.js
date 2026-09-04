@@ -51,6 +51,7 @@ import {
     applyNotificationV2ToCollection,
 } from "./notificationEntityProjection";
 import { createNotificationPreferences } from "./notificationPreferences";
+import { createNotificationSeenQueue } from "./notificationSeenQueue";
 import { useAdvancedSettingsStore } from "../settings/advanced";
 import { useAppearanceSettingsStore } from "../settings/appearance";
 import { useFavoriteStore } from "../favorite";
@@ -597,55 +598,15 @@ export const useNotificationStore = defineStore("Notification", () => {
         database.seenNotificationV2(notificationId);
     }
 
-    const seeQueue = [];
-    const seenIds = new Set();
-    let seeProcessing = false;
-
-    /**
-     *
-     */
-    async function processSeeQueue() {
-        if (seeProcessing) return;
-        seeProcessing = true;
-        let item;
-        while ((item = seeQueue.shift())) {
-            const { id, version } = item;
-            try {
-                await executeWithBackoff(
-                    async () => {
-                        if (version >= 2) {
-                            const args =
-                                await notificationRequest.seeNotificationV2({
-                                    notificationId: id,
-                                });
-                            handleNotificationV2Update({
-                                params: { notificationId: id },
-                                json: { ...args.json, seen: true },
-                            });
-                        } else {
-                            await notificationRequest.seeNotification({
-                                notificationId: id,
-                            });
-                            handleNotificationSee(id);
-                        }
-                    },
-                    {
-                        maxRetries: 3,
-                        baseDelay: 1000,
-                        shouldRetry: (err) =>
-                            err?.status === 429 ||
-                            (err?.message || "").includes("429"),
-                    },
-                );
-            } catch (err) {
-                console.warn("Failed to mark notification as seen:", id);
-                if (version >= 2) {
-                    handleNotificationV2Hide(id);
-                }
-            }
-        }
-        seeProcessing = false;
-    }
+    const notificationSeenQueue = createNotificationSeenQueue({
+        executeWithBackoff,
+        seeNotificationV2: (params) =>
+            notificationRequest.seeNotificationV2(params),
+        seeNotification: (params) => notificationRequest.seeNotification(params),
+        onV2Seen: handleNotificationV2Update,
+        onLegacySeen: handleNotificationSee,
+        onV2Failure: handleNotificationV2Hide,
+    });
 
     /**
      * Queue a notification to be marked as seen.
@@ -653,10 +614,7 @@ export const useNotificationStore = defineStore("Notification", () => {
      * @param {number} [version]
      */
     function queueMarkAsSeen(notificationId, version = 1) {
-        if (seenIds.has(notificationId)) return;
-        seenIds.add(notificationId);
-        seeQueue.push({ id: notificationId, version });
-        processSeeQueue();
+        notificationSeenQueue.enqueue(notificationId, version);
     }
 
     /**
