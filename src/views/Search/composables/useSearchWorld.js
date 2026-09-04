@@ -100,7 +100,10 @@ export function useSearchWorld() {
      */
     function handleSearchWorldCategorySelect(index) {
         searchWorldCategoryIndex.value = index;
-        const row = cachedConfig.value?.dynamicWorldRows?.find(
+        const config = /** @type {{ dynamicWorldRows?: Array<{ index?: number, sortHeading?: string, sortOrder?: string, tag?: string }> }} */ (
+            cachedConfig.value
+        );
+        const row = config.dynamicWorldRows?.find(
             (r) => r.index === index
         );
         searchWorld(row || {});
@@ -111,7 +114,9 @@ export function useSearchWorld() {
      * @param go
      */
     function moreSearchWorld(go) {
-        const params = searchWorldParams.value;
+        const params = /** @type {{ n: number, offset: number, [key: string]: any }} */ (
+            searchWorldParams.value
+        );
         if (go) {
             params.offset += params.n * go;
             if (params.offset < 0) {
