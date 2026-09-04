@@ -30,27 +30,17 @@ import configRepository from '../services/config';
 
 import * as workerTimers from 'worker-timers';
 import { deriveGroupRoleChangeMessages } from './groupRoleChangeDecision';
+import { createGroupLanguageEntries } from './groupLanguageProjection';
 
 /**
  * @param ref
  */
 function applyGroupLanguage(ref) {
     const userStore = useUserStore();
-    ref.$languages = [];
-    const { languages } = ref;
-    if (!languages) {
-        return;
-    }
-    for (const language of languages) {
-        const value = userStore.subsetOfLanguages[language];
-        if (typeof value === 'undefined') {
-            continue;
-        }
-        ref.$languages.push({
-            key: language,
-            value
-        });
-    }
+    ref.$languages = createGroupLanguageEntries({
+        languages: ref.languages,
+        subsetOfLanguages: userStore.subsetOfLanguages
+    });
 }
 
 /**
