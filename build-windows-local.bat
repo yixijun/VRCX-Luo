@@ -80,13 +80,16 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-call dotnet build Dotnet\VRCX-Cef.csproj -p:Configuration=Release -p:Platform=x64
+call dotnet build Dotnet\VRCX-Cef.csproj -p:Configuration=Release -p:Platform=x64 --self-contained
 if %errorlevel% neq 0 (
     echo [ERROR] Backend build failed!
     pause
     exit /b 1
 )
 echo.
+
+:: Mark the portable CEF output as a test build without changing the release Version file.
+>"build\Cef\Version" echo Nightly Build
 
 :: --- Finalize ---
 echo [INFO] Merging Resources...

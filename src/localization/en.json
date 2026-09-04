@@ -1534,6 +1534,7 @@
                 "show_avatar_author": "Show Avatar Author",
                 "show_fallback_avatar": "Show Fallback Avatar Details",
                 "show_previous_instances": "Show Previous Instances",
+                "show_instances_created_by_user": "Show Worlds Created by This User",
                 "moderation_block": "Block",
                 "moderation_unblock": "Unblock",
                 "moderation_mute": "Mute",
@@ -2492,6 +2493,7 @@
         },
         "previous_instances": {
             "header": "Previous Instances",
+            "header_created_by_user": "Worlds Created by This User That I Joined",
             "info": "Previous Instance Info",
             "search_placeholder": "Search",
             "table_view": "Table View",

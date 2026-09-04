@@ -400,6 +400,15 @@ export const useActivityStore = defineStore('Activity', () => {
         });
     }
 
+    async function loadFriendTopWorldsView({
+        userId,
+        rangeDays = 30,
+        limit = 5,
+        sortBy = 'time'
+    }) {
+        return database.getFriendTopWorlds(userId, rangeDays, limit, sortBy);
+    }
+
     function invalidateUser(userId) {
         if (!userId) {
             return;
@@ -515,6 +524,7 @@ export const useActivityStore = defineStore('Activity', () => {
         loadOverlapView,
         loadTopWorlds,
         loadTopWorldsView,
+        loadFriendTopWorldsView,
         refreshActivity,
         invalidateUser,
         startFullCacheBuild,

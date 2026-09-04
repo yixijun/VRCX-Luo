@@ -77,6 +77,8 @@
                 return PreviousInstancesInfoDialog;
             case 'previous-instances-user':
                 return PreviousInstancesListDialog;
+            case 'previous-instances-user-created':
+                return PreviousInstancesListDialog;
             case 'previous-instances-world':
                 return PreviousInstancesListDialog;
             case 'previous-instances-group':
@@ -89,6 +91,8 @@
         switch (activeType.value) {
             case 'previous-instances-user':
                 return { variant: 'user' };
+            case 'previous-instances-user-created':
+                return { variant: 'user-created' };
             case 'previous-instances-world':
                 return { variant: 'world' };
             case 'previous-instances-group':
@@ -116,6 +120,7 @@
                 return 'x-dialog main-entity-dialog group-main-dialog w-[calc(100vw-2rem)] sm:max-w-[60rem] overflow-hidden flex flex-col';
             case 'previous-instances-info':
             case 'previous-instances-user':
+            case 'previous-instances-user-created':
             case 'previous-instances-world':
             case 'previous-instances-group':
                 return 'x-dialog previous-instances-dialog h-[calc(100dvh-3rem)] sm:max-w-250 overflow-hidden flex flex-col';
@@ -258,7 +263,13 @@
                 </BreadcrumbList>
             </Breadcrumb>
 
-            <component :is="activeComponent" v-if="activeComponent" v-bind="activeComponentProps" :key="activeType" />
+            <Transition name="dialog-panel" mode="out-in">
+                <component
+                    :is="activeComponent"
+                    v-if="activeComponent"
+                    v-bind="activeComponentProps"
+                    :key="activeType" />
+            </Transition>
         </DialogContent>
     </Dialog>
 </template>
@@ -281,6 +292,28 @@
         background: var(--background);
     }
 
+    .dialog-panel-enter-active {
+        transition:
+            opacity 140ms ease-out,
+            transform 160ms cubic-bezier(0.2, 0.75, 0.25, 1);
+    }
+
+    .dialog-panel-leave-active {
+        transition:
+            opacity 100ms ease-in,
+            transform 120ms ease-in;
+    }
+
+    .dialog-panel-enter-from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    .dialog-panel-leave-to {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
     @media (max-height: 42rem) {
         :deep(.main-entity-dialog) {
             max-height: calc(100dvh - 1.5rem);
@@ -289,6 +322,18 @@
         :deep(.previous-instances-dialog) {
             height: calc(100dvh - 1.5rem);
             max-height: calc(100dvh - 1.5rem);
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .dialog-panel-enter-active,
+        .dialog-panel-leave-active {
+            transition: opacity 80ms linear;
+        }
+
+        .dialog-panel-enter-from,
+        .dialog-panel-leave-to {
+            transform: none;
         }
     }
 </style>

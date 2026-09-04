@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const mocks = vi.hoisted(() => ({
-    execute: vi.fn()
+    execute: vi.fn(),
+    executeNonQuery: vi.fn()
 }));
 
 vi.mock('../../sqlite.js', () => ({
     default: {
         execute: mocks.execute,
-        executeNonQuery: vi.fn()
+        executeNonQuery: mocks.executeNonQuery
     }
 }));
 vi.mock('../index.js', () => ({
@@ -158,6 +159,73 @@ describe('gameLog.getMyTopWorlds', () => {
             '@limit': 5,
             '@daysOffset': '-30 days',
             '@excludeWorldId': 'wrld_home'
+        });
+    });
+});
+
+describe('gameLog.getInstancesCreatedByUser', () => {
+    beforeEach(() => {
+        mocks.execute.mockReset();
+    });
+
+    test('returns only logged instances from worlds authored by the target user', async () => {
+        mocks.execute.mockImplementation(async (callback, sql, params) => {
+            callback([
+                '2025-01-01T12:00:00Z',
+                'wrld_target:123~region(us)',
+                3600000,
+                'Target World',
+                ''
+            ]);
+            return undefined;
+        });
+
+        const result = await gameLog.getInstancesCreatedByUser({ id: 'usr_target' });
+
+        expect([...result]).toEqual([
+            {
+                created_at: '2025-01-01T12:00:00Z',
+                location: 'wrld_target:123~region(us)',
+                time: 3600000,
+                worldName: 'Target World',
+                groupName: '',
+                events: []
+            }
+        ]);
+        expect(mocks.execute).toHaveBeenCalledTimes(1);
+        expect(mocks.execute.mock.calls[0][1]).toContain(
+            'INNER JOIN cache_world cw ON gl.world_id = cw.id'
+        );
+        expect(mocks.execute.mock.calls[0][1]).toContain('WHERE cw.author_id = @authorId');
+        expect(mocks.execute.mock.calls[0][2]).toEqual({ '@authorId': 'usr_target' });
+    });
+
+    test('matches historical instances by fetched world IDs when the world is not cached', async () => {
+        mocks.execute.mockImplementation(async (callback) => {
+            callback([
+                '2025-01-02T12:00:00Z',
+                'wrld_uncached:123~region(us)',
+                120000,
+                'Uncached World',
+                ''
+            ]);
+            return undefined;
+        });
+
+        await gameLog.getInstancesCreatedByUser(
+            { id: 'usr_target' },
+            ['wrld_uncached', 'wrld_uncached']
+        );
+
+        const [sql, params] = [
+            mocks.execute.mock.calls[0][1],
+            mocks.execute.mock.calls[0][2]
+        ];
+        expect(sql).toContain('gl.world_id IN (@worldId0)');
+        expect(sql).not.toContain('INNER JOIN cache_world');
+        expect(params).toEqual({
+            '@worldId0': 'wrld_uncached',
+            '@authorId': 'usr_target'
         });
     });
 });

@@ -1552,6 +1552,7 @@
                 "show_avatar_author": "显示模型信息",
                 "show_fallback_avatar": "显示备用模型信息",
                 "show_previous_instances": "显示一起加入过的房间",
+                "show_instances_created_by_user": "显示加入过他创建的世界",
                 "moderation_block": "屏蔽",
                 "moderation_unblock": "取消屏蔽",
                 "moderation_mute": "静音",
@@ -2544,6 +2545,7 @@
         },
         "previous_instances": {
             "header": "曾加入的房间",
+            "header_created_by_user": "加入过的、由他创建的世界",
             "info": "曾加入的房间",
             "search_placeholder": "搜索",
             "table_view": "表格视图",

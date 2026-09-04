@@ -770,7 +770,7 @@
      * Function receives an unmodified json string grabbed from the screenshot file
      * Error checking and and verification of data is done in .NET already; In the case that the data/file is invalid, a JSON object with the token "error" will be returned containing a description of the problem.
      * Example: {"error":"Invalid file selected. Please select a valid VRChat screenshot."}
-     * See docs/screenshotMetadata.json for schema
+     * See docs/schemas/screenshotMetadata-schema.json for schema
      * @param {string} json - JSON string grabbed from PNG file
      * @param {boolean} needsCarouselFiles - Whether or not to get the last/next files for the carousel
      * @returns {Promise<void>}

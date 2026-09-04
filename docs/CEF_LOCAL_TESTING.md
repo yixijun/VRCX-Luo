@@ -76,8 +76,53 @@ npm run prod
 构建 Windows CEF Release：
 
 ```powershell
-dotnet build Dotnet/VRCX-Cef.csproj --no-restore -p:Configuration=Release -p:Platform=x64
+dotnet build Dotnet/VRCX-Cef.csproj --no-restore `
+    -p:Configuration=Release `
+    -p:Platform=x64 `
+    --self-contained
 ```
+
+### 出现“.NET 需要安装或更新”窗口
+
+如果启动 `VRCX-Luo.exe` 时出现下面的系统窗口：
+
+```text
+You must install or update .NET to run this application.
+```
+
+这不是 VRCX 页面或云同步代码抛出的异常，而是 Windows CEF 可执行文件在应用代码启动前
+没有找到所需运行时。常见原因是手动构建时漏掉了 `--self-contained`，生成了依赖本机 .NET
+运行时的 framework-dependent 可执行文件。
+
+本地测试版按仓库的自包含方式重新构建即可，不需要用户另外安装 .NET Desktop Runtime：
+
+```powershell
+dotnet build Dotnet/VRCX-Cef.csproj `
+    -p:Configuration=Release `
+    -p:WarningLevel=0 `
+    -p:Platform=x64 `
+    -p:PlatformTarget=x64 `
+    -p:RestorePackagesConfig=true `
+    -t:"Restore;Clean;Build" `
+    -m -a x64 `
+    --self-contained
+```
+
+也可以直接运行根目录的 `build-windows-local.bat`，不要用不带 `--self-contained` 的旧命令
+覆盖 `build/Cef`。构建完成后检查输出目录中存在 `coreclr.dll` 和 `hostfxr.dll`，再启动：
+
+```powershell
+Test-Path '.\build\Cef\coreclr.dll'
+Test-Path '.\build\Cef\hostfxr.dll'
+Start-Process -FilePath '.\build\Cef\VRCX-Luo.exe' -WorkingDirectory '.\build\Cef'
+```
+
+如果必须使用 framework-dependent 构建，则需要安装与项目目标框架和架构匹配的
+`.NET 10 Windows Desktop Runtime x64`；但这不是本地便携测试版的推荐方案。修复后应看到
+VRCX 主窗口标题并能在 `%APPDATA%\VRCX\logs` 中生成新的启动日志，而不是 .NET 安装提示。
+
+本地脚本会把 `build/Cef/Version` 标记为 `Nightly Build`，因此测试版窗口标题显示为
+`VRCX-Luo Nightly Build`。仓库根目录的 `Version` 不会被修改，正式构建仍使用正式版本号。
 
 启动测试版：
 

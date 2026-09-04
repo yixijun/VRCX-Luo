@@ -187,7 +187,10 @@ describe('UserSummaryHeader.vue', () => {
 
         expect(
             wrapper.find('[data-testid="user-summary-header"]').classes()
-        ).toEqual(expect.arrayContaining(['flex-wrap', 'min-w-0']));
+        ).toEqual(expect.arrayContaining(['flex-wrap', 'min-w-0', 'relative']));
+        expect(
+            wrapper.find('[data-testid="user-summary-actions"]').classes()
+        ).toEqual(expect.arrayContaining(['absolute', 'top-0', 'right-0']));
         expect(
             wrapper.find('[data-testid="user-summary-details"]').classes()
         ).toEqual(expect.arrayContaining(['min-w-0', 'basis-72']));

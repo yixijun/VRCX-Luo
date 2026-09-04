@@ -147,6 +147,10 @@
                         <User class="size-4" />
                         {{ t('dialog.user.actions.show_fallback_avatar') }}
                     </DropdownMenuItem>
+                    <DropdownMenuItem @click="onCommand('Instances Created By User')">
+                        <LineChart class="size-4" />
+                        {{ t('dialog.user.actions.show_instances_created_by_user') }}
+                    </DropdownMenuItem>
                     <DropdownMenuItem @click="onCommand('Previous Instances')">
                         <LineChart class="size-4" />
                         {{ t('dialog.user.actions.show_previous_instances') }}

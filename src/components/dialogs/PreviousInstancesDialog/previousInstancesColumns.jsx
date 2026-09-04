@@ -128,7 +128,7 @@ const actionsColumn = ({
 });
 
 export const createPreviousInstancesColumns = (variant, config) => {
-    if (variant === 'user') {
+    if (variant === 'user' || variant === 'user-created') {
         return [
             baseDateColumn(),
             {

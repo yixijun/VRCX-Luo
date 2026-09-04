@@ -24,8 +24,8 @@
                         <Image class="size-8 text-muted-foreground" />
                     </div>
                 </div>
-                <div class="ml-4" style="flex: 1; display: flex; align-items: flex-start">
-                    <div style="flex: 1">
+                <div class="relative ml-4 min-w-0 flex-1 pr-36">
+                    <div class="min-w-0">
                         <div>
                             <span class="font-bold mr-1.5" style="cursor: pointer" @click="copyWorldName">
                                 <Home
@@ -155,13 +155,13 @@
                             </Button>
                         </div>
                     </div>
-                    <div class="ml-2 mt-12">
+                    <div class="absolute top-0 right-0 z-10 flex items-center gap-2">
                         <TooltipWrapper
                             v-if="worldDialog.inCache"
                             side="top"
                             :content="t('dialog.world.actions.delete_cache_tooltip')">
                             <Button
-                                class="rounded-full mr-2"
+                                class="rounded-full"
                                 size="icon-lg"
                                 variant="outline"
                                 :disabled="isGameRunning && worldDialog.cacheLocked"
@@ -188,7 +188,7 @@
                         </TooltipWrapper>
                         <DropdownMenu>
                             <DropdownMenuTrigger as-child>
-                                <Button variant="outline" size="icon-lg" class="rounded-full ml-2">
+                                <Button variant="outline" size="icon-lg" class="rounded-full">
                                     <Ellipsis />
                                 </Button>
                             </DropdownMenuTrigger>

@@ -365,7 +365,7 @@ export const useInstanceStore = defineStore('Instance', () => {
     async function showPreviousInstancesListDialog(variant, targetRef) {
         previousInstancesListDialog.value.variant = variant;
         let resolved = null;
-        if (variant === 'user') {
+        if (variant === 'user' || variant === 'user-created') {
             resolved = await resolveUserRef(targetRef);
             previousInstancesListDialog.value.userRef = resolved;
         } else if (variant === 'world') {
@@ -378,9 +378,9 @@ export const useInstanceStore = defineStore('Instance', () => {
         previousInstancesListDialog.value.visible = true;
         const dialogId = resolved?.id || '';
         const label = resolved?.id
-            ? variant === 'user'
-                ? resolved.displayName || resolved.id
-                : resolved.name || resolved.id
+            ? variant === 'world' || variant === 'group'
+                ? resolved.name || resolved.id
+                : resolved.displayName || resolved.id
             : '';
         uiStore.openDialog({
             type: `previous-instances-${variant}`,

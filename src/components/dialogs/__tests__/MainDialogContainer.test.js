@@ -13,7 +13,8 @@ const mocks = vi.hoisted(() => ({
     },
     userVisible: { value: true },
     previousInstancesInfoVisible: { value: false },
-    previousInstancesVisible: { value: false }
+    previousInstancesVisible: { value: false },
+    previousInstancesVariant: { value: 'user' }
 }));
 
 vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
@@ -33,7 +34,7 @@ vi.mock('@/stores', () => ({
         }),
         previousInstancesListDialog: ref({
             visible: mocks.previousInstancesVisible.value,
-            variant: 'user'
+            variant: mocks.previousInstancesVariant.value
         })
     })
 }));
@@ -102,6 +103,7 @@ describe('MainDialogContainer.vue', () => {
         mocks.userVisible.value = true;
         mocks.previousInstancesInfoVisible.value = false;
         mocks.previousInstancesVisible.value = false;
+        mocks.previousInstancesVariant.value = 'user';
     });
 
     it('renders active dialog and handles breadcrumb back click', async () => {
@@ -147,5 +149,32 @@ describe('MainDialogContainer.vue', () => {
                 'flex-col'
             ])
         );
+    });
+
+    it('uses the same bounded layout for instances from worlds created by a user', () => {
+        mocks.userVisible.value = false;
+        mocks.previousInstancesVisible.value = true;
+        mocks.previousInstancesVariant.value = 'user-created';
+
+        const wrapper = mount(MainDialogContainer);
+        const dialog = wrapper.get('[data-testid="dialog-content"]');
+
+        expect(dialog.classes()).toEqual(
+            expect.arrayContaining([
+                'previous-instances-dialog',
+                'h-[calc(100dvh-3rem)]',
+                'overflow-hidden',
+                'flex',
+                'flex-col'
+            ])
+        );
+    });
+
+    it('animates content when switching between dialog pages', () => {
+        const wrapper = mount(MainDialogContainer);
+        const transition = wrapper.get('transition-stub');
+
+        expect(transition.attributes('name')).toBe('dialog-panel');
+        expect(transition.attributes('mode')).toBe('out-in');
     });
 });

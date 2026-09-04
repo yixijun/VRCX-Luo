@@ -332,6 +332,9 @@ export function useUserDialogCommands(
             'Previous Instances': () => {
                 instanceStore.showPreviousInstancesListDialog('user', D().ref);
             },
+            'Instances Created By User': () => {
+                instanceStore.showPreviousInstancesListDialog('user-created', D().ref);
+            },
             'Manage Gallery': () => {
                 userDialog.value.visible = false;
                 showGalleryPage();

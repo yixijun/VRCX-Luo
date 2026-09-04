@@ -143,7 +143,7 @@
             </div>
         </div>
 
-        <div v-if="isSelf" class="mt-4 border-t border-border pt-3">
+        <div class="mt-4 border-t border-border pt-3">
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">
                     <span class="text-sm font-medium">
@@ -476,13 +476,20 @@
         scheduleTopWorldsLoading(requestId);
 
         try {
-            const result = await activityStore.loadTopWorldsView({
-                userId,
-                rangeDays,
-                limit: 5,
-                sortBy,
-                excludeWorldId: excludeHomeWorldEnabled.value ? currentHomeWorldId.value : ''
-            });
+            const result = isSelf.value
+                ? await activityStore.loadTopWorldsView({
+                      userId,
+                      rangeDays,
+                      limit: 5,
+                      sortBy,
+                      excludeWorldId: excludeHomeWorldEnabled.value ? currentHomeWorldId.value : ''
+                  })
+                : await activityStore.loadFriendTopWorldsView({
+                      userId,
+                      rangeDays,
+                      limit: 5,
+                      sortBy
+                  });
             if (
                 requestId !== activeTopWorldsRequestId ||
                 userDialog.value.id !== userId ||
@@ -501,7 +508,7 @@
 
     async function refreshTopWorldsOnly() {
         const userId = userDialog.value.id;
-        if (!isSelf.value || !userId) {
+        if (!userId) {
             return;
         }
 
@@ -586,6 +593,13 @@
                 return;
             }
             applyOverlapView(overlapView);
+
+            await loadTopWorldsSection({
+                userId,
+                rangeDays,
+                sortBy: topWorldsSortBy.value,
+                period: selectedPeriod.value
+            });
         } finally {
             if (requestId === activeRequestId) {
                 isLoading.value = false;

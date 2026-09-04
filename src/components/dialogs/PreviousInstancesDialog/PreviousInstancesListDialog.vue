@@ -1,7 +1,7 @@
 <template>
     <div class="flex min-h-0 flex-1 flex-col">
         <DialogHeader>
-            <DialogTitle>{{ t('dialog.previous_instances.header') }}</DialogTitle>
+            <DialogTitle>{{ variant === 'user-created' ? t('dialog.previous_instances.header_created_by_user') : t('dialog.previous_instances.header') }}</DialogTitle>
         </DialogHeader>
 
         <DataTableLayout
@@ -57,13 +57,14 @@
     import { DataTableLayout } from '../../ui/data-table';
     import { createPreviousInstancesColumns } from './previousInstancesColumns.jsx';
     import { database } from '../../../services/database';
+    import { queryRequest } from '../../../api';
     import { useVrcxVueTable } from '../../../lib/table/useVrcxVueTable';
 
     const props = defineProps({
         variant: {
             type: String,
             required: true,
-            validator: (value) => ['user', 'world', 'group'].includes(value)
+            validator: (value) => ['user', 'user-created', 'world', 'group'].includes(value)
         }
     });
 
@@ -120,19 +121,22 @@
 
     const headerText = computed(() => {
         const state = dialogState.value;
-        if (props.variant === 'user') return state?.userRef?.displayName ?? '';
+        if (props.variant === 'user' || props.variant === 'user-created')
+            return state?.userRef?.displayName ?? '';
         if (props.variant === 'world') return state?.worldRef?.name ?? '';
         return state?.groupRef?.name ?? '';
     });
 
     const currentId = computed(() => {
-        if (props.variant === 'user') return dialogState.value?.userRef?.id ?? '';
+        if (props.variant === 'user' || props.variant === 'user-created')
+            return dialogState.value?.userRef?.id ?? '';
         if (props.variant === 'world') return dialogState.value?.worldRef?.id ?? '';
         return dialogState.value?.groupRef?.id ?? '';
     });
 
     const persistKey = computed(() => {
         if (props.variant === 'user') return 'previousInstancesUserDialog';
+        if (props.variant === 'user-created') return 'previousInstancesUserCreatedDialog';
         if (props.variant === 'world') return 'previousInstancesWorldDialog';
         return 'previousInstancesGroupDialog';
     });
@@ -167,6 +171,8 @@
                 location: row.location,
                 events: row.events
             });
+        } else if (props.variant === 'user-created') {
+            database.deleteGameLogInstanceByInstanceId({ location: row.location });
         } else {
             database.deleteGameLogInstanceByInstanceId({ location: row.location });
         }
@@ -175,7 +181,7 @@
 
     function deleteGameLogInstancePrompt(row) {
         const description =
-            props.variant === 'user'
+            props.variant === 'user' || props.variant === 'user-created'
                 ? 'Continue? Delete User From GameLog Instance'
                 : 'Continue? Delete GameLog Instance';
         modalStore
@@ -251,6 +257,30 @@
         sortBy.value = sorting;
     };
 
+    async function getCreatedWorldIds(userRef) {
+        const worldIds = [];
+        const params = {
+            n: 50,
+            offset: 0,
+            sort: 'updated',
+            order: 'descending',
+            userId: userRef?.id ?? '',
+            releaseStatus: 'public'
+        };
+
+        if (!params.userId) return worldIds;
+
+        while (true) {
+            const args = await queryRequest.fetch('worldsByUser', params);
+            for (const world of args.json ?? []) {
+                if (world?.id) worldIds.push(world.id);
+            }
+            if ((args.json ?? []).length < params.n) break;
+            params.offset += params.n;
+        }
+        return [...new Set(worldIds)];
+    }
+
     const refreshTable = async () => {
         loading.value = true;
         const array = [];
@@ -263,6 +293,19 @@
             }
             if (props.variant === 'user') {
                 const data = await database.getPreviousInstancesByUserId(D.userRef);
+                for (const item of data.values()) {
+                    item.$location = parseLocation(item.location);
+                    item.timer = item.time > 0 ? timeToText(item.time) : '';
+                    array.push(item);
+                }
+            } else if (props.variant === 'user-created') {
+                let worldIds = [];
+                try {
+                    worldIds = await getCreatedWorldIds(D.userRef);
+                } catch (error) {
+                    console.warn('Failed to load worlds created by user', error);
+                }
+                const data = await database.getInstancesCreatedByUser(D.userRef, worldIds);
                 for (const item of data.values()) {
                     item.$location = parseLocation(item.location);
                     item.timer = item.time > 0 ? timeToText(item.time) : '';

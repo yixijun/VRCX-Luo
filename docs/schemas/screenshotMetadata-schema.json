@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$comment": "This schema is primarily for any developers that want to interface with this outside of VRCX and want an easy way to view/generate the format without crawling through the codebase. It's also for me a couple months from now when I come back to this and have no idea what was done."
+  "$comment": "This schema is primarily for any developers that want to interface with this outside of VRCX and want an easy way to view/generate the format without crawling through the codebase. It's also for me a couple months from now when I come back to this and have no idea what was done.",
   "title": "VRChat Screenshot JSON",
   "description": "JSON object attached by VRCX to screenshot files taken by users in-game.",
   "type": "object",
@@ -8,13 +8,13 @@
   "properties": {
     "application": {
       "type": "string",
-	  "default": "VRCX"
+      "default": "VRCX",
       "description": "Name of the application writing to the screenshot. Should be VRCX."
     },
     "version": {
       "type": "integer",
-      "description": "The version of this schema. If the format changes, this number should change."
-	  "const": 1
+      "description": "The version of this schema. If the format changes, this number should change.",
+      "const": 1
     },
     "author": {
       "type": "object",

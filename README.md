@@ -178,6 +178,8 @@ Charts / UserDialog / Sidebar / Tools 等界面读取并展示
 
 ## 开发者文档
 
+- [文档中心](./docs/README.md)
+- [架构诊断报告](./docs/ARCHITECTURE_DIAGNOSIS.md)
 - [VRCX-Luo 改动清单](./docs/JIRAI_FEATURES.md)
 - [数据刷新机制说明](./docs/DATA_REFRESH.md)
 - [数据库架构预览](./docs/DATABASE_SCHEMA.md)
@@ -207,6 +209,9 @@ npm run prod
 ```
 
 本地测试版的安全启动、重启和常见问题见 [CEF_LOCAL_TESTING.md](./docs/CEF_LOCAL_TESTING.md)。
+如果启动时显示 `You must install or update .NET to run this application.`，请按文档中的
+“出现“.NET 需要安装或更新”窗口”部分使用 `--self-contained` 重新构建；这是运行时打包
+方式问题，不是 VRCX 页面功能异常。
 
 ## 免责声明
 

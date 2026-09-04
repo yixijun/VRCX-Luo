@@ -1316,6 +1316,50 @@ const gameLog = {
         return data;
     },
 
+    /**
+     * Get instances where the current user visited worlds created by the target user.
+     * @param {{id: string}} input - Target user reference.
+     * @param {string[]} [worldIds] - World IDs fetched from the target user's profile.
+     */
+    async getInstancesCreatedByUser(input, worldIds = []) {
+        const data = new Set();
+        const ids = [...new Set(worldIds.filter(Boolean))];
+        const params = {};
+        let source = 'INNER JOIN cache_world cw ON gl.world_id = cw.id';
+        let where = 'cw.author_id = @authorId';
+
+        if (ids.length > 0) {
+            source = '';
+            const placeholders = ids.map((_, index) => `@worldId${index}`);
+            where = `gl.world_id IN (${placeholders.join(', ')})`;
+            ids.forEach((worldId, index) => {
+                params[`@worldId${index}`] = worldId;
+            });
+        }
+
+        params['@authorId'] = input.id;
+        await sqliteService.execute(
+            (dbRow) => {
+                const [created_at, location, time, world_name, group_name] = dbRow;
+                data.add({
+                    created_at,
+                    location,
+                    time: time || 0,
+                    worldName: world_name || '',
+                    groupName: group_name || '',
+                    events: []
+                });
+            },
+            `SELECT gl.created_at, gl.location, gl.time, gl.world_name, gl.group_name
+             FROM gamelog_location gl
+             ${source}
+             WHERE ${where}
+             ORDER BY gl.created_at DESC`,
+            params
+        );
+        return data;
+    },
+
     async getPreviousInstancesByWorldId(input) {
         var data = new Map();
         await sqliteService.execute(
@@ -1569,6 +1613,77 @@ const gameLog = {
                 ${whereClause}
                 ${excludeClause}
             GROUP BY world_id
+            ORDER BY ${orderBy}
+            LIMIT @limit`,
+            params
+        );
+        return results;
+    },
+
+    /**
+     * Get most visited worlds for a specific friend from feed_gps data.
+     * @param {string} userId - VRChat user ID of the friend.
+     * @param {number} [days=0] - Number of days to look back (0 = all time).
+     * @param {number} [limit=5] - Maximum number of worlds to return.
+     * @param {'time'|'count'} [sortBy='time'] - Sort by total time or visit count.
+     * @returns {Promise<Array<{worldId: string, worldName: string, visitCount: number, totalTime: number}>>}
+     */
+    async getFriendTopWorlds(
+        userId,
+        days = 0,
+        limit = 5,
+        sortBy = 'time'
+    ) {
+        const results = [];
+        const whereClause =
+            days > 0 ? `AND created_at >= datetime('now', @daysOffset)` : '';
+        const orderBy =
+            sortBy === 'count' ? 'visit_count DESC' : 'total_time DESC';
+        const params = {
+            '@userId': userId,
+            '@limit': limit
+        };
+        if (days > 0) {
+            params['@daysOffset'] = `-${days} days`;
+        }
+        await sqliteService.execute(
+            (dbRow) => {
+                results.push({
+                    worldId: dbRow[0],
+                    worldName: dbRow[1] || dbRow[0],
+                    visitCount: dbRow[2],
+                    totalTime: dbRow[3] || 0
+                });
+            },
+            `WITH visits AS (
+                SELECT
+                    SUBSTR(location, 1, INSTR(location || ':', ':') - 1) AS wid,
+                    world_name,
+                    COUNT(*) AS visit_count
+                FROM ${dbVars.userPrefix}_feed_gps
+                WHERE user_id = @userId
+                    AND location LIKE 'wrld_%'
+                    ${whereClause}
+                GROUP BY wid
+            ),
+            durations AS (
+                SELECT
+                    SUBSTR(previous_location, 1, INSTR(previous_location || ':', ':') - 1) AS wid,
+                    SUM(time) AS total_time
+                FROM ${dbVars.userPrefix}_feed_gps
+                WHERE user_id = @userId
+                    AND previous_location LIKE 'wrld_%'
+                    AND time > 0
+                    ${whereClause}
+                GROUP BY wid
+            )
+            SELECT
+                v.wid,
+                v.world_name,
+                v.visit_count,
+                COALESCE(d.total_time, 0) AS total_time
+            FROM visits v
+            LEFT JOIN durations d ON v.wid = d.wid
             ORDER BY ${orderBy}
             LIMIT @limit`,
             params
