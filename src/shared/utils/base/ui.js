@@ -45,7 +45,10 @@ function applyThemeColorStyle(theme) {
     const root = document.documentElement;
     root.setAttribute('data-theme-color', theme.key);
 
-    let styleEl = document.getElementById(THEME_COLOR_STYLE_ID);
+    /** @type {HTMLLinkElement | null} */
+    let styleEl = /** @type {HTMLLinkElement | null} */ (
+        document.getElementById(THEME_COLOR_STYLE_ID)
+    );
     if (!theme.href) {
         styleEl?.remove();
         return;
@@ -132,7 +135,10 @@ function applyThemeFonts(themeKey, fontLinks = []) {
 function applyThemeModeStyle(themeMode) {
     const themeConfig = THEME_CONFIG[themeMode];
     const themeFile = themeConfig?.file;
-    let styleEl = document.getElementById(THEME_MODE_STYLE_ID);
+    /** @type {HTMLLinkElement | null} */
+    let styleEl = /** @type {HTMLLinkElement | null} */ (
+        document.getElementById(THEME_MODE_STYLE_ID)
+    );
 
     if (!themeFile) {
         styleEl?.remove();
