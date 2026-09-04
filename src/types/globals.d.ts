@@ -401,6 +401,15 @@ declare global {
         SetCookies(cookie: string): Promise<void>;
         Execute(options: any): Promise<{ Item1: number; Item2: string }>;
         ExecuteJson(requestJson: string): Promise<string>;
+        CreateSecondaryClient(accountId: string): Promise<void>;
+        DestroySecondaryClient(accountId: string): Promise<void>;
+        GetSecondaryCookies(accountId: string): Promise<string>;
+        SetSecondaryCookies(accountId: string, cookies: string): Promise<void>;
+        ExecuteAsJson(accountId: string, requestJson: string): Promise<string>;
+        ExecuteAs(
+            accountId: string,
+            options: any
+        ): Promise<{ Item1: number; Item2: string }>;
     };
 
     const AssetBundleManager: {
