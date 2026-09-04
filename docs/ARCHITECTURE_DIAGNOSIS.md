@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀及 M-03 编排层适配器切片已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-03 编排层适配器及 M-09 Group 纯 module 切片已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module、M-03 的 UI adapter，以及 M-09.1 Group 角色变更决策 module 已落地；coordinator 公共 interface 保持不变，其他架构风险尚未改动。
+> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module、M-03 的 UI adapter，以及 M-09.1 Group 角色变更决策和 M-09.2 Group 语言 projection module 已落地；coordinator 公共 interface 保持不变，其他架构风险尚未改动。
 
 ## 结论摘要
 
@@ -28,7 +28,7 @@
 | `src/components` | 对话框、列表、卡片、表格等可复用 UI | 复用组件大量依赖全局 store、router、toast、DOM；不少组件实际承担完整业务流程 |
 | `src/stores` | Pinia 状态、派生数据、部分业务命令 | 同时访问 API、数据库、Electron、DOM 和 coordinator；存在上帝 store 与循环依赖 |
 | `src/services` | 数据库、账号会话、配置、SQLite、聚合视图 | database facade 过宽；`dbVars` 是可变全局上下文；数据模块反向依赖 UI |
-| `src/coordinators` | WebSocket/API/数据库事件编排 | store/API/database 耦合仍在；M-03 已把 UI implementation 收敛到 services adapter seam，M-09.1 又把 Group 角色决策深化为纯 module，后续继续拆 use-case |
+| `src/coordinators` | WebSocket/API/数据库事件编排 | store/API/database 耦合仍在；M-03 已把 UI implementation 收敛到 services adapter seam，M-09.1/M-09.2 又把 Group 角色决策和语言 projection 深化为纯 module，后续继续拆 use-case |
 | `src/api` | REST/API endpoint 请求封装 | `window.request` 全局暴露；请求、缓存策略和 `src/queries` 有重复 |
 | `src/queries` | Query key、实体缓存、查询策略 | 新旧两套数据获取模型并存，Pinia 与 Query 的数据所有权不够清晰 |
 | `src/shared` | 常量、工具函数、基础 UI 操作 | 目录过于宽泛；部分工具直接调用 `AppApi` 或修改 UI，容易形成反向依赖 |
@@ -67,7 +67,7 @@
 | `src/coordinators/userCoordinator.js` | 原先拼接关系建议 HTML、`querySelector`、注册 DOM 事件 | Major → 已完成 M-03.4 | 关系建议已通过 `relationSuggestionNotification` adapter；后续仍可继续拆 user use-case 与 notification domain |
 | `src/coordinators/imageUploadCoordinator.js` | 原先直接查找 input，同时调用 Toast、AppApi、Web API | Major → 已完成 M-03.1 | input 查询已通过 `domInputAdapter` seam；后续再收窄上传 capability 和错误返回 |
 | `src/coordinators/authCoordinator.js` | 原先直接创建登出 Noty 并执行 router 跳转 | Major → 已完成 M-03.3/M-03.5 | Router 和登出欢迎通知均经 adapter；保留旧 `runLogoutFlow` interface |
-| `src/coordinators/groupCoordinator.js` | 原先在 Group 更新流程内计算角色新增/移除文案并发送通知 | Major → 已完成 M-09.1 | 角色差异已提取为纯 `groupRoleChangeDecision` module；保留 `applyGroup` 和通知顺序 |
+| `src/coordinators/groupCoordinator.js` | 原先在 Group 更新流程内计算角色文案、语言 projection 并发送通知 | Major → 已完成 M-09.1/M-09.2 | 角色差异已提取为 `groupRoleChangeDecision`、语言映射已提取为 `groupLanguageProjection`；保留 `applyGroup` 和通知顺序 |
 | `src/stores/ui.js` | store 同时管理状态、router、DOM drop 事件、开发者工具和窗口行为 | Major | 拆成 UI state 与 window actions；平台操作通过 adapter |
 | `src/stores/settings/appearance.js` | store 直接修改 `document.documentElement`，并访问 API/数据库 | Major | 提取主题 adapter/composable；store 只保存偏好和派生状态 |
 | `src/stores/notification/index.js` | 通知状态、数据库、API、托盘、Electron、router、dialog、Toast 混合 | Major | 拆成通知领域模块、持久化模块、托盘 adapter，保留旧 action 作为兼容入口 |
@@ -106,7 +106,7 @@
 | Store | `src/stores/vrcx.js`（871） | 应用启动、迁移、配置、更新、数据库修复 | app lifecycle / migration |
 | Coordinator | `src/coordinators/userCoordinator.js`（1297） | 用户事件、好友关系、DOM 通知、store 修改、API | user event / relationship use-case / notification |
 | Coordinator | `src/coordinators/favoriteCoordinator.js`（1185） | 收藏事件、API、数据库、store、Toast | favorite event / persistence |
-| Coordinator | `src/coordinators/groupCoordinator.js`（981） | Group API、事件、缓存、store、UI 提示；角色决策已提取 | group sync / group commands（角色决策 module 已落地） |
+| Coordinator | `src/coordinators/groupCoordinator.js`（981） | Group API、事件、缓存、store、UI 提示；角色决策和语言 projection 已提取 | group sync / group commands（纯决策与 projection module 已落地） |
 | Component | `src/vr/Vr.vue`（2175） | VR 页面、状态、输入、窗口、平台交互 | VR shell / panels / commands |
 | Component | `src/views/Charts/components/MutualFriends.vue`（1351） | 查询、图表转换、筛选、展示 | data query / chart model / view |
 | Component | `src/views/Tools/Gallery.vue`（1312） | 图片加载、缓存、筛选、窗口和操作 | gallery data / selection / presentation |
@@ -230,10 +230,11 @@ flowchart LR
 | 检查项 | 结果 |
 |---|---|
 | `npm run prod` | 成功；存在 router 动态导入警告和 Node deprecation 警告 |
-| `npm test` | 当前 235 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-09.1 前后失败数量保持不变 |
+| `npm test` | 当前 236 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-09.2 前后失败数量保持不变 |
 | updateLoop/task 定向测试 | 13 个测试文件、28 个测试通过 |
 | M-03 adapter 定向测试 | DOM input、Toast、Router、关系建议通知、登出欢迎通知及 coordinator 回归测试通过 |
 | M-09.1 Group 决策定向测试 | 4 个测试文件、20 个测试通过 |
+| M-09.2 Group 语言 projection 定向测试 | 5 个测试文件、23 个测试通过 |
 | 变更文件 `oxlint` | 0 warning、0 error |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | 失败：找不到 `tsc` |

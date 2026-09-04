@@ -27,7 +27,7 @@
 | Major | M-06 Notification Store 拆分 | 待 M-01/M-04 | 先补 characterization tests |
 | Major | M-07 Electron composition root / 双宿主契约 | 待 M-01 | 先建立启动流程 seam |
 | Major | M-08 API/Query 缓存所有权 | 待 M-02 | 先盘点实体和 cache key |
-| Major | M-09 其余上帝模块 | **进行中：M-09.1** | 继续从 Group/Favorite/User 大模块提取单一职责 |
+| Major | M-09 其余上帝模块 | **进行中：M-09.2** | 继续从 Group/Favorite/User 大模块提取单一职责 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
 | Minor | N-02 版本与构建来源 | 未开始 | 统一 `Version`、package 和宿主注入来源 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
@@ -56,6 +56,7 @@
 | `02b494b9` | M-03.4：提取关系建议 Noty/DOM 通知 adapter，保留提示文案、样式和点击副作用顺序 |
 | `c04e3e3d` | M-03.5：提取登出欢迎 Noty adapter，移除 auth coordinator 的直接 Noty 依赖 |
 | `ecfba613` | M-09.1：提取 Group 角色变更纯决策 module，保留移除优先、源顺序和旧文案行为 |
+| `c28ed3eb` | M-09.2：提取 Group 语言 projection module，保留源顺序、未知语言跳过和空值行为 |
 
 ## 当前 M-02 细分任务
 
@@ -89,7 +90,8 @@ M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，�
 ## 当前 M-09 细分任务
 
 1. **M-09.1 Group 角色变更决策（已完成）**：新增 `groupRoleChangeDecision` module，将角色新增/移除文案的纯计算与通知副作用分开；保持移除先于新增、各自沿原数组顺序、缺失 role payload 的旧文案结果。`groupCoordinator` 的 `groupRoleChange` 私有调用路径和 `applyGroup` interface 不变。提交：`ecfba613`。
-2. **M-09.2 待开始**：继续从 `favoriteCoordinator`、`userCoordinator` 或 `groupCoordinator` 选择一个可注入的单一职责 seam；仍需先跑对应基线测试，再单独提交。
+2. **M-09.2 Group 语言 projection（已完成）**：新增 `groupLanguageProjection` module，将 Group 语言 id 到本地化条目的纯映射从 coordinator 中移出；保持源数组顺序、未知语言跳过、空字符串/`false`/`0` 等值保留，以及 `applyGroup` interface 不变。提交：`c28ed3eb`。
+3. **M-09.3 待开始**：继续从 `favoriteCoordinator`、`userCoordinator` 或 `groupCoordinator` 选择一个可注入的单一职责 seam；先跑对应基线测试，再单独提交。
 
 ## 每个切片的回滚协议
 
