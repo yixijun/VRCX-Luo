@@ -743,8 +743,8 @@ const groupReq = {
      query: string,
      n: number,
      offset: number,
-     order: string,
-     sortBy: string
+     order?: string,
+     sortBy?: string
      }} params
      * @returns { Promise<{json: any, params}> }
      */
