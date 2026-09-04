@@ -313,7 +313,10 @@ export function showGroupDialog(groupId, options = {}) {
             throw err;
         })
         .then((args) => {
-            const ref = args.ref || applyGroup(args.json);
+            const response = /** @type {{ ref?: object, json: object }} */ (
+                /** @type {unknown} */ (args)
+            );
+            const ref = response.ref || applyGroup(response.json);
             if (groupId === ref.id) {
                 D.ref = ref;
                 uiStore.setDialogCrumbLabel('group', D.id, D.ref?.name || D.id);
