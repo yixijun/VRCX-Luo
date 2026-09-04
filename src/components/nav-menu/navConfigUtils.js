@@ -46,6 +46,12 @@ export function buildNavDefinitionsForLayout(
     return [...visibleBaseDefinitions, ...visibleDashboardDefinitions];
 }
 
+/**
+ * @param {{getString: (key: string) => Promise<string | null>}} repository
+ * @param {any[]} fallbackLayout
+ * @param {{configKey?: string, filterHiddenKey?: (key: string) => boolean}} [options]
+ * @returns {Promise<{layout: any[], hiddenKeys: string[]}>}
+ */
 export async function loadStoredNavConfig(
     repository,
     fallbackLayout,
