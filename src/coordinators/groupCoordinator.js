@@ -41,7 +41,9 @@ function applyGroupLanguage(ref) {
     const userStore = useUserStore();
     ref.$languages = createGroupLanguageEntries({
         languages: ref.languages,
-        subsetOfLanguages: userStore.subsetOfLanguages
+        subsetOfLanguages: /** @type {Record<string, unknown>} */ (
+            /** @type {unknown} */ (userStore.subsetOfLanguages)
+        )
     });
 }
 
