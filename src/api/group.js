@@ -1064,21 +1064,6 @@ const groupReq = {
         });
     },
 
-    followGroupEvent(params) {
-        return request(`calendar/${params.groupId}/${params.eventId}/follow`, {
-            method: 'POST',
-            params: {
-                isFollowing: params.isFollowing
-            }
-        }).then((json) => {
-            const args = {
-                json,
-                params
-            };
-            return args;
-        });
-    }
-
     // getRequestedGroups() {
     //     return request(
     //         `users/${API.currentUser.id}/groups/requested`,
