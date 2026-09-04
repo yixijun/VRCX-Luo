@@ -55,6 +55,7 @@
 | `36f91180` | M-03.3：提取 Router adapter，保留登出后跳转行为和动态加载语义 |
 | `02b494b9` | M-03.4：提取关系建议 Noty/DOM 通知 adapter，保留提示文案、样式和点击副作用顺序 |
 | `c04e3e3d` | M-03.5：提取登出欢迎 Noty adapter，移除 auth coordinator 的直接 Noty 依赖 |
+| `3d0bf3c3` | M-03.6：修复 Toast adapter 的可调用入口，保持 `gameCoordinator` 的 `toast(message)` 兼容，并补回归测试 |
 | `ecfba613` | M-09.1：提取 Group 角色变更纯决策 module，保留移除优先、源顺序和旧文案行为 |
 | `c28ed3eb` | M-09.2：提取 Group 语言 projection module，保留源顺序、未知语言跳过和空值行为 |
 | `f5082f8b` | M-09.3：提取 Group presence 决策 module，保留加入/移除顺序和重复抑制行为 |
@@ -97,8 +98,9 @@ M-02、M-03 编排层纯化、M-06 Notification Store 低风险 seam 和 M-08 AP
 3. **M-03.3 Router adapter（已完成）**：`authCoordinator` 通过 `redirectToLogin` adapter 触发登录路由，保留动态加载、已在登录页不重复跳转和吞掉导航失败的行为。提交：`36f91180`。
 4. **M-03.4 关系建议通知 adapter（已完成）**：`userCoordinator` 只负责关系建议 use-case 和语义回调；Noty、HTML、DOM 样式与按钮监听收敛到 `relationSuggestionNotification` module。提交：`02b494b9`。
 5. **M-03.5 登出欢迎通知 adapter（已完成）**：`authCoordinator` 只传入显示名和翻译 interface；Noty、HTML 转义和展示 implementation 收敛到 `logoutNotification` module。提交：`c04e3e3d`。
+6. **M-03.6 Toast 可调用入口兼容（已完成）**：`toastAdapter` 同时保留可调用函数入口与 `dismiss/error/info/loading/success/warning` method interface，修复 `gameCoordinator` 的 `toast(message)` 运行时错误；新增回归测试。提交：`3d0bf3c3`。
 
-M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，也不再直接访问 `document`、`querySelector` 或 router implementation；跨层 UI 副作用均经过浅入口背后的 adapter seam。M-06 已为通知 store 建立领域 projection、persistence 和 seen queue seam；更深的宿主/database capability 仍等待 M-01/M-04。
+M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，也不再直接访问 `document`、`querySelector` 或 router implementation；跨层 UI 副作用均经过浅入口背后的 adapter seam。M-03.6 进一步补齐了 adapter 的 callable interface，避免旧调用方在压缩包中触发运行时错误。M-06 已为通知 store 建立领域 projection、persistence 和 seen queue seam；更深的宿主/database capability 仍等待 M-01/M-04。
 
 ## 当前 M-06 细分任务
 

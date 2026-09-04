@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-03 编排层适配器、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module、M-03 的 UI adapter、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator/store 公共 interface 保持不变，其他架构风险尚未改动。
+> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator/store 公共 interface 保持不变，其他架构风险尚未改动。
 
 ## 结论摘要
 
@@ -66,6 +66,7 @@
 | `src/stores` ↔ `src/coordinators` | 双向依赖、编排循环 | Major | 先选 friend/favorite 一条链路，引入 use-case 或事件 port；store 消费结果，coordinator 负责编排 |
 | `src/coordinators/userCoordinator.js` | 原先拼接关系建议 HTML、`querySelector`、注册 DOM 事件；自动状态和配置 projection 也混在 coordinator | Major → 已完成 M-03.4/M-09.7/M-09.8 | 关系建议已通过 `relationSuggestionNotification` adapter；语言 projection 和自动状态决策已通过纯 module；后续仍可继续拆 user use-case 与 notification domain |
 | `src/coordinators/imageUploadCoordinator.js` | 原先直接查找 input，同时调用 Toast、AppApi、Web API | Major → 已完成 M-03.1 | input 查询已通过 `domInputAdapter` seam；后续再收窄上传 capability 和错误返回 |
+| `src/services/toastAdapter.js` ↔ `src/coordinators/gameCoordinator.js` | adapter 原先只有 method object，旧协调器仍调用 `toast(message)`，生产包触发 `TypeError: Us is not a function` | Major → 已完成 M-03.6 | adapter 现在同时暴露 callable function 与 method interface；回归测试覆盖默认调用形状，提交 `3d0bf3c3` |
 | `src/coordinators/authCoordinator.js` | 原先直接创建登出 Noty 并执行 router 跳转 | Major → 已完成 M-03.3/M-03.5 | Router 和登出欢迎通知均经 adapter；保留旧 `runLogoutFlow` interface |
 | `src/coordinators/groupCoordinator.js` | 原先在 Group 更新流程内计算角色/presence/持久化/语言 projection 并发送通知 | Major → 已完成 M-09.1～M-09.4 | 角色、语言、presence 和持久化均已提取为纯 module；保留 `applyGroup`、`applyPresenceGroups` 和通知顺序 |
 | `src/coordinators/favoriteCoordinator.js` | 本地 world/avatar/friend 收藏分组、缓存、API、数据库和 Toast 混合 | Major → 已完成 M-09.5/M-09.6 | 本地实体和好友 id projection 已集中到 `favoriteLocalProjection`；后续再拆事件/持久化 use-case |
