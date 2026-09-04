@@ -18,7 +18,7 @@ const getLocalizationObjects = function* () {
         );
     for (const file of files) {
         const filePath = path.join(localeFolder, file.name);
-        const jsonStr = fs.readFileSync(filePath);
+        const jsonStr = fs.readFileSync(filePath, 'utf8');
         yield [filePath, JSON.parse(jsonStr)];
     }
 };
@@ -66,7 +66,7 @@ const InsertKeyInObj = (obj, key, value, above_key) => {
         }
 
         return newObj;
-    }, {});
+    }, /** @type {Record<string, unknown>} */ ({}));
     delete ret.dummy;
 
     // Clear keys on old object
