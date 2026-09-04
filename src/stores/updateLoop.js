@@ -24,6 +24,7 @@ import { useVrcxStore } from './vrcx';
 import { watchState } from '../services/watchState';
 
 import * as workerTimers from 'worker-timers';
+import { createCurrentUserTask } from './updateLoopTasks/currentUserTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -33,6 +34,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const discordPresenceSettingsStore = useDiscordPresenceSettingsStore();
     const vrcxUpdaterStore = useVRCXUpdaterStore();
     const vrStore = useVrStore();
+    const currentUserTask = createCurrentUserTask({ getCurrentUser });
     const state = {
         nextCurrentUserRefresh: 300,
         nextFriendsRefresh: 3600,
@@ -52,6 +54,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         () => watchState.isLoggedIn,
         () => {
             state.nextCurrentUserRefresh = 300;
+            currentUserTask.reset();
             state.nextFriendsRefresh = 3600;
             state.nextNonFriendRefresh = 3600;
             state.nextGroupInstanceRefresh = 0;
@@ -73,10 +76,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     async function updateLoop() {
         try {
             if (watchState.isLoggedIn) {
-                if (--state.nextCurrentUserRefresh <= 0) {
-                    state.nextCurrentUserRefresh = 300; // 5min
-                    getCurrentUser();
-                }
+                currentUserTask.tick();
                 if (--state.nextFriendsRefresh <= 0) {
                     state.nextFriendsRefresh = 3600; // 1hour
                     runRefreshFriendsListFlow();
@@ -196,7 +196,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
      * @param value
      */
     function setNextCurrentUserRefresh(value) {
-        state.nextCurrentUserRefresh = value;
+        currentUserTask.setNext(value);
     }
 
     return {
