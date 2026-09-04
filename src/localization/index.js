@@ -1,3 +1,4 @@
+/** @type {Record<string, string>} */
 const localizedStringsUrls = import.meta.glob('./*.json', {
     eager: true,
     query: '?url',
@@ -10,7 +11,7 @@ async function getLocalizedStrings(code) {
 
     try {
         const res = await fetch(url);
-        if (!res.ok) throw new Error(res.status);
+        if (!res.ok) throw new Error(String(res.status));
         return await res.json();
     } catch {
         if (url !== fallbackUrl) {
