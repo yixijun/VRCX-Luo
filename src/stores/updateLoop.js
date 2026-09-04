@@ -30,6 +30,7 @@ import { createGroupInstanceTask } from './updateLoopTasks/groupInstanceTask';
 import { createGameStateTask } from './updateLoopTasks/gameStateTask';
 import { createUpdateCheckTask } from './updateLoopTasks/updateCheckTask';
 import { createDiscordTask } from './updateLoopTasks/discordTask';
+import { createNonFriendSyncTask } from './updateLoopTasks/nonFriendSyncTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -72,6 +73,9 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         isActive: () => discordPresenceSettingsStore.discordActive,
         updateDiscord: () => discordPresenceSettingsStore.updateDiscord()
     });
+    const nonFriendSyncTask = createNonFriendSyncTask({
+        refreshTrackedNonFriends: refreshTrackedNonFriendsFlow
+    });
     const state = {
         nextCurrentUserRefresh: 300,
         nextFriendsRefresh: 3600,
@@ -95,6 +99,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
             state.nextFriendsRefresh = 3600;
             friendSyncTask.reset();
             state.nextNonFriendRefresh = 3600;
+            nonFriendSyncTask.reset();
             state.nextGroupInstanceRefresh = 0;
             groupInstanceTask.reset();
         },
@@ -117,10 +122,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
             if (watchState.isLoggedIn) {
                 currentUserTask.tick();
                 friendSyncTask.tick();
-                if (--state.nextNonFriendRefresh <= 0) {
-                    state.nextNonFriendRefresh = 3600; // 1hour
-                    refreshTrackedNonFriendsFlow();
-                }
+                nonFriendSyncTask.tick();
                 await groupInstanceTask.tick();
                 updateCheckTask.tick();
                 if (--state.ipcTimeout <= 0) {
