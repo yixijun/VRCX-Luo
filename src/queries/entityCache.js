@@ -160,16 +160,19 @@ export async function fetchWithEntityPolicy({
         queryFn: () => withQueryLog(queryFn),
         ...toQueryOptions(policy)
     });
+    const logTarget = /** @type {string | unknown[]} */ (
+        label || queryKey[0]
+    );
 
     if (isFresh) {
         logWebRequest(
             '[QUERY CACHE HIT]',
-            label || queryKey[0],
+            logTarget,
             queryKey,
             data
         );
     } else {
-        logWebRequest('[QUERY FETCH]', label || queryKey[0], queryKey, data);
+        logWebRequest('[QUERY FETCH]', logTarget, queryKey, data);
     }
 
     return {
