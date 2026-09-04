@@ -27,7 +27,7 @@
 | Major | M-06 Notification Store 拆分 | 待 M-01/M-04 | 先补 characterization tests |
 | Major | M-07 Electron composition root / 双宿主契约 | 待 M-01 | 先建立启动流程 seam |
 | Major | M-08 API/Query 缓存所有权 | 待 M-02 | 先盘点实体和 cache key |
-| Major | M-09 其余上帝模块 | **进行中：M-09.6** | 完成 User 语言 projection，再处理自动状态决策 |
+| Major | M-09 其余上帝模块 | **进行中：M-09.7** | 完成 User 自动状态决策并执行 M09 全量回归 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
 | Minor | N-02 版本与构建来源 | 未开始 | 统一 `Version`、package 和宿主注入来源 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
@@ -61,6 +61,7 @@
 | `35b05f64` | M-09.4：提取 Group 持久化 projection module，保留配置快照字段和顺序 |
 | `b1089ecc` | M-09.5：提取 Favorite 本地实体 projection module，保留分组顺序和 fallback ref 行为 |
 | `0c03a39e` | M-09.6：提取 Favorite 本地好友 id projection，保留默认组和数据库顺序 |
+| `9020880a` | M-09.7：提取 User 配置语言 projection，保留 key 枚举顺序和旧 interface |
 
 ## 当前 M-02 细分任务
 
@@ -99,8 +100,8 @@ M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，�
 4. **M-09.4 Group 持久化 projection（已完成）**：新增 `groupPersistenceProjection` module，将当前用户 Group 快照的纯序列化从 coordinator 中移出，保持配置 key、JSON 字段、`undefined` roleIds 和顺序不变。提交：`35b05f64`。
 5. **M-09.5 Favorite 本地实体 projection（已完成）**：新增 `favoriteLocalProjection` module，合并 world/avatar 本地收藏读取中的重复分组逻辑，保持数据库顺序、fallback ref 和默认 `Favorites` 组行为。提交：`b1089ecc`。
 6. **M-09.6 Favorite 本地好友 projection（已完成）**：复用 `favoriteLocalProjection` module 提取好友收藏 id 分组逻辑，保持 `Favorites` 默认组和数据库顺序。提交：`0c03a39e`。
-7. **M-09.7 User 语言 projection（进行中）**：提取配置事件中的语言条目映射，保持语言 key 顺序和旧 interface。
-8. **M-09.8 User 自动状态决策（待开始）**：提取自动状态/描述的纯决策 module，保持现有守卫、组筛选和状态文案行为。
+7. **M-09.7 User 语言 projection（已完成）**：新增 `userLanguageProjection` module，提取配置事件中的语言条目映射，保持语言 key 枚举顺序和旧 interface。提交：`9020880a`。
+8. **M-09.8 User 自动状态决策（进行中）**：提取自动状态/描述的纯决策 module，保持现有守卫、组筛选和状态文案行为；完成后执行 M09 全量回归并收口。
 
 ## 每个切片的回滚协议
 
