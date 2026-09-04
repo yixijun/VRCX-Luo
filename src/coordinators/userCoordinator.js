@@ -61,6 +61,7 @@ import { useUserStore } from '../stores/user';
 import { useManualRelationsStore } from '../stores/manualRelations';
 import { findRelationSuggestionForUser } from './relationSuggestionPopup';
 import { showRelationSuggestionNotification } from '../services/relationSuggestionNotification';
+import { createUserLanguageEntries } from './userLanguageProjection';
 
 const getRobotUrl = () =>
     `${AppDebug.endpointDomain}/file/file_0e8c4e32-7444-44ea-ade4-313c010d4bae/1/file`;
@@ -895,15 +896,7 @@ export function handleConfig(args) {
         return;
     }
     userStore.setSubsetOfLanguages(languages);
-    const data = [];
-    for (const key in languages) {
-        const value = languages[key];
-        data.push({
-            key,
-            value
-        });
-    }
-    userStore.setLanguageDialogLanguages(data);
+    userStore.setLanguageDialogLanguages(createUserLanguageEntries(languages));
 }
 
 /**
