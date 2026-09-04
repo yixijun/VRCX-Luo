@@ -14,7 +14,7 @@ export const useManualRelationsStore = defineStore('ManualRelations', () => {
     const relationsSet = ref(new Set());
     const isLoaded = ref(false);
     
-    /** @type {import('vue').Ref<Array<{userIdA: string, userIdB: string, score: number, key: string, nameA: string, nameB: string}>>} */
+    /** @type {import('vue').Ref<Array<{userIdA: string, userIdB: string, score: number, displayScore: string, tooltip: string, key: string, nameA: string, nameB: string, isAdded: boolean}>>} */
     const cachedSuggestions = ref([]);
     const ignoredSuggestionKeys = ref(new Set());
     const isComputingSuggestions = ref(false);
