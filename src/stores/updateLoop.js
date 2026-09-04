@@ -31,6 +31,7 @@ import { createGameStateTask } from './updateLoopTasks/gameStateTask';
 import { createUpdateCheckTask } from './updateLoopTasks/updateCheckTask';
 import { createDiscordTask } from './updateLoopTasks/discordTask';
 import { createNonFriendSyncTask } from './updateLoopTasks/nonFriendSyncTask';
+import { createIpcTimeoutTask } from './updateLoopTasks/ipcTimeoutTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -75,6 +76,9 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     });
     const nonFriendSyncTask = createNonFriendSyncTask({
         refreshTrackedNonFriends: refreshTrackedNonFriendsFlow
+    });
+    const ipcTimeoutTask = createIpcTimeoutTask({
+        setIpcEnabled: (enabled) => vrcxStore.setIpcEnabled(enabled)
     });
     const state = {
         nextCurrentUserRefresh: 300,
@@ -125,9 +129,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                 nonFriendSyncTask.tick();
                 await groupInstanceTask.tick();
                 updateCheckTask.tick();
-                if (--state.ipcTimeout <= 0) {
-                    vrcxStore.setIpcEnabled(false);
-                }
+                ipcTimeoutTask.tick();
                 if (
                     --state.nextClearVRCXCacheCheck <= 0 &&
                     vrcxStore.clearVRCXCacheFrequency > 0
@@ -183,7 +185,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
      * @param value
      */
     function setIpcTimeout(value) {
-        state.ipcTimeout = value;
+        ipcTimeoutTask.setNext(value);
     }
 
     /**
