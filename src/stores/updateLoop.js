@@ -32,6 +32,7 @@ import { createUpdateCheckTask } from './updateLoopTasks/updateCheckTask';
 import { createDiscordTask } from './updateLoopTasks/discordTask';
 import { createNonFriendSyncTask } from './updateLoopTasks/nonFriendSyncTask';
 import { createIpcTimeoutTask } from './updateLoopTasks/ipcTimeoutTask';
+import { createCacheCleanupTask } from './updateLoopTasks/cacheCleanupTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -79,6 +80,10 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     });
     const ipcTimeoutTask = createIpcTimeoutTask({
         setIpcEnabled: (enabled) => vrcxStore.setIpcEnabled(enabled)
+    });
+    const cacheCleanupTask = createCacheCleanupTask({
+        getFrequency: () => vrcxStore.clearVRCXCacheFrequency,
+        clearCache: clearVRCXCache
     });
     const state = {
         nextCurrentUserRefresh: 300,
@@ -130,14 +135,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                 await groupInstanceTask.tick();
                 updateCheckTask.tick();
                 ipcTimeoutTask.tick();
-                if (
-                    --state.nextClearVRCXCacheCheck <= 0 &&
-                    vrcxStore.clearVRCXCacheFrequency > 0
-                ) {
-                    state.nextClearVRCXCacheCheck =
-                        vrcxStore.clearVRCXCacheFrequency / 2;
-                    clearVRCXCache();
-                }
+                cacheCleanupTask.tick();
                 discordTask.tick();
                 if (--state.nextAutoStateChange <= 0) {
                     state.nextAutoStateChange = 3;
@@ -161,7 +159,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
      * @param value
      */
     function setNextClearVRCXCacheCheck(value) {
-        state.nextClearVRCXCacheCheck = value;
+        cacheCleanupTask.setNext(value);
     }
 
     /**
