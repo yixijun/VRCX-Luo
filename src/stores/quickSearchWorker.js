@@ -169,7 +169,21 @@ function updateIndex(payload) {
 
 // ── Search functions ────────────────────────────────────────────────
 
+/**
+ * @typedef {object} QuickSearchResult
+ * @property {any} id
+ * @property {any} name
+ * @property {string} type
+ * @property {any} imageUrl
+ * @property {any} [memo]
+ * @property {any} [note]
+ * @property {any} [bio]
+ * @property {string | null} [matchedField]
+ * @property {boolean} [_isPrefix]
+ */
+
 function searchFriends(query, cleanQuery, comparer, limit = 10) {
+    /** @type {QuickSearchResult[]} */
     const results = [];
     const trimmedQuery = query.trim();
     const canSearchExtraFields = trimmedQuery.length >= 2;
@@ -229,6 +243,7 @@ function searchItems(
     ownerId,
     limit = 10
 ) {
+    /** @type {QuickSearchResult[]} */
     const results = [];
     for (const ref of items) {
         if (!ref || !ref.name) continue;
