@@ -41,6 +41,10 @@ declare global {
             getClipboardText: () => Promise<string>;
             getNoUpdater: () => Promise<boolean>;
             setTrayIconNotification: (notify: boolean) => Promise<void>;
+            updateTrayNotifications: (snapshot: any) => Promise<void>;
+            onTrayNotificationAction: (
+                callback: (payload: any) => void
+            ) => () => void;
             setDesktopNotificationsEnabled: (enabled: boolean) => Promise<void>;
             setTraySilentMode: (enabled: boolean) => Promise<void>;
             setVSleepMode: (enabled: boolean) => Promise<void>;
@@ -365,6 +369,7 @@ declare global {
         CheckUpdateProgress(): Promise<number>;
 
         // Notifications
+        UpdateTrayNotifications(json: string): Promise<void>;
         XSNotification(
             title: string,
             content: string,
