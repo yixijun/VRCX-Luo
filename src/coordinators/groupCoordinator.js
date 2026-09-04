@@ -707,7 +707,9 @@ export async function updateInGameGroupOrder() {
         if (!json) {
             return;
         }
-        groupStore.setInGameGroupOrder(JSON.parse(json));
+        groupStore.setInGameGroupOrder(
+            JSON.parse(/** @type {string} */ (json))
+        );
     } catch (err) {
         console.error(err);
     }
