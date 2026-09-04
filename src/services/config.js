@@ -27,7 +27,7 @@ class ConfigRepository {
 
     /**
      * @param {string} key
-     * @param {string} defaultValue
+     * @param {string | null} defaultValue
      * @returns {Promise<string | null>}
      */
     async getString(key, defaultValue = null) {
@@ -94,11 +94,11 @@ class ConfigRepository {
      * @returns {Promise<number | null>}
      */
     async getInt(key, defaultValue = null) {
-        let value = await this.getString(key, null);
-        if (value === null || value === undefined) {
+        const rawValue = await this.getString(key, null);
+        if (rawValue === null || rawValue === undefined) {
             return defaultValue;
         }
-        value = parseInt(value, 10);
+        const value = parseInt(rawValue, 10);
         if (isNaN(value) === true) {
             return defaultValue;
         }
@@ -110,11 +110,11 @@ class ConfigRepository {
     }
 
     async getFloat(key, defaultValue = null) {
-        let value = await this.getString(key, null);
-        if (value === null || value === undefined) {
+        const rawValue = await this.getString(key, null);
+        if (rawValue === null || rawValue === undefined) {
             return defaultValue;
         }
-        value = parseFloat(value);
+        const value = parseFloat(rawValue);
         if (isNaN(value) === true) {
             return defaultValue;
         }
