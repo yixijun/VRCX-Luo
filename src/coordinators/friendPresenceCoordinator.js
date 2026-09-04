@@ -9,6 +9,7 @@ import { useSharedFeedStore } from '../stores/sharedFeed';
 import { useUserStore } from '../stores/user';
 import { userRequest } from '../api';
 import { watchState } from '../services/watchState';
+import { createFriendPresenceFeed } from './friendPresenceFeed';
 
 /**
  * @param {object} ctx
@@ -67,16 +68,16 @@ export async function runUpdateFriendDelayedCheckFlow(
             const time = ts - $location_at;
             worldName = await getWorldName(location);
             groupName = await getGroupName(location);
-            feed = {
-                created_at: nowIso(),
-                type: 'Offline',
+            feed = createFriendPresenceFeed({
+                transition: 'offline',
+                createdAt: nowIso(),
                 userId: ref.id,
                 displayName: ref.displayName,
                 location,
                 worldName,
                 groupName,
                 time
-            };
+            });
             notificationStore.queueFeedNoty(feed);
             sharedFeedStore.addEntry(feed);
             feedStore.addFeedEntry(feed);
@@ -93,16 +94,16 @@ export async function runUpdateFriendDelayedCheckFlow(
             ctx.ref.$active_for = '';
             worldName = await getWorldName(location);
             groupName = await getGroupName(location);
-            feed = {
-                created_at: nowIso(),
-                type: 'Online',
+            feed = createFriendPresenceFeed({
+                transition: 'online',
+                createdAt: nowIso(),
                 userId: id,
                 displayName: ctx.name,
                 location,
                 worldName,
                 groupName,
                 time: ''
-            };
+            });
             notificationStore.queueFeedNoty(feed);
             sharedFeedStore.addEntry(feed);
             feedStore.addFeedEntry(feed);
