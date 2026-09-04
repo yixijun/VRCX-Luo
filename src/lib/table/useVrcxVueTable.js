@@ -30,6 +30,7 @@ export function safeJsonParse(str) {
  * @param wait
  */
 function debounce(fn, wait) {
+    /** @type {ReturnType<typeof setTimeout> | 0} */
     let t = 0;
     return (...args) => {
         if (t) {
