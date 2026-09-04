@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-03 编排层适配器、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-03 编排层适配器、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module、M-03 的 UI adapter、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator 公共 interface 保持不变，其他架构风险尚未改动。
+> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module、M-03 的 UI adapter、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator/store 公共 interface 保持不变，其他架构风险尚未改动。
 
 ## 结论摘要
 
@@ -26,7 +26,7 @@
 |---|---|---|
 | `src/views` | 页面级功能、路由页面、业务流程组合 | 页面直接读写 store、数据库和宿主 API；查询、事件监听、窗口控制混在页面；存在多个 900～1300 行页面 |
 | `src/components` | 对话框、列表、卡片、表格等可复用 UI | 复用组件大量依赖全局 store、router、toast、DOM；不少组件实际承担完整业务流程 |
-| `src/stores` | Pinia 状态、派生数据、部分业务命令 | 同时访问 API、数据库、Electron、DOM 和 coordinator；存在上帝 store 与循环依赖 |
+| `src/stores` | Pinia 状态、派生数据、部分业务命令 | 同时访问 API、数据库、Electron、DOM 和 coordinator；通知 store 已通过 M-06 建立 projection/persistence/queue module，但兼容 facade 仍较大，其他上帝 store 与循环依赖仍在 |
 | `src/services` | 数据库、账号会话、配置、SQLite、聚合视图 | database facade 过宽；`dbVars` 是可变全局上下文；数据模块反向依赖 UI |
 | `src/coordinators` | WebSocket/API/数据库事件编排 | store/API/database 耦合仍在；M-03 已把 UI implementation 收敛到 services adapter seam，M-09 已把 Group/Favorite/User 的角色、presence、持久化、收藏、本地化和自动状态决策深化为纯 module，后续继续拆 use-case |
 | `src/api` | REST/API endpoint 请求封装 | `window.request` 全局暴露；M-08 后缓存副作用经 `queryCache` adapter，Query resource 仍由 facade 组装，宿主全局和 API/Query 边界仍需后续收窄 |
@@ -71,7 +71,7 @@
 | `src/coordinators/favoriteCoordinator.js` | 本地 world/avatar/friend 收藏分组、缓存、API、数据库和 Toast 混合 | Major → 已完成 M-09.5/M-09.6 | 本地实体和好友 id projection 已集中到 `favoriteLocalProjection`；后续再拆事件/持久化 use-case |
 | `src/stores/ui.js` | store 同时管理状态、router、DOM drop 事件、开发者工具和窗口行为 | Major | 拆成 UI state 与 window actions；平台操作通过 adapter |
 | `src/stores/settings/appearance.js` | store 直接修改 `document.documentElement`，并访问 API/数据库 | Major | 提取主题 adapter/composable；store 只保存偏好和派生状态 |
-| `src/stores/notification/index.js` | 通知状态、数据库、API、托盘、Electron、router、dialog、Toast 混合 | Major | 拆成通知领域模块、持久化模块、托盘 adapter，保留旧 action 作为兼容入口 |
+| `src/stores/notification/index.js` | 通知状态、数据库、API、托盘、Electron、router、dialog、Toast 混合 | Major → 已完成 M-06.1～M-06.4 低风险 seam | 已提取通知领域 projection、偏好 persistence、seen queue；保留旧 action 兼容入口和 tray adapter。后续更深拆分等待 M-01/M-04 capability 契约 |
 | `src/services/sqlite.js` | 数据模块反向依赖 modal、i18n、外链打开 | Major | SQLite 层只抛结构化错误；由上层负责提示、翻译和导航 |
 | `src/services/accountSession.js` | 会话、登录/2FA、好友缓存、WebSocket、定时器、原始 SQL、modal 混合 | Major | 分离 session transport、认证用例、缓存持久化和调度器 |
 | `src/services/database/index.js` | facade 过宽，`window.database` 全局暴露，`dbVars` 可变 | Major | 按领域拆 database module；引入显式 `DbContext`；保留兼容 facade |
@@ -96,7 +96,7 @@
 
 | 类型 | 文件（当前约行数） | 责任叠加 | 首个拆分边界 |
 |---|---|---|---|
-| Store | `src/stores/notification/index.js`（1927） | 通知状态、API、数据库、托盘、路由、dialog、Toast | notification domain / persistence / tray |
+| Store | `src/stores/notification/index.js`（约 1990） | 通知状态、API、数据库、托盘、路由、dialog、Toast；projection、偏好 persistence、seen queue 已提取 | notification command facade / database capability |
 | Store | `src/stores/photon.js`（1831） | Photon 事件、实例状态、网络同步、数据库 | Photon transport / instance projection |
 | Store | `src/stores/instance.js`（1411） | 实例模型、加入/离开、API、平台动作 | instance state / join-leave use-case |
 | Store | `src/stores/friend.js`（1385） | 好友、在线状态、排序、数据库、账号聚合 | friend entity / presence / aggregation |
@@ -231,7 +231,7 @@ flowchart LR
 | 检查项 | 结果 |
 |---|---|
 | `npm run prod` | 成功；存在 router 动态导入警告和 Node deprecation 警告 |
-| `npm test` | 当前 244 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-08 新增测试通过，既有失败数量未增加 |
+| `npm test` | 当前 248 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-06 新增测试通过，既有失败数量未增加 |
 | updateLoop/task 定向测试 | 13 个测试文件、28 个测试通过 |
 | M-03 adapter 定向测试 | DOM input、Toast、Router、关系建议通知、登出欢迎通知及 coordinator 回归测试通过 |
 | M-09.1 Group 决策定向测试 | 4 个测试文件、20 个测试通过 |
@@ -243,6 +243,7 @@ flowchart LR
 | M-09.8 User 自动状态决策定向测试 | 5 个测试文件、40 个测试通过 |
 | M-08 Query cache/resource registry 定向测试 | 12 个测试文件、63 个测试通过 |
 | M-08 新增 Query module `oxlint` | 0 warning、0 error；既有 API lint debt 未扩大 |
+| M-06 Notification Store 定向测试 | 5 个测试文件、30 个测试通过 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | 失败：找不到 `tsc` |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
