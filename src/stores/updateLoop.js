@@ -29,6 +29,7 @@ import { createFriendSyncTask } from './updateLoopTasks/friendSyncTask';
 import { createGroupInstanceTask } from './updateLoopTasks/groupInstanceTask';
 import { createGameStateTask } from './updateLoopTasks/gameStateTask';
 import { createUpdateCheckTask } from './updateLoopTasks/updateCheckTask';
+import { createDiscordTask } from './updateLoopTasks/discordTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -66,6 +67,10 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         getAutoUpdateMode: () => vrcxUpdaterStore.autoUpdateVRCX,
         checkForVRCXUpdate: () => vrcxUpdaterStore.checkForVRCXUpdate(),
         tryAutoBackupVrcRegistry: () => vrcxStore.tryAutoBackupVrcRegistry()
+    });
+    const discordTask = createDiscordTask({
+        isActive: () => discordPresenceSettingsStore.discordActive,
+        updateDiscord: () => discordPresenceSettingsStore.updateDiscord()
     });
     const state = {
         nextCurrentUserRefresh: 300,
@@ -129,12 +134,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                         vrcxStore.clearVRCXCacheFrequency / 2;
                     clearVRCXCache();
                 }
-                if (--state.nextDiscordUpdate <= 0) {
-                    state.nextDiscordUpdate = 3;
-                    if (discordPresenceSettingsStore.discordActive) {
-                        discordPresenceSettingsStore.updateDiscord();
-                    }
-                }
+                discordTask.tick();
                 if (--state.nextAutoStateChange <= 0) {
                     state.nextAutoStateChange = 3;
                     updateAutoStateChange();
@@ -173,7 +173,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
      * @param value
      */
     function setNextDiscordUpdate(value) {
-        state.nextDiscordUpdate = value;
+        discordTask.setNext(value);
     }
 
     /**
