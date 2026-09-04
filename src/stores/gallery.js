@@ -212,7 +212,8 @@ export const useGalleryStore = defineStore('Gallery', () => {
         }
         const r = new FileReader();
         r.onload = function () {
-            uploadImage.value = btoa(r.result);
+            const result = /** @type {string} */ (r.result);
+            uploadImage.value = btoa(result);
         };
         r.readAsBinaryString(file);
     }
@@ -224,7 +225,10 @@ export const useGalleryStore = defineStore('Gallery', () => {
         const buttonList = document.querySelectorAll(
             '.inviteImageUploadButton'
         );
-        buttonList.forEach((button) => (button.value = ''));
+        buttonList.forEach((button) => {
+            const input = /** @type {HTMLInputElement} */ (button);
+            input.value = '';
+        });
         uploadImage.value = '';
     }
 
