@@ -3,6 +3,7 @@ import { i18n } from '../plugins/i18n';
 import Noty from 'noty';
 
 import { closeWebSocket, initWebsocket } from '../services/websocket';
+import { redirectToLogin } from '../services/routerAdapter';
 import { escapeTag } from '../shared/utils';
 import { queryClient } from '../queries';
 import { useAuthStore } from '../stores/auth';
@@ -49,10 +50,7 @@ export async function runLogoutFlow() {
     authStore.setAttemptingAutoLogin(false);
     authStore.state.autoLoginAttempts.clear();
     closeWebSocket();
-    const { router } = await import('../plugins/router');
-    if (router.currentRoute.value.name !== 'login') {
-        router.replace({ name: 'login' }).catch(() => {});
-    }
+    await redirectToLogin();
 }
 
 /**
