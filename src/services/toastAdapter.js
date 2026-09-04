@@ -16,12 +16,17 @@ const TOAST_METHODS = [
  * @returns {object}
  */
 export function createToastAdapter(toastImplementation) {
-    return Object.fromEntries(
-        TOAST_METHODS.map((method) => [
-            method,
-            (...args) => toastImplementation[method](...args)
-        ])
+    const adapter = (...args) => toastImplementation(...args);
+    Object.assign(
+        adapter,
+        Object.fromEntries(
+            TOAST_METHODS.map((method) => [
+                method,
+                (...args) => toastImplementation[method](...args)
+            ])
+        )
     );
+    return adapter;
 }
 
 /**

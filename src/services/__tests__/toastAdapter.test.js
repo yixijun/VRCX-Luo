@@ -3,6 +3,26 @@ import { describe, expect, it, vi } from 'vitest';
 import { createToastAdapter } from '../toastAdapter';
 
 describe('createToastAdapter', () => {
+    it('keeps the callable toast entrypoint used by coordinators', () => {
+        const implementation = Object.assign(
+            vi.fn(() => 'toast-id'),
+            {
+                dismiss: vi.fn(),
+                error: vi.fn(),
+                info: vi.fn(),
+                loading: vi.fn(),
+                success: vi.fn(),
+                warning: vi.fn()
+            }
+        );
+        const adapter = createToastAdapter(implementation);
+
+        expect(adapter('message', { duration: 1000 })).toBe('toast-id');
+        expect(implementation).toHaveBeenCalledWith('message', {
+            duration: 1000
+        });
+    });
+
     it('forwards the coordinator toast interface to the supplied implementation', () => {
         const implementation = {
             dismiss: vi.fn(),
