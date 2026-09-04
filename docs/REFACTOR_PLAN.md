@@ -139,7 +139,7 @@ M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决�
 2. **M-00.2 现有类型债务分批收敛（待开始）**：工具链启用后，当前检查暴露 210 条既有诊断，主要集中在 API response 类型、宿主 bridge 类型、store 推断和旧 JSDoc；按模块 seam 分批处理，每批保持定向测试和生产构建通过。
 3. **M-00.3 CI 硬门禁（待 M-00.2）**：在 typecheck 诊断降到可控范围前，不把该命令直接改成阻断式 CI；先保留可见报告，再逐步收紧 lint/format/test 的失败策略。
 
-M-00.2 已开始：首个低风险切片修正 `gameStateTask` 的 `getLogLines` 注释契约，使其准确表达同步数组/Promise 双路径，并完成原文件格式化；`updateLoop.js(65,28)` 误报已消失，整体诊断数仍为 210。提交：`8961b676`。第二个切片修正 Group API 的 `bool` JSDoc 类型名称，诊断数降至 209，提交：`8c34f3f2`。第三个切片修复 Avatar 上传方法的空参数 JSDoc，诊断数降至 207，提交：`26513e2c`。下一刀优先处理同类不改变运行时的 JSDoc/声明契约问题。
+M-00.2 已开始：首个低风险切片修正 `gameStateTask` 的 `getLogLines` 注释契约，使其准确表达同步数组/Promise 双路径，并完成原文件格式化；`updateLoop.js(65,28)` 误报已消失，整体诊断数仍为 210。提交：`8961b676`。第二个切片修正 Group API 的 `bool` JSDoc 类型名称，诊断数降至 209，提交：`8c34f3f2`。第三个切片修复 Avatar 上传方法的空参数 JSDoc，诊断数降至 207，提交：`26513e2c`。第四个切片将 Notification API 的损坏 typedef 改为标准 `@typedef/@property` 声明，解析错误消失，当前诊断数为 206，提交：`23be21b4`。下一刀优先处理同类不改变运行时的 JSDoc/声明契约问题。
 
 当前 M-00 的安全边界是“先让检查可执行，再逐批降低诊断数”。本切片没有修改运行时代码、公共 interface、序列化格式或并发逻辑。
 
