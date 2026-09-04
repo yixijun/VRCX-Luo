@@ -436,10 +436,10 @@ export const columns = [
 /**
  * Function that format the differences between two strings with HTML tags
  * markerStartTag and markerEndTag are optional, if emitted, the differences will be highlighted with yellow and underlined.
- * @param {*} s1
- * @param {*} s2
- * @param {*} markerStartTag
- * @param {*} markerEndTag
+ * @param {unknown} oldString
+ * @param {unknown} newString
+ * @param {string} markerAddition
+ * @param {string} markerDeletion
  * @returns An array that contains both the string 1 and string 2, which the differences are formatted with HTML tags
  */
 
