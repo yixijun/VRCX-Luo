@@ -139,6 +139,9 @@ function isExpired(notification, now) {
     return Number.isFinite(expiresAt) && expiresAt <= now;
 }
 
+/**
+ * @param {{notifications?: any[], unseenIds?: any[], hiddenIds?: any[], now?: number, limit?: number, formatMessage?: Function, getAvatarUrl?: Function, theme?: Record<string, string>}} [options]
+ */
 function buildTrayNotificationSnapshot({
     notifications = [],
     unseenIds = [],
