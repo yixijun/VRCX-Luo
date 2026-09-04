@@ -182,11 +182,11 @@ export default defineConfig(({ mode }) => {
             reportCompressedSize: false,
             chunkSizeWarningLimit: 5000,
             sourcemap: buildAndUploadSourceMaps ? 'hidden' : false,
-            assetsInlineLimit(filePath) {
+            assetsInlineLimit: /** @type {any} */ ((filePath) => {
                 if (isFont(filePath)) return 0;
                 if (filePath.endsWith('.json')) return 0;
                 return 40960;
-            },
+            }),
             rolldownOptions: {
                 preserveEntrySignatures: false,
                 input: {
