@@ -84,7 +84,7 @@ export const useVrcxStore = defineStore('Vrcx', () => {
     const databaseReadyForAutoLogin = ref(false);
     let resolveDatabaseInit = () => {};
     const databaseInitComplete = new Promise((resolve) => {
-        resolveDatabaseInit = resolve;
+        resolveDatabaseInit = () => resolve();
     });
 
     const currentlyDroppingFile = ref(null);
@@ -398,11 +398,14 @@ export const useVrcxStore = defineStore('Vrcx', () => {
      */
     async function saveVRCXWindowOption(windowState = state) {
         if (LINUX) {
-            VRCXStorage.Set('VRCX_LocationX', windowState.x.toString());
-            VRCXStorage.Set('VRCX_LocationY', windowState.y.toString());
-            VRCXStorage.Set('VRCX_SizeWidth', windowState.width.toString());
-            VRCXStorage.Set('VRCX_SizeHeight', windowState.height.toString());
-            VRCXStorage.Set('VRCX_WindowState', windowState.windowState);
+            const options = /** @type {{ x: number, y: number, width: number, height: number, windowState: string }} */ (
+                windowState
+            );
+            VRCXStorage.Set('VRCX_LocationX', options.x.toString());
+            VRCXStorage.Set('VRCX_LocationY', options.y.toString());
+            VRCXStorage.Set('VRCX_SizeWidth', options.width.toString());
+            VRCXStorage.Set('VRCX_SizeHeight', options.height.toString());
+            VRCXStorage.Set('VRCX_WindowState', options.windowState);
         }
     }
 
