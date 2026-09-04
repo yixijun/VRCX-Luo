@@ -50,6 +50,7 @@ import {
     applyNotificationToCollection,
     applyNotificationV2ToCollection,
 } from "./notificationEntityProjection";
+import { createNotificationPreferences } from "./notificationPreferences";
 import { useAdvancedSettingsStore } from "../settings/advanced";
 import { useAppearanceSettingsStore } from "../settings/appearance";
 import { useFavoriteStore } from "../favorite";
@@ -94,6 +95,9 @@ export const useNotificationStore = defineStore("Notification", () => {
     const inviteStore = useInviteStore();
     const modalStore = useModalStore();
     const launchStore = useLaunchStore();
+    const notificationPreferences = createNotificationPreferences({
+        configRepository,
+    });
 
     const notificationInitStatus = ref(false);
     const notificationTable = ref({
@@ -133,9 +137,6 @@ export const useNotificationStore = defineStore("Notification", () => {
     const notificationCenterHiddenSet = computed(
         () => new Set(notificationCenterHiddenIds.value),
     );
-    const notificationCenterHiddenIdsConfigKey =
-        "VRCX_notificationCenterHiddenIds";
-    const notificationCenterHiddenIdsLimit = 1000;
     const trayNotificationSnapshot = ref({ total: 0, items: [] });
     const unseenFriendNotifications = computed(() =>
         filterUnseenNotifications(
@@ -193,22 +194,11 @@ export const useNotificationStore = defineStore("Notification", () => {
      *
      */
     function saveNotificationCenterHiddenIds() {
-        const ids = [
-            ...new Set(
-                notificationCenterHiddenIds.value.filter(
-                    (id) => typeof id === "string" && id.length > 0,
-                ),
-            ),
-        ].slice(-notificationCenterHiddenIdsLimit);
+        const ids = notificationPreferences.normalizeHiddenIds(
+            notificationCenterHiddenIds.value,
+        );
         notificationCenterHiddenIds.value = ids;
-        configRepository
-            .setArray(notificationCenterHiddenIdsConfigKey, ids)
-            .catch((err) => {
-                console.warn(
-                    "Failed to save hidden notification center IDs:",
-                    err,
-                );
-            });
+        notificationPreferences.saveHiddenIds(ids);
     }
 
     watch(
@@ -227,19 +217,10 @@ export const useNotificationStore = defineStore("Notification", () => {
      *
      */
     async function init() {
-        notificationTable.value.filters[0].value = JSON.parse(
-            await configRepository.getString(
-                "VRCX_notificationTableFilters",
-                "[]",
-            ),
-        );
-        const hiddenIds = await configRepository.getArray(
-            notificationCenterHiddenIdsConfigKey,
-            [],
-        );
-        notificationCenterHiddenIds.value = hiddenIds.filter(
-            (id) => typeof id === "string" && id.length > 0,
-        );
+        const { filterTypes, hiddenIds } =
+            await notificationPreferences.load();
+        notificationTable.value.filters[0].value = filterTypes;
+        notificationCenterHiddenIds.value = hiddenIds;
     }
 
     const initPromise = init();
