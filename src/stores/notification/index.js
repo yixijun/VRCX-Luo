@@ -33,10 +33,7 @@ import {
     toNotificationText,
 } from "../../shared/utils/notificationMessage";
 import { database, dbVars } from "../../services/database";
-import {
-    getNotificationCategory,
-    getNotificationTs,
-} from "../../shared/utils/notificationCategory";
+import { getNotificationCategory } from "../../shared/utils/notificationCategory";
 import { AppDebug } from "../../services/appConfig";
 import { createOverlayDispatch } from "./overlayDispatch";
 import {
@@ -44,6 +41,11 @@ import {
     createTrayNotificationActionHandler,
     getTrayNotificationTheme,
 } from "./trayNotificationBridge";
+import {
+    filterNotificationsByCategory,
+    filterRecentNotifications,
+    filterUnseenNotifications,
+} from "./notificationViewProjection";
 import { useAdvancedSettingsStore } from "../settings/advanced";
 import { useAppearanceSettingsStore } from "../settings/appearance";
 import { useFavoriteStore } from "../favorite";
@@ -115,19 +117,13 @@ export const useNotificationStore = defineStore("Notification", () => {
     const acceptingInviteIds = new Set();
 
     const friendNotifications = computed(() =>
-        notificationTable.value.data.filter(
-            (n) => getNotificationCategory(n.type) === "friend",
-        ),
+        filterNotificationsByCategory(notificationTable.value.data, "friend"),
     );
     const groupNotifications = computed(() =>
-        notificationTable.value.data.filter(
-            (n) => getNotificationCategory(n.type) === "group",
-        ),
+        filterNotificationsByCategory(notificationTable.value.data, "group"),
     );
     const otherNotifications = computed(() =>
-        notificationTable.value.data.filter(
-            (n) => getNotificationCategory(n.type) === "other",
-        ),
+        filterNotificationsByCategory(notificationTable.value.data, "other"),
     );
     const unseenSet = computed(() => new Set(unseenNotifications.value));
     const notificationCenterHiddenSet = computed(
@@ -138,52 +134,49 @@ export const useNotificationStore = defineStore("Notification", () => {
     const notificationCenterHiddenIdsLimit = 1000;
     const trayNotificationSnapshot = ref({ total: 0, items: [] });
     const unseenFriendNotifications = computed(() =>
-        friendNotifications.value.filter(
-            (n) =>
-                unseenSet.value.has(n.id) &&
-                !notificationCenterHiddenSet.value.has(n.id),
+        filterUnseenNotifications(
+            friendNotifications.value,
+            unseenSet.value,
+            notificationCenterHiddenSet.value,
         ),
     );
     const unseenGroupNotifications = computed(() =>
-        groupNotifications.value.filter(
-            (n) =>
-                unseenSet.value.has(n.id) &&
-                !notificationCenterHiddenSet.value.has(n.id),
+        filterUnseenNotifications(
+            groupNotifications.value,
+            unseenSet.value,
+            notificationCenterHiddenSet.value,
         ),
     );
     const unseenOtherNotifications = computed(() =>
-        otherNotifications.value.filter(
-            (n) =>
-                unseenSet.value.has(n.id) &&
-                !notificationCenterHiddenSet.value.has(n.id),
+        filterUnseenNotifications(
+            otherNotifications.value,
+            unseenSet.value,
+            notificationCenterHiddenSet.value,
         ),
     );
     const recentCutoff = computed(() => dayjs().subtract(24, "hour").valueOf());
     const recentFriendNotifications = computed(() =>
-        friendNotifications.value.filter(
-            (n) =>
-                !unseenSet.value.has(n.id) &&
-                !notificationCenterHiddenSet.value.has(n.id) &&
-                n.seen !== false &&
-                getNotificationTs(n) > recentCutoff.value,
+        filterRecentNotifications(
+            friendNotifications.value,
+            unseenSet.value,
+            notificationCenterHiddenSet.value,
+            recentCutoff.value,
         ),
     );
     const recentGroupNotifications = computed(() =>
-        groupNotifications.value.filter(
-            (n) =>
-                !unseenSet.value.has(n.id) &&
-                !notificationCenterHiddenSet.value.has(n.id) &&
-                n.seen !== false &&
-                getNotificationTs(n) > recentCutoff.value,
+        filterRecentNotifications(
+            groupNotifications.value,
+            unseenSet.value,
+            notificationCenterHiddenSet.value,
+            recentCutoff.value,
         ),
     );
     const recentOtherNotifications = computed(() =>
-        otherNotifications.value.filter(
-            (n) =>
-                !unseenSet.value.has(n.id) &&
-                !notificationCenterHiddenSet.value.has(n.id) &&
-                n.seen !== false &&
-                getNotificationTs(n) > recentCutoff.value,
+        filterRecentNotifications(
+            otherNotifications.value,
+            unseenSet.value,
+            notificationCenterHiddenSet.value,
+            recentCutoff.value,
         ),
     );
     const hasUnseenNotifications = computed(
