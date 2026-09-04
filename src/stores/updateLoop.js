@@ -33,6 +33,7 @@ import { createDiscordTask } from './updateLoopTasks/discordTask';
 import { createNonFriendSyncTask } from './updateLoopTasks/nonFriendSyncTask';
 import { createIpcTimeoutTask } from './updateLoopTasks/ipcTimeoutTask';
 import { createCacheCleanupTask } from './updateLoopTasks/cacheCleanupTask';
+import { createAutoStateTask } from './updateLoopTasks/autoStateTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -84,6 +85,9 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const cacheCleanupTask = createCacheCleanupTask({
         getFrequency: () => vrcxStore.clearVRCXCacheFrequency,
         clearCache: clearVRCXCache
+    });
+    const autoStateTask = createAutoStateTask({
+        updateAutoStateChange
     });
     const state = {
         nextCurrentUserRefresh: 300,
@@ -137,10 +141,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                 ipcTimeoutTask.tick();
                 cacheCleanupTask.tick();
                 discordTask.tick();
-                if (--state.nextAutoStateChange <= 0) {
-                    state.nextAutoStateChange = 3;
-                    updateAutoStateChange();
-                }
+                autoStateTask.tick();
                 await gameStateTask.tick();
                 if (--state.nextDatabaseOptimize <= 0) {
                     state.nextDatabaseOptimize = 86400; // 1 day
