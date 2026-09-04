@@ -20,7 +20,7 @@
 | Blocker 条件项 | B-02 多账户数据隔离 | **按要求暂缓** | 不改 `dbVars`、`accountHub` 和次号生命周期 |
 | Major | M-00 测试与 CI 门禁 | 基础切片完成 | 补齐 JS typecheck 工具链；评估现有 lint/format 债务后再收紧 CI |
 | Major | M-01 宿主 capability adapter | 未开始 | 依赖 B-01 方法清单；保留旧 facade |
-| Major | M-02 数据刷新链路契约化 | **进行中：M-02.4.1 已完成** | 继续迁移 online/offline/location（M-02.4.2） |
+| Major | M-02 数据刷新链路契约化 | **进行中：M-02.4.2 已完成** | 迁移 friend-location（M-02.4.3） |
 | Major | M-03 编排层纯化 | 待 M-02 | 先处理 DOM/Toast/Router 反向依赖 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
@@ -46,18 +46,22 @@
 | `909685bc` | 提取纯 friend presence Feed 决策 module，并保留原副作用顺序 |
 | `bfbfbddf` | 为 friend presence delayed flow 注入 Store/Feed/通知/数据库 capability，保留兼容入口 |
 | `9e987ab8` | 为 `friend-update` 建立显式依赖入口，保留旧 `runHandleUserUpdateFlow` interface，并补齐 Bio 事件测试 |
+| `ead6a2f5` | 为 online/offline/active presence flow 建立显式依赖入口，保留 `runUpdateFriendFlow` 兼容 interface，并补齐 pending-offline 测试 |
 
 ## 当前 M-02 细分任务
 
 1. **M-02.1 事件→副作用矩阵（已完成）**：为 `friendPresenceCoordinator` 覆盖 Online/Offline 的状态、Feed、通知、共享 Feed、数据库写入和排序更新；验证结果已固化在 `40292dfa`。
 2. **M-02.2 纯 diff/记录决策函数（已完成）**：提取 `createFriendPresenceFeed` 输入→Feed 决策 module，不改变调用顺序和写入时机；验证结果已固化在 `909685bc`。
 3. **M-02.3 注入接口（已完成）**：把 Friend Store、Feed、Shared Feed、通知和数据库 capability 作为显式依赖；旧入口继续组装默认 adapter；验证结果已固化在 `bfbfbddf`。
-4. **M-02.4 事件迁移（进行中）**：已完成 `friend-update` 的首个显式依赖 seam；下一步按 online/offline/location 顺序逐条迁移。
+4. **M-02.4 事件迁移（进行中）**：已完成 `friend-update` 及 online/offline/active presence flow 的显式依赖 seam；下一步迁移 `friend-location`。
 5. **M-02.5 取消、重连、竞态**：覆盖 pending-offline、WebSocket 重连和轮询取消。
 
-本轮完成：**M-02.4.1 `friend-update` seam**。`runHandleUserUpdateFlow` 仍是兼容入口，新增的依赖核心可注入 Store、Feed、通知、共享 Feed 和数据库 adapter；Bio 变更的副作用顺序由测试固化。提交为 `9e987ab8`。
+已完成切片：
 
-下一切片：**M-02.4.2 online/offline/location**。开始前仍需先运行同一组受影响测试，完成后立即验证并单独提交。
+- **M-02.4.1 `friend-update` seam**：`runHandleUserUpdateFlow` 仍是兼容入口，新增的依赖核心可注入 Store、Feed、通知、共享 Feed 和数据库 adapter；Bio 变更的副作用顺序由测试固化。提交为 `9e987ab8`。
+- **M-02.4.2 online/offline/active presence seam**：`runUpdateFriendFlow` 仍是兼容入口，新增的依赖核心可注入好友状态、用户缓存、重取用户、搜索索引、登录状态和延迟 transition capability；pending-offline 行为由测试固化。提交为 `ead6a2f5`。
+
+下一切片：**M-02.4.3 friend-location**。开始前仍需先运行同一组受影响测试，完成后立即验证并单独提交。
 
 ## 每个切片的回滚协议
 
