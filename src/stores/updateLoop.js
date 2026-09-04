@@ -27,6 +27,7 @@ import * as workerTimers from 'worker-timers';
 import { createCurrentUserTask } from './updateLoopTasks/currentUserTask';
 import { createFriendSyncTask } from './updateLoopTasks/friendSyncTask';
 import { createGroupInstanceTask } from './updateLoopTasks/groupInstanceTask';
+import { createGameStateTask } from './updateLoopTasks/gameStateTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -50,6 +51,15 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         getUsersGroupInstances: () => groupRequest.getUsersGroupInstances(),
         handleGroupUserInstances,
         checkGameRunning: () => AppApi.CheckGameRunning()
+    });
+    const gameStateTask = createGameStateTask({
+        isLinux: LINUX,
+        getLogLines: () => LogWatcher.GetLogLines(),
+        addGameLogEvent,
+        getIsGameRunning: () => AppApi.IsGameRunning(),
+        getIsSteamVRRunning: () => AppApi.IsSteamVRRunning(),
+        updateIsGameRunning: runUpdateIsGameRunningFlow,
+        initVr: () => vrStore.vrInit()
     });
     const state = {
         nextCurrentUserRefresh: 300,
@@ -129,23 +139,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                     state.nextAutoStateChange = 3;
                     updateAutoStateChange();
                 }
-                if (LINUX && --state.nextGetLogCheck <= 0) {
-                    state.nextGetLogCheck = 0.5;
-                    const logLines = await LogWatcher.GetLogLines();
-                    if (logLines) {
-                        logLines.forEach((logLine) => {
-                            addGameLogEvent(logLine);
-                        });
-                    }
-                }
-                if (LINUX && --state.nextGameRunningCheck <= 0) {
-                    state.nextGameRunningCheck = 1;
-                    await runUpdateIsGameRunningFlow(
-                        await AppApi.IsGameRunning(),
-                        await AppApi.IsSteamVRRunning()
-                    );
-                    vrStore.vrInit(); // TODO: make this event based
-                }
+                await gameStateTask.tick();
                 if (--state.nextDatabaseOptimize <= 0) {
                     state.nextDatabaseOptimize = 86400; // 1 day
                     database.optimize().catch(console.error);
