@@ -27,7 +27,7 @@ function refetchActiveGroupScope(groupId) {
 const groupReq = {
     /**
      * @param {string} groupId
-     * @param {{isRepresenting: bool}} params
+     * @param {{isRepresenting: boolean}} params
      * @returns
      */
     setGroupRepresentation(groupId, params) {
