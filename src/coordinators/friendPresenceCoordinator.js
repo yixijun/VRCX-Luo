@@ -364,6 +364,33 @@ export async function runPendingOfflineTickFlow({
     nowIso = () => new Date().toJSON()
 } = {}) {
     const friendStore = useFriendStore();
+    return runPendingOfflineTickFlowWithDependencies({
+        now,
+        nowIso,
+        friendStore,
+        debugFriendState: AppDebug.debugFriendState,
+        runDelayedFlow: runUpdateFriendDelayedCheckFlow
+    });
+}
+
+/**
+ * Processes pending-offline entries with explicit state and transition capabilities.
+ * The compatibility entry point above supplies the application's default adapters.
+ *
+ * @param {object} dependencies
+ * @param {object} dependencies.friendStore
+ * @param {boolean} [dependencies.debugFriendState]
+ * @param {function} dependencies.runDelayedFlow
+ * @param {function} [dependencies.now]
+ * @param {function} [dependencies.nowIso]
+ */
+export async function runPendingOfflineTickFlowWithDependencies({
+    friendStore,
+    debugFriendState = false,
+    runDelayedFlow,
+    now = Date.now,
+    nowIso = () => new Date().toJSON()
+}) {
     const { friends, pendingOfflineMap, pendingOfflineDelay } = friendStore;
 
     const currentTime = now();
@@ -383,11 +410,11 @@ export async function runPendingOfflineTickFlow({
                 pendingOfflineMap.delete(id);
                 continue;
             }
-            if (AppDebug.debugFriendState) {
+            if (debugFriendState) {
                 console.log(ctx.name, 'pendingOfflineEnd');
             }
             pendingOfflineMap.delete(id);
-            await runUpdateFriendDelayedCheckFlow(
+            await runDelayedFlow(
                 ctx,
                 pending.newState,
                 pending.previousLocation,

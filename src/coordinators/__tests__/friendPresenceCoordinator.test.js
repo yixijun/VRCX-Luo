@@ -83,7 +83,9 @@ import {
     runUpdateFriendDelayedCheckFlow,
     runUpdateFriendDelayedCheckFlowWithDependencies,
     runUpdateFriendFlow,
-    runUpdateFriendFlowWithDependencies
+    runUpdateFriendFlowWithDependencies,
+    runPendingOfflineTickFlow,
+    runPendingOfflineTickFlowWithDependencies
 } from '../friendPresenceCoordinator';
 
 describe('runUpdateFriendDelayedCheckFlow', () => {
@@ -363,5 +365,181 @@ describe('runUpdateFriendFlow', () => {
             mocks.database.addOnlineOfflineToDatabase
         ).toHaveBeenCalledOnce();
         expect(mocks.feedStore.addFeedEntry).toHaveBeenCalledOnce();
+    });
+});
+
+describe('runPendingOfflineTickFlow', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.friendStore.friends.clear();
+        mocks.friendStore.localFavoriteFriends.clear();
+        mocks.friendStore.pendingOfflineMap.clear();
+        mocks.userStore.cachedUsers.clear();
+        mocks.getWorldName.mockResolvedValue('World');
+        mocks.getGroupName.mockResolvedValue('Group');
+        mocks.isRealInstance.mockReturnValue(false);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
+    });
+
+    it('runs a due transition with injected capabilities at the fake-clock deadline', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(10000);
+        const ctx = {
+            id: 'usr-pending',
+            name: 'Pending Friend',
+            state: 'online',
+            pendingOffline: true
+        };
+        const pending = {
+            startTime: 5000,
+            newState: 'offline',
+            previousLocation: 'wrld_previous:instance',
+            previousLocationAt: 4500
+        };
+        const pendingOfflineMap = new Map([[ctx.id, pending]]);
+        const injectedFriendStore = {
+            friends: new Map([[ctx.id, ctx]]),
+            pendingOfflineMap,
+            pendingOfflineDelay: 5000
+        };
+        const runDelayedFlow = vi.fn();
+
+        await runPendingOfflineTickFlowWithDependencies({
+            friendStore: injectedFriendStore,
+            runDelayedFlow,
+            now: Date.now,
+            nowIso: () => '2026-09-04T00:00:10.000Z'
+        });
+
+        expect(ctx.pendingOffline).toBe(false);
+        expect(pendingOfflineMap.has(ctx.id)).toBe(false);
+        expect(runDelayedFlow).toHaveBeenCalledWith(
+            ctx,
+            'offline',
+            'wrld_previous:instance',
+            4500,
+            expect.objectContaining({ now: Date.now })
+        );
+    });
+
+    it('keeps an early pending entry and does not run the transition', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(9000);
+        const ctx = {
+            id: 'usr-early',
+            name: 'Early Friend',
+            state: 'online',
+            pendingOffline: true
+        };
+        const pendingOfflineMap = new Map([
+            [
+                ctx.id,
+                {
+                    startTime: 5000,
+                    newState: 'offline',
+                    previousLocation: 'wrld_previous:instance',
+                    previousLocationAt: 4500
+                }
+            ]
+        ]);
+        const runDelayedFlow = vi.fn();
+
+        await runPendingOfflineTickFlowWithDependencies({
+            friendStore: {
+                friends: new Map([[ctx.id, ctx]]),
+                pendingOfflineMap,
+                pendingOfflineDelay: 5000
+            },
+            runDelayedFlow,
+            now: Date.now,
+            nowIso: () => '2026-09-04T00:00:09.000Z'
+        });
+
+        expect(ctx.pendingOffline).toBe(true);
+        expect(pendingOfflineMap.has(ctx.id)).toBe(true);
+        expect(runDelayedFlow).not.toHaveBeenCalled();
+    });
+
+    it('cancels a stale entry when the current state already matches', async () => {
+        vi.useFakeTimers();
+        vi.setSystemTime(10000);
+        const ctx = {
+            id: 'usr-matched',
+            name: 'Matched Friend',
+            state: 'offline',
+            pendingOffline: true
+        };
+        const pendingOfflineMap = new Map([
+            [
+                ctx.id,
+                {
+                    startTime: 5000,
+                    newState: 'offline',
+                    previousLocation: 'offline',
+                    previousLocationAt: 4500
+                }
+            ]
+        ]);
+        const runDelayedFlow = vi.fn();
+        const consoleError = vi
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await runPendingOfflineTickFlowWithDependencies({
+            friendStore: {
+                friends: new Map([[ctx.id, ctx]]),
+                pendingOfflineMap,
+                pendingOfflineDelay: 5000
+            },
+            runDelayedFlow,
+            now: Date.now,
+            nowIso: () => '2026-09-04T00:00:10.000Z'
+        });
+
+        expect(ctx.pendingOffline).toBe(false);
+        expect(pendingOfflineMap.has(ctx.id)).toBe(false);
+        expect(runDelayedFlow).not.toHaveBeenCalled();
+        expect(consoleError).toHaveBeenCalledWith(
+            'Matched Friend',
+            'pendingOfflineCancelledStateMatched, this should never happen'
+        );
+        consoleError.mockRestore();
+    });
+
+    it('keeps the compatibility entry point on default adapters', async () => {
+        const ctx = {
+            id: 'usr-default-pending',
+            name: 'Default Pending Friend',
+            state: 'online',
+            pendingOffline: true,
+            ref: {
+                id: 'usr-default-pending',
+                displayName: 'Default Pending Friend',
+                location: 'wrld-default:instance',
+                $location_at: 1000
+            }
+        };
+        mocks.friendStore.friends.set(ctx.id, ctx);
+        mocks.friendStore.pendingOfflineMap.set(ctx.id, {
+            startTime: 1000,
+            newState: 'offline',
+            previousLocation: 'offline',
+            previousLocationAt: 1000
+        });
+        mocks.getWorldName.mockResolvedValue('World');
+        mocks.getGroupName.mockResolvedValue('Group');
+
+        await runPendingOfflineTickFlow({
+            now: () => 6000,
+            nowIso: () => '2026-09-04T00:00:06.000Z'
+        });
+
+        expect(ctx.state).toBe('offline');
+        expect(
+            mocks.database.addOnlineOfflineToDatabase
+        ).toHaveBeenCalledOnce();
     });
 });
