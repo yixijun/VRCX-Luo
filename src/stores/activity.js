@@ -319,6 +319,10 @@ export const useActivityStore = defineStore('Activity', () => {
         return view;
     }
 
+    /**
+     * @param {string} userId
+     * @param {{rangeDays?: number, limit?: number, sortBy?: 'time' | 'count', excludeWorldId?: string, isSelf?: boolean}} options
+     */
     async function loadTopWorlds(
         userId,
         { rangeDays = 30, limit = 5, sortBy = 'time', excludeWorldId = '' }
@@ -384,6 +388,9 @@ export const useActivityStore = defineStore('Activity', () => {
         };
     }
 
+    /**
+     * @param {{userId: string, rangeDays?: number, limit?: number, sortBy?: 'time' | 'count', excludeWorldId?: string}} options
+     */
     async function loadTopWorldsView({
         userId,
         rangeDays = 30,
@@ -400,6 +407,9 @@ export const useActivityStore = defineStore('Activity', () => {
         });
     }
 
+    /**
+     * @param {{userId: string, rangeDays?: number, limit?: number, sortBy?: 'time' | 'count'}} options
+     */
     async function loadFriendTopWorldsView({
         userId,
         rangeDays = 30,
