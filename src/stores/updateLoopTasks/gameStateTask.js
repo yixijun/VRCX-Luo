@@ -13,7 +13,7 @@
  * @param {() => Promise<boolean>} dependencies.getIsSteamVRRunning
  * @param {(isGameRunning: boolean, isSteamVRRunning: boolean) => Promise<void>} dependencies.updateIsGameRunning
  * @param {() => void} dependencies.initVr
- * @returns {{ tick: () => Promise<void> }}
+ * @returns {{ tick: () => void | Promise<void> }}
  */
 export function createGameStateTask({
     isLinux,
@@ -28,28 +28,48 @@ export function createGameStateTask({
     let nextGameRunningCheck = 0;
 
     return {
-        async tick() {
+        tick() {
             if (!isLinux) {
                 return;
             }
 
-            if (--nextGetLogCheck <= 0) {
+            const readLogLines = () => {
                 nextGetLogCheck = 0.5;
-                const logLines = await getLogLines();
-                if (logLines) {
-                    logLines.forEach((logLine) => {
-                        addGameLogEvent(logLine);
-                    });
+                return Promise.resolve(getLogLines()).then((logLines) => {
+                    if (logLines) {
+                        logLines.forEach((logLine) => {
+                            addGameLogEvent(logLine);
+                        });
+                    }
+                    return checkGameState();
+                });
+            };
+
+            const checkGameState = () => {
+                if (--nextGameRunningCheck > 0) {
+                    return;
                 }
+
+                nextGameRunningCheck = 1;
+                return Promise.resolve(getIsGameRunning()).then(
+                    (isGameRunning) =>
+                        Promise.resolve(getIsSteamVRRunning()).then(
+                            (isSteamVRRunning) =>
+                                Promise.resolve(
+                                    updateIsGameRunning(
+                                        isGameRunning,
+                                        isSteamVRRunning
+                                    )
+                                )
+                        )
+                ).then(() => initVr());
+            };
+
+            if (--nextGetLogCheck <= 0) {
+                return readLogLines();
             }
 
-            if (--nextGameRunningCheck <= 0) {
-                nextGameRunningCheck = 1;
-                const isGameRunning = await getIsGameRunning();
-                const isSteamVRRunning = await getIsSteamVRRunning();
-                await updateIsGameRunning(isGameRunning, isSteamVRRunning);
-                initVr();
-            }
+            return checkGameState();
         }
     };
 }

@@ -35,6 +35,7 @@ import { createIpcTimeoutTask } from './updateLoopTasks/ipcTimeoutTask';
 import { createCacheCleanupTask } from './updateLoopTasks/cacheCleanupTask';
 import { createAutoStateTask } from './updateLoopTasks/autoStateTask';
 import { createDatabaseOptimizeTask } from './updateLoopTasks/databaseOptimizeTask';
+import { createUpdateLoopScheduler } from './updateLoopTasks/updateLoopScheduler';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -94,67 +95,58 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         optimize: () => database.optimize(),
         onError: console.error
     });
-    const state = {
-        nextCurrentUserRefresh: 300,
-        nextFriendsRefresh: 3600,
-        nextNonFriendRefresh: 3600,
-        nextGroupInstanceRefresh: 0,
-        nextAppUpdateCheck: 3600,
-        ipcTimeout: 0,
-        nextClearVRCXCacheCheck: 86400,
-        nextDiscordUpdate: 0,
-        nextAutoStateChange: 0,
-        nextGetLogCheck: 0,
-        nextGameRunningCheck: 0,
-        nextDatabaseOptimize: 3600
-    };
+    const tasks = [
+        currentUserTask,
+        friendSyncTask,
+        nonFriendSyncTask,
+        groupInstanceTask,
+        updateCheckTask,
+        ipcTimeoutTask,
+        cacheCleanupTask,
+        discordTask,
+        autoStateTask,
+        gameStateTask,
+        databaseOptimizeTask
+    ];
+    const scheduler = createUpdateLoopScheduler({
+        tasks,
+        isLoggedIn: () => watchState.isLoggedIn,
+        onError: (error) => {
+            friendStore.setIsRefreshFriendsLoading(false);
+            console.error(error);
+        },
+        setTimeout: workerTimers.setTimeout,
+        clearTimeout: workerTimers.clearTimeout
+    });
 
     watch(
         () => watchState.isLoggedIn,
         () => {
-            state.nextCurrentUserRefresh = 300;
             currentUserTask.reset();
-            state.nextFriendsRefresh = 3600;
             friendSyncTask.reset();
-            state.nextNonFriendRefresh = 3600;
             nonFriendSyncTask.reset();
-            state.nextGroupInstanceRefresh = 0;
             groupInstanceTask.reset();
         },
         { flush: 'sync' }
     );
 
-    const nextGroupInstanceRefresh = state.nextGroupInstanceRefresh;
+    const nextGroupInstanceRefresh = 0;
 
-    const nextCurrentUserRefresh = state.nextCurrentUserRefresh;
+    const nextCurrentUserRefresh = 300;
 
-    const nextDiscordUpdate = state.nextDiscordUpdate;
+    const nextDiscordUpdate = 0;
 
-    const ipcTimeout = state.ipcTimeout;
+    const ipcTimeout = 0;
 
     /**
      *
      */
     async function updateLoop() {
-        try {
-            if (watchState.isLoggedIn) {
-                currentUserTask.tick();
-                friendSyncTask.tick();
-                nonFriendSyncTask.tick();
-                await groupInstanceTask.tick();
-                updateCheckTask.tick();
-                ipcTimeoutTask.tick();
-                cacheCleanupTask.tick();
-                discordTask.tick();
-                autoStateTask.tick();
-                await gameStateTask.tick();
-                databaseOptimizeTask.tick();
-            }
-        } catch (err) {
-            friendStore.setIsRefreshFriendsLoading(false);
-            console.error(err);
-        }
-        workerTimers.setTimeout(() => updateLoop(), 1000);
+        return scheduler.start();
+    }
+
+    function stopUpdateLoop() {
+        scheduler.stop();
     }
 
     /**
@@ -205,6 +197,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         nextDiscordUpdate,
         ipcTimeout,
         updateLoop,
+        stopUpdateLoop,
         setIpcTimeout,
         setNextCurrentUserRefresh,
         setNextDiscordUpdate,

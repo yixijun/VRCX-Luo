@@ -68,4 +68,25 @@ describe('gameStateTask', () => {
 
         clearInterval(timer);
     });
+
+    test('does not advance game polling when log reading fails', async () => {
+        const logError = new Error('log unavailable');
+        const getLogLines = vi.fn().mockRejectedValueOnce(logError).mockResolvedValue([]);
+        const getIsGameRunning = vi.fn().mockResolvedValue(true);
+        const getIsSteamVRRunning = vi.fn().mockResolvedValue(false);
+        const task = createGameStateTask({
+            isLinux: true,
+            getLogLines,
+            addGameLogEvent: vi.fn(),
+            getIsGameRunning,
+            getIsSteamVRRunning,
+            updateIsGameRunning: vi.fn().mockResolvedValue(undefined),
+            initVr: vi.fn()
+        });
+
+        await expect(task.tick()).rejects.toBe(logError);
+        await task.tick();
+
+        expect(getIsGameRunning).toHaveBeenCalledTimes(1);
+    });
 });

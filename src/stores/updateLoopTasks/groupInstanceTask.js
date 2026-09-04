@@ -13,7 +13,7 @@ export const GROUP_INSTANCE_REFRESH_SECONDS = 300;
  * @param {(args: unknown) => void} dependencies.handleGroupUserInstances
  * @param {() => void} dependencies.checkGameRunning
  * @param {number} [dependencies.interval=300]
- * @returns {{ tick: () => Promise<void>, reset: () => void, setNext: (value: number) => void }}
+ * @returns {{ tick: () => void | Promise<void>, reset: () => void, setNext: (value: number) => void }}
  */
 export function createGroupInstanceTask({
     isFriendsLoaded,
@@ -25,12 +25,16 @@ export function createGroupInstanceTask({
     let nextRefresh = 0;
 
     return {
-        async tick() {
+        tick() {
             if (--nextRefresh <= 0) {
                 if (isFriendsLoaded()) {
                     nextRefresh = interval;
-                    const args = await getUsersGroupInstances();
-                    handleGroupUserInstances(args);
+                    return Promise.resolve(getUsersGroupInstances()).then(
+                        (args) => {
+                            handleGroupUserInstances(args);
+                            checkGameRunning();
+                        }
+                    );
                 }
                 checkGameRunning();
             }
