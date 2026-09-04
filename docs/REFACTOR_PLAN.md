@@ -27,7 +27,7 @@
 | Major | M-06 Notification Store 拆分 | 待 M-01/M-04 | 先补 characterization tests |
 | Major | M-07 Electron composition root / 双宿主契约 | 待 M-01 | 先建立启动流程 seam |
 | Major | M-08 API/Query 缓存所有权 | 待 M-02 | 先盘点实体和 cache key |
-| Major | M-09 其余上帝模块 | **进行中：M-09.7** | 完成 User 自动状态决策并执行 M09 全量回归 |
+| Major | M-09 其余上帝模块 | **已完成：M-09.8** | 进入 M-06/M-08；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
 | Minor | N-02 版本与构建来源 | 未开始 | 统一 `Version`、package 和宿主注入来源 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
@@ -62,6 +62,7 @@
 | `b1089ecc` | M-09.5：提取 Favorite 本地实体 projection module，保留分组顺序和 fallback ref 行为 |
 | `0c03a39e` | M-09.6：提取 Favorite 本地好友 id projection，保留默认组和数据库顺序 |
 | `9020880a` | M-09.7：提取 User 配置语言 projection，保留 key 枚举顺序和旧 interface |
+| `80fa011f` | M-09.8：提取 User 自动状态纯决策 module，保留守卫、组筛选和状态描述行为 |
 
 ## 当前 M-02 细分任务
 
@@ -101,7 +102,9 @@ M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，�
 5. **M-09.5 Favorite 本地实体 projection（已完成）**：新增 `favoriteLocalProjection` module，合并 world/avatar 本地收藏读取中的重复分组逻辑，保持数据库顺序、fallback ref 和默认 `Favorites` 组行为。提交：`b1089ecc`。
 6. **M-09.6 Favorite 本地好友 projection（已完成）**：复用 `favoriteLocalProjection` module 提取好友收藏 id 分组逻辑，保持 `Favorites` 默认组和数据库顺序。提交：`0c03a39e`。
 7. **M-09.7 User 语言 projection（已完成）**：新增 `userLanguageProjection` module，提取配置事件中的语言条目映射，保持语言 key 枚举顺序和旧 interface。提交：`9020880a`。
-8. **M-09.8 User 自动状态决策（进行中）**：提取自动状态/描述的纯决策 module，保持现有守卫、组筛选和状态文案行为；完成后执行 M09 全量回归并收口。
+8. **M-09.8 User 自动状态决策（已完成）**：新增 `userAutoStateDecision` module，提取自动状态/描述的纯决策，保持现有守卫、Group 访问类型映射、远程/本地好友组筛选、状态文案和 `updateAutoStateChange` interface 不变。提交：`80fa011f`。
+
+M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。下一主线为 **M-06 Notification Store 拆分** 或 **M-08 API/Query 缓存所有权**；多账户 B-02/M-05 继续按要求暂缓。
 
 ## 每个切片的回滚协议
 
