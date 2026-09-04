@@ -59,6 +59,9 @@ const timeColumn = () => ({
     cell: ({ row }) => <span>{row.original?.timer ?? ''}</span>
 });
 
+/**
+ * @param {{shiftHeld?: unknown, onShowInfo?: Function, onDelete?: Function, onDeletePrompt?: Function, onLaunch?: Function}} options
+ */
 const actionsColumn = ({
     shiftHeld,
     onShowInfo,
