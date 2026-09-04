@@ -77,7 +77,11 @@ export const useSearchStore = defineStore('Search', () => {
                     console.error('getUsers gave us garbage', json);
                     continue;
                 }
-                applyUser(json);
+                applyUser(
+                    /** @type {import('../types/api/user').GetUserResponse} */ (
+                        json
+                    )
+                );
             }
 
             const map = new Map();
