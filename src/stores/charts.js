@@ -1,4 +1,4 @@
-import { computed, reactive, watch } from 'vue';
+import { computed, reactive, unref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
@@ -52,9 +52,7 @@ export const useChartsStore = defineStore('Charts', () => {
     });
 
     const friendCount = computed(() => friendStore.friends.size || 0);
-    const currentUser = computed(
-        () => userStore.currentUser?.value ?? userStore.currentUser
-    );
+    const currentUser = computed(() => unref(userStore.currentUser));
     const isOptOut = computed(() =>
         Boolean(currentUser.value?.hasSharedConnectionsOptOut)
     );
