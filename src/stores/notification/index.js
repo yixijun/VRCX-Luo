@@ -46,6 +46,10 @@ import {
     filterRecentNotifications,
     filterUnseenNotifications,
 } from "./notificationViewProjection";
+import {
+    applyNotificationToCollection,
+    applyNotificationV2ToCollection,
+} from "./notificationEntityProjection";
 import { useAdvancedSettingsStore } from "../settings/advanced";
 import { useAppearanceSettingsStore } from "../settings/appearance";
 import { useFavoriteStore } from "../favorite";
@@ -777,23 +781,13 @@ export const useNotificationStore = defineStore("Notification", () => {
      * @returns {object}
      */
     function applyNotification(data) {
-        const json = sanitizeNotificationJson({ ...data });
-        let ref;
-        const array = notificationTable.value.data;
-        for (let i = array.length - 1; i >= 0; i--) {
-            if (array[i].id === json.id) {
-                ref = array[i];
-                break;
-            }
-        }
-        if (typeof ref === "undefined") {
-            ref = createDefaultNotificationRef(json);
-        } else {
-            Object.assign(ref, json);
-            ref.$isExpired = false;
-        }
-        ref.details = parseNotificationDetails(ref.details);
-        return ref;
+        return applyNotificationToCollection({
+            notifications: notificationTable.value.data,
+            payload: data,
+            sanitizeNotificationJson,
+            createDefaultNotificationRef,
+            parseNotificationDetails,
+        });
     }
 
     /**
@@ -801,16 +795,14 @@ export const useNotificationStore = defineStore("Notification", () => {
      * @param data
      */
     function applyNotificationV2(data) {
-        const json = sanitizeNotificationJson({ ...data });
-        let ref = notificationTable.value.data.find((n) => n.id === json.id);
-        if (typeof ref === "undefined") {
-            ref = createDefaultNotificationV2Ref(json);
-        } else {
-            Object.assign(ref, json);
-        }
-        ref.created_at = ref.createdAt; // for table
-        applyBoopLegacyHandling(ref, AppDebug.endpointDomain);
-        return ref;
+        return applyNotificationV2ToCollection({
+            notifications: notificationTable.value.data,
+            payload: data,
+            sanitizeNotificationJson,
+            createDefaultNotificationV2Ref,
+            applyBoopLegacyHandling,
+            endpointDomain: AppDebug.endpointDomain,
+        });
     }
 
     /**
