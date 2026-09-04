@@ -2,7 +2,7 @@
 
 > 状态：执行中
 >
-> 更新时间：2026-09-04
+> 更新时间：2026-09-05
 >
 > 本计划按 Blocker / Major / Minor 排序；每个切片保持公共 interface、序列化格式和并发语义不变，并单独提交到本地 Git。不会在本计划范围内发布或推送。
 
@@ -18,7 +18,7 @@
 |---|---|---|---|
 | Blocker 条件项 | B-01 宿主桥安全封口 | 条件性 Major；暂缓 | 先完成 Electron/CEF 方法清单和可信内容判定 |
 | Blocker 条件项 | B-02 多账户数据隔离 | **按要求暂缓** | 不改 `dbVars`、`accountHub` 和次号生命周期 |
-| Major | M-00 测试与 CI 门禁 | 基础切片完成 | 补齐 JS typecheck 工具链；评估现有 lint/format 债务后再收紧 CI |
+| Major | M-00 测试与 CI 门禁 | **M-00.1 工具链已补齐；门禁仍为红** | 先分批收敛现有 typecheck 诊断，再评估 lint/format 债务和 CI 硬门禁 |
 | Major | M-01 宿主 capability adapter | 未开始 | 依赖 B-01 方法清单；保留旧 facade |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
 | Major | M-03 编排层纯化 | **已完成：M-03.6** | 进入 M-00；M-06 低风险 seam 已完成 |
@@ -71,6 +71,7 @@
 | `7983eccd` | M-06.2：提取 legacy/V2 通知实体 projection module |
 | `f8629638` | M-06.3：提取通知中心偏好 persistence interface |
 | `e8115bf2` | M-06.4：提取通知已读去重、串行处理和重试 queue module |
+| `7fddf930` | M-00.1：补齐 `typescript` 开发依赖，使 `typecheck:js` 可以实际执行 |
 
 ## 当前 M-02 细分任务
 
@@ -131,6 +132,14 @@ M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，
 8. **M-09.8 User 自动状态决策（已完成）**：新增 `userAutoStateDecision` module，提取自动状态/描述的纯决策，保持现有守卫、Group 访问类型映射、远程/本地好友组筛选、状态文案和 `updateAutoStateChange` interface 不变。提交：`80fa011f`。
 
 M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。下一主线为 **M-00 测试与 CI 门禁**；多账户 B-02/M-05 继续按要求暂缓。
+
+## 当前 M-00 细分任务
+
+1. **M-00.1 JavaScript typecheck 工具链（已完成）**：将 `typescript@^5.9.3` 加入 `devDependencies` 并锁定到 `package-lock.json`，修复 `typecheck:js` 过去因找不到 `tsc` 而无法执行的问题。提交：`7fddf930`。
+2. **M-00.2 现有类型债务分批收敛（待开始）**：工具链启用后，当前检查暴露 210 条既有诊断，主要集中在 API response 类型、宿主 bridge 类型、store 推断和旧 JSDoc；按模块 seam 分批处理，每批保持定向测试和生产构建通过。
+3. **M-00.3 CI 硬门禁（待 M-00.2）**：在 typecheck 诊断降到可控范围前，不把该命令直接改成阻断式 CI；先保留可见报告，再逐步收紧 lint/format/test 的失败策略。
+
+当前 M-00 的安全边界是“先让检查可执行，再逐批降低诊断数”。本切片没有修改运行时代码、公共 interface、序列化格式或并发逻辑。
 
 ## 每个切片的回滚协议
 

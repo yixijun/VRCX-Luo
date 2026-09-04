@@ -246,7 +246,7 @@ flowchart LR
 | M-08 新增 Query module `oxlint` | 0 warning、0 error；既有 API lint debt 未扩大 |
 | M-06 Notification Store 定向测试 | 5 个测试文件、30 个测试通过 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
-| `npm run typecheck:js` | 失败：找不到 `tsc` |
+| `npm run typecheck:js` | 工具链已补齐并可执行；当前暴露 210 条既有 TypeScript/JavaScript 诊断，尚未作为阻断式 CI 门禁 |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
 | C# 测试项目构建 | 通过：0 警告、0 错误 |
 | `screenshotMetadata-schema.json` | JSON 解析和 5 属性结构检查通过 |
