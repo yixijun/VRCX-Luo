@@ -5,12 +5,19 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Forms;
+using Xunit;
 
 namespace VRCX.Tests;
 
-internal static class TrayNotificationPreviewTests
+public class TrayNotificationPreviewTests
 {
-    internal static void Verify()
+    [Fact]
+    public void TrayNotificationPreviewRendersAndRoutesActions()
+    {
+        StaTest.Run(Verify);
+    }
+
+    private static void Verify()
     {
         VerifyTrayHoverIntent();
         VerifyPointerDismissalTiming();
