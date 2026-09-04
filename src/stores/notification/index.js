@@ -1466,7 +1466,7 @@ export const useNotificationStore = defineStore("Notification", () => {
     /**
      * Accept a direct friend invite and open the invited instance.
      * Supports both legacy invite notifications and V2 response actions.
-     * @param {object} row
+     * @param {boolean} rsvp
      * @returns {Promise<boolean>}
      */
     async function getQuickInviteResponseParams(rsvp) {
