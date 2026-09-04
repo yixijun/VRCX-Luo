@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const mockRequest = vi.fn();
-const mockInvalidateQueries = vi.fn().mockResolvedValue();
+const mockInvalidateActive = vi.fn().mockResolvedValue();
 const mockApplyGroup = vi.fn((json) => json);
 
 vi.mock('../../services/request', () => ({
@@ -18,8 +18,8 @@ vi.mock('../../stores', () => ({
 }));
 
 vi.mock('../../queries', () => ({
-    queryClient: {
-        invalidateQueries: (...args) => mockInvalidateQueries(...args)
+    queryCache: {
+        invalidateActive: (...args) => mockInvalidateActive(...args)
     },
     entityQueryPolicies: {
         user: {},
@@ -54,11 +54,8 @@ describe('group query sync', () => {
             visibility: 'visible'
         });
 
-        expect(mockInvalidateQueries).toHaveBeenCalledTimes(4);
-        expect(mockInvalidateQueries).toHaveBeenCalledWith({
-            queryKey: ['group', 'grp_1'],
-            refetchType: 'active'
-        });
+        expect(mockInvalidateActive).toHaveBeenCalledTimes(4);
+        expect(mockInvalidateActive).toHaveBeenCalledWith(['group', 'grp_1']);
     });
 
     test('creating group content uses the official endpoints and refreshes the group', async () => {
@@ -104,6 +101,6 @@ describe('group query sync', () => {
                 params: { fileId: 'file_1' }
             }
         );
-        expect(mockInvalidateQueries).toHaveBeenCalledTimes(3);
+        expect(mockInvalidateActive).toHaveBeenCalledTimes(3);
     });
 });

@@ -1,4 +1,4 @@
-import { queryClient, queryKeys } from '../queries';
+import { queryCache, queryKeys } from '../queries';
 import { request } from '../services/request';
 import { useUserStore } from '../stores';
 
@@ -196,10 +196,7 @@ const miscReq = {
                 json,
                 fileId
             };
-            queryClient.removeQueries({
-                queryKey: queryKeys.file(fileId),
-                exact: true
-            });
+            queryCache.removeExact(queryKeys.file(fileId));
             return args;
         });
     },

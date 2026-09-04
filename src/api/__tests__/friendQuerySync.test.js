@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const mockRequest = vi.fn();
-const mockInvalidateQueries = vi.fn().mockResolvedValue();
+const mockInvalidateActive = vi.fn().mockResolvedValue();
 const mockApplyUser = vi.fn((json) => json);
 
 vi.mock('../../services/request', () => ({
@@ -19,8 +19,8 @@ vi.mock('../../coordinators/userCoordinator', () => ({
 }));
 
 vi.mock('../../queries', () => ({
-    queryClient: {
-        invalidateQueries: (...args) => mockInvalidateQueries(...args)
+    queryCache: {
+        invalidateActive: (...args) => mockInvalidateActive(...args)
     },
     entityQueryPolicies: {
         user: {},
@@ -44,10 +44,7 @@ describe('friend query sync', () => {
         await friendRequest.cancelFriendRequest({ userId: 'usr_1' });
         await friendRequest.deleteFriend({ userId: 'usr_1' });
 
-        expect(mockInvalidateQueries).toHaveBeenCalledTimes(3);
-        expect(mockInvalidateQueries).toHaveBeenCalledWith({
-            queryKey: ['friends'],
-            refetchType: 'active'
-        });
+        expect(mockInvalidateActive).toHaveBeenCalledTimes(3);
+        expect(mockInvalidateActive).toHaveBeenCalledWith(['friends']);
     });
 });

@@ -1,15 +1,12 @@
-import { queryClient } from '../queries';
+import { queryCache } from '../queries';
 import { request } from '../services/request';
 
 /**
  *
  */
 function refetchActiveInventoryQueries() {
-    queryClient
-        .invalidateQueries({
-            queryKey: ['inventory'],
-            refetchType: 'active'
-        })
+    queryCache
+        .invalidateActive(['inventory'])
         .catch((err) => {
             console.error('Failed to refresh inventory queries:', err);
         });

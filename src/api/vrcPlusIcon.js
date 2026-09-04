@@ -1,15 +1,12 @@
-import { queryClient } from '../queries';
+import { queryCache } from '../queries';
 import { request } from '../services/request';
 
 /**
  *
  */
 function refetchActiveGalleryQueries() {
-    queryClient
-        .invalidateQueries({
-            queryKey: ['gallery'],
-            refetchType: 'active'
-        })
+    queryCache
+        .invalidateActive(['gallery'])
         .catch((err) => {
             console.error('Failed to refresh gallery queries:', err);
         });

@@ -1,6 +1,6 @@
 import { useUserStore } from '../stores';
 import { applyGroup } from '../coordinators/groupCoordinator';
-import { queryClient } from '../queries';
+import { queryCache } from '../queries';
 import { request } from '../services/request';
 
 /**
@@ -18,11 +18,8 @@ function refetchActiveGroupScope(groupId) {
     if (!groupId) {
         return;
     }
-    queryClient
-        .invalidateQueries({
-            queryKey: ['group', groupId],
-            refetchType: 'active'
-        })
+    queryCache
+        .invalidateActive(['group', groupId])
         .catch((err) => {
             console.error('Failed to refresh scoped group queries:', err);
         });

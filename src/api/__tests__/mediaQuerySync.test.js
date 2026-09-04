@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const mockRequest = vi.fn();
-const mockInvalidateQueries = vi.fn().mockResolvedValue();
-const mockRemoveQueries = vi.fn();
+const mockInvalidateActive = vi.fn().mockResolvedValue();
+const mockRemoveExact = vi.fn();
 
 vi.mock('../../services/request', () => ({
     request: (...args) => mockRequest(...args)
@@ -15,9 +15,9 @@ vi.mock('../../stores', () => ({
 }));
 
 vi.mock('../../queries', () => ({
-    queryClient: {
-        invalidateQueries: (...args) => mockInvalidateQueries(...args),
-        removeQueries: (...args) => mockRemoveQueries(...args)
+    queryCache: {
+        invalidateActive: (...args) => mockInvalidateActive(...args),
+        removeExact: (...args) => mockRemoveExact(...args)
     },
     queryKeys: {
         galleryFiles: (params) => ['gallery', 'files', params],
@@ -51,13 +51,7 @@ describe('media and inventory query sync', () => {
         await vrcPlusImageRequest.uploadEmoji('img', { tag: 'emoji' });
         await miscRequest.deleteFile('file_misc_1');
 
-        expect(mockInvalidateQueries).toHaveBeenCalledWith({
-            queryKey: ['gallery'],
-            refetchType: 'active'
-        });
-        expect(mockRemoveQueries).toHaveBeenCalledWith({
-            queryKey: ['file', 'file_misc_1'],
-            exact: true
-        });
+        expect(mockInvalidateActive).toHaveBeenCalledWith(['gallery']);
+        expect(mockRemoveExact).toHaveBeenCalledWith(['file', 'file_misc_1']);
     });
 });

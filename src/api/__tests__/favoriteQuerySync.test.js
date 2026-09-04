@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 const mockRequest = vi.fn();
-const mockInvalidateQueries = vi.fn().mockResolvedValue();
+const mockInvalidateActive = vi.fn().mockResolvedValue();
 const mockHandleFavoriteAdd = vi.fn();
 const mockHandleFavoriteDelete = vi.fn();
 const mockHandleFavoriteGroupClear = vi.fn();
@@ -23,8 +23,8 @@ vi.mock('../../coordinators/favoriteCoordinator', () => ({
 }));
 
 vi.mock('../../queries', () => ({
-    queryClient: {
-        invalidateQueries: (...args) => mockInvalidateQueries(...args)
+    queryCache: {
+        invalidateActive: (...args) => mockInvalidateActive(...args)
     }
 }));
 
@@ -53,10 +53,7 @@ describe('favorite query sync', () => {
             group: 'worlds1'
         });
 
-        expect(mockInvalidateQueries).toHaveBeenCalledTimes(4);
-        expect(mockInvalidateQueries).toHaveBeenCalledWith({
-            queryKey: ['favorite'],
-            refetchType: 'active'
-        });
+        expect(mockInvalidateActive).toHaveBeenCalledTimes(4);
+        expect(mockInvalidateActive).toHaveBeenCalledWith(['favorite']);
     });
 });
