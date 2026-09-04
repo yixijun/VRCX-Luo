@@ -246,7 +246,7 @@ flowchart LR
 | M-08 新增 Query module `oxlint` | 0 warning、0 error；既有 API lint debt 未扩大 |
 | M-06 Notification Store 定向测试 | 5 个测试文件、30 个测试通过 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
-| `npm run typecheck:js` | 工具链已补齐并可执行；当前仍有 89 条既有 TypeScript/JavaScript 诊断，已先消除 `updateLoop.js(65,28)`、Group API `bool`、Avatar 空参数、Notification typedef、V2 projection 误标参数、Feed 差异函数旧参数名、邀请 `rsvp` 误标参数、13 个上传选项误报、World/Instance API `ref` 推断误报、request 自定义 Error 字段误报、全部 Query key 解构参数误报、WebApi 二级账号 bridge 方法误报、Sentry 原始异常 message 误报、WorldDialog 两个 composable 的 toast 属性误报、quickSearch worker 临时字段误报、ConfigRepository 数值解析误报、cacheCoordinator SDK 版本属性误报、devtool SDK 版本属性误报、format 工具转换误报、localization URL/Error 参数误报、表格 debounce 定时器误报、FileReader ArrayBuffer 参数误报及主题 link 元素误报，尚未作为阻断式 CI 门禁 |
+| `npm run typecheck:js` | 工具链已补齐并可执行；当前仍有 88 条既有 TypeScript/JavaScript 诊断，已先消除 `updateLoop.js(65,28)`、Group API `bool`、Avatar 空参数、Notification typedef、V2 projection 误标参数、Feed 差异函数旧参数名、邀请 `rsvp` 误标参数、13 个上传选项误报、World/Instance API `ref` 推断误报、request 自定义 Error 字段误报、全部 Query key 解构参数误报、WebApi 二级账号 bridge 方法误报、Sentry 原始异常 message 误报、WorldDialog 两个 composable 的 toast 属性误报、quickSearch worker 临时字段误报、ConfigRepository 数值解析误报、cacheCoordinator SDK 版本属性误报、devtool SDK 版本属性误报、format 工具转换误报、localization URL/Error 参数误报、表格 debounce 定时器误报、FileReader ArrayBuffer 参数误报、主题 link 元素误报及 Group API 重复方法误报，尚未作为阻断式 CI 门禁 |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
 | C# 测试项目构建 | 通过：0 警告、0 错误 |
 | `screenshotMetadata-schema.json` | JSON 解析和 5 属性结构检查通过 |
