@@ -27,7 +27,7 @@
 | Major | M-06 Notification Store 拆分 | 待 M-01/M-04 | 先补 characterization tests |
 | Major | M-07 Electron composition root / 双宿主契约 | 待 M-01 | 先建立启动流程 seam |
 | Major | M-08 API/Query 缓存所有权 | 待 M-02 | 先盘点实体和 cache key |
-| Major | M-09 其余上帝模块 | **进行中：M-09.3** | 完成 Group 持久化 projection，再处理 Favorite/User 单一职责 |
+| Major | M-09 其余上帝模块 | **进行中：M-09.4** | 进入 Favorite 本地实体 projection，再处理 User 单一职责 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
 | Minor | N-02 版本与构建来源 | 未开始 | 统一 `Version`、package 和宿主注入来源 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
@@ -58,6 +58,7 @@
 | `ecfba613` | M-09.1：提取 Group 角色变更纯决策 module，保留移除优先、源顺序和旧文案行为 |
 | `c28ed3eb` | M-09.2：提取 Group 语言 projection module，保留源顺序、未知语言跳过和空值行为 |
 | `f5082f8b` | M-09.3：提取 Group presence 决策 module，保留加入/移除顺序和重复抑制行为 |
+| `35b05f64` | M-09.4：提取 Group 持久化 projection module，保留配置快照字段和顺序 |
 
 ## 当前 M-02 细分任务
 
@@ -93,8 +94,8 @@ M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，�
 1. **M-09.1 Group 角色变更决策（已完成）**：新增 `groupRoleChangeDecision` module，将角色新增/移除文案的纯计算与通知副作用分开；保持移除先于新增、各自沿原数组顺序、缺失 role payload 的旧文案结果。`groupCoordinator` 的 `groupRoleChange` 私有调用路径和 `applyGroup` interface 不变。提交：`ecfba613`。
 2. **M-09.2 Group 语言 projection（已完成）**：新增 `groupLanguageProjection` module，将 Group 语言 id 到本地化条目的纯映射从 coordinator 中移出；保持源数组顺序、未知语言跳过、空字符串/`false`/`0` 等值保留，以及 `applyGroup` interface 不变。提交：`c28ed3eb`。
 3. **M-09.3 Group presence 决策（已完成）**：新增 `groupPresenceDecision` module，将 presence payload 的加入/移除计算从 coordinator 中移出；保持 incoming 顺序、重复加入抑制、current membership 移除顺序，以及 `applyPresenceGroups` interface 不变。提交：`f5082f8b`。
-4. **M-09.4 Group 持久化 projection（进行中）**：把当前用户 Group 快照的纯序列化从 coordinator 中移出，保持配置 key、JSON 字段和顺序不变。
-5. **M-09.5 Favorite 本地实体 projection（待开始）**：合并 world/avatar 本地收藏读取中的重复分组逻辑，保持数据库顺序和 fallback ref 行为。
+4. **M-09.4 Group 持久化 projection（已完成）**：新增 `groupPersistenceProjection` module，将当前用户 Group 快照的纯序列化从 coordinator 中移出，保持配置 key、JSON 字段、`undefined` roleIds 和顺序不变。提交：`35b05f64`。
+5. **M-09.5 Favorite 本地实体 projection（进行中）**：合并 world/avatar 本地收藏读取中的重复分组逻辑，保持数据库顺序和 fallback ref 行为。
 6. **M-09.6 Favorite 本地好友 projection（待开始）**：提取好友收藏 id 分组逻辑，保持 `Favorites` 默认组和数据库顺序。
 7. **M-09.7 User 语言 projection（待开始）**：提取配置事件中的语言条目映射，保持语言 key 顺序和旧 interface。
 8. **M-09.8 User 自动状态决策（待开始）**：提取自动状态/描述的纯决策 module，保持现有守卫、组筛选和状态文案行为。
