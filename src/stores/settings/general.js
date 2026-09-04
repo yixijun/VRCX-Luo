@@ -27,7 +27,9 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
     const isStartAtWindowsStartup = ref(false);
     const isStartAsMinimizedState = ref(false);
     const disableGpuAcceleration = ref(false);
-    const closeButtonAction = ref(CLOSE_BEHAVIOR.ASK);
+    const closeButtonAction = ref(
+        /** @type {'ask' | 'tray' | 'exit'} */ (CLOSE_BEHAVIOR.ASK)
+    );
     const disableVrOverlayGpuAcceleration = ref(false);
     const localFavoriteFriendsGroups = ref([]);
     const udonExceptionLogging = ref(false);
@@ -274,7 +276,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         );
     }
     function setAutoLoginDelaySeconds(value) {
-        const parsed = parseInt(value, 10);
+        const parsed = parseInt(String(value), 10);
         autoLoginDelaySeconds.value = Number.isNaN(parsed)
             ? 0
             : Math.min(10, Math.max(0, parsed));
