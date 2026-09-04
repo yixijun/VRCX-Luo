@@ -30,6 +30,7 @@ import { request } from './request';
 import { runUpdateFriendFlow } from '../coordinators/friendPresenceCoordinator';
 import { runSetCurrentUserLocationFlow } from '../coordinators/locationCoordinator';
 import { createFriendLocationPayload } from './websocketFriendLocation';
+import { scheduleWebSocketReconnect } from './websocketReconnect';
 import { watchState } from './watchState';
 
 import * as workerTimers from 'worker-timers';
@@ -100,15 +101,13 @@ function connectWebSocket(token) {
         if (AppDebug.debugWebSocket) {
             console.log('WebSocket closed');
         }
-        workerTimers.setTimeout(() => {
-            if (
-                watchState.isLoggedIn &&
-                watchState.isFriendsLoaded &&
-                webSocket === null
-            ) {
-                initWebsocket();
-            }
-        }, 5000);
+        scheduleWebSocketReconnect({
+            setTimeout: workerTimers.setTimeout,
+            isLoggedIn: () => watchState.isLoggedIn,
+            isFriendsLoaded: () => watchState.isFriendsLoaded,
+            isSocketAbsent: () => webSocket === null,
+            reconnect: initWebsocket
+        });
     };
     socket.onerror = () => {
         if (AppDebug.errorNoty) {
