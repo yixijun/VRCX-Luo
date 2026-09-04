@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-03 编排层适配器及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-03 编排层适配器、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module、M-03 的 UI adapter，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator 公共 interface 保持不变，其他架构风险尚未改动。
+> 实施状态（2026-09-04）：`updateLoop` 调度器、独立任务 module、M-03 的 UI adapter、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator 公共 interface 保持不变，其他架构风险尚未改动。
 
 ## 结论摘要
 
@@ -29,8 +29,8 @@
 | `src/stores` | Pinia 状态、派生数据、部分业务命令 | 同时访问 API、数据库、Electron、DOM 和 coordinator；存在上帝 store 与循环依赖 |
 | `src/services` | 数据库、账号会话、配置、SQLite、聚合视图 | database facade 过宽；`dbVars` 是可变全局上下文；数据模块反向依赖 UI |
 | `src/coordinators` | WebSocket/API/数据库事件编排 | store/API/database 耦合仍在；M-03 已把 UI implementation 收敛到 services adapter seam，M-09 已把 Group/Favorite/User 的角色、presence、持久化、收藏、本地化和自动状态决策深化为纯 module，后续继续拆 use-case |
-| `src/api` | REST/API endpoint 请求封装 | `window.request` 全局暴露；请求、缓存策略和 `src/queries` 有重复 |
-| `src/queries` | Query key、实体缓存、查询策略 | 新旧两套数据获取模型并存，Pinia 与 Query 的数据所有权不够清晰 |
+| `src/api` | REST/API endpoint 请求封装 | `window.request` 全局暴露；M-08 后缓存副作用经 `queryCache` adapter，Query resource 仍由 facade 组装，宿主全局和 API/Query 边界仍需后续收窄 |
+| `src/queries` | Query key、实体缓存、查询策略、resource registry | M-08 已集中 QueryClient side effect、scope key 和 resource registry；Pinia 与 Query 的实体数据所有权仍需继续明确 |
 | `src/shared` | 常量、工具函数、基础 UI 操作 | 目录过于宽泛；部分工具直接调用 `AppApi` 或修改 UI，容易形成反向依赖 |
 | `src/composables` | 可复用的 Composition 行为 | 总体边界较合理，但生命周期和 worker 相关测试警告较多 |
 | `src/plugins` | i18n、router、组件、Sentry、interop 初始化 | 初始化顺序复杂；router 存在静态和动态混合导入，构建有 chunk 警告 |
@@ -77,7 +77,7 @@
 | `src/services/database/index.js` | facade 过宽，`window.database` 全局暴露，`dbVars` 可变 | Major | 按领域拆 database module；引入显式 `DbContext`；保留兼容 facade |
 | `src/services/database/gameLog.js` | 约 2200 行，写入、查询、媒体解析、聚合、统计全混在一起 | Major | 先拆只读查询，再拆写入和 parser，避免一次性重写 SQL |
 | `src/services/aggregatedView.js` | 使用 `accountHub.allSessions` / `primaryPrefix`，但对应 getter 不存在 | Major | 定义明确的账号元数据 interface，并为标签、颜色和 primary 判断增加契约测试 |
-| `src/api/index.js`、`src/queries` | API、Query cache、Pinia 可能重复持有实体数据 | Major | 统一请求、缓存和失效策略，明确实体数据的唯一来源 |
+| `src/api/index.js`、`src/queries` | API、Query cache、Pinia 可能重复持有实体数据 | Major → 已完成 M-08.1～M-08.3 | Query side effect、scope key 和 resource registry 已统一到 Query layer；继续明确 Pinia/Query 的实体唯一来源，并收窄全局 request facade |
 | `src/stores/updateLoop.js` | 兼容入口和依赖组装仍集中；任务实现已移到独立模块 | Major | 已完成第一刀；后续可把宿主 capability 注入进一步收窄，继续保留兼容 facade |
 | `src-electron/preload.js`、`src-electron/main.js`、`src/ipc-electron/interopApi.js` | 动态 class/method IPC，缺少 allowlist 和参数 schema | Major | 改为 capability adapter；主进程校验 class、method 和参数 |
 | `src-electron/main.js` | 主进程约 1062 行，窗口、托盘、通知、IPC、Dotnet 启动集中 | Major | 以 main.js 作为 composition root，拆分 window、tray、notification、Dotnet、IPC module |
@@ -231,7 +231,7 @@ flowchart LR
 | 检查项 | 结果 |
 |---|---|
 | `npm run prod` | 成功；存在 router 动态导入警告和 Node deprecation 警告 |
-| `npm test` | 当前 241 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-09 全部切片前后失败数量保持不变 |
+| `npm test` | 当前 244 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-08 新增测试通过，既有失败数量未增加 |
 | updateLoop/task 定向测试 | 13 个测试文件、28 个测试通过 |
 | M-03 adapter 定向测试 | DOM input、Toast、Router、关系建议通知、登出欢迎通知及 coordinator 回归测试通过 |
 | M-09.1 Group 决策定向测试 | 4 个测试文件、20 个测试通过 |
@@ -241,7 +241,8 @@ flowchart LR
 | M-09.5/M-09.6 Favorite projection 定向测试 | 2 个测试文件、6 个测试通过 |
 | M-09.7 User 语言 projection 定向测试 | 3 个测试文件、33 个测试通过 |
 | M-09.8 User 自动状态决策定向测试 | 5 个测试文件、40 个测试通过 |
-| 变更文件 `oxlint` | 0 warning、0 error |
+| M-08 Query cache/resource registry 定向测试 | 12 个测试文件、63 个测试通过 |
+| M-08 新增 Query module `oxlint` | 0 warning、0 error；既有 API lint debt 未扩大 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | 失败：找不到 `tsc` |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |

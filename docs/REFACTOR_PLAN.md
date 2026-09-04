@@ -21,13 +21,13 @@
 | Major | M-00 测试与 CI 门禁 | 基础切片完成 | 补齐 JS typecheck 工具链；评估现有 lint/format 债务后再收紧 CI |
 | Major | M-01 宿主 capability adapter | 未开始 | 依赖 B-01 方法清单；保留旧 facade |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
-| Major | M-03 编排层纯化 | **已完成：M-03.5** | 进入 M-06/M-09；继续沿同一 seam 拆分剩余上帝模块 |
+| Major | M-03 编排层纯化 | **已完成：M-03.5** | 进入 M-06；继续沿同一 seam 拆分剩余上帝模块 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
 | Major | M-06 Notification Store 拆分 | 待 M-01/M-04 | 先补 characterization tests |
 | Major | M-07 Electron composition root / 双宿主契约 | 待 M-01 | 先建立启动流程 seam |
-| Major | M-08 API/Query 缓存所有权 | 待 M-02 | 先盘点实体和 cache key |
-| Major | M-09 其余上帝模块 | **已完成：M-09.8** | 进入 M-06/M-08；多账户 B-02/M-05 继续暂缓 |
+| Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | 进入 M-06；多账户 B-02/M-05 继续暂缓 |
+| Major | M-09 其余上帝模块 | **已完成：M-09.8** | 进入 M-06；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
 | Minor | N-02 版本与构建来源 | 未开始 | 统一 `Version`、package 和宿主注入来源 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
@@ -63,6 +63,9 @@
 | `0c03a39e` | M-09.6：提取 Favorite 本地好友 id projection，保留默认组和数据库顺序 |
 | `9020880a` | M-09.7：提取 User 配置语言 projection，保留 key 枚举顺序和旧 interface |
 | `80fa011f` | M-09.8：提取 User 自动状态纯决策 module，保留守卫、组筛选和状态描述行为 |
+| `94c69af2` | M-08.1：集中 QueryClient 的 invalidate/remove/cancel/clear side effect adapter |
+| `38db4161` | M-08.2：集中 favorite/friend/group/inventory/gallery cache scope key factory |
+| `7f422d0f` | M-08.3：将 query resource registry 移入 Query module，并注入 API transport implementation |
 
 ## 当前 M-02 细分任务
 
@@ -81,7 +84,7 @@
 - **M-02.5.2 WebSocket reconnect**：新增纯 `scheduleWebSocketReconnect` module，固定 5 秒延迟并在回调时读取登录、好友加载和 socket 空位守卫；`websocket.js` 仅负责组装默认 adapter，兼容原有断线行为。提交为 `283251e2`。
 - **M-02.5.3 polling cancellation**：沿用 `updateLoopScheduler` 的 start/stop interface，现有 fake-clock 测试验证 stop 会清理 pending timer，未改生产逻辑。
 
-M-02 已完成，M-03 编排层纯化已完成。下一主线：**M-06 Notification Store 拆分**或 **M-09 其余上帝模块**；多账户 B-02/M-05 继续按要求暂缓。
+M-02 已完成，M-03 编排层纯化和 M-08 API/Query 缓存所有权已完成。下一主线：**M-06 Notification Store 拆分**；多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-03 细分任务
 
@@ -92,6 +95,14 @@ M-02 已完成，M-03 编排层纯化已完成。下一主线：**M-06 Notificat
 5. **M-03.5 登出欢迎通知 adapter（已完成）**：`authCoordinator` 只传入显示名和翻译 interface；Noty、HTML 转义和展示 implementation 收敛到 `logoutNotification` module。提交：`c04e3e3d`。
 
 M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，也不再直接访问 `document`、`querySelector` 或 router implementation；跨层 UI 副作用均经过浅入口背后的 adapter seam。剩余的 store/API/database 深化仍属于 M-06、M-08、M-09，不在本批次扩大范围。
+
+## 当前 M-08 细分任务
+
+1. **M-08.1 Query cache side-effect adapter（已完成）**：新增 `queryCache` module，集中 `invalidateActive`、`removeExact`、`cancelAll` 和 `clear` interface；API 与登出流程不再直接 import `QueryClient`，保留原有 refetch、精确删除和登出清理语义。提交：`94c69af2`。
+2. **M-08.2 Cache scope key factory（已完成）**：在 `queryKeys` 中增加 favorite、friend、group、inventory、gallery scope key，替换 API 层裸数组；实际 key 值和前缀失效范围保持不变。提交：`38db4161`。
+3. **M-08.3 Query resource registry（已完成）**：新增 `createQueryResourceRegistry` module，将资源 key、policy 和 queryFn 的 registry 归入 Query layer；API request facade 只注入 transport implementation，保留 `queryRequest.fetch` interface、资源名称和策略。提交：`7f422d0f`。
+
+M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，API/认证层通过 adapter seam 使用缓存；scope key 和 resource registry 具备独立测试表面。后续主线为 **M-06 Notification Store 拆分**；多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-09 细分任务
 
@@ -104,7 +115,7 @@ M-03 完成后，`src/coordinators` 不再直接 import `vue-sonner`/`noty`，�
 7. **M-09.7 User 语言 projection（已完成）**：新增 `userLanguageProjection` module，提取配置事件中的语言条目映射，保持语言 key 枚举顺序和旧 interface。提交：`9020880a`。
 8. **M-09.8 User 自动状态决策（已完成）**：新增 `userAutoStateDecision` module，提取自动状态/描述的纯决策，保持现有守卫、Group 访问类型映射、远程/本地好友组筛选、状态文案和 `updateAutoStateChange` interface 不变。提交：`80fa011f`。
 
-M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。下一主线为 **M-06 Notification Store 拆分** 或 **M-08 API/Query 缓存所有权**；多账户 B-02/M-05 继续按要求暂缓。
+M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。下一主线为 **M-06 Notification Store 拆分**；多账户 B-02/M-05 继续按要求暂缓。
 
 ## 每个切片的回滚协议
 
