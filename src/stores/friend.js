@@ -1490,7 +1490,6 @@ export const useFriendStore = defineStore('Friend', () => {
         resetDerivedDebugCounters,
         getDerivedDebugCounters,
         initFriendLogHistoryTable,
-        setIsRefreshFriendsLoading,
-        updateSidebarFavorites
+        setIsRefreshFriendsLoading
     };
 });
