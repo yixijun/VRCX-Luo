@@ -10,6 +10,7 @@ import { useWorldStore } from '../stores/world';
 import { rebuildFavoriteSearchIndex } from './searchIndexCoordinator';
 import { applyWorld } from './worldCoordinator';
 import { runUpdateFriendFlow } from './friendPresenceCoordinator';
+import { projectLocalFavoriteEntities } from './favoriteLocalProjection';
 import { avatarRequest, favoriteRequest, queryRequest } from '../api';
 import { database } from '../services/database';
 import { i18n } from '../plugins/i18n';
@@ -665,10 +666,6 @@ export async function getLocalWorldFavorites() {
     const favoriteStore = useFavoriteStore();
     const worldStore = useWorldStore();
 
-    const localGroups = new Set();
-    const localListSet = new Set();
-    const localFavorites = Object.create(null);
-
     const worldCache = await database.getWorldCache();
     for (let i = 0; i < worldCache.length; ++i) {
         const ref = worldCache[i];
@@ -678,29 +675,10 @@ export async function getLocalWorldFavorites() {
     }
 
     const favorites = await database.getWorldFavorites();
-    for (let i = 0; i < favorites.length; ++i) {
-        const favorite = favorites[i];
-
-        localListSet.add(favorite.worldId);
-
-        if (!localFavorites[favorite.groupName]) {
-            localFavorites[favorite.groupName] = [];
-        }
-        localGroups.add(favorite.groupName);
-
-        let ref = worldStore.cachedWorlds.get(favorite.worldId);
-        if (typeof ref === 'undefined') {
-            ref = { id: favorite.worldId };
-        }
-        localFavorites[favorite.groupName].unshift(ref);
-    }
-
-    let groupsArr = Array.from(localGroups);
-    if (groupsArr.length === 0) {
-        localFavorites.Favorites = [];
-        // default group
-        groupsArr = ['Favorites'];
-    }
+    const localFavorites = projectLocalFavoriteEntities(favorites, {
+        idKey: 'worldId',
+        resolveRef: (worldId) => worldStore.cachedWorlds.get(worldId)
+    });
 
     replaceReactiveObject(favoriteStore.localWorldFavorites, localFavorites);
 
@@ -939,10 +917,6 @@ export async function getLocalAvatarFavorites() {
     const favoriteStore = useFavoriteStore();
     const avatarStore = useAvatarStore();
 
-    const localGroups = new Set();
-    const localListSet = new Set();
-    const localFavorites = Object.create(null);
-
     const avatarCache = await database.getAvatarCache();
     for (let i = 0; i < avatarCache.length; ++i) {
         const ref = avatarCache[i];
@@ -952,29 +926,10 @@ export async function getLocalAvatarFavorites() {
     }
 
     const favorites = await database.getAvatarFavorites();
-    for (let i = 0; i < favorites.length; ++i) {
-        const favorite = favorites[i];
-
-        localListSet.add(favorite.avatarId);
-
-        if (!localFavorites[favorite.groupName]) {
-            localFavorites[favorite.groupName] = [];
-        }
-        localGroups.add(favorite.groupName);
-
-        let ref = avatarStore.cachedAvatars.get(favorite.avatarId);
-        if (typeof ref === 'undefined') {
-            ref = { id: favorite.avatarId };
-        }
-        localFavorites[favorite.groupName].unshift(ref);
-    }
-
-    let groupsArr = Array.from(localGroups);
-    if (groupsArr.length === 0) {
-        // default group
-        localFavorites.Favorites = [];
-        groupsArr = ['Favorites'];
-    }
+    const localFavorites = projectLocalFavoriteEntities(favorites, {
+        idKey: 'avatarId',
+        resolveRef: (avatarId) => avatarStore.cachedAvatars.get(avatarId)
+    });
 
     replaceReactiveObject(favoriteStore.localAvatarFavorites, localFavorites);
 
