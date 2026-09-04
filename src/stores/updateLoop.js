@@ -34,6 +34,7 @@ import { createNonFriendSyncTask } from './updateLoopTasks/nonFriendSyncTask';
 import { createIpcTimeoutTask } from './updateLoopTasks/ipcTimeoutTask';
 import { createCacheCleanupTask } from './updateLoopTasks/cacheCleanupTask';
 import { createAutoStateTask } from './updateLoopTasks/autoStateTask';
+import { createDatabaseOptimizeTask } from './updateLoopTasks/databaseOptimizeTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -89,6 +90,10 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const autoStateTask = createAutoStateTask({
         updateAutoStateChange
     });
+    const databaseOptimizeTask = createDatabaseOptimizeTask({
+        optimize: () => database.optimize(),
+        onError: console.error
+    });
     const state = {
         nextCurrentUserRefresh: 300,
         nextFriendsRefresh: 3600,
@@ -143,10 +148,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                 discordTask.tick();
                 autoStateTask.tick();
                 await gameStateTask.tick();
-                if (--state.nextDatabaseOptimize <= 0) {
-                    state.nextDatabaseOptimize = 86400; // 1 day
-                    database.optimize().catch(console.error);
-                }
+                databaseOptimizeTask.tick();
             }
         } catch (err) {
             friendStore.setIsRefreshFriendsLoading(false);
