@@ -37,7 +37,7 @@
 | `src/ipc-electron` | Renderer 到 Electron 的 IPC 代理 | 动态 Proxy 缺少方法、参数类型和 allowlist |
 | `src-electron` | 主进程、窗口、托盘、IPC、C# 启动 | `main.js` 约 1062 行，窗口、托盘、通知、IPC、Dotnet 全部集中 |
 | `Dotnet` | CEF/Electron C# 宿主、SQLite、日志、VR overlay | CEF/Electron 两套项目目标框架和依赖版本存在漂移；部分 C# 类过大 |
-| `Dotnet.Tests` | C# 测试/验证程序 | 更像自定义 console smoke test，`dotnet test` 不会发现实际测试 |
+| `Dotnet.Tests` | C# WinForms 测试项目 | 已接入 xUnit 与正式测试发现；测试通过 STA 辅助器执行，尚未接入 CI job |
 | `src/vr` | VR overlay 和 VR 页面 | `Vr.vue` 超过 2000 行，VR UI、状态和平台行为混杂 |
 | `src/workers` | 后台任务和定时 worker | 异步边界较隐蔽，独立测试接缝不足 |
 | `src/localization` | 多语言 JSON 和翻译辅助 | translation key 漂移风险，缺少自动一致性检查 |
@@ -55,7 +55,7 @@
 | `docs/MULTI_ACCOUNT_V4_DETAIL_DESIGN.md` | 多账号、DB prefix、WebSocket、热切换、聚合视图 | 仍是 Draft；设计与当前实现存在契约漂移 |
 | `docs/CEF_LOCAL_TESTING.md` | Windows CEF 本地测试和安全重启 | 运维内容较实用，但没有完整覆盖 Electron/CEF 差异 |
 | `docs/BIO_DIFF_ENGLISH_PUNCTUATION_BUG.md` | Bio Diff 缺陷记录 | 缺少可重复的回归测试矩阵 |
-| `docs/schemas/screenshotMetadata-schema.json` | 截图元数据 JSON Schema | 原文件存在语法错误，已集中到本目录后仍需修复并加 CI 校验 |
+| `docs/schemas/screenshotMetadata-schema.json` | 截图元数据 JSON Schema | 已恢复为可解析 JSON，并由 `npm run check:schema` 和 CI 校验；后续可补充字段语义校验 |
 | `docs/third-party-libs.md` | Dotnet 第三方库来源 | 缺少版本、升级约束和安全审计信息 |
 | `CONTEXT.md`、`docs/adr/` | 领域词汇和架构决策 | 当前不存在，架构知识主要依赖代码和过时文档 |
 
@@ -82,8 +82,8 @@
 | `src` 多处生产文件 | 大量文件直接绕过边界访问 database 或宿主全局对象 | Major | 用 lint boundary 限制跨层 import，逐步迁移到 use-case/adapter |
 | `.github/workflows/ci.yaml`、`package.json` | CI 偏手工触发，检查允许失败；`typecheck:js` 找不到 `tsc` | Major | 补齐工具链，把 test、lint、typecheck、schema 校验设为硬门禁 |
 | `src/**/*.test.*` | 当前前端测试有大量失败和脆弱 mock | Major | 先修公共组件、图标、数据库 contract mock，再增加新测试 |
-| `Dotnet.Tests/VRCX.Cef.Tests.csproj` | `dotnet test` 成功但没有发现实际测试 | Major | 使用正式测试框架，确保 CI 能发现和执行测试 |
-| `docs/schemas/screenshotMetadata-schema.json` | JSON schema 语法无效 | Major | 修复 JSON，并在 CI 中执行解析和 schema 校验 |
+| `Dotnet.Tests/VRCX.Cef.Tests.csproj` | C# 测试发现曾被 `OutputType=Exe` 绕过 | Major | 已改为正式测试项目，`dotnet test` 当前发现并通过 3 个测试；下一步接入 CI |
+| `docs/schemas/screenshotMetadata-schema.json` | Schema 结构校验此前缺失 | Major | 已增加 `check:schema` 脚本并接入 CI，后续补字段语义/样例校验 |
 | `docs/DATABASE_SCHEMA.md`、`docs/JIRAI_FEATURES.md` | 文档与代码状态、表结构、行数不一致 | Minor | 描述稳定契约；易变的统计信息改为脚本生成 |
 | `package.json`、`Version` | 版本号来源不一致 | Minor | 明确唯一版本源，构建时统一注入 |
 
@@ -232,9 +232,9 @@ flowchart LR
 | 变更文件 `oxlint` | 0 warning、0 error |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | 失败：找不到 `tsc` |
-| `dotnet test` | 进程成功，但未发现实际测试 |
-| C# 自定义 smoke test | `dotnet run` 可输出通过结果 |
-| `screenshotMetadata-schema.json` | JSON 解析失败 |
+| `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
+| C# 测试项目构建 | 通过：0 警告、0 错误 |
+| `screenshotMetadata-schema.json` | JSON 解析和 5 属性结构检查通过 |
 
 ### 术语说明
 

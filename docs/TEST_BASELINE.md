@@ -7,7 +7,7 @@
 ## 当前工作树
 
 - 当前分支：`master`
-- 基线建立前工作树：干净
+- 基线建立前工作树：干净；当前工作树应在每个独立切片提交后恢复干净
 - `updateLoop` scheduler/task 拆分：已完成，不在本轮重复修改
 - schema 文件：`docs/schemas/screenshotMetadata-schema.json` 当前可以解析
 
@@ -23,6 +23,20 @@
 | Oxlint | `npm run lint:oxlint` | **失败** | 79 个 warning、45 个 error；本轮不顺带修复业务 lint 债务 |
 | 格式检查 | `npm run format:check` | **失败** | 209 个文件存在格式差异；本轮只记录，不做全仓格式化 |
 
+## M-01.3 后置验证
+
+2026-09-04，`Dotnet.Tests` 已从自定义 `Main` smoke runner 转为正式 xUnit 测试项目。原有 WinForms 验证逻辑保留，由 STA 辅助器在测试线程中执行。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| C# 测试发现 | `dotnet test Dotnet.Tests/VRCX.Cef.Tests.csproj --no-build --list-tests` | **通过**：发现 3 个测试 |
+| C# 自动化测试 | `dotnet test Dotnet.Tests/VRCX.Cef.Tests.csproj --no-restore` | **通过**：3/3 |
+| C# 测试项目构建 | `dotnet build Dotnet.Tests/VRCX.Cef.Tests.csproj --no-restore` | **通过**：0 警告、0 错误 |
+| 前端 updateLoop 定向测试 | `npx vitest run src/stores/updateLoopTasks --reporter=dot` | **通过**：12 个文件、26 项测试 |
+| Schema 结构检查 | `npm run check:schema` | **通过**：5 个属性 |
+
+本切片只涉及 `Dotnet.Tests` 测试项目和测试代码；未修改产品运行时、公共接口、序列化格式或并发逻辑。
+
 ## 失败分类
 
 ### 完整前端测试
@@ -37,7 +51,7 @@
 ### 质量门禁
 
 - `typecheck:js`：先决定正式的 JavaScript 类型检查入口，再补齐工具和配置；不要把一个不可执行的脚本直接设为强制门禁。
-- `Dotnet.Tests`：先保留现有 smoke 命令，再引入正式测试框架和可发现的测试项目，避免丢失当前覆盖。
+- `Dotnet.Tests`：已引入正式测试框架和可发现的测试项目；后续将把该命令纳入 CI，并继续保留 WinForms 的 STA 线程约束。
 - Oxlint / Oxfmt：先建立“新增代码不得增加错误”的增量规则，不在本任务中一次性重排全仓文件。
 - Schema：增加单独的解析/结构检查，防止文件再次出现语法漂移。
 
