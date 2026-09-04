@@ -399,7 +399,7 @@ export const useVrcxStore = defineStore('Vrcx', () => {
     async function saveVRCXWindowOption(windowState = state) {
         if (LINUX) {
             const options = /** @type {{ x: number, y: number, width: number, height: number, windowState: string }} */ (
-                windowState
+                /** @type {unknown} */ (windowState)
             );
             VRCXStorage.Set('VRCX_LocationX', options.x.toString());
             VRCXStorage.Set('VRCX_LocationY', options.y.toString());
