@@ -353,7 +353,11 @@ function handlePipeline(args) {
                 travelingToWorld: 'offline',
                 travelingToInstance: 'offline'
             };
-            applyUser(offlineJson);
+            applyUser(
+                /** @type {import('../types/api/user').GetUserResponse} */ (
+                    offlineJson
+                )
+            );
             break;
 
         case 'friend-update':
