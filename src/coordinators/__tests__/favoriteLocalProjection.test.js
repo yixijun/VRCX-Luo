@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { projectLocalFavoriteEntities } from '../favoriteLocalProjection';
+import {
+    projectLocalFavoriteEntities,
+    projectLocalFavoriteIds
+} from '../favoriteLocalProjection';
 
 describe('projectLocalFavoriteEntities', () => {
     it('groups entities and preserves legacy reverse insertion order', () => {
@@ -46,5 +49,24 @@ describe('projectLocalFavoriteEntities', () => {
                 resolveRef: () => undefined
             })
         ).toEqual({ Favorites: [] });
+    });
+});
+
+describe('projectLocalFavoriteIds', () => {
+    it('groups friend ids in the same reverse insertion order', () => {
+        expect(
+            projectLocalFavoriteIds([
+                { userId: 'user-1', groupName: 'Favorites' },
+                { userId: 'user-2', groupName: 'Favorites' },
+                { userId: 'user-3', groupName: 'Other' }
+            ])
+        ).toEqual({
+            Favorites: ['user-2', 'user-1'],
+            Other: ['user-3']
+        });
+    });
+
+    it('creates the default Favorites group when no friend favorites exist', () => {
+        expect(projectLocalFavoriteIds([])).toEqual({ Favorites: [] });
     });
 });

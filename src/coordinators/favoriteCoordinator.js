@@ -10,7 +10,10 @@ import { useWorldStore } from '../stores/world';
 import { rebuildFavoriteSearchIndex } from './searchIndexCoordinator';
 import { applyWorld } from './worldCoordinator';
 import { runUpdateFriendFlow } from './friendPresenceCoordinator';
-import { projectLocalFavoriteEntities } from './favoriteLocalProjection';
+import {
+    projectLocalFavoriteEntities,
+    projectLocalFavoriteIds
+} from './favoriteLocalProjection';
 import { avatarRequest, favoriteRequest, queryRequest } from '../api';
 import { database } from '../services/database';
 import { i18n } from '../plugins/i18n';
@@ -1162,20 +1165,8 @@ export async function getLocalFriendFavorites() {
     const favoriteStore = useFavoriteStore();
     const friendStore = useFriendStore();
 
-    const localFavorites = Object.create(null);
-
     const favorites = await database.getFriendFavorites();
-    for (let i = 0; i < favorites.length; ++i) {
-        const favorite = favorites[i];
-        if (!localFavorites[favorite.groupName]) {
-            localFavorites[favorite.groupName] = [];
-        }
-        localFavorites[favorite.groupName].unshift(favorite.userId);
-    }
-
-    if (Object.keys(localFavorites).length === 0) {
-        localFavorites.Favorites = [];
-    }
+    const localFavorites = projectLocalFavoriteIds(favorites);
 
     replaceReactiveObject(favoriteStore.localFriendFavorites, localFavorites);
     friendStore.updateLocalFavoriteFriends();

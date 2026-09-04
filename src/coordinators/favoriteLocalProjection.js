@@ -32,3 +32,27 @@ export function projectLocalFavoriteEntities(favorites, { idKey, resolveRef }) {
 
     return localFavorites;
 }
+
+/**
+ * Builds the grouped local friend favorite id projection.
+ *
+ * @param {Array<object>} favorites
+ * @returns {Record<string, string[]>}
+ */
+export function projectLocalFavoriteIds(favorites) {
+    const localFavorites = Object.create(null);
+
+    for (let i = 0; i < favorites.length; ++i) {
+        const favorite = favorites[i];
+        if (!localFavorites[favorite.groupName]) {
+            localFavorites[favorite.groupName] = [];
+        }
+        localFavorites[favorite.groupName].unshift(favorite.userId);
+    }
+
+    if (Object.keys(localFavorites).length === 0) {
+        localFavorites.Favorites = [];
+    }
+
+    return localFavorites;
+}
