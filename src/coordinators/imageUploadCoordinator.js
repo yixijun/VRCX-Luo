@@ -110,7 +110,7 @@ export async function uploadImageLegacy(
     const api = apiMap[type];
 
     const fileMd5 = await AppApi.MD5File(base64File);
-    const fileSizeInBytes = parseInt(blob.size, 10);
+    const fileSizeInBytes = parseInt(String(blob.size), 10);
     const base64SignatureFile = await AppApi.SignFile(base64File);
     const signatureMd5 = await AppApi.MD5File(base64SignatureFile);
     const signatureSizeInBytes = parseInt(
