@@ -142,7 +142,9 @@ function parseDbRow(dbRow) {
     row.$accountId = null;
     row.$accountColor = null;
     row.$accountLabel = null;
-    const session = accountHub.allSessions.find(s => s.dbPrefix === prefix);
+    const session = accountHub.allSessions.find(
+        s => (s.userPrefix || s.dbPrefix) === prefix
+    );
     if (session) {
         row.$accountId = session.userId;
         row.$accountColor = accountHub.getAccountColor(session.userId);

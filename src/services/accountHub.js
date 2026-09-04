@@ -73,6 +73,16 @@ export const accountHub = {
     get viewMode() { return _state.viewMode; },
     get accountColors() { return _state.accountColors; },
 
+    /** All active account session records, including the primary stub. */
+    get allSessions() {
+        return [..._state.sessions.values()];
+    },
+
+    /** Database table prefix for the primary account, when registered. */
+    get primaryPrefix() {
+        return _state.sessions.get(_state.primaryId)?.userPrefix || '';
+    },
+
     get isMergedView() { return _state.viewMode === 'merged'; },
 
     /** All secondary sessions (excludes primary) */
