@@ -12,6 +12,7 @@ export const queryKeys = Object.freeze({
         groupId,
         Boolean(includeRoles)
     ],
+    /** @param {{ groupId?: string, userId?: string }} [params] */
     groupMember: ({ groupId, userId } = {}) => [
         'group',
         groupId,
