@@ -1,5 +1,6 @@
 export { queryClient } from './client';
 export { createQueryCacheAdapter, queryCache } from './queryCache';
+export { createQueryResourceRegistry } from './queryResourceRegistry';
 export { queryKeys } from './keys';
 export { entityQueryPolicies, toQueryOptions } from './policies';
 export {
