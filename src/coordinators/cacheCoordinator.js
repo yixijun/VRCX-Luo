@@ -17,7 +17,9 @@ import { queryRequest } from '../api';
 
 async function deleteVRChatCache(ref) {
     const authStore = useAuthStore();
-    const sdkUnityVersion = authStore.cachedConfig.sdkUnityVersion;
+    const sdkUnityVersion = /** @type {{ sdkUnityVersion?: string }} */ (
+        authStore.cachedConfig
+    ).sdkUnityVersion;
     let assetUrl = '';
     let variant = '';
     for (let i = ref.unityPackages.length - 1; i > -1; i--) {
@@ -58,7 +60,9 @@ async function checkVRChatCache(ref) {
         return { Item1: -1, Item2: false, Item3: '' };
     }
     const authStore = useAuthStore();
-    const sdkUnityVersion = authStore.cachedConfig.sdkUnityVersion;
+    const sdkUnityVersion = /** @type {{ sdkUnityVersion?: string }} */ (
+        authStore.cachedConfig
+    ).sdkUnityVersion;
     let assetUrl = '';
     let variant = '';
     for (let i = ref.unityPackages.length - 1; i > -1; i--) {
@@ -110,7 +114,9 @@ async function checkVRChatCache(ref) {
  */
 async function getBundleDateSize(ref) {
     const authStore = useAuthStore();
-    const sdkUnityVersion = authStore.cachedConfig.sdkUnityVersion;
+    const sdkUnityVersion = /** @type {{ sdkUnityVersion?: string }} */ (
+        authStore.cachedConfig
+    ).sdkUnityVersion;
     const avatarStore = useAvatarStore();
     const { avatarDialog } = storeToRefs(avatarStore);
     const worldStore = useWorldStore();
