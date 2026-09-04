@@ -440,7 +440,10 @@ export function getGroupDialogGroup(groupId, existingRef) {
                     });
             }
             nextTick(() => (D.isGetGroupDialogGroupLoading = false));
-            return result.args || result;
+            const resultWithArgs = /** @type {{ args?: object }} */ (
+                /** @type {unknown} */ (result)
+            );
+            return resultWithArgs.args || result;
         });
 }
 
