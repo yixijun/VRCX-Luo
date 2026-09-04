@@ -5,6 +5,7 @@
 ## 项目与架构
 
 - [架构诊断报告](./ARCHITECTURE_DIAGNOSIS.md)：当前模块职责、跨层耦合、上帝模块、依赖图和低风险重构顺序。
+- [重构执行计划](./REFACTOR_PLAN.md)：按 Blocker / Major / Minor 划分的任务、当前状态和逐切片回滚协议。
 - [Luo 改动清单](./JIRAI_FEATURES.md)：相对于上游的功能和改动记录。
 - [多账号 V4 详细设计草案](./MULTI_ACCOUNT_V4_DETAIL_DESIGN.md)：账号会话、数据库前缀、WebSocket 和聚合视图设计。
 
