@@ -12,9 +12,9 @@ const worldReq = {
         }).then((json) => {
             const args = {
                 json,
-                params
+                params,
+                ref: applyWorld(json)
             };
-            args.ref = applyWorld(json);
             return args;
         });
     },
