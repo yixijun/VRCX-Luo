@@ -62,6 +62,7 @@ import { useManualRelationsStore } from '../stores/manualRelations';
 import { findRelationSuggestionForUser } from './relationSuggestionPopup';
 import { showRelationSuggestionNotification } from '../services/relationSuggestionNotification';
 import { createUserLanguageEntries } from './userLanguageProjection';
+import { deriveAutoStateChangeParams } from './userAutoStateDecision';
 
 const getRobotUrl = () =>
     `${AppDebug.endpointDomain}/file/file_0e8c4e32-7444-44ea-ade4-313c010d4bae/1/file`;
@@ -1176,96 +1177,34 @@ export function updateAutoStateChange() {
     const locationStore = useLocationStore();
     const favoriteStore = useFavoriteStore();
 
-    if (
-        !generalSettingsStore.autoStateChangeEnabled ||
-        !gameStore.isGameRunning ||
-        !locationStore.lastLocation.playerList.size ||
-        locationStore.lastLocation.location === '' ||
-        locationStore.lastLocation.location === 'traveling'
-    ) {
+    const params = deriveAutoStateChangeParams({
+        enabled: generalSettingsStore.autoStateChangeEnabled,
+        isGameRunning: gameStore.isGameRunning,
+        playerCount: locationStore.lastLocation.playerList.size,
+        location: locationStore.lastLocation.location,
+        parseLocation,
+        allowedInstanceTypes:
+            generalSettingsStore.autoStateChangeInstanceTypes,
+        noFriends: generalSettingsStore.autoStateChangeNoFriends,
+        selectedGroups: generalSettingsStore.autoStateChangeGroups,
+        cachedFavorites: favoriteStore.cachedFavorites,
+        localFriendFavorites: favoriteStore.localFriendFavorites,
+        friendList: locationStore.lastLocation.friendList,
+        currentStatus: userStore.currentUser.status,
+        companyStatus: generalSettingsStore.autoStateChangeCompanyStatus,
+        aloneStatus: generalSettingsStore.autoStateChangeAloneStatus,
+        companyDescEnabled:
+            generalSettingsStore.autoStateChangeCompanyDescEnabled,
+        companyDesc: generalSettingsStore.autoStateChangeCompanyDesc,
+        aloneDescEnabled: generalSettingsStore.autoStateChangeAloneDescEnabled,
+        aloneDesc: generalSettingsStore.autoStateChangeAloneDesc
+    });
+    if (!params) {
         return;
-    }
-
-    const $location = parseLocation(locationStore.lastLocation.location);
-    let instanceType = $location.accessType;
-    if (instanceType === 'group') {
-        if ($location.groupAccessType === 'members') {
-            instanceType = 'groupOnly';
-        } else if ($location.groupAccessType === 'plus') {
-            instanceType = 'groupPlus';
-        } else {
-            instanceType = 'groupPublic';
-        }
-    }
-    if (
-        generalSettingsStore.autoStateChangeInstanceTypes.length > 0 &&
-        !generalSettingsStore.autoStateChangeInstanceTypes.includes(
-            instanceType
-        )
-    ) {
-        return;
-    }
-
-    let withCompany = locationStore.lastLocation.playerList.size > 1;
-    if (generalSettingsStore.autoStateChangeNoFriends) {
-        const selectedGroups = generalSettingsStore.autoStateChangeGroups;
-        if (selectedGroups.length > 0) {
-            const groupFriendIds = new Set();
-            for (const ref of favoriteStore.cachedFavorites.values()) {
-                if (
-                    ref.type === 'friend' &&
-                    selectedGroups.includes(ref.$groupKey)
-                ) {
-                    groupFriendIds.add(ref.favoriteId);
-                }
-            }
-            for (const selectedKey of selectedGroups) {
-                if (selectedKey.startsWith('local:')) {
-                    const groupName = selectedKey.slice(6);
-                    const userIds =
-                        favoriteStore.localFriendFavorites[groupName];
-                    if (userIds) {
-                        for (let i = 0; i < userIds.length; ++i) {
-                            groupFriendIds.add(userIds[i]);
-                        }
-                    }
-                }
-            }
-            withCompany = false;
-            for (const friendId of locationStore.lastLocation.friendList.keys()) {
-                if (groupFriendIds.has(friendId)) {
-                    withCompany = true;
-                    break;
-                }
-            }
-        } else {
-            withCompany = locationStore.lastLocation.friendList.size >= 1;
-        }
-    }
-
-    const currentStatus = userStore.currentUser.status;
-    const newStatus = withCompany
-        ? generalSettingsStore.autoStateChangeCompanyStatus
-        : generalSettingsStore.autoStateChangeAloneStatus;
-
-    if (currentStatus === newStatus) {
-        return;
-    }
-
-    const params = { status: newStatus };
-    if (withCompany && generalSettingsStore.autoStateChangeCompanyDescEnabled) {
-        params.statusDescription =
-            generalSettingsStore.autoStateChangeCompanyDesc;
-    } else if (
-        !withCompany &&
-        generalSettingsStore.autoStateChangeAloneDescEnabled
-    ) {
-        params.statusDescription =
-            generalSettingsStore.autoStateChangeAloneDesc;
     }
 
     userRequest.saveCurrentUser(params).then(() => {
-        const text = `Status automatically changed to ${newStatus}`;
+        const text = `Status automatically changed to ${params.status}`;
         if (AppDebug.errorNoty) {
             toast.dismiss(AppDebug.errorNoty);
         }
