@@ -29,6 +29,7 @@ import { useAdvancedSettingsStore } from '../stores/settings/advanced';
 import configRepository from '../services/config';
 
 import * as workerTimers from 'worker-timers';
+import { deriveGroupRoleChangeMessages } from './groupRoleChangeDecision';
 
 /**
  * @param ref
@@ -250,30 +251,14 @@ async function groupOwnerChange(ref, oldUserId, newUserId) {
  * @param {Array} newRoleIds
  */
 function groupRoleChange(ref, oldRoles, newRoles, oldRoleIds, newRoleIds) {
-    // check for removed/added roleIds
-    for (const roleId of oldRoleIds) {
-        if (!newRoleIds.includes(roleId)) {
-            let roleName = '';
-            const role = oldRoles.find((fineRole) => fineRole.id === roleId);
-            if (role) {
-                roleName = role.name;
-            }
-            groupChange(ref, `Role ${roleName} removed`);
-        }
-    }
-    if (typeof newRoles !== 'undefined') {
-        for (const roleId of newRoleIds) {
-            if (!oldRoleIds.includes(roleId)) {
-                let roleName = '';
-                const role = newRoles.find(
-                    (fineRole) => fineRole.id === roleId
-                );
-                if (role) {
-                    roleName = role.name;
-                }
-                groupChange(ref, `Role ${roleName} added`);
-            }
-        }
+    const messages = deriveGroupRoleChangeMessages({
+        oldRoles,
+        newRoles,
+        oldRoleIds,
+        newRoleIds
+    });
+    for (const message of messages) {
+        groupChange(ref, message);
     }
 }
 
