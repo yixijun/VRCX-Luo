@@ -31,6 +31,7 @@ import configRepository from '../services/config';
 import * as workerTimers from 'worker-timers';
 import { deriveGroupRoleChangeMessages } from './groupRoleChangeDecision';
 import { createGroupLanguageEntries } from './groupLanguageProjection';
+import { deriveGroupPresenceChanges } from './groupPresenceDecision';
 
 /**
  * @param ref
@@ -457,16 +458,15 @@ export function applyPresenceGroups(ref) {
         return;
     }
 
-    // update group list
-    for (const groupId of groups) {
-        if (!groupStore.currentUserGroups.has(groupId)) {
-            onGroupJoined(groupId);
-        }
+    const { joinedGroupIds, leftGroupIds } = deriveGroupPresenceChanges({
+        groups,
+        currentGroupIds: groupStore.currentUserGroups.keys()
+    });
+    for (const groupId of joinedGroupIds) {
+        onGroupJoined(groupId);
     }
-    for (const groupId of groupStore.currentUserGroups.keys()) {
-        if (!groups.includes(groupId)) {
-            onGroupLeft(groupId);
-        }
+    for (const groupId of leftGroupIds) {
+        onGroupLeft(groupId);
     }
 }
 
