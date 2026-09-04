@@ -603,7 +603,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         if (lastCleanupStr) {
             const lastCleanup = new Date(lastCleanupStr);
             const daysSinceLastCleanup =
-                (now - lastCleanup) / (1000 * 60 * 60 * 24);
+                (now.getTime() - lastCleanup.getTime()) /
+                (1000 * 60 * 60 * 24);
             if (daysSinceLastCleanup < 7) return;
         }
 
