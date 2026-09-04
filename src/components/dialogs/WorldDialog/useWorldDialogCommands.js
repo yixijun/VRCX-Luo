@@ -23,7 +23,7 @@ import { removeWorldFromCache } from '../../../coordinators/worldCoordinator';
  * @param {import('vue').Ref} worldDialog - reactive ref to the world dialog state
  * @param {object} deps - external dependencies
  * @param {Function} deps.t - i18n translation function
- * @param {Function} deps.toast - toast notification function
+ * @param {{ success: Function, error: Function }} deps.toast - toast notification API
  * @param {object} deps.modalStore - modal store for confirm/prompt dialogs
  * @param {import('vue').Ref} deps.userDialog - reactive ref to the user dialog state
  * @param {Map} deps.cachedWorlds - cached worlds map
