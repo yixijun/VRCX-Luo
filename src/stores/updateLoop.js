@@ -26,6 +26,7 @@ import { watchState } from '../services/watchState';
 import * as workerTimers from 'worker-timers';
 import { createCurrentUserTask } from './updateLoopTasks/currentUserTask';
 import { createFriendSyncTask } from './updateLoopTasks/friendSyncTask';
+import { createGroupInstanceTask } from './updateLoopTasks/groupInstanceTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -43,6 +44,12 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
             authStore.updateStoredUser(currentUser),
         refreshPlayerModerations: runRefreshPlayerModerationsFlow,
         now: () => Date.now()
+    });
+    const groupInstanceTask = createGroupInstanceTask({
+        isFriendsLoaded: () => watchState.isFriendsLoaded,
+        getUsersGroupInstances: () => groupRequest.getUsersGroupInstances(),
+        handleGroupUserInstances,
+        checkGameRunning: () => AppApi.CheckGameRunning()
     });
     const state = {
         nextCurrentUserRefresh: 300,
@@ -68,6 +75,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
             friendSyncTask.reset();
             state.nextNonFriendRefresh = 3600;
             state.nextGroupInstanceRefresh = 0;
+            groupInstanceTask.reset();
         },
         { flush: 'sync' }
     );
@@ -92,15 +100,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                     state.nextNonFriendRefresh = 3600; // 1hour
                     refreshTrackedNonFriendsFlow();
                 }
-                if (--state.nextGroupInstanceRefresh <= 0) {
-                    if (watchState.isFriendsLoaded) {
-                        state.nextGroupInstanceRefresh = 300; // 5min
-                        const args =
-                            await groupRequest.getUsersGroupInstances();
-                        handleGroupUserInstances(args);
-                    }
-                    AppApi.CheckGameRunning();
-                }
+                await groupInstanceTask.tick();
                 if (--state.nextAppUpdateCheck <= 0) {
                     state.nextAppUpdateCheck = 3600; // 1hour
                     if (vrcxUpdaterStore.autoUpdateVRCX !== 'Off') {
@@ -171,7 +171,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
      * @param value
      */
     function setNextGroupInstanceRefresh(value) {
-        state.nextGroupInstanceRefresh = value;
+        groupInstanceTask.setNext(value);
     }
 
     /**
