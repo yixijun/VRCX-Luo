@@ -28,6 +28,7 @@ import { createCurrentUserTask } from './updateLoopTasks/currentUserTask';
 import { createFriendSyncTask } from './updateLoopTasks/friendSyncTask';
 import { createGroupInstanceTask } from './updateLoopTasks/groupInstanceTask';
 import { createGameStateTask } from './updateLoopTasks/gameStateTask';
+import { createUpdateCheckTask } from './updateLoopTasks/updateCheckTask';
 
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
@@ -60,6 +61,11 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         getIsSteamVRRunning: () => AppApi.IsSteamVRRunning(),
         updateIsGameRunning: runUpdateIsGameRunningFlow,
         initVr: () => vrStore.vrInit()
+    });
+    const updateCheckTask = createUpdateCheckTask({
+        getAutoUpdateMode: () => vrcxUpdaterStore.autoUpdateVRCX,
+        checkForVRCXUpdate: () => vrcxUpdaterStore.checkForVRCXUpdate(),
+        tryAutoBackupVrcRegistry: () => vrcxStore.tryAutoBackupVrcRegistry()
     });
     const state = {
         nextCurrentUserRefresh: 300,
@@ -111,13 +117,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
                     refreshTrackedNonFriendsFlow();
                 }
                 await groupInstanceTask.tick();
-                if (--state.nextAppUpdateCheck <= 0) {
-                    state.nextAppUpdateCheck = 3600; // 1hour
-                    if (vrcxUpdaterStore.autoUpdateVRCX !== 'Off') {
-                        vrcxUpdaterStore.checkForVRCXUpdate();
-                    }
-                    vrcxStore.tryAutoBackupVrcRegistry();
-                }
+                updateCheckTask.tick();
                 if (--state.ipcTimeout <= 0) {
                     vrcxStore.setIpcEnabled(false);
                 }
