@@ -26,16 +26,61 @@ export async function runHandleUserUpdateFlow(
     props,
     { now = Date.now, nowIso = () => new Date().toJSON() } = {}
 ) {
-    const friendStore = useFriendStore();
-    const userStore = useUserStore();
-    const worldStore = useWorldStore();
-    const groupStore = useGroupStore();
-    const instanceStore = useInstanceStore();
-    const feedStore = useFeedStore();
-    const notificationStore = useNotificationStore();
-    const sharedFeedStore = useSharedFeedStore();
-    const generalSettingsStore = useGeneralSettingsStore();
+    return runHandleUserUpdateFlowWithDependencies(ref, props, {
+        now,
+        nowIso,
+        friendStore: useFriendStore(),
+        userStore: useUserStore(),
+        worldStore: useWorldStore(),
+        groupStore: useGroupStore(),
+        instanceStore: useInstanceStore(),
+        feedStore: useFeedStore(),
+        notificationStore: useNotificationStore(),
+        sharedFeedStore: useSharedFeedStore(),
+        generalSettingsStore: useGeneralSettingsStore(),
+        database
+    });
+}
 
+/**
+ * Handles a user diff with explicit state and side-effect capabilities.
+ * The compatibility entry point above supplies the application's default adapters.
+ *
+ * @param {object} ref Updated user reference.
+ * @param {object} props Changed props with [new, old] tuples.
+ * @param {object} dependencies
+ * @param {object} dependencies.friendStore
+ * @param {object} dependencies.userStore
+ * @param {object} dependencies.worldStore
+ * @param {object} dependencies.groupStore
+ * @param {object} dependencies.instanceStore
+ * @param {object} dependencies.feedStore
+ * @param {object} dependencies.notificationStore
+ * @param {object} dependencies.sharedFeedStore
+ * @param {object} dependencies.generalSettingsStore
+ * @param {object} dependencies.database
+ * @param {function} [dependencies.now]
+ * @param {function} [dependencies.nowIso]
+ * @returns {Promise<void>}
+ */
+export async function runHandleUserUpdateFlowWithDependencies(
+    ref,
+    props,
+    {
+        friendStore,
+        userStore,
+        worldStore,
+        groupStore,
+        instanceStore,
+        feedStore,
+        notificationStore,
+        sharedFeedStore,
+        generalSettingsStore,
+        database: databaseApi,
+        now = Date.now,
+        nowIso = () => new Date().toJSON()
+    }
+) {
     const { state, userDialog, applyUserDialogLocation, checkNote } = userStore;
 
     let feed;
@@ -145,7 +190,7 @@ export async function runHandleUserUpdateFlow(
             notificationStore.queueFeedNoty(feed);
             sharedFeedStore.addEntry(feed);
             feedStore.addFeedEntry(feed);
-            database.addGPSToDatabase(feed);
+            databaseApi.addGPSToDatabase(feed);
             // clear previousLocation after GPS
             ref.$previousLocation = '';
             ref.$travelingToTime = now();
@@ -255,7 +300,7 @@ export async function runHandleUserUpdateFlow(
             notificationStore.queueFeedNoty(feed);
             sharedFeedStore.addEntry(feed);
             feedStore.addFeedEntry(feed);
-            database.addAvatarToDatabase(feed);
+            databaseApi.addAvatarToDatabase(feed);
         }
     }
     // if status is offline, ignore status and statusDescription
@@ -304,7 +349,7 @@ export async function runHandleUserUpdateFlow(
         notificationStore.queueFeedNoty(feed);
         sharedFeedStore.addEntry(feed);
         feedStore.addFeedEntry(feed);
-        database.addStatusToDatabase(feed);
+        databaseApi.addStatusToDatabase(feed);
     }
     if (props.bio && props.bio[0] && props.bio[1]) {
         let bio = '';
@@ -326,7 +371,7 @@ export async function runHandleUserUpdateFlow(
         notificationStore.queueFeedNoty(feed);
         sharedFeedStore.addEntry(feed);
         feedStore.addFeedEntry(feed);
-        database.addBioToDatabase(feed);
+        databaseApi.addBioToDatabase(feed);
     }
     if (
         props.note &&
