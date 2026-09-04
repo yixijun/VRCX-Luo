@@ -29,6 +29,7 @@ import { groupRequest } from '../api';
 import { request } from './request';
 import { runUpdateFriendFlow } from '../coordinators/friendPresenceCoordinator';
 import { runSetCurrentUserLocationFlow } from '../coordinators/locationCoordinator';
+import { createFriendLocationPayload } from './websocketFriendLocation';
 import { watchState } from './watchState';
 
 import * as workerTimers from 'worker-timers';
@@ -361,36 +362,14 @@ function handlePipeline(args) {
             break;
 
         case 'friend-location':
-            const $location1 = parseLocation(content.location);
-            const $travelingToLocation1 = parseLocation(
-                content.travelingToLocation
+            const { hasUser, locationJson } = createFriendLocationPayload(
+                content,
+                parseLocation
             );
-            if (!content?.user?.id) {
+            if (!hasUser) {
                 console.error('friend-location missing user id', content);
-                const jankLocationJson = {
-                    id: content.userId,
-                    location: content.location,
-                    worldId: content.worldId,
-                    instanceId: $location1.instanceId,
-                    travelingToLocation: content.travelingToLocation,
-                    travelingToWorld: $travelingToLocation1.worldId,
-                    travelingToInstance: $travelingToLocation1.instanceId
-                };
-                applyUser(jankLocationJson);
-                break;
             }
-            const locationJson = {
-                location: content.location,
-                worldId: content.worldId,
-                instanceId: $location1.instanceId,
-                travelingToLocation: content.travelingToLocation,
-                travelingToWorld: $travelingToLocation1.worldId,
-                travelingToInstance: $travelingToLocation1.instanceId,
-                ...content.user,
-                state: 'online' // JANK
-            };
             applyUser(locationJson);
-
             break;
 
         case 'user-update':
