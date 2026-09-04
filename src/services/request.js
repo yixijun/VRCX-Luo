@@ -25,7 +25,9 @@ function isLoggedOutRequestAllowed(endpoint) {
 }
 
 function createLoggedOutRequestError(endpoint) {
-    const err = new Error(`API request blocked while logged out: ${endpoint}`);
+    const err = /** @type {Error & { status: number, endpoint?: string, loggedOut?: boolean }} */ (
+        new Error(`API request blocked while logged out: ${endpoint}`)
+    );
     err.status = -1;
     err.endpoint = endpoint;
     err.loggedOut = true;
@@ -384,7 +386,9 @@ export function $throw(code, error, endpoint) {
             position: 'bottom-left'
         });
     }
-    const e = new Error(text);
+    const e = /** @type {Error & { status: number, endpoint?: string }} */ (
+        new Error(text)
+    );
     e.status = code;
     e.endpoint = endpoint;
     throw e;
