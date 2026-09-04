@@ -15,9 +15,9 @@ const instanceReq = {
         }).then((json) => {
             const args = {
                 json,
-                params
+                params,
+                ref: instanceStore.applyInstance(json)
             };
-            args.ref = instanceStore.applyInstance(json);
             return args;
         });
     },
