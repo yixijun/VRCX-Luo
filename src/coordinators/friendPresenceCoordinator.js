@@ -27,10 +27,55 @@ export async function runUpdateFriendDelayedCheckFlow(
     $location_at,
     { now = Date.now, nowIso = () => new Date().toJSON() } = {}
 ) {
-    const friendStore = useFriendStore();
-    const feedStore = useFeedStore();
-    const notificationStore = useNotificationStore();
-    const sharedFeedStore = useSharedFeedStore();
+    return runUpdateFriendDelayedCheckFlowWithDependencies(
+        ctx,
+        newState,
+        location,
+        $location_at,
+        {
+            now,
+            nowIso,
+            friendStore: useFriendStore(),
+            feedStore: useFeedStore(),
+            notificationStore: useNotificationStore(),
+            sharedFeedStore: useSharedFeedStore(),
+            database
+        }
+    );
+}
+
+/**
+ * Runs a friend presence transition with explicit state and side-effect capabilities.
+ * The compatibility entry point above supplies the application's default adapters.
+ *
+ * @param {object} ctx
+ * @param {string} newState
+ * @param {string} location
+ * @param {number} $location_at
+ * @param {object} dependencies
+ * @param {object} dependencies.friendStore
+ * @param {object} dependencies.feedStore
+ * @param {object} dependencies.notificationStore
+ * @param {object} dependencies.sharedFeedStore
+ * @param {object} dependencies.database
+ * @param {function} [dependencies.now]
+ * @param {function} [dependencies.nowIso]
+ */
+export async function runUpdateFriendDelayedCheckFlowWithDependencies(
+    ctx,
+    newState,
+    location,
+    $location_at,
+    {
+        friendStore,
+        feedStore,
+        notificationStore,
+        sharedFeedStore,
+        database: databaseApi,
+        now = Date.now,
+        nowIso = () => new Date().toJSON()
+    }
+) {
     const { friends, localFavoriteFriends } = friendStore;
 
     let feed;
@@ -81,7 +126,7 @@ export async function runUpdateFriendDelayedCheckFlow(
             notificationStore.queueFeedNoty(feed);
             sharedFeedStore.addEntry(feed);
             feedStore.addFeedEntry(feed);
-            database.addOnlineOfflineToDatabase(feed);
+            databaseApi.addOnlineOfflineToDatabase(feed);
         } else if (
             newState === 'online' &&
             (ctx.state === 'offline' || ctx.state === 'active')
@@ -107,7 +152,7 @@ export async function runUpdateFriendDelayedCheckFlow(
             notificationStore.queueFeedNoty(feed);
             sharedFeedStore.addEntry(feed);
             feedStore.addFeedEntry(feed);
-            database.addOnlineOfflineToDatabase(feed);
+            databaseApi.addOnlineOfflineToDatabase(feed);
         }
         if (newState === 'active') {
             ctx.ref.$active_for = now();

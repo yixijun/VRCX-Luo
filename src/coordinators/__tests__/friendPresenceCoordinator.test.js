@@ -79,7 +79,10 @@ vi.mock('../../services/watchState', () => ({
     watchState: { isFriendsLoaded: false }
 }));
 
-import { runUpdateFriendDelayedCheckFlow } from '../friendPresenceCoordinator';
+import {
+    runUpdateFriendDelayedCheckFlow,
+    runUpdateFriendDelayedCheckFlowWithDependencies
+} from '../friendPresenceCoordinator';
 
 describe('runUpdateFriendDelayedCheckFlow', () => {
     beforeEach(() => {
@@ -191,5 +194,71 @@ describe('runUpdateFriendDelayedCheckFlow', () => {
             mocks.friendStore.updateOnlineFriendCounter
         ).toHaveBeenCalledOnce();
         expect(mocks.friendStore.reindexSortedFriend).toHaveBeenCalledWith(ctx);
+    });
+
+    it('uses explicitly injected capabilities and preserves side-effect order', async () => {
+        const ref = {
+            id: 'usr-injected-friend',
+            displayName: 'Injected Friend',
+            location: 'wrld_injected:instance',
+            $location_at: 1000
+        };
+        const ctx = {
+            id: ref.id,
+            name: ref.displayName,
+            state: 'online',
+            ref
+        };
+        const sideEffectOrder = [];
+        const injectedFriendStore = {
+            friends: new Map([[ctx.id, ctx]]),
+            localFavoriteFriends: new Set(),
+            updateOnlineFriendCounter: vi.fn(),
+            reindexSortedFriend: vi.fn()
+        };
+        const injectedFeedStore = {
+            addFeedEntry: vi.fn(() => sideEffectOrder.push('feed'))
+        };
+        const injectedNotificationStore = {
+            queueFeedNoty: vi.fn(() => sideEffectOrder.push('notification'))
+        };
+        const injectedSharedFeedStore = {
+            addEntry: vi.fn(() => sideEffectOrder.push('shared-feed'))
+        };
+        const injectedDatabase = {
+            addOnlineOfflineToDatabase: vi.fn(() =>
+                sideEffectOrder.push('database')
+            )
+        };
+
+        await runUpdateFriendDelayedCheckFlowWithDependencies(
+            ctx,
+            'offline',
+            'offline',
+            1000,
+            {
+                friendStore: injectedFriendStore,
+                feedStore: injectedFeedStore,
+                notificationStore: injectedNotificationStore,
+                sharedFeedStore: injectedSharedFeedStore,
+                database: injectedDatabase,
+                now: () => 2000,
+                nowIso: () => '2026-09-04T00:00:02.000Z'
+            }
+        );
+
+        expect(sideEffectOrder).toEqual([
+            'notification',
+            'shared-feed',
+            'feed',
+            'database'
+        ]);
+        expect(injectedNotificationStore.queueFeedNoty).toHaveBeenCalledOnce();
+        expect(
+            injectedDatabase.addOnlineOfflineToDatabase
+        ).toHaveBeenCalledOnce();
+        expect(
+            mocks.friendStore.updateOnlineFriendCounter
+        ).not.toHaveBeenCalled();
     });
 });
