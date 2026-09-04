@@ -13,7 +13,9 @@ import { compareUnityVersion } from '../avatar';
  */
 async function getBundleLocation(input) {
     const authStore = useAuthStore();
-    const sdkUnityVersion = authStore.cachedConfig.sdkUnityVersion;
+    const sdkUnityVersion = /** @type {{ sdkUnityVersion?: string }} */ (
+        authStore.cachedConfig
+    ).sdkUnityVersion;
     const worldStore = useWorldStore();
     const avatarStore = useAvatarStore();
     let unityPackage;
