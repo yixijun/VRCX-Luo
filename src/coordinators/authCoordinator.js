@@ -1,10 +1,8 @@
 import { i18n } from '../plugins/i18n';
 
-import Noty from 'noty';
-
 import { closeWebSocket, initWebsocket } from '../services/websocket';
 import { redirectToLogin } from '../services/routerAdapter';
-import { escapeTag } from '../shared/utils';
+import { showLogoutGreeting } from '../services/logoutNotification';
 import { queryClient } from '../queries';
 import { useAuthStore } from '../stores/auth';
 import { useNotificationStore } from '../stores/notification';
@@ -27,12 +25,10 @@ export async function runLogoutFlow() {
     const t = i18n.global.t;
 
     if (watchState.isLoggedIn) {
-        new Noty({
-            type: 'success',
-            text: t('message.auth.logout_greeting', {
-                name: `<strong>${escapeTag(userStore.currentUser.displayName)}</strong>`
-            })
-        }).show();
+        showLogoutGreeting({
+            displayName: userStore.currentUser.displayName,
+            translate: t
+        });
     }
 
     userStore.setUserDialogVisible(false);
