@@ -18,7 +18,7 @@ import configRepository from '../../../services/config.js';
  * @param {number} [options.minPx]
  * @returns {object}
  */
-export function useFavoritesSplitter(options = {}) {
+export function useFavoritesSplitter(options = /** @type {any} */ ({})) {
     const configKey = options.configKey ?? '';
     const defaultSize = options.defaultSize ?? 260;
     const maxPx = options.maxPx ?? 360;

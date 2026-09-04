@@ -4,9 +4,12 @@ import { nextTick, ref } from 'vue';
  * @param {object} options
  * @param {Function} options.createGroup - store function to create a new local group
  * @param {Function} options.selectGroup - function to select a group after creation
+ * @param {Function} [options.canCreate] - optional creation guard
  * @returns {object}
  */
-export function useFavoritesLocalGroups(options = {}) {
+export function useFavoritesLocalGroups(
+    options = /** @type {any} */ ({})
+) {
     const { createGroup, selectGroup, canCreate = () => true } = options;
 
     const isCreatingLocalGroup = ref(false);
