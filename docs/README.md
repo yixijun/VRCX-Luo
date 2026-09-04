@@ -18,6 +18,7 @@
 ## 开发、测试与故障记录
 
 - [Windows CEF 本地测试与安全重启](./CEF_LOCAL_TESTING.md)
+- [测试与契约基线](./TEST_BASELINE.md)
 - [Bio Diff 英文标点问题记录](./BIO_DIFF_ENGLISH_PUNCTUATION_BUG.md)
 - [截图元数据 JSON Schema](./schemas/screenshotMetadata-schema.json)
 - [第三方 Dotnet 库来源](./third-party-libs.md)
@@ -30,4 +31,3 @@
 3. 架构决策应在文档标题中标注状态（Draft/Accepted/Deprecated）和更新时间。
 4. 易变的文件行数、构建产物和依赖清单尽量由脚本生成，不作为手工维护的架构事实。
 5. `build/`、依赖目录和第三方生成文件不纳入项目文档中心。
-
