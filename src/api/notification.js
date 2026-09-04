@@ -6,9 +6,9 @@ const notificationReq = {
      * @typedef {object} NotificationFetchParameter
      * @property {number} n
      * @property {number} offset
-     * @property {boolean} sent
-     * @property {string} type
-     * @property {string} after
+     * @property {boolean} [sent]
+     * @property {string} [type]
+     * @property {string} [after]
      */
 
     /**
