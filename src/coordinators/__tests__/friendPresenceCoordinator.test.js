@@ -81,7 +81,9 @@ vi.mock('../../services/watchState', () => ({
 
 import {
     runUpdateFriendDelayedCheckFlow,
-    runUpdateFriendDelayedCheckFlowWithDependencies
+    runUpdateFriendDelayedCheckFlowWithDependencies,
+    runUpdateFriendFlow,
+    runUpdateFriendFlowWithDependencies
 } from '../friendPresenceCoordinator';
 
 describe('runUpdateFriendDelayedCheckFlow', () => {
@@ -260,5 +262,106 @@ describe('runUpdateFriendDelayedCheckFlow', () => {
         expect(
             mocks.friendStore.updateOnlineFriendCounter
         ).not.toHaveBeenCalled();
+    });
+});
+
+describe('runUpdateFriendFlow', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+        mocks.friendStore.friends.clear();
+        mocks.friendStore.localFavoriteFriends.clear();
+        mocks.friendStore.pendingOfflineMap.clear();
+        mocks.userStore.cachedUsers.clear();
+        mocks.getWorldName.mockResolvedValue('World');
+        mocks.getGroupName.mockResolvedValue('Group');
+        mocks.isRealInstance.mockReturnValue(false);
+    });
+
+    it('uses injected capabilities for an offline transition pending check', async () => {
+        const ref = {
+            id: 'usr-injected-friend',
+            displayName: 'Injected Friend',
+            location: 'wrld_injected:instance',
+            $location_at: 1000,
+            $lastFetch: 2000
+        };
+        const ctx = {
+            id: ref.id,
+            name: ref.displayName,
+            state: 'online',
+            ref: undefined,
+            pendingOffline: false
+        };
+        const pendingOfflineMap = new Map();
+        const injectedFriendStore = {
+            friends: new Map([[ctx.id, ctx]]),
+            localFavoriteFriends: new Set(),
+            pendingOfflineMap,
+            updateOnlineFriendCounter: vi.fn(),
+            reindexSortedFriend: vi.fn()
+        };
+        const injectedUserStore = {
+            cachedUsers: new Map([[ctx.id, ref]])
+        };
+        const fetchUser = vi.fn();
+        const syncFriendSearchIndex = vi.fn();
+        const runDelayedFlow = vi.fn();
+
+        await runUpdateFriendFlowWithDependencies(ctx.id, 'offline', {
+            friendStore: injectedFriendStore,
+            userStore: injectedUserStore,
+            isRealInstance: vi.fn(() => false),
+            fetchUser,
+            watchState: { isFriendsLoaded: true },
+            syncFriendSearchIndex,
+            runDelayedFlow,
+            now: () => 2000,
+            nowIso: () => '2026-09-04T00:00:02.000Z'
+        });
+
+        expect(ctx.ref).toBe(ref);
+        expect(ctx.pendingOffline).toBe(true);
+        expect(pendingOfflineMap.get(ctx.id)).toEqual({
+            startTime: 2000,
+            newState: 'offline',
+            previousLocation: ref.location,
+            previousLocationAt: 1000
+        });
+        expect(syncFriendSearchIndex).toHaveBeenCalledWith(ctx);
+        expect(injectedFriendStore.reindexSortedFriend).toHaveBeenCalledWith(
+            ctx
+        );
+        expect(fetchUser).not.toHaveBeenCalled();
+        expect(runDelayedFlow).not.toHaveBeenCalled();
+        expect(mocks.friendStore.reindexSortedFriend).not.toHaveBeenCalled();
+    });
+
+    it('keeps the compatibility entry point wired to default adapters', async () => {
+        const ref = {
+            id: 'usr-default-friend',
+            displayName: 'Default Friend',
+            location: 'wrld_default:instance',
+            $location_at: 1000,
+            $lastFetch: 2000
+        };
+        const ctx = {
+            id: ref.id,
+            name: ref.displayName,
+            state: 'online',
+            ref: undefined
+        };
+        mocks.friendStore.friends.set(ctx.id, ctx);
+        mocks.userStore.cachedUsers.set(ctx.id, ref);
+
+        await runUpdateFriendFlow(ctx.id, 'offline', {
+            now: () => 2000,
+            nowIso: () => '2026-09-04T00:00:02.000Z'
+        });
+
+        expect(ctx.state).toBe('offline');
+        expect(
+            mocks.database.addOnlineOfflineToDatabase
+        ).toHaveBeenCalledOnce();
+        expect(mocks.feedStore.addFeedEntry).toHaveBeenCalledOnce();
     });
 });

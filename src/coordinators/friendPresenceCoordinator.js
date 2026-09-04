@@ -185,6 +185,54 @@ export async function runUpdateFriendFlow(
 ) {
     const friendStore = useFriendStore();
     const userStore = useUserStore();
+    return runUpdateFriendFlowWithDependencies(id, stateInput, {
+        now,
+        nowIso,
+        friendStore,
+        userStore,
+        isRealInstance,
+        fetchUser: (args) => userRequest.getUser(args),
+        watchState,
+        debugFriendState: AppDebug.debugFriendState,
+        syncFriendSearchIndex,
+        runDelayedFlow: runUpdateFriendDelayedCheckFlow
+    });
+}
+
+/**
+ * Handles immediate friend presence updates with explicit capabilities.
+ * The compatibility entry point above supplies the application's default adapters.
+ *
+ * @param {string} id Friend id.
+ * @param {string | undefined} stateInput Optional incoming state.
+ * @param {object} dependencies
+ * @param {object} dependencies.friendStore
+ * @param {object} dependencies.userStore
+ * @param {function} dependencies.isRealInstance
+ * @param {function} dependencies.fetchUser
+ * @param {object} dependencies.watchState
+ * @param {boolean} [dependencies.debugFriendState]
+ * @param {function} dependencies.syncFriendSearchIndex
+ * @param {function} dependencies.runDelayedFlow
+ * @param {function} [dependencies.now]
+ * @param {function} [dependencies.nowIso]
+ */
+export async function runUpdateFriendFlowWithDependencies(
+    id,
+    stateInput = undefined,
+    {
+        friendStore,
+        userStore,
+        isRealInstance: isRealInstanceFn,
+        fetchUser,
+        watchState: watchStateApi,
+        debugFriendState = false,
+        syncFriendSearchIndex: syncFriendSearchIndexFn,
+        runDelayedFlow,
+        now = Date.now,
+        nowIso = () => new Date().toJSON()
+    }
+) {
     const { friends, localFavoriteFriends, pendingOfflineMap } = friendStore;
 
     const ctx = friends.get(id);
@@ -195,7 +243,7 @@ export async function runUpdateFriendFlow(
 
     if (stateInput === 'online') {
         const pendingOffline = pendingOfflineMap.get(id);
-        if (AppDebug.debugFriendState && pendingOffline) {
+        if (debugFriendState && pendingOffline) {
             const time = (now() - pendingOffline.startTime) / 1000;
             console.log(`${ctx.name} pendingOfflineCancelTime ${time}`);
         }
@@ -213,11 +261,11 @@ export async function runUpdateFriendFlow(
         // wtf, fetch user if offline in an instance
         if (
             currentState !== 'online' &&
-            isRealInstance(ref.location) &&
+            isRealInstanceFn(ref.location) &&
             ref.$lastFetch < now() - 10000 // 10 seconds
         ) {
             console.log(`Fetching offline friend in an instance ${ctx.name}`);
-            userRequest.getUser({ userId: id });
+            fetchUser({ userId: id });
         }
         // wtf, fetch user if online in an offline location
         if (
@@ -228,7 +276,7 @@ export async function runUpdateFriendFlow(
             console.log(
                 `Fetching online friend in an offline location ${ctx.name}`
             );
-            userRequest.getUser({ userId: id });
+            fetchUser({ userId: id });
         }
     }
     if (typeof stateInput === 'undefined' || ctx.state === stateInput) {
@@ -239,8 +287,8 @@ export async function runUpdateFriendFlow(
             // AddFriend (CurrentUser) 이후,
             // 서버에서 오는 순서라고 보면 될 듯.
             if (ctx.state === 'online') {
-                if (watchState.isFriendsLoaded) {
-                    userRequest.getUser({ userId: id });
+                if (watchStateApi.isFriendsLoaded) {
+                    fetchUser({ userId: id });
                 }
             }
         }
@@ -249,7 +297,7 @@ export async function runUpdateFriendFlow(
         }
         if (typeof ref !== 'undefined' && ctx.name !== ref.displayName) {
             ctx.name = ref.displayName;
-            syncFriendSearchIndex(ctx);
+            syncFriendSearchIndexFn(ctx);
         }
         friendStore.reindexSortedFriend(ctx);
         return;
@@ -262,26 +310,23 @@ export async function runUpdateFriendFlow(
         ctx.isVIP = isVIP;
         if (typeof ref !== 'undefined') {
             ctx.name = ref.displayName;
-            syncFriendSearchIndex(ctx);
+            syncFriendSearchIndexFn(ctx);
         }
-        if (!watchState.isFriendsLoaded) {
-            await runUpdateFriendDelayedCheckFlow(
-                ctx,
-                stateInput,
-                location,
-                $location_at,
-                { now, nowIso }
-            );
+        if (!watchStateApi.isFriendsLoaded) {
+            await runDelayedFlow(ctx, stateInput, location, $location_at, {
+                now,
+                nowIso
+            });
             return;
         }
         // prevent status flapping
         if (pendingOfflineMap.has(id)) {
-            if (AppDebug.debugFriendState) {
+            if (debugFriendState) {
                 console.log(ctx.name, 'pendingOfflineAlreadyWaiting');
             }
             return;
         }
-        if (AppDebug.debugFriendState) {
+        if (debugFriendState) {
             console.log(ctx.name, 'pendingOfflineBegin');
         }
         pendingOfflineMap.set(id, {
@@ -298,14 +343,11 @@ export async function runUpdateFriendFlow(
     ctx.isVIP = isVIP;
     if (typeof ref !== 'undefined') {
         ctx.name = ref.displayName;
-        syncFriendSearchIndex(ctx);
-        await runUpdateFriendDelayedCheckFlow(
-            ctx,
-            ctx.ref.state,
-            location,
-            $location_at,
-            { now, nowIso }
-        );
+        syncFriendSearchIndexFn(ctx);
+        await runDelayedFlow(ctx, ctx.ref.state, location, $location_at, {
+            now,
+            nowIso
+        });
     } else {
         friendStore.reindexSortedFriend(ctx);
     }
