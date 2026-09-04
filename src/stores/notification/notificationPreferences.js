@@ -11,7 +11,9 @@ export const NOTIFICATION_CENTER_HIDDEN_IDS_LIMIT = 1000;
  * @returns {Array<string>}
  */
 export function filterValidHiddenNotificationIds(ids) {
-    return ids.filter((id) => typeof id === 'string' && id.length > 0);
+    return /** @type {string[]} */ (
+        ids.filter((id) => typeof id === 'string' && id.length > 0)
+    );
 }
 
 /**
