@@ -6,6 +6,10 @@ import { replaceBioSymbols } from '../../../shared/utils';
 import { groupRequest } from '../../../api';
 
 /**
+ * @typedef {{ query: string, n: number, offset: number, order?: string, sortBy?: string }} ActiveSearchGroupParams
+ */
+
+/**
  * Group search composable for Search view.
  * Manages group search state and pagination.
  */
@@ -33,7 +37,9 @@ export function useSearchGroup() {
      * @param go
      */
     async function moreSearchGroup(go) {
-        const params = searchGroupParams.value;
+        const params = /** @type {ActiveSearchGroupParams} */ (
+            searchGroupParams.value
+        );
         if (go) {
             params.offset += params.n * go;
             if (params.offset < 0) {
