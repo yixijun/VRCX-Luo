@@ -158,6 +158,20 @@ describe('handleImageUploadInput', () => {
         expect(typeof clearInput).toBe('function');
     });
 
+    test('uses the injected input resolver when clearing a file', () => {
+        const input = { value: 'selected' };
+        const resolveInput = vi.fn(() => input);
+        const { clearInput } = handleImageUploadInput(makeEvent(makeFile()), {
+            inputSelector: '#image-input',
+            resolveInput
+        });
+
+        clearInput();
+
+        expect(resolveInput).toHaveBeenCalledWith('#image-input');
+        expect(input.value).toBe('');
+    });
+
     test('calls onClear callback when clearing', () => {
         const onClear = vi.fn();
         const { clearInput } = handleImageUploadInput(

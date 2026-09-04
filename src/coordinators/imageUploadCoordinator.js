@@ -2,6 +2,7 @@ import { toast } from 'vue-sonner';
 
 import { $throw } from '../services/request';
 import { AppDebug } from '../services/appConfig.js';
+import { resolveInputElement } from '../services/domInputAdapter';
 import { extractFileId } from '../shared/utils';
 import { imageRequest } from '../api';
 
@@ -12,19 +13,6 @@ function resolveMessage(message) {
     return message;
 }
 
-function getInputElement(selector) {
-    if (!selector) {
-        return null;
-    }
-    if (typeof selector === 'function') {
-        return selector();
-    }
-    if (typeof selector === 'string') {
-        return document.querySelector(selector);
-    }
-    return selector;
-}
-
 export function handleImageUploadInput(event, options = {}) {
     const {
         inputSelector,
@@ -33,12 +21,13 @@ export function handleImageUploadInput(event, options = {}) {
         acceptPattern = /image.*/,
         tooLargeMessage,
         invalidTypeMessage,
-        onClear
+        onClear,
+        resolveInput = resolveInputElement
     } = options;
 
     const clearInput = () => {
         onClear?.();
-        const input = getInputElement(inputSelector);
+        const input = resolveInput(inputSelector);
         if (input) {
             input.value = '';
         }
