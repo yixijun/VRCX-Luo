@@ -12,7 +12,7 @@ import { database } from '../../../services/database';
  * @param {import('vue').Ref} worldDialog - reactive ref to the world dialog state
  * @param {object} deps - external dependencies
  * @param {Function} deps.t - i18n translation function
- * @param {Function} deps.toast - toast notification function
+ * @param {{ success: Function, error: Function }} deps.toast - toast notification API
  * @param deps.sdkUnityVersion
  * @returns {object} info composable API
  */
