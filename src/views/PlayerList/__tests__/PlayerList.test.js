@@ -291,6 +291,22 @@ describe('PlayerList.vue', () => {
         expect(wrapper.find('.current-instance-table').exists()).toBe(true);
     });
 
+    test('renders the activity control as an icon in the summary action slot', () => {
+        mocks.currentInstanceWorld.value.ref.id = 'wrld_123';
+        const wrapper = mount(PlayerList);
+
+        const button = wrapper.get(
+            '.player-list__summary-action [data-testid="toggle-player-events"]'
+        );
+        expect(button.text()).toBe('');
+        expect(button.attributes('title')).toBe(
+            'view.player_list.presence.show'
+        );
+        expect(wrapper.find('.player-list__table-toolbar').exists()).toBe(
+            false
+        );
+    });
+
     test('toggles the room activity panel without changing the player table source', async () => {
         mocks.currentInstanceLocation.value = { tag: 'wrld_123:instance_1' };
         const wrapper = mount(PlayerList);

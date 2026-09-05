@@ -135,6 +135,33 @@
                                     v-text="currentInstanceWorld.ref.description"></span>
                             </div>
                         </div>
+                        <div
+                            class="player-list__summary-action ml-3 flex w-28 shrink-0 items-start justify-center pt-1">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                class="size-8"
+                                :class="showPlayerEvents && 'bg-accent text-accent-foreground'"
+                                :aria-pressed="showPlayerEvents"
+                                :aria-label="
+                                    t(
+                                        showPlayerEvents
+                                            ? 'view.player_list.presence.back_to_players'
+                                            : 'view.player_list.presence.show'
+                                    )
+                                "
+                                :title="
+                                    t(
+                                        showPlayerEvents
+                                            ? 'view.player_list.presence.back_to_players'
+                                            : 'view.player_list.presence.show'
+                                    )
+                                "
+                                data-testid="toggle-player-events"
+                                @click="togglePlayerEvents">
+                                <History class="size-4" />
+                            </Button>
+                        </div>
                         <div class="ml-5" style="display: flex; flex-direction: column">
                             <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
                                 <div class="flex-1 overflow-hidden">
@@ -188,25 +215,6 @@
 
             <ResizablePanel :default-size="100 - summarySize" :min-size="tableMinSize" :order="2">
                 <div class="current-instance-table flex h-full min-h-0 min-w-0 flex-col">
-                    <div class="player-list__table-toolbar flex shrink-0 items-center border-b border-border px-1 py-1">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            class="h-7 gap-1.5 px-2 text-xs"
-                            :class="showPlayerEvents && 'bg-accent text-accent-foreground'"
-                            :aria-pressed="showPlayerEvents"
-                            data-testid="toggle-player-events"
-                            @click="togglePlayerEvents">
-                            <History class="size-3.5" />
-                            {{
-                                t(
-                                    showPlayerEvents
-                                        ? 'view.player_list.presence.back_to_players'
-                                        : 'view.player_list.presence.show'
-                                )
-                            }}
-                        </Button>
-                    </div>
                     <InstancePlayerEvents
                         v-if="showPlayerEvents"
                         :location="currentInstanceTag"
@@ -226,21 +234,28 @@
         <div v-else class="current-instance-table flex h-full min-h-0 min-w-0 flex-col">
             <div class="player-list__table-toolbar flex shrink-0 items-center border-b border-border px-1 py-1">
                 <Button
-                    variant="outline"
-                    size="sm"
-                    class="h-7 gap-1.5 px-2 text-xs"
+                    variant="ghost"
+                    size="icon"
+                    class="ml-auto size-8"
                     :class="showPlayerEvents && 'bg-accent text-accent-foreground'"
                     :aria-pressed="showPlayerEvents"
-                    data-testid="toggle-player-events"
-                    @click="togglePlayerEvents">
-                    <History class="size-3.5" />
-                    {{
+                    :aria-label="
                         t(
                             showPlayerEvents
                                 ? 'view.player_list.presence.back_to_players'
                                 : 'view.player_list.presence.show'
                         )
-                    }}
+                    "
+                    :title="
+                        t(
+                            showPlayerEvents
+                                ? 'view.player_list.presence.back_to_players'
+                                : 'view.player_list.presence.show'
+                        )
+                    "
+                    data-testid="toggle-player-events"
+                    @click="togglePlayerEvents">
+                    <History class="size-4" />
                 </Button>
             </div>
             <InstancePlayerEvents v-if="showPlayerEvents" :location="currentInstanceTag" class="min-h-0 flex-1" />
