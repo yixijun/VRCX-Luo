@@ -28,6 +28,9 @@ const {
     buildTrayToolTip: buildTrayToolTipText,
     normalizeTrayNotificationSnapshot
 } = require('./trayNotificationProjection.cjs');
+const {
+    createDesktopNotificationController
+} = require('./desktopNotificationController.cjs');
 
 //app.disableHardwareAcceleration();
 
@@ -161,6 +164,15 @@ function areDesktopNotificationsEnabled() {
     return VRCXStorage.Get('VRCX_desktopNotificationsEnabled') !== 'false';
 }
 
+const desktopNotificationController = createDesktopNotificationController({
+    Notification,
+    isEnabled: areDesktopNotificationsEnabled,
+    getActiveNotification: () => activeNotification,
+    setActiveNotification: (notification) => {
+        activeNotification = notification;
+    }
+});
+
 function notifyDesktopNotificationsChanged(enabled) {
     mainWindow?.webContents?.send('desktop-notifications-updated', enabled);
 }
@@ -247,28 +259,7 @@ registerIpcHandlers({
             return null;
         },
         showNotification: (event, title, body, icon, silent) => {
-            if (!areDesktopNotificationsEnabled()) {
-                return;
-            }
-
-            if (activeNotification) {
-                activeNotification.close();
-            }
-
-            const notification = new Notification({
-                title,
-                body,
-                icon,
-                silent: !!silent
-            });
-            notification.on('close', () => {
-                if (activeNotification === notification) {
-                    notification.removeAllListeners();
-                    activeNotification = null;
-                }
-            });
-            activeNotification = notification;
-            notification.show();
+            desktopNotificationController.show(title, body, icon, silent);
         },
         restartApp: () => {
             if (process.platform === 'linux') {
