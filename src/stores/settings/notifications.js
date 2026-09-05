@@ -7,6 +7,7 @@ import { useModalStore } from '../modal';
 import { useVrStore } from '../vr';
 
 import configRepository from '../../services/config';
+import { openFileDialog } from '../../services/fileDialogAdapter';
 
 export const useNotificationsSettingsStore = defineStore(
     'NotificationsSettings',
@@ -315,7 +316,10 @@ export const useNotificationsSettingsStore = defineStore(
         function setTraySilentMode(value = null) {
             traySilentMode.value =
                 value === null ? !traySilentMode.value : !!value;
-            VRCXStorage.Set('VRCX_traySilentMode', traySilentMode.value.toString());
+            VRCXStorage.Set(
+                'VRCX_traySilentMode',
+                traySilentMode.value.toString()
+            );
             window.electron?.setTraySilentMode?.(traySilentMode.value);
         }
 
@@ -370,22 +374,19 @@ export const useNotificationsSettingsStore = defineStore(
         }
 
         async function selectCustomNotificationSound() {
-            let filePath = '';
-            if (WINDOWS) {
-                filePath = await AppApi.OpenFileSelectorDialog(
-                    '',
-                    '.wav',
-                    'Audio Files (*.wav;*.mp3;*.ogg;*.m4a)|*.wav;*.mp3;*.ogg;*.m4a|All files (*.*)|*.*'
-                );
-            } else {
-                filePath = await window.electron?.openFileDialog?.([
+            const filePath = await openFileDialog({
+                defaultPath: '',
+                defaultExt: '.wav',
+                defaultFilter:
+                    'Audio Files (*.wav;*.mp3;*.ogg;*.m4a)|*.wav;*.mp3;*.ogg;*.m4a|All files (*.*)|*.*',
+                filters: [
                     {
                         name: 'Audio Files',
                         extensions: ['wav', 'mp3', 'ogg', 'm4a']
                     },
                     { name: 'All files', extensions: ['*'] }
-                ]);
-            }
+                ]
+            });
             if (!filePath) {
                 return;
             }
