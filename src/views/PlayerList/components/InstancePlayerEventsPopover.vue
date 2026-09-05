@@ -18,9 +18,9 @@
             side="bottom"
             align="end"
             :side-offset="8"
-            class="w-96 max-w-[calc(100vw-2rem)] p-0"
+            class="w-96 max-w-[calc(100vw-2rem)] max-h-[var(--reka-popover-content-available-height)] overflow-hidden p-0"
             data-testid="player-events-popover">
-            <InstancePlayerEvents v-if="open" :location="props.location" class="h-96 max-h-[calc(100vh-4rem)]" />
+            <InstancePlayerEvents v-if="open" :location="props.location" class="h-96 max-h-full" />
         </PopoverContent>
     </Popover>
 </template>
