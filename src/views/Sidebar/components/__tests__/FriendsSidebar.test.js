@@ -314,6 +314,26 @@ describe('FriendsSidebar.vue', () => {
         ]);
     });
 
+    test('uses the latest activity when offline timestamp is unavailable', async () => {
+        const olderOffline = makeFriend('usr_old_startup', 'offline');
+        olderOffline.state = 'offline';
+        olderOffline.ref.last_activity = '2026-09-05T10:00:00.000Z';
+        const recentOffline = makeFriend('usr_recent_startup', 'offline');
+        recentOffline.state = 'offline';
+        recentOffline.ref.last_activity = '2026-09-05T11:00:00.000Z';
+        mocks.friendStore.offlineFriends.value = [olderOffline, recentOffline];
+
+        const wrapper = mount(FriendsSidebar);
+        await flushPromises();
+        await nextTick();
+
+        expect(
+            wrapper
+                .findAll('[data-testid="friend-item"]')
+                .map((item) => item.text())
+        ).toEqual(['usr_recent_startup', 'usr_old_startup']);
+    });
+
     test('keeps floating controls inside the visible sidebar tab', async () => {
         const wrapper = mount(FriendsSidebar);
         await flushPromises();

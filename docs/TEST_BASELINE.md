@@ -337,6 +337,19 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 | 生产构建 | `npm run prod` | **通过：4417 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
 | 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
 
+### 启动时已离线好友的排序兜底修正
+
+同日复核发现，应用启动时已经处于离线状态的好友尚未经历本次运行的在线→离线 transition，通常没有 `$offline_for`。侧栏现优先使用该字段；缺失时依次使用 `last_activity`、`last_login`，因此最近活动的离线好友仍排在上面；三个字段都缺失时保持原顺序。好友状态 transition、Store public interface、序列化格式、多账户合并视图和 VR overlay 仍未修改。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 兜底行为 RED | `npx vitest run src/views/Sidebar/components/__tests__/FriendsSidebar.test.js --reporter=dot` | **预期失败**：无 `$offline_for` 时保留旧顺序 `usr_old_startup`、`usr_recent_startup` |
+| 兜底行为 GREEN/侧栏回归 | `npx vitest run src/views/Sidebar/components/__tests__/FriendsSidebar.test.js --reporter=dot` | **通过：1 个文件、7 项测试** |
+| Sidebar 组件目录回归 | `npx vitest run src/views/Sidebar/components/__tests__ --reporter=dot` | **通过：7 个文件、35 项测试**；仅输出既有删除失败日志，无测试失败 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 生产构建 | `npm run prod` | **通过：4417 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
+
 共享好友排序旧测试的既有基线仍有 3 项失败（时间实例、None、空排序数组），本次没有修改该模块，也未增加失败。代码提交：`ba12266d`。未发布、未推送。
 
 ## 后续门禁规则

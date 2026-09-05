@@ -265,7 +265,7 @@ M-11.1～M-11.4 已完成并分别建立独立回滚点。本轮前端 UI 重构
 
 ## 近期功能变更
 
-1. **离线好友按最近离线时间排序（已完成）**：`src/views/Sidebar/components/FriendsSidebar.vue` 的离线分组现在按 `friend.ref.$offline_for` 毫秒时间戳倒序排列，最近离线的好友显示在最上方；无时间戳的旧数据排在有时间戳数据之后，并保持彼此原顺序。只调整单账户侧栏显示层，未修改好友状态写入、Store public interface 或多账户合并视图。测试与构建结果记录在 `docs/TEST_BASELINE.md`，代码提交：`ba12266d`。
+1. **离线好友按最近离线时间排序（已完成）**：`src/views/Sidebar/components/FriendsSidebar.vue` 的离线分组优先按 `friend.ref.$offline_for` 毫秒时间戳倒序排列，最近离线的好友显示在最上方；应用启动时已经离线、没有该运行时字段的好友依次使用 `last_activity`、`last_login` 作为排序兜底，仍无可用时间的数据保持原顺序。只调整单账户侧栏显示层，未修改好友状态写入、Store public interface 或多账户合并视图。测试与构建结果记录在 `docs/TEST_BASELINE.md`，初始实现提交：`ba12266d`，启动离线兜底修正另有独立回滚点。
 
 ## 当前 M-00 细分任务
 

@@ -411,15 +411,25 @@
     });
 
     function getOfflineTimestamp(friend) {
-        const value = friend?.ref?.$offline_for;
-        if (typeof value === 'number') {
-            return Number.isFinite(value) && value > 0 ? value : null;
-        }
-        if (typeof value === 'string' && value.trim() !== '') {
-            const timestamp = Number(value);
-            return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : null;
-        }
-        return null;
+        const parseTimestamp = (value) => {
+            if (typeof value === 'number') {
+                return Number.isFinite(value) && value > 0 ? value : null;
+            }
+            if (typeof value !== 'string' || value.trim() === '') {
+                return null;
+            }
+            const numericTimestamp = Number(value);
+            if (Number.isFinite(numericTimestamp) && numericTimestamp > 0) {
+                return numericTimestamp;
+            }
+            const parsedTimestamp = Date.parse(value);
+            return Number.isFinite(parsedTimestamp) && parsedTimestamp > 0 ? parsedTimestamp : null;
+        };
+
+        const ref = friend?.ref;
+        return (
+            parseTimestamp(ref?.$offline_for) ?? parseTimestamp(ref?.last_activity) ?? parseTimestamp(ref?.last_login)
+        );
     }
 
     function compareByOfflineRecency(a, b) {

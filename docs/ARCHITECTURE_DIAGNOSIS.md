@@ -350,7 +350,7 @@ M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAd
 
 ### 近期功能变更：离线好友排序
 
-`FriendsSidebar.vue` 的单账户离线分组已按 `friend.ref.$offline_for` 毫秒时间戳实现“最近离线在上”倒序排序；缺少时间戳的旧数据作为稳定 fallback，不改变其相互顺序。该变更只作用于侧栏显示层，未修改好友状态 transition、Store interface、`dbVars`、多账户合并视图或 VR overlay。代码提交为 `ba12266d`，验证结果见 `docs/TEST_BASELINE.md`。
+`FriendsSidebar.vue` 的单账户离线分组优先按 `friend.ref.$offline_for` 毫秒时间戳实现“最近离线在上”倒序排序；应用启动时已离线而缺少该运行时字段的好友依次使用 `last_activity`、`last_login` 作为排序兜底，完全缺少时间信息的数据保持稳定原顺序。该变更只作用于侧栏显示层，未修改好友状态 transition、Store interface、`dbVars`、多账户合并视图或 VR overlay。初始实现代码提交为 `ba12266d`，启动离线兜底修正另有独立回滚点，验证结果见 `docs/TEST_BASELINE.md`。
 
 ### 术语说明
 
