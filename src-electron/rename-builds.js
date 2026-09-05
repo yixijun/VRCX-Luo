@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { getArchAndPlatform } = require('./utils');
+const { readVersionMetadata } = require('./versionMetadata.cjs');
 
 const rootDir = path.join(__dirname, '..');
 const versionFilePath = path.join(rootDir, 'Version');
@@ -8,7 +9,7 @@ const buildDir = path.join(rootDir, 'build');
 
 let version = '';
 try {
-    version = fs.readFileSync(versionFilePath, 'utf8').trim();
+    version = readVersionMetadata({ versionFilePath }).sourceVersion;
     // if (!version.includes('T')) {
     //     // Remove dots only from Stable version
     //     version = version.replaceAll('.', '');
