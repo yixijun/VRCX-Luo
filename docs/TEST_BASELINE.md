@@ -158,6 +158,17 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：65 个文件、321 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-07.6 后置验证
+
+窗口关闭守卫 Adapter 切片只迁移 `BrowserWindow` 的 `close` 监听；保留退出状态、关闭到托盘、提示框选项、重复提示并发守卫、偏好持久化顺序、最小化/退出动作和 finally 清理语义。未修改托盘、通知、VR overlay 或 renderer interface。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 关闭决策/窗口状态事件定向测试 | `npx vitest run src/shared/utils/__tests__/closeToTrayDecision.test.js src/services/__tests__/windowState.test.js src/services/__tests__/windowEventBridge.test.js src/services/__tests__/windowCloseHandler.test.js --reporter=dot` | **通过**：4 个文件、11 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/windowCloseHandler.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：66 个文件、324 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
