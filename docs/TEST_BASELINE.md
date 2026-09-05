@@ -191,6 +191,17 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：68 个文件、330 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-07.9 后置验证
+
+托盘通知 projection 切片只迁移 snapshot 规范化和 tooltip 文本生成；保留无效输入 fallback、最多 4 条 item/3 条 tooltip、action 限制、字符串化、截断长度、默认文案和空列表行为。未修改桌面 Notification、通知 action IPC、托盘生命周期、VR overlay 或 renderer interface。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 托盘通知/菜单定向测试 | `npx vitest run src/services/__tests__/trayNotificationProjection.test.js src/services/__tests__/trayContextMenu.test.js src/services/__tests__/trayIconFactory.test.js --reporter=dot` | **通过**：3 个文件、8 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/trayNotificationProjection.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：69 个文件、332 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
