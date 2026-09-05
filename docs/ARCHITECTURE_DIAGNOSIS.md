@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片及 M-07.1～M-07.3 Electron composition-root seam 已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-07.1～M-07.3 Electron composition-root seam，以及 M-00.1～M-00.3 测试/CI 门禁已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module，以及 M-07.1～M-07.3 的 Electron .NET bootstrap、IPC 注册和双宿主 capability contract seam 已落地；coordinator/store 公共 interface 保持不变，`main.js` 的 window/tray/notification 实现仍未迁移。
+> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-07.1～M-07.3 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract，以及 M-00.1～M-00.3 的 JavaScript 类型收敛、重构 smoke 集和分阶段 CI 门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的 window/tray/notification 实现仍未迁移，多账户运行时功能仍按要求暂停。
 
 ## 结论摘要
 
@@ -42,7 +42,7 @@
 | `src/workers` | 后台任务和定时 worker | 异步边界较隐蔽，独立测试接缝不足 |
 | `src/localization` | 多语言 JSON 和翻译辅助 | translation key 漂移风险，缺少自动一致性检查 |
 | `Installer`、`build-scripts` | 安装包、构建、发布脚本 | Windows shell 假设较多，版本和产物来源不够集中 |
-| `.github/workflows` | CI、构建和发布 | 主 CI 偏手工触发，部分检查允许失败，质量门禁不完整 |
+| `.github/workflows` | CI、构建和发布 | 已支持 PR 与手动触发；`quality_js` 和 C# 测试为阻断门禁，全量测试、lint/format 保留可见 report-only 基线 |
 
 ## 2. 文档盘点
 
@@ -87,7 +87,7 @@
 | `src-electron/main.js` | 主进程约 1182 行，窗口、托盘、通知、IPC、Dotnet 启动集中 | Major → M-07.1～M-07.3 首批 seam 完成 | Dotnet 启动与 IPC 注册已移出，双宿主 contract 已可执行；window、tray、notification 行为实现仍可独立拆分 |
 | `Dotnet/VRCX-Cef.csproj`、`Dotnet/VRCX-Electron.csproj` | CEF/Electron 目标框架和依赖版本漂移 | Major | 建立共享宿主 contract、版本矩阵和双宿主 contract test |
 | `src` 多处生产文件 | 大量文件直接绕过边界访问 database 或宿主全局对象 | Major | 用 lint boundary 限制跨层 import，逐步迁移到 use-case/adapter |
-| `.github/workflows/ci.yaml`、`package.json` | CI 偏手工触发，检查允许失败；`typecheck:js` 已可执行但仍有既有诊断 | Major | 先收敛类型债务，再逐步把 test、lint、typecheck、schema 校验设为硬门禁 |
+| `.github/workflows/ci.yaml`、`package.json` | CI 已由 PR/手动触发；类型检查和重构 smoke 已纳入阻断门禁，全量测试与 lint/format 仍有历史红线 | Major → M-00.1～M-00.3 已完成 | 保持 report-only 结果可见并逐类收敛遗留债务；后续再收紧全量 test、lint、format |
 | `src/**/*.test.*` | 当前前端测试有大量失败和脆弱 mock | Major | 先修公共组件、图标、数据库 contract mock，再增加新测试 |
 | `Dotnet.Tests/VRCX.Cef.Tests.csproj` | C# 测试发现曾被 `OutputType=Exe` 绕过 | Major | 已改为正式测试项目，`dotnet test` 当前发现并通过 3 个测试，且由 Windows CI job 执行 |
 | `docs/schemas/screenshotMetadata-schema.json` | Schema 结构校验此前缺失 | Major | 已增加 `check:schema` 脚本并接入 CI，后续补字段语义/样例校验 |
@@ -240,7 +240,7 @@ flowchart LR
 | 检查项 | 结果 |
 |---|---|
 | `npm run prod` | 成功；存在 router 动态导入警告和 Node deprecation 警告 |
-| `npm test` | 当前 248 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-06 新增测试通过，既有失败数量未增加 |
+| `npm test` | 当前 255 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-06/M-07/M-08/M-09 新增测试通过，既有失败数量未增加 |
 | updateLoop/task 定向测试 | 13 个测试文件、28 个测试通过 |
 | M-03 adapter 定向测试 | DOM input、Toast、Router、关系建议通知、登出欢迎通知及 coordinator 回归测试通过 |
 | M-09.1 Group 决策定向测试 | 4 个测试文件、20 个测试通过 |
@@ -259,7 +259,8 @@ flowchart LR
 | M-01.3 Dotnet bridge manifest | manifest 契约 4 个测试通过；119 个静态 renderer 调用与清单匹配；主进程/renderer 语法检查和生产构建通过 |
 | M-07.1～M-07.3 Electron composition root / 双宿主 contract | IPC 注册测试 1 个、双宿主契约测试 2 个通过；与 M-01 capability 回归合计 6 个文件、18 个测试通过；格式、Node 语法和生产构建通过 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
-| `npm run typecheck:js` | 工具链已补齐并可执行；当前仍有 14 条既有 TypeScript/JavaScript 诊断，已先消除 `updateLoop.js(65,28)`、Group API `bool`、Avatar 空参数、Notification typedef、V2 projection 误标参数、Feed 差异函数旧参数名、邀请 `rsvp` 误标参数、13 个上传选项误报、World/Instance API `ref` 推断误报、request 自定义 Error 字段误报、全部 Query key 解构参数误报、WebApi 二级账号 bridge 方法误报、Sentry 原始异常 message 误报、WorldDialog 两个 composable 的 toast 属性误报、quickSearch worker 临时字段误报、ConfigRepository 数值解析误报、cacheCoordinator SDK 版本属性误报、devtool SDK 版本属性误报、format 工具转换误报、localization URL/Error 参数误报、表格 debounce 定时器误报、FileReader ArrayBuffer 参数误报、主题 link 元素误报、Group API 重复方法误报、游戏注册表值解析误报、上传协调器 Blob.size 参数误报、manual relations 建议结果字段误报、game-log Dayjs 算术误报、Group API `order/sortBy` 必填误报、`useSearchGroup` 活动参数推断误报、`useSearchWorld` 缓存配置/活动参数推断误报、查询缓存日志目标误报、通知偏好过滤返回类型误报、导航配置过滤回调字面量误报、`$throw` 必然抛错返回类型误报、activity top-worlds 参数契约误报、friend store 重复导出键误报、Previous Instances actions `onLaunch` 必填误报、tray notification 投影可选输入误报、托盘通知 bridge 方法误报、旧版 Notification 查询字段必填误报、`getQuickInviteResponseParams` 返回类型误报、托盘自定义事件 `detail` 类型误报、游戏日志分页布尔值误报、搜索用户投影类型误报、WebSocket 离线用户载荷类型误报、GroupDialog 数量替换类型误报、`openDialog` label 可选属性误报、高级设置日期算术误报、本地化 CLI 文件 IO/临时对象类型误报、外观路由名类型误报、通用设置关闭行为/解析类型误报、图表互友图读取与元数据契约误报、收藏分组映射返回类型误报、图库上传 DOM 类型误报、通知超时弹窗类型误报、VRCX 窗口动态状态断言误报、Favorites composable 默认参数误报、recent-action 冷却解析类型误报、光子事件详情回调契约误报、Vite 资源内联回调 overload 误报、Group 语言 projection 输入契约误报、Group 对话框响应契约误报、二次加载结果契约误报及 Group 注册表 JSON 输入契约误报，尚未作为阻断式 CI 门禁 |
+| `npm run typecheck:js` | **通过：0 diagnostics**；210 条既有诊断已通过 M-00.2 的静态契约切片清零，未修改多账户运行时流程 |
+| `npm run test:refactor` | **通过：55 个测试文件、285 项测试**；覆盖 coordinator、services、queries、notification 和 updateLoop task 的回归 smoke |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
 | C# 测试项目构建 | 通过：0 警告、0 错误 |
 | `screenshotMetadata-schema.json` | JSON 解析和 5 属性结构检查通过 |

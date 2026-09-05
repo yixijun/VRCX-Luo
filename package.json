@@ -29,6 +29,7 @@
         "check:schema": "node build-scripts/validate-screenshot-metadata-schema.js",
         "typecheck:js": "tsc -p tsconfig.checkjs.json --pretty false",
         "test": "vitest run",
+        "test:refactor": "vitest run src/coordinators/__tests__ src/services/__tests__ src/queries/__tests__ src/stores/notification/__tests__ src/stores/updateLoopTasks --reporter=dot --maxWorkers=2",
         "test:coverage": "vitest run --coverage",
         "build:licenses": "node ./build-scripts/generate-third-party-licenses.js",
         "prod": "cross-env PLATFORM=windows vite build src && npm run build:licenses",

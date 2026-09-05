@@ -18,16 +18,16 @@
 |---|---|---|---|
 | Blocker 条件项 | B-01 宿主桥安全封口 | 条件性 Major；allowlist 已完成，来源判定待补 | 补充可信渲染来源判定和按方法细粒度参数 schema |
 | Blocker 条件项 | B-02 多账户数据隔离 | **按要求暂缓** | 不改 `dbVars`、`accountHub` 和次号生命周期 |
-| Major | M-00 测试与 CI 门禁 | **M-00.1 已完成；M-00.2 单账户范围完成；剩余多账户诊断按要求暂缓；门禁仍为红** | 多账户恢复后继续收敛剩余诊断，再评估 lint/format 债务和 CI 硬门禁 |
+| Major | M-00 测试与 CI 门禁 | **已完成：M-00.1～M-00.3（分阶段门禁）** | 转入 B-01/N-02；全仓 lint/format/完整测试债务继续报告化收敛，多账户功能仍暂停 |
 | Major | M-01 宿主 capability adapter | **已完成：M-01.1～M-01.3** | 进入 M-07 Electron composition root；B-01 仅继续处理可信来源/细粒度 schema |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
-| Major | M-03 编排层纯化 | **已完成：M-03.6** | 进入 M-00；M-06 低风险 seam 已完成 |
+| Major | M-03 编排层纯化 | **已完成：M-03.6** | M-00 已完成；继续按总览推进 B-01/N-02 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
-| Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | 进入 M-00；M-01/M-04 解锁后再收窄宿主/数据库 capability |
-| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.3** | 进入 M-00 测试与 CI 门禁；window/tray/notification 可另行细分 |
-| Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | 进入 M-00；多账户 B-02/M-05 继续暂缓 |
-| Major | M-09 其余上帝模块 | **已完成：M-09.8** | 进入 M-00；多账户 B-02/M-05 继续暂缓 |
+| Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | M-00 已完成；M-01/M-04 解锁后再收窄宿主/数据库 capability |
+| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.3** | M-00 已完成；window/tray/notification 可另行细分 |
+| Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00 已完成；多账户 B-02/M-05 继续暂缓 |
+| Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
 | Minor | N-02 版本与构建来源 | 未开始 | 统一 `Version`、package 和宿主注入来源 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
@@ -72,6 +72,11 @@
 | `f8629638` | M-06.3：提取通知中心偏好 persistence interface |
 | `e8115bf2` | M-06.4：提取通知已读去重、串行处理和重试 queue module |
 | `7fddf930` | M-00.1：补齐 `typescript` 开发依赖，使 `typecheck:js` 可以实际执行 |
+| `6c7022a6` | M-00.2：为 accountHub 主账号兼容 stub 与二级会话注册表补齐静态契约；不改变多账户运行时行为 |
+| `52657880` | M-00.2：为二级账号 request/friend cache 补齐静态契约；不改变多账户运行时行为 |
+| `3e6945a6` | M-00.2：为 aggregatedView 合并输入与 prefix 查找补齐局部静态契约；不改变聚合运行时行为 |
+| `dc732cc9` | M-00.2：隐藏 Sentry 第三方私有 option 类型，完成 JavaScript 类型检查 |
+| M-00.3 CI/docs 提交 | M-00.3：建立 PR/手动触发的分阶段 CI 门禁，加入 `test:refactor` smoke 命令并同步测试基线文档 |
 | `feb584b9` | M-01.1：提取 CEF/Electron 剪贴板 capability adapter，保留 `directAccessPaste()` 兼容入口和 CEF 失败回退 |
 | `f4050150` | M-01.2a：提取 CEF/Electron 文件选择 capability，保留自定义通知音频的取消值和持久化行为 |
 | `62c29b7c` | M-01.2b：提取 CEF/Electron 目录选择 capability，保留旧路径提示、取消值和并发守卫 |
@@ -106,7 +111,7 @@ M-01 已完成三个低风险宿主 seam：剪贴板、文件/目录选择和动
 - **M-02.5.2 WebSocket reconnect**：新增纯 `scheduleWebSocketReconnect` module，固定 5 秒延迟并在回调时读取登录、好友加载和 socket 空位守卫；`websocket.js` 仅负责组装默认 adapter，兼容原有断线行为。提交为 `283251e2`。
 - **M-02.5.3 polling cancellation**：沿用 `updateLoopScheduler` 的 start/stop interface，现有 fake-clock 测试验证 stop 会清理 pending timer，未改生产逻辑。
 
-M-02、M-03 编排层纯化、M-06 Notification Store 低风险 seam 和 M-08 API/Query 缓存所有权已完成。当前主线：**M-00 测试与 CI 门禁**；多账户 B-02/M-05 继续按要求暂缓。
+M-02、M-03 编排层纯化、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存所有权和 M-00 测试与 CI 门禁已完成。当前按总览推进 B-01/N-02；多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-03 细分任务
 
@@ -142,7 +147,7 @@ M-07 已完成本计划定义的三项首批 seam：.NET bootstrap、IPC handler
 2. **M-08.2 Cache scope key factory（已完成）**：在 `queryKeys` 中增加 favorite、friend、group、inventory、gallery scope key，替换 API 层裸数组；实际 key 值和前缀失效范围保持不变。提交：`38db4161`。
 3. **M-08.3 Query resource registry（已完成）**：新增 `createQueryResourceRegistry` module，将资源 key、policy 和 queryFn 的 registry 归入 Query layer；API request facade 只注入 transport implementation，保留 `queryRequest.fetch` interface、资源名称和策略。提交：`7f422d0f`。
 
-M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，API/认证层通过 adapter seam 使用缓存；scope key 和 resource registry 具备独立测试表面。当前主线为 **M-00 测试与 CI 门禁**；多账户 B-02/M-05 继续按要求暂缓。
+M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，API/认证层通过 adapter seam 使用缓存；scope key 和 resource registry 具备独立测试表面。M-00 测试与 CI 门禁随后完成；当前按总览推进 B-01/N-02，多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-09 细分任务
 
@@ -155,13 +160,13 @@ M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，
 7. **M-09.7 User 语言 projection（已完成）**：新增 `userLanguageProjection` module，提取配置事件中的语言条目映射，保持语言 key 枚举顺序和旧 interface。提交：`9020880a`。
 8. **M-09.8 User 自动状态决策（已完成）**：新增 `userAutoStateDecision` module，提取自动状态/描述的纯决策，保持现有守卫、Group 访问类型映射、远程/本地好友组筛选、状态文案和 `updateAutoStateChange` interface 不变。提交：`80fa011f`。
 
-M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。当前主线为 **M-00 测试与 CI 门禁**；多账户 B-02/M-05 继续按要求暂缓。
+M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。M-00 测试与 CI 门禁随后完成；当前按总览推进 B-01/N-02，多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-00 细分任务
 
 1. **M-00.1 JavaScript typecheck 工具链（已完成）**：将 `typescript@^5.9.3` 加入 `devDependencies` 并锁定到 `package-lock.json`，修复 `typecheck:js` 过去因找不到 `tsc` 而无法执行的问题。提交：`7fddf930`。
-2. **M-00.2 现有类型债务分批收敛（单账户范围完成，整体暂缓）**：工具链启用后，当前检查暴露 210 条既有诊断，已通过低风险契约切片降至 14 条；单账户范围内的诊断已清零，剩余 14 条全部集中在按要求暂停的多账户 API response、宿主 bridge 类型和 store 推断。多账户恢复后再继续，每批保持定向测试和生产构建通过。
-3. **M-00.3 CI 硬门禁（待 M-00.2）**：在 typecheck 诊断降到可控范围前，不把该命令直接改成阻断式 CI；先保留可见报告，再逐步收紧 lint/format/test 的失败策略。
+2. **M-00.2 现有类型债务分批收敛（已完成）**：工具链启用后暴露的 210 条既有诊断已通过低风险契约切片降至 0 条。最后四个静态-only 切片覆盖 accountHub、accountSession、aggregatedView 和 Sentry 返回契约（`6c7022a6`、`52657880`、`3e6945a6`、`dc732cc9`）；没有修改多账户运行时流程、公共 interface、序列化格式或并发逻辑，多账户功能实现仍按要求暂停。
+3. **M-00.3 CI 分阶段门禁（已完成）**：`.github/workflows/ci.yaml` 现在在 PR 和手动触发时运行。JavaScript typecheck、schema、重构 smoke、生产构建及 C# 测试为阻断门禁；全量前端测试、Oxlint/Oxfmt 和 C# 格式检查保留为可见的 report-only 检查，直到既有基线债务被单独消化。
 
 M-00.2 已开始：首个低风险切片修正 `gameStateTask` 的 `getLogLines` 注释契约，使其准确表达同步数组/Promise 双路径，并完成原文件格式化；`updateLoop.js(65,28)` 误报已消失，整体诊断数仍为 210。提交：`8961b676`。第二个切片修正 Group API 的 `bool` JSDoc 类型名称，诊断数降至 209，提交：`8c34f3f2`。第三个切片修复 Avatar 上传方法的空参数 JSDoc，诊断数降至 207，提交：`26513e2c`。第四个切片将 Notification API 的损坏 typedef 改为标准 `@typedef/@property` 声明，解析错误消失，当前诊断数为 206，提交：`23be21b4`。第五个切片移除 Notification V2 projection 中不存在的 `endpointDomain` 参数注释，诊断数降至 205，提交：`5ee0da85`。第六个切片对齐 Feed 差异格式化函数的四个参数名与真实签名，诊断数降至 201，提交：`1fa5e8f9`。第七个切片修正通知邀请辅助函数的 `rsvp` 参数注释，诊断数降至 200，提交：`2e412fa8`。第八个切片为 `request()` 建立显式上传扩展 interface，清零 13 个上传选项误报，诊断数降至 189，提交：`950185fb`。第九个切片修正 World API `ref` 返回对象的静态推断并保持属性顺序，诊断数降至 188，提交：`c4fc3a58`。第十个切片修正 Instance API `ref` 返回对象的静态推断并保持属性顺序，诊断数降至 187，提交：`33f9c4c6`。第十一个切片为 request 自定义 Error 字段加入表达式级静态类型，诊断数降至 182，提交：`fb93b448`。第十二个切片为 Query key `groupMember` 解构参数声明可选 id，诊断数降至 180，提交：`b1999fa2`。第十三个切片补齐其余 Group/World/File Query key 的解构参数声明，诊断数降至 171，提交：`cb03eb6c`。第十四个切片同步 C# WebApi 二级账号方法到全局 bridge interface，诊断数降至 165，提交：`7e67caa4`。第十五个切片为 Sentry 原始异常 message 增加安全静态 narrowing，诊断数降至 150，提交：`d7a0e479`。第十六个切片将 WorldDialog commands 的 toast 注释从普通函数收窄为现有 `success/error` 方法契约，未改变运行时调用，诊断数降至 132，提交：`ae24f1b0`。第十七个切片将 WorldDialog info 的 toast 注释收窄为同一 `success/error` 方法契约，未改变运行时调用，诊断数降至 126，提交：`8296bd40`。第十八个切片为 quickSearch worker 的排序临时字段建立内部结果类型，保留返回前删除 `_isPrefix` 的行为，诊断数降至 114，提交：`bef8632b`。第十九个切片修正 ConfigRepository 整数/浮点读取的字符串与数字局部推断，保持缺省值与 NaN 分支行为，诊断数降至 109，提交：`4cb54188`。第二十个切片为 cacheCoordinator 的三个 SDK 版本读取点加入局部结构断言，保持缓存选择和比较行为，诊断数降至 106，提交：`5f968094`。第二十一个切片为 devtool 的 SDK 版本读取点加入同源局部结构断言，保持 bundle 路径选择行为，诊断数降至 105，提交：`143f3e99`。第二十二个切片修正 format 工具的字符串/数字转换和 YouTube 时间数组内部类型，保持原有格式输出，诊断数降至 96，提交：`a9539b57`。第二十三个切片为 localization glob URL 建立字符串资源 map，并显式字符串化 HTTP 错误状态，保持 fallback 请求行为，诊断数降至 93，提交：`bc4ce3d5`。第二十四个切片为表格 debounce 定时器声明跨 Node/浏览器的返回类型，保持取消与触发时序，诊断数降至 92，提交：`509a48df`。第二十五个切片为 FileReader 的 ArrayBuffer 结果加入局部类型断言，保持 base64 编码流程，诊断数降至 91，提交：`322642ab`。第二十六个切片为两个主题 style link 节点加入 `HTMLLinkElement` 局部类型，保持 DOM 插入和 rel/href 行为，诊断数降至 89，提交：`3d01e043`。第二十七个切片删除 `src/api/group.js` 中与前一个实现逐行一致的重复 `followGroupEvent` 定义，保持单一公共方法实现，诊断数降至 88，提交：`4db8eff6`。第二十八个切片将游戏注册表值显式转为字符串再解析，保持日志开关判断，诊断数降至 87，提交：`c50650c5`。第二十九个切片将上传协调器的 Blob.size 显式转为字符串后解析，保持字节数计算，诊断数降至 86，提交：`18a2f3cb`。第三十个切片补齐 manual relations 建议结果的 `displayScore/tooltip/isAdded` 类型，保持提示内容和排序行为，诊断数降至 85，提交：`c2016307`。第三十一个切片将 game-log 离开时长计算显式改为 Dayjs `valueOf()`，保持原有毫秒差，诊断数降至 84，提交：`1fee019c`。第三十二个切片将 Group API 的 `order/sortBy` 注释改为可选，匹配实际调用并通过 Group 查询测试，诊断数保持 84，提交：`5bc9022a`。第三十三个切片为 `useSearchGroup` 的活动参数建立局部契约断言，保留初始/清空时的空对象行为，诊断数降至 79，提交：`c9434ef1`。第三十四个切片为 `useSearchWorld` 的缓存配置和活动参数加入局部契约断言，保留空对象初始化/清空以及原有搜索、分页行为，诊断数降至 73，提交：`c69ae85e`。第三十五个切片为查询缓存日志目标加入 `string | unknown[]` 局部断言，保持日志标签、目标和参数顺序，诊断数降至 71，提交：`ff489866`。第三十六个切片为通知偏好过滤函数的返回结果加入 `string[]` 局部断言，保持无效 ID 过滤及顺序/重复语义，诊断数降至 70，提交：`035716d6`。第三十七个切片为 `loadStoredNavConfig` 的 `filterHiddenKey` 补齐布尔回调契约，修复两个导航 composable 的字面量 `true` 误报，诊断数降至 68，相关导航工具测试维持基线 31/32 通过（另有 1 个既有 charts-folder 失败及 `useNavLayout` 导入阶段的既有 i18n 初始化失败），提交：`dbb9d03f`。第三十八个切片将 `$throw` 的返回契约标记为 `never`，准确表达其必然抛错语义并消除 request Promise 的 `void` 误报，诊断数降至 67，request 测试 47/47 通过，提交：`18946f8c`。第三十九个切片为 activity store 的 top-worlds 查询参数补齐 `time | count` 与兼容的 `isSelf` 契约，保持数据库调用和传参形状，诊断数降至 64；activity store 测试因既有 `i18n.global` 导入初始化失败无法启动，已用同一基线复现，数据库 top-worlds 测试 7/7 通过且生产构建通过，提交：`e47b326c`。第四十个切片删除 friend store 返回对象中逐字重复的 `updateSidebarFavorites` 键，保持导出接口和方法引用，诊断数降至 63，friend sync 任务测试 2/2 通过，提交：`a3a15492`。第四十一个切片将 Previous Instances actions 列工厂的 `onLaunch` 标记为可选，匹配 world/默认场景的既有缺省调用，诊断数降至 61，生产构建通过且该目录无专属测试，提交：`319ed620`。第四十二个切片为 tray notification 投影补齐 `formatMessage/getAvatarUrl` 可选输入契约，保持通知筛选、排序、主题及操作快照行为，诊断数降至 58，tray bridge 测试 15/15 通过，提交：`d6cd5abc`。第四十三个切片将 C# `AppApi.UpdateTrayNotifications` 与 Electron preload 的两个托盘通知方法补齐到全局 bridge interface，保持 JSON snapshot 和回调语义，诊断数降至 55，通知相关测试 30/30 通过，提交：`b84e4f65`。第四十四个切片将旧版 Notification API 的 `sent/type/after` 查询字段标记为可选，匹配刷新循环只传 `n/offset` 的既有行为，诊断数降至 54，通知辅助测试 8/8 通过，提交：`facd3d3a`。第四十五个切片将 `getQuickInviteResponseParams` 返回契约从 `Promise<boolean>` 校正为邀请响应对象，保持邀请调用和序列化字段，诊断数降至 53，邀请/通知测试 23/23 通过，提交：`f6d5dc4d`。第四十六个切片将托盘自定义 DOM 事件在监听器内收窄为 `CustomEvent`，保持事件名和 payload 解构行为，诊断数降至 52，通知相关测试 30/30 通过，提交：`44e0cdca`。下一刀优先处理同类不改变运行时的 JSDoc/声明契约问题。
 
@@ -190,6 +195,21 @@ M-00.2 已开始：首个低风险切片修正 `gameStateTask` 的 `getLogLines`
 第六十九个切片为 Group 注册表排序 JSON 的动态返回值补齐字符串局部断言，保持原有 `JSON.parse` 输入和排序写入行为，诊断数降至 14，游戏协调器测试 2/2 通过，提交：`67e12e26`。
 
 当前 M-00 的安全边界是“先让检查可执行，再逐批降低诊断数”。本切片没有修改运行时代码、公共 interface、序列化格式或并发逻辑。
+
+### M-00.2 最后四个静态契约切片
+
+- `6c7022a6`：为 `accountHub` 的主账号兼容 stub 和 session registry 加入结构化 JSDoc，诊断从 14 降至 13。
+- `52657880`：为 `accountSession` 的二级账号 request/friend cache 加入结构化 JSDoc，诊断从 13 降至 2。
+- `3e6945a6`：为 `aggregatedView` 的好友合并输入和 prefix 查找加入局部结构断言，随后只剩第三方 Sentry option 类型诊断。
+- `dc732cc9`：为 `getSentry` 明确 `any` 返回边界，隐藏第三方私有 option 类型；`npm run typecheck:js` 最终通过（0 diagnostics）。
+
+以上切片均为声明/局部静态类型修正，未触碰多账户功能实现；每刀均在受影响测试和生产构建基线上验证后独立提交。
+
+### M-00 完成口径
+
+- 阻断门禁：`npm run typecheck:js`（0 diagnostics）、`npm run check:schema`（5 properties）、`npm run test:refactor`（55 个文件/285 项测试）、`npm run prod`、C# `dotnet test`（3/3）。
+- 可见但暂不阻断：完整 `npm test`（255 个文件：231 通过、24 失败；2395 项测试：2307 通过、88 失败；3 个未处理错误）、`npm run lint`（45 errors/79 warnings）、`npm run format:check`（209 个文件）、C# format。
+- 这些 report-only 检查不会被隐藏，也不会把既有红色基线误报为绿色；后续每个切片仍需保证失败数量和错误类别不增加。
 
 ## 每个切片的回滚协议
 

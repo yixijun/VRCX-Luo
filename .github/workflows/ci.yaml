@@ -1,28 +1,20 @@
 name: CI
+
 on:
-  # pull_request:
-  #   branches:
-  #     - master
+  pull_request:
+    branches:
+      - master
   workflow_dispatch:
 
 permissions:
   contents: read
 
-jobs:
-  lint_js:
-    name: Lint JS (Oxlint)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - uses: oxc-project/oxlint-action@v2.0.1
-        with:
-          config: .oxlintrc.json
-        continue-on-error: true
+env:
+  NODE_VERSION: '24.x'
 
-  format_js:
-    name: Format JS (Oxfmt)
+jobs:
+  quality_js:
+    name: JS quality gates
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
@@ -30,15 +22,63 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-node@v6
         with:
-          node-version: lts/*
+          node-version: ${{ env.NODE_VERSION }}
           cache: npm
-      - run: npm ci
+      - name: Install dependencies
+        run: npm ci
+      - name: Typecheck JavaScript
+        run: npm run typecheck:js
       - name: Validate screenshot metadata schema
         run: npm run check:schema
+      - name: Run refactor smoke tests
+        run: npm run test:refactor
+      - name: Build renderer and license manifest
+        run: npm run prod
+
+  lint_js:
+    name: Lint JS (Oxlint report)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: oxc-project/oxlint-action@v2.0.1
+        with:
+          config: .oxlintrc.json
+
+  format_js:
+    name: Format JS (Oxfmt report)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
       - run: npm run format:check
 
+  test_js:
+    name: Frontend tests (full-suite report)
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      - run: npm test -- --reporter=dot --maxWorkers=2
+
   format_c_sharp:
-    name: Format C# (dotnet format)
+    name: Format C# (dotnet format report)
     runs-on: ubuntu-latest
     continue-on-error: true
     steps:
