@@ -1,5 +1,7 @@
 import { resolve } from 'node:path';
 
+import fs from 'node:fs';
+
 import { defineConfig, loadEnv } from 'vite';
 import { browserslistToTargets } from 'lightningcss';
 
@@ -9,9 +11,6 @@ import vue from '@vitejs/plugin-vue';
 import vueJsx from '@vitejs/plugin-vue-jsx';
 
 import { languageCodes } from './localization/locales';
-import versionMetadata from '../src-electron/versionMetadata.cjs';
-
-const { readVersionMetadata } = versionMetadata;
 
 /**
  * Vite plugin to remove legacy remixicon font files (eot, woff, ttf, svg)
@@ -102,12 +101,12 @@ export default defineConfig(({ mode }) => {
 
     const buildAndUploadSourceMaps = !!sentryAuthToken;
 
-    const { sourceVersion: version, isNightly: versionIsNightly } =
-        readVersionMetadata({
-            versionFilePath: new URL('../Version', import.meta.url)
-        });
+    const version = fs
+        .readFileSync(new URL('../Version', import.meta.url), 'utf-8')
+        .trim();
 
-    const nightly = mode === 'development' || versionIsNightly;
+    const nightly =
+        mode === 'development' || version.split('-').at(-1).length === 7;
 
     return {
         base: '',
