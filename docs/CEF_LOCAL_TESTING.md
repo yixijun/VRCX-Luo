@@ -124,6 +124,10 @@ You must install or update .NET to run this application.
 没有找到所需运行时。常见原因是手动构建时漏掉了 `--self-contained`，生成了依赖本机 .NET
 运行时的 framework-dependent 可执行文件。
 
+`Dotnet/VRCX-Cef.csproj` 现在默认启用 `SelfContained=true`，因此普通增量构建也会携带 .NET
+运行时；只有显式传入 `--no-self-contained` 或 `-p:SelfContained=false` 才会切换回依赖本机
+运行时的模式。
+
 本地测试版按仓库的自包含方式重新构建即可，不需要用户另外安装 .NET Desktop Runtime：
 
 ```powershell

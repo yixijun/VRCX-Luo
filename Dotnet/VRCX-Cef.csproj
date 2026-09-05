@@ -52,7 +52,9 @@
   </PropertyGroup>
   <PropertyGroup>
     <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
-    <SelfContained Condition="'$(SelfContained)' == ''">false</SelfContained>
+    <!-- The Windows CEF build is distributed as a portable app. Keep the runtime
+         beside the executable unless a build explicitly overrides this property. -->
+    <SelfContained Condition="'$(SelfContained)' == ''">true</SelfContained>
   </PropertyGroup>
   <PropertyGroup>
     <ApplicationManifest>app.manifest</ApplicationManifest>
