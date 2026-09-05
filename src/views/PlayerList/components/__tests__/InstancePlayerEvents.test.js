@@ -137,6 +137,10 @@ describe('InstancePlayerEvents.vue', () => {
             'presence-identity-filter',
             'presence-direction-filter'
         ]);
+        expect(wrapper.get('.instance-player-events__toolbar').classes()).toContain('flex-nowrap');
+        expect(wrapper.get('[data-testid="presence-filter-menu"]').classes()).toEqual(
+            expect.arrayContaining(['flex-1', 'overflow-x-auto', 'scrollbar-hidden'])
+        );
 
         await wrapper.get('[data-testid="filter-friends"]').trigger('click');
         expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);
