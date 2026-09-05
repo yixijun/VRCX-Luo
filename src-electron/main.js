@@ -31,6 +31,10 @@ const {
 const {
     createDesktopNotificationController
 } = require('./desktopNotificationController.cjs');
+const {
+    destroyTray: destroyTrayInstance,
+    setTrayIcon: setTrayIconInstance
+} = require('./trayLifecycle.cjs');
 
 //app.disableHardwareAcceleration();
 
@@ -524,10 +528,12 @@ function writeOverlayFrame(imageBuffer) {
 }
 
 function destroyTray() {
-    if (tray) {
-        tray.destroy();
-        tray = null;
-    }
+    destroyTrayInstance({
+        getTray: () => tray,
+        setTray: (value) => {
+            tray = value;
+        }
+    });
 }
 
 function sendTrayNotificationAction(action, notificationId = '') {
@@ -590,9 +596,12 @@ function createTray() {
 }
 
 function setTrayIconNotification(notify) {
-    if (tray) {
-        tray.setImage(notify ? trayIconNotify : trayIcon);
-    }
+    setTrayIconInstance({
+        getTray: () => tray,
+        trayIcon,
+        trayIconNotify,
+        notify
+    });
 }
 
 async function installVRCX() {
