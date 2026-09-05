@@ -98,6 +98,7 @@ if (process.arch === 'arm64' && fs.existsSync(armPath)) {
 const InteropApi = require('./InteropApi');
 const { assertAllowedDotNetCall } = require('./dotnetCapabilityManifest.cjs');
 const { initializeDotnet } = require('./dotnetBootstrap.cjs');
+const { registerIpcHandlers } = require('./ipcHandlers.cjs');
 const interopApi = new InteropApi();
 
 const OVERLAY_WRIST_FRAME_WIDTH = 512;
@@ -120,11 +121,6 @@ function createOverlayWindowShm() {
 }
 
 initializeDotnet({ interopApi, version, args });
-
-ipcMain.handle('callDotNetMethod', (event, className, methodName, args) => {
-    assertAllowedDotNetCall(className, methodName, args);
-    return interopApi.callMethod(className, methodName, args);
-});
 
 /** @type {Electron.CrossProcessExports.BrowserWindow} */
 let mainWindow = undefined;
@@ -204,150 +200,152 @@ if (!gotTheLock) {
     });
 }
 
-ipcMain.handle('dialog:openFile', async (_event, filters = null) => {
-    const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openFile'],
-        filters: filters || [{ name: 'Images', extensions: ['png'] }]
-    });
+registerIpcHandlers({
+    ipcMain,
+    handlers: {
+        callDotNetMethod: (event, className, methodName, args) => {
+            assertAllowedDotNetCall(className, methodName, args);
+            return interopApi.callMethod(className, methodName, args);
+        },
+        openFileDialog: async (_event, filters = null) => {
+            const result = await dialog.showOpenDialog(mainWindow, {
+                properties: ['openFile'],
+                filters: filters || [{ name: 'Images', extensions: ['png'] }]
+            });
 
-    if (!result.canceled && result.filePaths.length > 0) {
-        return result.filePaths[0];
-    }
-    return null;
-});
-
-ipcMain.handle('dialog:openDirectory', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
-        properties: ['openDirectory']
-    });
-
-    if (!result.canceled && result.filePaths.length > 0) {
-        return result.filePaths[0];
-    }
-    return null;
-});
-
-ipcMain.handle(
-    'notification:showNotification',
-    (event, title, body, icon, silent) => {
-        if (!areDesktopNotificationsEnabled()) {
-            return;
-        }
-
-        if (activeNotification) {
-            activeNotification.close();
-        }
-
-        const notification = new Notification({
-            title,
-            body,
-            icon,
-            silent: !!silent
-        });
-        notification.on('close', () => {
-            if (activeNotification === notification) {
-                notification.removeAllListeners();
-                activeNotification = null;
+            if (!result.canceled && result.filePaths.length > 0) {
+                return result.filePaths[0];
             }
-        });
-        activeNotification = notification;
-        notification.show();
-    }
-);
+            return null;
+        },
+        openDirectoryDialog: async () => {
+            const result = await dialog.showOpenDialog(mainWindow, {
+                properties: ['openDirectory']
+            });
 
-ipcMain.handle('app:restart', () => {
-    if (process.platform === 'linux') {
-        const options = {
-            execPath: process.execPath,
-            args: process.argv.slice(1)
-        };
-        if (appImagePath) {
-            options.execPath = appImagePath;
-            if (!x11 && !options.args.includes('--appimage-extract-and-run')) {
-                options.args.unshift('--appimage-extract-and-run');
+            if (!result.canceled && result.filePaths.length > 0) {
+                return result.filePaths[0];
             }
-        }
-        app.relaunch(options);
-        destroyTray();
-        app.exit(0);
-    } else {
-        app.relaunch();
-        app.quit();
-    }
-});
-
-ipcMain.handle('app:getOverlayWindow', () => {
-    if (overlayWindow && overlayWindow.webContents) {
-        return (
-            !overlayWindow.webContents.isLoading() &&
-            overlayWindow.webContents.isPainting()
-        );
-    }
-    return false;
-});
-
-ipcMain.handle(
-    'app:updateVr',
-    (event, active, hmdOverlay, wristOverlay, menuButton, overlayHand) => {
-        if (!active || (!hmdOverlay && !wristOverlay)) {
-            disposeOverlay();
-            return;
-        }
-        if (active && !overlayWindow) {
-            try {
-                createOverlayWindowOffscreen();
-            } catch (err) {
-                console.error('Error creating overlay windows:', err);
+            return null;
+        },
+        showNotification: (event, title, body, icon, silent) => {
+            if (!areDesktopNotificationsEnabled()) {
+                return;
             }
+
+            if (activeNotification) {
+                activeNotification.close();
+            }
+
+            const notification = new Notification({
+                title,
+                body,
+                icon,
+                silent: !!silent
+            });
+            notification.on('close', () => {
+                if (activeNotification === notification) {
+                    notification.removeAllListeners();
+                    activeNotification = null;
+                }
+            });
+            activeNotification = notification;
+            notification.show();
+        },
+        restartApp: () => {
+            if (process.platform === 'linux') {
+                const options = {
+                    execPath: process.execPath,
+                    args: process.argv.slice(1)
+                };
+                if (appImagePath) {
+                    options.execPath = appImagePath;
+                    if (
+                        !x11 &&
+                        !options.args.includes('--appimage-extract-and-run')
+                    ) {
+                        options.args.unshift('--appimage-extract-and-run');
+                    }
+                }
+                app.relaunch(options);
+                destroyTray();
+                app.exit(0);
+            } else {
+                app.relaunch();
+                app.quit();
+            }
+        },
+        getOverlayWindow: () => {
+            if (overlayWindow && overlayWindow.webContents) {
+                return (
+                    !overlayWindow.webContents.isLoading() &&
+                    overlayWindow.webContents.isPainting()
+                );
+            }
+            return false;
+        },
+        updateVr: (
+            event,
+            active,
+            hmdOverlay,
+            wristOverlay,
+            menuButton,
+            overlayHand
+        ) => {
+            if (!active || (!hmdOverlay && !wristOverlay)) {
+                disposeOverlay();
+                return;
+            }
+            if (active && !overlayWindow) {
+                try {
+                    createOverlayWindowOffscreen();
+                } catch (err) {
+                    console.error('Error creating overlay windows:', err);
+                }
+            }
+        },
+        getArch: () => {
+            return process.arch.toString();
+        },
+        getClipboardText: () => {
+            return clipboard.readText();
+        },
+        getNoUpdater: () => {
+            return noUpdater;
+        },
+        setTrayIconNotification: (event, notify) => {
+            setTrayIconNotification(notify);
+        },
+        updateTrayNotifications: (event, snapshot) => {
+            trayNotificationSnapshot =
+                normalizeTrayNotificationSnapshot(snapshot);
+            if (tray) {
+                tray.setToolTip(buildTrayToolTip());
+                tray.setContextMenu(buildTrayContextMenu());
+            }
+        },
+        setDesktopNotificationsEnabled: (event, enabled) => {
+            const next = !!enabled;
+            VRCXStorage.Set('VRCX_desktopNotificationsEnabled', String(next));
+            notifyDesktopNotificationsChanged(next);
+            destroyTray();
+            createTray();
+        },
+        setTraySilentMode: (event, enabled) => {
+            const next = !!enabled;
+            VRCXStorage.Set('VRCX_traySilentMode', String(next));
+            notifyTraySilentModeChanged(next);
+            destroyTray();
+            createTray();
+        },
+        setVSleepMode: (event, enabled) => {
+            const next = !!enabled;
+            VRCXStorage.Set('VRCX_vSleepMode', String(next));
+            notifyVSleepModeChanged(next);
+            destroyTray();
+            createTray();
         }
     }
-);
-
-ipcMain.handle('app:getArch', () => {
-    return process.arch.toString();
-});
-ipcMain.handle('app:getClipboardText', () => {
-    return clipboard.readText();
-});
-
-ipcMain.handle('app:getNoUpdater', () => {
-    return noUpdater;
-});
-
-ipcMain.handle('app:setTrayIconNotification', (event, notify) => {
-    setTrayIconNotification(notify);
-});
-
-ipcMain.handle('app:updateTrayNotifications', (event, snapshot) => {
-    trayNotificationSnapshot = normalizeTrayNotificationSnapshot(snapshot);
-    if (tray) {
-        tray.setToolTip(buildTrayToolTip());
-        tray.setContextMenu(buildTrayContextMenu());
-    }
-});
-
-ipcMain.handle('app:setDesktopNotificationsEnabled', (event, enabled) => {
-    const next = !!enabled;
-    VRCXStorage.Set('VRCX_desktopNotificationsEnabled', String(next));
-    notifyDesktopNotificationsChanged(next);
-    destroyTray();
-    createTray();
-});
-
-ipcMain.handle('app:setTraySilentMode', (event, enabled) => {
-    const next = !!enabled;
-    VRCXStorage.Set('VRCX_traySilentMode', String(next));
-    notifyTraySilentModeChanged(next);
-    destroyTray();
-    createTray();
-});
-
-ipcMain.handle('app:setVSleepMode', (event, enabled) => {
-    const next = !!enabled;
-    VRCXStorage.Set('VRCX_vSleepMode', String(next));
-    notifyVSleepModeChanged(next);
-    destroyTray();
-    createTray();
 });
 
 function tryRelaunchWithArgs(args) {
