@@ -12,6 +12,15 @@ import {
     getGroupName
 } from '../../shared/utils';
 import { createMediaParsers } from './mediaParsers';
+import {
+    applySessionsSearchFilter as applySessionsSearchFilterPure,
+    clampSessionsDateRange as clampSessionsDateRangePure,
+    filterSessionsEventsByFilters as filterSessionsEventsByFiltersPure,
+    filterSessionsSegmentsByDateRange as filterSessionsSegmentsByDateRangePure,
+    isSessionsGlobalSearchMode as isSessionsGlobalSearchModePure,
+    isSessionsLocationInDateRange as isSessionsLocationInDateRangePure,
+    toSessionsEpoch
+} from './sessionsFilters';
 import { database } from '../../services/database';
 import { tryLoadPlayerList } from '../../coordinators/gameLogCoordinator';
 import { useAdvancedSettingsStore } from '../settings/advanced';
@@ -552,234 +561,50 @@ export const useGameLogStore = defineStore('GameLog', () => {
     // ── Sessions view methods ──
 
     /**
-     * @param {string} value
-     * @returns {number}
-     */
-    function toSessionsEpoch(value) {
-        if (!value) return 0;
-        const ts = Date.parse(value);
-        return Number.isNaN(ts) ? 0 : ts;
-    }
-
-    /**
-     * @param {string} value
-     * @returns {string}
-     */
-    function normalizeSessionsSearch(value) {
-        return String(value ?? '')
-            .trim()
-            .toUpperCase();
-    }
-
-    /**
-     * @returns {boolean}
+     * Sessions filters are implemented in a dependency-free module. These
+     * wrappers preserve the Store's existing private call signatures while
+     * supplying its reactive state and shared search predicate.
      */
     function isSessionsGlobalSearchMode() {
-        return (
-            !sessionsDateRangeActive.value &&
-            normalizeSessionsSearch(sessionsSearch.value).length > 0
-        );
+        return isSessionsGlobalSearchModePure({
+            dateRangeActive: sessionsDateRangeActive.value,
+            search: sessionsSearch.value
+        });
     }
 
-    /**
-     * @param {object} location
-     * @returns {boolean}
-     */
     function isSessionsLocationInDateRange(location) {
-        if (!sessionsDateRangeActive.value) {
-            return true;
-        }
-
-        const createdAt = toSessionsEpoch(location?.created_at);
-        if (sessionsDateFrom.value) {
-            const from = toSessionsEpoch(sessionsDateFrom.value);
-            if (createdAt < from) {
-                return false;
-            }
-        }
-        if (sessionsDateTo.value) {
-            const to = toSessionsEpoch(sessionsDateTo.value);
-            if (createdAt > to) {
-                return false;
-            }
-        }
-        return true;
+        return isSessionsLocationInDateRangePure(location, {
+            dateRangeActive: sessionsDateRangeActive.value,
+            dateFrom: sessionsDateFrom.value,
+            dateTo: sessionsDateTo.value
+        });
     }
 
-    /**
-     * @param {string} from
-     * @param {string} to
-     * @returns {[string, string]}
-     */
     function clampSessionsDateRange(from, to) {
-        const start = String(from ?? '');
-        const end = String(to ?? '');
-        const startTs = toSessionsEpoch(start);
-        const endTs = toSessionsEpoch(end);
-        if (!startTs || !endTs) {
-            return [start, end];
-        }
-
-        const lower = Math.min(startTs, endTs);
-        const upper = Math.max(startTs, endTs);
-        if (upper - lower <= SESSIONS_DATE_RANGE_MAX_DAYS * 86400000) {
-            return startTs <= endTs ? [start, end] : [end, start];
-        }
-
-        const clampedEnd = new Date(
-            lower + SESSIONS_DATE_RANGE_MAX_DAYS * 86400000
-        ).toISOString();
-        return startTs <= endTs ? [start, clampedEnd] : [clampedEnd, start];
+        return clampSessionsDateRangePure(from, to);
     }
 
-    /**
-     * @param {object} event
-     * @param {string} value
-     * @returns {boolean}
-     */
-    function isSessionsMemberSearchMatch(event, value) {
-        if (!event) {
-            return false;
-        }
-
-        return [event.displayName]
-            .map((item) => String(item ?? '').toUpperCase())
-            .some((item) => item.includes(value));
-    }
-
-    /**
-     * @param {object} event
-     * @param {string} value
-     * @returns {boolean}
-     */
-    function isSessionsEventSearchMatch(event, value) {
-        if (!event) {
-            return false;
-        }
-        if (event.type === 'JoinGroup' || event.type === 'LeftGroup') {
-            return Array.isArray(event.members)
-                ? event.members.some((member) =>
-                      isSessionsMemberSearchMatch(member, value)
-                  )
-                : false;
-        }
-        if (gameLogSearchFilter(event, value)) {
-            return true;
-        }
-        return [event.displayName, event.videoName, event.videoUrl]
-            .map((item) => String(item ?? '').toUpperCase())
-            .some((item) => item.includes(value));
-    }
-
-    /**
-     * @param {object} segment
-     * @param {string} value
-     * @returns {boolean}
-     */
-    function isSessionsSegmentHeaderSearchMatch(segment, value) {
-        return [segment.worldName]
-            .map((item) => String(item ?? '').toUpperCase())
-            .some((item) => item.includes(value));
-    }
-
-    /**
-     * @param {Array<object>} events
-     * @returns {Array<object>}
-     */
     function filterSessionsEventsByFilters(events) {
-        let result = events;
-
-        if (sessionsVipFilter.value) {
-            result = result.filter(
-                (event) => event.type === 'VideoPlay' || event.isFavorite
-            );
-        }
-
-        if (sessionsEventFilters.value.length > 0) {
-            result = result.filter((event) =>
-                sessionsEventFilters.value.includes(event.type)
-            );
-        }
-
-        return result;
+        return filterSessionsEventsByFiltersPure(events, {
+            vipFilter: sessionsVipFilter.value,
+            eventFilters: sessionsEventFilters.value
+        });
     }
 
-    /**
-     * @param {Array<object>} segments
-     * @returns {Array<object>}
-     */
-    function dropEmptySessionsSegments(segments) {
-        return segments.filter(
-            (segment) => segment.events && segment.events.length > 0
-        );
-    }
-
-    /**
-     * @param {Array<object>} segments
-     * @returns {Array<object>}
-     */
     function filterSessionsSegmentsByDateRange(segments) {
-        if (!sessionsDateRangeActive.value) {
-            return segments;
-        }
-        return segments.filter((segment) =>
-            isSessionsLocationInDateRange(segment)
-        );
+        return filterSessionsSegmentsByDateRangePure(segments, {
+            dateRangeActive: sessionsDateRangeActive.value,
+            dateFrom: sessionsDateFrom.value,
+            dateTo: sessionsDateTo.value
+        });
     }
 
-    /**
-     * @param {Array<object>} segments
-     * @returns {Array<object>}
-     */
     function applySessionsSearchFilter(segments) {
-        const value = normalizeSessionsSearch(sessionsSearch.value);
-        if (!value) {
-            return dropEmptySessionsSegments(segments);
-        }
-
-        const filtered = [];
-        for (const segment of segments) {
-            if (isSessionsSegmentHeaderSearchMatch(segment, value)) {
-                filtered.push(segment);
-                continue;
-            }
-
-            const events = Array.isArray(segment.events)
-                ? segment.events.flatMap((event) => {
-                      if (
-                          event.type === 'JoinGroup' ||
-                          event.type === 'LeftGroup'
-                      ) {
-                          if (!Array.isArray(event.members)) {
-                              return [];
-                          }
-                          const matchedMembers = event.members.filter(
-                              (member) =>
-                                  isSessionsMemberSearchMatch(member, value)
-                          );
-                          return matchedMembers.map((member) => ({
-                              ...member,
-                              type:
-                                  event.type === 'JoinGroup'
-                                      ? 'OnPlayerJoined'
-                                      : 'OnPlayerLeft',
-                              location: segment.location
-                          }));
-                      }
-
-                      return isSessionsEventSearchMatch(event, value)
-                          ? [event]
-                          : [];
-                  })
-                : [];
-            if (events.length > 0) {
-                filtered.push({
-                    ...segment,
-                    events
-                });
-            }
-        }
-        return filtered.slice(0, vrcxStore.searchLimit);
+        return applySessionsSearchFilterPure(segments, {
+            search: sessionsSearch.value,
+            searchLimit: vrcxStore.searchLimit,
+            gameLogSearchFilter
+        });
     }
 
     /**
