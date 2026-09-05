@@ -187,9 +187,33 @@
                 @dblclick="resetPlayerListAdaptiveLayout" />
 
             <ResizablePanel :default-size="100 - summarySize" :min-size="tableMinSize" :order="2">
-                <div class="current-instance-table flex h-full min-h-0 min-w-0">
+                <div class="current-instance-table flex h-full min-h-0 min-w-0 flex-col">
+                    <div class="player-list__table-toolbar flex shrink-0 items-center border-b border-border px-1 py-1">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="h-7 gap-1.5 px-2 text-xs"
+                            :class="showPlayerEvents && 'bg-accent text-accent-foreground'"
+                            :aria-pressed="showPlayerEvents"
+                            data-testid="toggle-player-events"
+                            @click="togglePlayerEvents">
+                            <History class="size-3.5" />
+                            {{
+                                t(
+                                    showPlayerEvents
+                                        ? 'view.player_list.presence.back_to_players'
+                                        : 'view.player_list.presence.show'
+                                )
+                            }}
+                        </Button>
+                    </div>
+                    <InstancePlayerEvents
+                        v-if="showPlayerEvents"
+                        :location="currentInstanceTag"
+                        class="min-h-0 flex-1" />
                     <DataTableLayout
-                        class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75! [&_tr]:h-7!"
+                        v-else
+                        class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75!"
                         :table="playerListTable"
                         auto-height
                         :loading="false"
@@ -199,9 +223,30 @@
             </ResizablePanel>
         </ResizablePanelGroup>
 
-        <div v-else class="current-instance-table flex h-full min-h-0 min-w-0">
+        <div v-else class="current-instance-table flex h-full min-h-0 min-w-0 flex-col">
+            <div class="player-list__table-toolbar flex shrink-0 items-center border-b border-border px-1 py-1">
+                <Button
+                    variant="outline"
+                    size="sm"
+                    class="h-7 gap-1.5 px-2 text-xs"
+                    :class="showPlayerEvents && 'bg-accent text-accent-foreground'"
+                    :aria-pressed="showPlayerEvents"
+                    data-testid="toggle-player-events"
+                    @click="togglePlayerEvents">
+                    <History class="size-3.5" />
+                    {{
+                        t(
+                            showPlayerEvents
+                                ? 'view.player_list.presence.back_to_players'
+                                : 'view.player_list.presence.show'
+                        )
+                    }}
+                </Button>
+            </div>
+            <InstancePlayerEvents v-if="showPlayerEvents" :location="currentInstanceTag" class="min-h-0 flex-1" />
             <DataTableLayout
-                class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75! [&_tr]:h-7!"
+                v-else
+                class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75!"
                 :table="playerListTable"
                 auto-height
                 :loading="false"
@@ -216,7 +261,7 @@
 
 <script setup>
     import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-    import { Apple, Home, Image, Monitor, Smartphone } from 'lucide-vue-next';
+    import { Apple, History, Home, Image, Monitor, Smartphone } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
@@ -230,6 +275,7 @@
     } from '../../stores';
     import { commaNumber, formatDateFilter } from '../../shared/utils';
     import { Badge } from '../../components/ui/badge';
+    import { Button } from '../../components/ui/button';
     import { DataTableLayout } from '../../components/ui/data-table';
     import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable';
     import { createColumns } from './columns.jsx';
@@ -242,6 +288,7 @@
     import { showWorldDialog } from '../../coordinators/worldCoordinator';
 
     import PhotonEventTable from './components/PhotonEventTable.vue';
+    import InstancePlayerEvents from './components/InstancePlayerEvents.vue';
     import { useUserDisplay } from '../../composables/useUserDisplay';
 
     const { randomUserColours } = storeToRefs(useAppearanceSettingsStore());
@@ -275,6 +322,7 @@
     const summaryMaxSize = ref(68);
     const tableMinSize = ref(32);
     const currentSummarySize = ref(42);
+    const showPlayerEvents = ref(false);
     const isPlayerListSplitterDragging = ref(false);
     const summaryOffset = ref(0);
     const summaryOffsetStorageKey = 'VRCX_playerListSummaryOffset';
@@ -285,6 +333,11 @@
     const hasSummaryContent = computed(
         () => Boolean(currentInstanceWorld.value?.ref?.id) || Boolean(photonLoggingEnabled.value)
     );
+    const currentInstanceTag = computed(() => currentInstanceLocation.value?.tag || '');
+
+    function togglePlayerEvents() {
+        showPlayerEvents.value = !showPlayerEvents.value;
+    }
 
     function getElement(componentRef) {
         return componentRef?.$el ?? componentRef ?? null;

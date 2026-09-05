@@ -352,6 +352,22 @@
                 "filter_placeholder": "筛选",
                 "chatbox_blacklist": "聊天框黑名单",
                 "status_tooltip": "VRCX Companion 状态"
+            },
+            "presence": {
+                "title": "房间进出",
+                "show": "查看进出记录",
+                "back_to_players": "返回玩家列表",
+                "all": "全部",
+                "friends": "仅好友",
+                "strangers": "陌生人",
+                "joined": "进入",
+                "left": "离开",
+                "empty": "当前房间暂无进出记录",
+                "loading": "正在加载进出记录…",
+                "load_failed": "进出记录加载失败",
+                "refresh": "刷新进出记录",
+                "unknown_player": "未知玩家",
+                "filters_label": "房间进出筛选"
             }
         },
         "my_avatars": {

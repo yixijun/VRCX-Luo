@@ -128,6 +128,14 @@ vi.mock('@/components/ui/data-table', () => ({
     }
 }));
 
+vi.mock('@/components/ui/button', () => ({
+    Button: {
+        emits: ['click'],
+        template:
+            '<button :aria-pressed="ariaPressed" data-testid="button" @click="$emit(\'click\', $event)"><slot /></button>'
+    }
+}));
+
 vi.mock('@/components/ui/resizable', () => ({
     ResizablePanelGroup: {
         props: ['direction', 'autoSaveId'],
@@ -168,6 +176,14 @@ vi.mock('../dialogs/ChatboxBlacklistDialog.vue', () => ({
             '<div data-testid="chatbox-dialog" :data-visible="String(chatboxBlacklistDialog.visible)">' +
             '<button data-testid="emit-delete-chatbox" @click="$emit(\'delete-chatbox-user-blacklist\', \'usr_blocked\')">delete</button>' +
             '</div>'
+    }
+}));
+
+vi.mock('../components/InstancePlayerEvents.vue', () => ({
+    default: {
+        props: ['location'],
+        template:
+            '<div data-testid="instance-player-events" :data-location="location" />'
     }
 }));
 
@@ -273,6 +289,38 @@ describe('PlayerList.vue', () => {
             wrapper.find('[data-testid="player-list-resize-handle"]').exists()
         ).toBe(false);
         expect(wrapper.find('.current-instance-table').exists()).toBe(true);
+    });
+
+    test('toggles the room activity panel without changing the player table source', async () => {
+        mocks.currentInstanceLocation.value = { tag: 'wrld_123:instance_1' };
+        const wrapper = mount(PlayerList);
+
+        expect(
+            wrapper.find('[data-testid="instance-player-events"]').exists()
+        ).toBe(false);
+        await wrapper
+            .get('[data-testid="toggle-player-events"]')
+            .trigger('click');
+
+        expect(
+            wrapper
+                .get('[data-testid="instance-player-events"]')
+                .attributes('data-location')
+        ).toBe('wrld_123:instance_1');
+        expect(wrapper.find('[data-testid="row-click-with-id"]').exists()).toBe(
+            false
+        );
+
+        await wrapper
+            .get('[data-testid="toggle-player-events"]')
+            .trigger('click');
+        expect(
+            wrapper.find('[data-testid="instance-player-events"]').exists()
+        ).toBe(false);
+        expect(wrapper.find('[data-testid="row-click-with-id"]').exists()).toBe(
+            true
+        );
+        wrapper.unmount();
     });
 
     test('clears the manual layout when the room instance changes', async () => {

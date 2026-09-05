@@ -346,6 +346,22 @@
                 "filter_placeholder": "Filter",
                 "chatbox_blacklist": "Chatbox Blacklist",
                 "status_tooltip": "VRCX Companion Status"
+            },
+            "presence": {
+                "title": "Room activity",
+                "show": "View player activity",
+                "back_to_players": "Back to player list",
+                "all": "All",
+                "friends": "Friends",
+                "strangers": "Strangers",
+                "joined": "Joined",
+                "left": "Left",
+                "empty": "No player activity in this room",
+                "loading": "Loading player activity…",
+                "load_failed": "Failed to load player activity",
+                "refresh": "Refresh player activity",
+                "unknown_player": "Unknown player",
+                "filters_label": "Room activity filters"
             }
         },
         "my_avatars": {
