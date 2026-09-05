@@ -202,6 +202,17 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：69 个文件、332 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-07.10 后置验证
+
+桌面通知 controller 切片只迁移启用判断、旧通知替换、Notification options、close 清理和 show 调用；保留 `notification:showNotification` IPC 参数顺序、`silent` 布尔化、active notification 竞态和 renderer/宿主接口。第一次测试替身错误地让 `close()` 同步触发 close listener，已按回滚协议撤销未提交尝试；修正为异步 close 语义后重新验证通过。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 桌面通知/宿主定向测试 | `npx vitest run src/services/__tests__/desktopNotificationController.test.js src/services/__tests__/hostCapabilityContract.test.js src/services/__tests__/trayContextMenu.test.js --reporter=dot` | **通过**：3 个文件、8 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/desktopNotificationController.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：70 个文件、335 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
