@@ -5,6 +5,7 @@ import { useMagicKeys } from '@vueuse/core';
 import { useRouter } from 'vue-router';
 
 import { AppDebug } from '../services/appConfig';
+import { installBodyDropGuard } from '../services/dropGuard';
 import { refreshCustomCss } from '../shared/utils/base/ui';
 import { updateLocalizedStrings } from '../plugins/i18n';
 import { useAppearanceSettingsStore } from './settings/appearance';
@@ -257,9 +258,7 @@ export const useUiStore = defineStore('Ui', () => {
 
     // Make sure file drops outside of the screenshot manager don't navigate to the file path dropped.
     // This issue persists on prompts created with prompt(), unfortunately. Not sure how to fix that.
-    document.body.addEventListener('drop', function (e) {
-        e.preventDefault();
-    });
+    installBodyDropGuard(document);
 
     function showConsole() {
         AppApi.ShowDevTools();
