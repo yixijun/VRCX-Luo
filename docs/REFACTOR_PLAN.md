@@ -29,9 +29,9 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
-| Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03 已完成，下一步进入 N-04，多账户 B-02/M-05 继续暂缓 |
-| Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 进入 N-04；保持依赖方向与语言包契约门禁，多账户 B-02/M-05 继续暂缓 |
-| Minor | N-04 第三方/生成文件治理 | **进行中：N-04.1～N-04.2** | 版本矩阵与生成文件规则已建立；下一步接入 CI，并保持不自动升级/不改生成代码 |
+| Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
+| Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
+| Minor | N-04 第三方/生成文件治理 | **已完成：N-04.1～N-04.3** | 保持版本矩阵阻断结构性错误、报告跨宿主漂移；生成代码与构建注入文件继续按治理规则维护 |
 
 ## 已完成切片
 
@@ -124,17 +124,17 @@ N-02 已完成。根 `Version` 是唯一人工维护的版本来源，package/lo
 2. **N-03.2 翻译 key 契约（已完成）**：新增 `build-scripts/localizationContract.cjs` 与 `check-localization.js`，以 `en.json` 的 2699 个字符串叶节点作为 canonical key set，校验 14 个语言包 JSON、`language`/`translator` 元数据及字符串叶节点；非英文缺失 key 按既有 fallback 语义统计，额外 key 统计为漂移，不自动重写语言包；`--strict` 选项为未来全量 parity 迁移保留入口。新增 3 项契约测试。提交：`81d1bada`。
 3. **N-03.3 聚合门禁与 CI 接入（已完成）**：新增 `check-architecture.js` 与 `npm run check:architecture`，统一执行依赖方向和语言包契约检查；接入 `.github/workflows/ci.yaml` 的 `quality_js` 阻断 job，本地与 CI 使用同一入口。提交：`6f86f976`。
 
-N-03 已完成。最终检查扫描 74 个 Shared/Localization 源文件、14 个受限边（均为已登记历史例外），验证 14 个语言包和 2699 个英文 canonical key；当前 fallback 缺失 13285 项、额外 key 200 项均为可见报告，不改变现有 fallback 运行时行为。N-03 只增加静态门禁和测试，没有改变公共 interface、序列化格式、任务周期或并发语义。
+N-03 已完成。最终检查扫描 74 个 Shared/Localization 源文件、14 个受限边（均为已登记历史例外），验证 14 个语言包和 2699 个英文 canonical key；当前 fallback 缺失 13285 项、额外 key 200 项均为可见报告，不改变现有 fallback 运行时行为。N-03 只增加静态门禁和测试，没有改变公共 interface、序列化格式、任务周期或并发语义；N-04 随后已完成。
 
-下一步进入 N-04（第三方/生成文件治理）；多账户 B-02/M-05 仍按要求暂缓。
+多账户 B-02/M-05 仍按要求暂缓；后续只在明确授权后处理第三方升级或生成文件来源变更。
 
 ## 当前 N-04 细分任务
 
 1. **N-04.1 依赖版本矩阵（已完成）**：新增 `build-scripts/dependencyVersionMatrix.cjs` 与 `check-dependency-version-matrix.js`，读取 npm manifest/lockfile 和三个 .NET 宿主项目；阻断根版本漂移、关键包缺失、重复引用及同项目耦合包不一致，跨宿主漂移只报告不自动修改。纳入 NodeApi/Generator 的 x64/arm64 漂移观测；新增 `src/services/__tests__/dependencyVersionMatrix.test.js`，提交：`5401a792`、`9b36ab80`。
-2. **N-04.2 生成文件治理文档（已完成）**：新增 [`DEPENDENCY_VERSION_MATRIX.md`](./DEPENDENCY_VERSION_MATRIX.md) 与 [`GENERATED_FILE_POLICY.md`](./GENERATED_FILE_POLICY.md)，统一记录版本检查入口、当前漂移、生成代码/原生二进制/构建产物来源及修改边界；不修改任何生成结果，本次文档变更单独提交。
-3. **N-04.3 CI 门禁（待开始）**：在 JavaScript 质量 job 复用 `npm run check:dependency-matrix`，只阻断结构性错误并保留跨宿主漂移可见。
+2. **N-04.2 生成文件治理文档（已完成）**：新增 [`DEPENDENCY_VERSION_MATRIX.md`](./DEPENDENCY_VERSION_MATRIX.md) 与 [`GENERATED_FILE_POLICY.md`](./GENERATED_FILE_POLICY.md)，统一记录版本检查入口、当前漂移、生成代码/原生二进制/构建产物来源及修改边界；不修改任何生成结果。提交：`34766470`。
+3. **N-04.3 CI 门禁（已完成）**：在 JavaScript 质量 job 复用 `npm run check:dependency-matrix`，只阻断结构性错误并保留跨宿主漂移可见；提交：`0b1fc204`。
 
-N-04 当前只建立观察和治理边界，不做第三方版本升级，不改 OpenVR 生成绑定、WinForms Designer 或构建时注入的 Installer 文件。
+N-04 已完成：版本矩阵、生成文件规则和 PR 质量门禁均已建立。当前已知跨宿主漂移（NLog、System.Data.SQLite、System.Management、NodeApi/Generator）只做可见报告，不做无验证升级；OpenVR 生成绑定、WinForms Designer 和构建时注入的 Installer 文件均未修改。后续若要升级第三方依赖，必须按本矩阵单依赖、单宿主切片执行并保留完整 Git 回滚点。
 
 ## 当前 M-02 细分任务
 
@@ -153,7 +153,7 @@ N-04 当前只建立观察和治理边界，不做第三方版本升级，不改
 - **M-02.5.2 WebSocket reconnect**：新增纯 `scheduleWebSocketReconnect` module，固定 5 秒延迟并在回调时读取登录、好友加载和 socket 空位守卫；`websocket.js` 仅负责组装默认 adapter，兼容原有断线行为。提交为 `283251e2`。
 - **M-02.5.3 polling cancellation**：沿用 `updateLoopScheduler` 的 start/stop interface，现有 fake-clock 测试验证 stop 会清理 pending timer，未改生产逻辑。
 
-M-02、M-03 编排层纯化、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存所有权、M-00 测试与 CI 门禁和 B-01 宿主桥安全封口已完成；N-02、N-03 随后完成。当前按总览推进 N-04，多账户 B-02/M-05 继续按要求暂缓。
+M-02、M-03 编排层纯化、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存所有权、M-00 测试与 CI 门禁和 B-01 宿主桥安全封口已完成；N-02、N-03、N-04 随后完成。多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-03 细分任务
 
@@ -189,7 +189,7 @@ M-07 已完成本计划定义的三项首批 seam：.NET bootstrap、IPC handler
 2. **M-08.2 Cache scope key factory（已完成）**：在 `queryKeys` 中增加 favorite、friend、group、inventory、gallery scope key，替换 API 层裸数组；实际 key 值和前缀失效范围保持不变。提交：`38db4161`。
 3. **M-08.3 Query resource registry（已完成）**：新增 `createQueryResourceRegistry` module，将资源 key、policy 和 queryFn 的 registry 归入 Query layer；API request facade 只注入 transport implementation，保留 `queryRequest.fetch` interface、资源名称和策略。提交：`7f422d0f`。
 
-M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，API/认证层通过 adapter seam 使用缓存；scope key 和 resource registry 具备独立测试表面。M-00 测试与 CI 门禁、B-01 宿主桥安全封口、N-02 与 N-03 随后完成；当前按总览推进 N-04，多账户 B-02/M-05 继续按要求暂缓。
+M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，API/认证层通过 adapter seam 使用缓存；scope key 和 resource registry 具备独立测试表面。M-00 测试与 CI 门禁、B-01 宿主桥安全封口、N-02、N-03 与 N-04 均已完成，多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-09 细分任务
 
@@ -202,7 +202,7 @@ M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，
 7. **M-09.7 User 语言 projection（已完成）**：新增 `userLanguageProjection` module，提取配置事件中的语言条目映射，保持语言 key 枚举顺序和旧 interface。提交：`9020880a`。
 8. **M-09.8 User 自动状态决策（已完成）**：新增 `userAutoStateDecision` module，提取自动状态/描述的纯决策，保持现有守卫、Group 访问类型映射、远程/本地好友组筛选、状态文案和 `updateAutoStateChange` interface 不变。提交：`80fa011f`。
 
-M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。M-00 测试与 CI 门禁、B-01 宿主桥安全封口、N-02 与 N-03 随后完成；当前按总览推进 N-04，多账户 B-02/M-05 继续按要求暂缓。
+M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。M-00 测试与 CI 门禁、B-01 宿主桥安全封口、N-02、N-03 与 N-04 随后完成，多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-00 细分任务
 

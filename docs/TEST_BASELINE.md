@@ -120,6 +120,22 @@ N-02 的首次 Vite 接入尝试触发了跨 tsconfig 类型诊断，已由 `ffc
 
 N-03 的检查默认不自动修复遗留 key 差异；`check-localization.js --strict` 已保留为未来全量 parity 迁移的显式入口。新增门禁没有改变公共 interface、序列化格式、任务周期或并发语义。
 
+## N-04 后置验证
+
+2026-09-05，第三方依赖/生成文件治理完成。版本矩阵读取 npm manifest/lockfile 和三个 .NET 宿主项目；结构性错误阻断，跨宿主版本漂移只报告。生成文件、原生 OpenVR 二进制和构建时 Installer 注入文件均只补来源与修改边界，没有改写产物。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 依赖矩阵定向测试 | `npx vitest run src/services/__tests__/dependencyVersionMatrix.test.js --reporter=dot` | **通过**：1 个文件、3 项测试 |
+| 依赖版本矩阵 | `npm run check:dependency-matrix` | **通过**：3 个 .NET 项目；5 组跨宿主漂移可见报告 |
+| Shared/Localization 聚合门禁 | `npm run check:architecture` | **通过**：74 个文件、14 个历史例外、14 个语言包 |
+| 版本来源一致性 | `npm run check:version` | **通过**：`2026.08.23 -> 2026.08.23` |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：63 个文件、314 项测试 |
+| 生产构建与许可清单 | `npm run prod` | **通过**：4408 个模块；生成 118 条许可条目；保留既有动态 import 与 Node deprecation 警告 |
+
+N-04 没有修改公共 interface、序列化格式、任务周期、并发逻辑、第三方版本或生成结果；CI 仅新增 `npm run check:dependency-matrix` 阻断结构性错误。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
