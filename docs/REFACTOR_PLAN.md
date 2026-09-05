@@ -29,7 +29,7 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
-| Minor | N-02 版本与构建来源 | 未开始 | 统一 `Version`、package 和宿主注入来源 |
+| Minor | N-02 版本与构建来源 | **进行中：N-02.1** | 先固化 `Version` 的纯解析契约，再统一 package 和宿主注入来源 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
 | Minor | N-04 第三方/生成文件治理 | 未开始 | 建立版本矩阵，生成代码不作为首批目标 |
 
@@ -101,6 +101,12 @@
 3. **B-01.3 安全回归与门禁（已完成）**：新增可信来源策略、IPC guard、schema 覆盖与非法参数回归测试；`test:refactor` 通过 56 个文件/293 项测试，`typecheck:js`、`check:schema`、生产构建和 C# 3/3 测试均通过。未修改 renderer facade、公共 API 签名、序列化格式、任务周期或并发逻辑。
 
 M-01 已完成三个低风险宿主 seam；B-01 现已完成动态 bridge 的来源与参数安全封口；M-07 composition root 的首批 seam 也已完成。多账户 B-02/M-05 继续按要求暂缓。
+
+## 当前 N-02 细分任务
+
+1. **N-02.1 版本元数据纯契约（已完成）**：新增 `src-electron/versionMetadata.cjs`，集中描述 `Version` 文本清理、时间戳到 package 版本的转换、七字符 nightly 后缀识别和注入式回退值；新增 `src/services/__tests__/versionMetadata.test.js` 覆盖稳定版、时间戳版、nightly 和空值回退。此切片仅建立可测试 seam，未接入 Electron、Vite 或构建脚本，因此不改变现有运行时行为。提交：待本切片完成后记录。
+2. **N-02.2 构建与宿主接入（未开始）**：将 `patch-package-version.js`、`vite.config.js`、`main.js` 和产物命名脚本逐步改为消费同一版本元数据，保留既有显示字符串、序列化格式和构建产物命名语义。
+3. **N-02.3 来源一致性门禁（未开始）**：增加构建前校验，阻止 `Version`、`package.json` 和宿主注入值发生无提示漂移，并补充文档与 CI 输出。
 
 ## 当前 M-02 细分任务
 

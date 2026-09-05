@@ -92,7 +92,7 @@
 | `Dotnet.Tests/VRCX.Cef.Tests.csproj` | C# 测试发现曾被 `OutputType=Exe` 绕过 | Major | 已改为正式测试项目，`dotnet test` 当前发现并通过 3 个测试，且由 Windows CI job 执行 |
 | `docs/schemas/screenshotMetadata-schema.json` | Schema 结构校验此前缺失 | Major | 已增加 `check:schema` 脚本并接入 CI，后续补字段语义/样例校验 |
 | `docs/DATABASE_SCHEMA.md`、`docs/JIRAI_FEATURES.md` | 文档与代码状态、表结构、行数不一致 | Minor | 描述稳定契约；易变的统计信息改为脚本生成 |
-| `package.json`、`Version` | 版本号来源不一致 | Minor | 明确唯一版本源，构建时统一注入 |
+| `package.json`、`Version` | 版本号来源不一致 | Minor → N-02.1 已建立纯解析 seam | 继续将 Electron、Vite 和构建脚本接入同一版本元数据，并保留当前对外格式 |
 
 ## 4. 上帝组件和上帝 store
 
