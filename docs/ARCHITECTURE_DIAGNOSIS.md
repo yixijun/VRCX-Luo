@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator/store 公共 interface 保持不变，其他架构风险尚未改动。
+> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator/store 公共 interface 保持不变，其他架构风险尚未改动。
 
 ## 结论摘要
 
@@ -34,8 +34,8 @@
 | `src/shared` | 常量、工具函数、基础 UI 操作 | 目录过于宽泛；部分工具直接调用 `AppApi` 或修改 UI，容易形成反向依赖 |
 | `src/composables` | 可复用的 Composition 行为 | 总体边界较合理，但生命周期和 worker 相关测试警告较多 |
 | `src/plugins` | i18n、router、组件、Sentry、interop 初始化 | 初始化顺序复杂；router 存在静态和动态混合导入，构建有 chunk 警告 |
-| `src/ipc-electron` | Renderer 到 Electron 的 IPC 代理 | 动态 Proxy 缺少方法、参数类型和 allowlist |
-| `src-electron` | 主进程、窗口、托盘、IPC、C# 启动 | `main.js` 约 1062 行，窗口、托盘、通知、IPC、Dotnet 全部集中 |
+| `src/ipc-electron` | Renderer 到 Electron 的 IPC 代理 | M-01.3 已让 Proxy 只生成 manifest 内的 class/method；细粒度参数类型仍待 B-01 |
+| `src-electron` | 主进程、窗口、托盘、IPC、C# 启动 | `main.js` 约 1062 行，窗口、托盘、通知、IPC、Dotnet 全部集中；M-01.3 已在 IPC 入口增加 class/method 与 args envelope 校验 |
 | `Dotnet` | CEF/Electron C# 宿主、SQLite、日志、VR overlay | CEF/Electron 两套项目目标框架和依赖版本存在漂移；部分 C# 类过大 |
 | `Dotnet.Tests` | C# WinForms 测试项目 | 已接入 xUnit、正式测试发现和 Windows CI job；测试通过 STA 辅助器执行 |
 | `src/vr` | VR overlay 和 VR 页面 | `Vr.vue` 超过 2000 行，VR UI、状态和平台行为混杂 |
@@ -83,7 +83,7 @@
 | `src/services/aggregatedView.js` | 使用 `accountHub.allSessions` / `primaryPrefix`，但对应 getter 不存在 | Major | 定义明确的账号元数据 interface，并为标签、颜色和 primary 判断增加契约测试 |
 | `src/api/index.js`、`src/queries` | API、Query cache、Pinia 可能重复持有实体数据 | Major → 已完成 M-08.1～M-08.3 | Query side effect、scope key 和 resource registry 已统一到 Query layer；继续明确 Pinia/Query 的实体唯一来源，并收窄全局 request facade |
 | `src/stores/updateLoop.js` | 兼容入口和依赖组装仍集中；任务实现已移到独立模块 | Major | 已完成第一刀；后续可把宿主 capability 注入进一步收窄，继续保留兼容 facade |
-| `src-electron/preload.js`、`src-electron/main.js`、`src/ipc-electron/interopApi.js` | 动态 class/method IPC，缺少 allowlist 和参数 schema | Major | 改为 capability adapter；主进程校验 class、method 和参数 |
+| `src-electron/preload.js`、`src-electron/main.js`、`src-electron/InteropApi.js`、`src/ipc-electron/interopApi.js` | 动态 class/method IPC 曾缺少 allowlist 和参数 envelope | Major → 已完成 M-01.3 | 共享 `dotnetCapabilityManifest.cjs` 收敛允许的 class/method；preload、main handler、InteropApi 和 renderer Proxy 均校验；按方法细粒度类型与可信来源判定留给 B-01 |
 | `src-electron/main.js` | 主进程约 1062 行，窗口、托盘、通知、IPC、Dotnet 启动集中 | Major | 以 main.js 作为 composition root，拆分 window、tray、notification、Dotnet、IPC module |
 | `Dotnet/VRCX-Cef.csproj`、`Dotnet/VRCX-Electron.csproj` | CEF/Electron 目标框架和依赖版本漂移 | Major | 建立共享宿主 contract、版本矩阵和双宿主 contract test |
 | `src` 多处生产文件 | 大量文件直接绕过边界访问 database 或宿主全局对象 | Major | 用 lint boundary 限制跨层 import，逐步迁移到 use-case/adapter |
@@ -218,6 +218,7 @@ flowchart LR
 - M-01.1 已先迁移剪贴板读取：`src/services/clipboardAdapter.js` 通过显式依赖分别封装 Electron `getClipboardText` 和 CEF `AppApi.GetClipboard`；`src/stores/search.js` 只保留兼容入口，解析和提示行为未改动。
 - M-01.2a 已迁移自定义通知音频文件选择：`src/services/fileDialogAdapter.js` 通过显式 options 分别封装 Electron filters 与 CEF legacy 参数；`selectCustomNotificationSound()` 继续保留 `if (!filePath)` 取消语义和持久化顺序。
 - M-01.2b 已迁移目录选择：同一 capability module 通过 `createDirectoryDialogAdapter()` 封装 CEF 的旧路径 hint 与 Electron 的无参 dialog；`folderSelectorDialog()` 保留旧的可见状态 guard、错误传播和 host-specific cancellation value。
+- M-01.3 已收敛动态 Dotnet bridge：`dotnetCapabilityManifest.cjs` 统一 renderer-facing class/method 清单；preload 和 main process 双重校验，renderer Proxy 不再生成清单外入口；`assertAllowedDotNetCall()` 只增加 class/method 与数组 envelope 检查，不改变既有合法参数值。
 
 这是高 leverage 的架构接缝（seam）：新旧实现可以短期并存，不需要一次性改写业务代码。
 
@@ -254,6 +255,7 @@ flowchart LR
 | M-01.1 clipboard/search 定向测试 | 2 个测试文件、29 个测试通过；adapter 路由与 CEF 失败回退均覆盖 |
 | M-01.2a file-dialog/notifications 定向测试 | 2 个测试文件、6 个测试通过；CEF/Electron 参数、取消值、异常传播和 Store 持久化均覆盖 |
 | M-01.2b directory-dialog/Settings 回归 | 2 个测试文件、24 个测试通过；CEF 旧路径、Electron 无参调用、取消值和设置对话框行为均覆盖 |
+| M-01.3 Dotnet bridge manifest | manifest 契约 4 个测试通过；119 个静态 renderer 调用与清单匹配；主进程/renderer 语法检查和生产构建通过 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | 工具链已补齐并可执行；当前仍有 14 条既有 TypeScript/JavaScript 诊断，已先消除 `updateLoop.js(65,28)`、Group API `bool`、Avatar 空参数、Notification typedef、V2 projection 误标参数、Feed 差异函数旧参数名、邀请 `rsvp` 误标参数、13 个上传选项误报、World/Instance API `ref` 推断误报、request 自定义 Error 字段误报、全部 Query key 解构参数误报、WebApi 二级账号 bridge 方法误报、Sentry 原始异常 message 误报、WorldDialog 两个 composable 的 toast 属性误报、quickSearch worker 临时字段误报、ConfigRepository 数值解析误报、cacheCoordinator SDK 版本属性误报、devtool SDK 版本属性误报、format 工具转换误报、localization URL/Error 参数误报、表格 debounce 定时器误报、FileReader ArrayBuffer 参数误报、主题 link 元素误报、Group API 重复方法误报、游戏注册表值解析误报、上传协调器 Blob.size 参数误报、manual relations 建议结果字段误报、game-log Dayjs 算术误报、Group API `order/sortBy` 必填误报、`useSearchGroup` 活动参数推断误报、`useSearchWorld` 缓存配置/活动参数推断误报、查询缓存日志目标误报、通知偏好过滤返回类型误报、导航配置过滤回调字面量误报、`$throw` 必然抛错返回类型误报、activity top-worlds 参数契约误报、friend store 重复导出键误报、Previous Instances actions `onLaunch` 必填误报、tray notification 投影可选输入误报、托盘通知 bridge 方法误报、旧版 Notification 查询字段必填误报、`getQuickInviteResponseParams` 返回类型误报、托盘自定义事件 `detail` 类型误报、游戏日志分页布尔值误报、搜索用户投影类型误报、WebSocket 离线用户载荷类型误报、GroupDialog 数量替换类型误报、`openDialog` label 可选属性误报、高级设置日期算术误报、本地化 CLI 文件 IO/临时对象类型误报、外观路由名类型误报、通用设置关闭行为/解析类型误报、图表互友图读取与元数据契约误报、收藏分组映射返回类型误报、图库上传 DOM 类型误报、通知超时弹窗类型误报、VRCX 窗口动态状态断言误报、Favorites composable 默认参数误报、recent-action 冷却解析类型误报、光子事件详情回调契约误报、Vite 资源内联回调 overload 误报、Group 语言 projection 输入契约误报、Group 对话框响应契约误报、二次加载结果契约误报及 Group 注册表 JSON 输入契约误报，尚未作为阻断式 CI 门禁 |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
