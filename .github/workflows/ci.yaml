@@ -32,6 +32,8 @@ jobs:
         run: npm run check:schema
       - name: Check shared dependency direction and localization contract
         run: npm run check:architecture
+      - name: Check dependency version matrix
+        run: npm run check:dependency-matrix
       - name: Run refactor smoke tests
         run: npm run test:refactor
       - name: Build renderer and license manifest
