@@ -273,6 +273,22 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 
 首次接入尝试因自定义嵌套 JSDoc typedef 误描述 `Document` 而导致类型检查失败，已按回滚协议撤回未提交改动；第二次使用显式嵌套参数契约后通过全部门禁。代码提交：`b00564e2`。未发布、未推送。
 
+## M-11.2 后置验证
+
+2026-09-05，UI Store 的 body `drop` guard 已移入 `src/services/dropGuard.js`。Store 仍在原初始化位置注册 `drop` listener，事件名、`preventDefault()` 行为、截图管理器语义和 UI Store public interface 均未改变；adapter 额外返回 cleanup 供测试和后续宿主生命周期使用。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前 UI Store 定向基线 | `npx vitest run src/stores/__tests__/uiNotifications.test.js --reporter=dot` | **通过：1 个文件、8 项测试** |
+| M-11.2 Adapter RED → GREEN | `npx vitest run src/services/__tests__/dropGuard.test.js --reporter=dot` | **先因模块不存在得到预期失败；实现后 1 个文件、1 项通过** |
+| M-11.2 Adapter/Store 定向回归 | `npx vitest run src/services/__tests__/dropGuard.test.js src/stores/__tests__/uiNotifications.test.js --reporter=dot` | **通过：2 个文件、9 项测试** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过：73 个测试文件、344 项测试** |
+| 生产构建 | `npm run prod` | **通过：4415 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
+
+代码提交：`9844d194`。未发布、未推送。M-11.2 未修改 `src/vr`、CEF/Electron bridge、窗口接口、多账户会话或任何公共页面调用方。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

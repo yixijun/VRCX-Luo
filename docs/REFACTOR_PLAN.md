@@ -29,7 +29,7 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-10 GameLog 深化 | **已完成：M-10.1～M-10.4** | M-10 已闭环；后续如需继续深化，另开 database 写入/事务或其它 Major seam；保持 `database` facade、日志 tuple 和 Store 兼容入口 |
-| Major | M-11 前端 UI 状态与 DOM seam | **进行中：M-11.2 计划中** | 先提取 UI Store 的 body drop guard；保持 drop 阻止行为，再评估窗口动作与大型页面；不触碰多账户和 VR overlay |
+| Major | M-11 前端 UI 状态与 DOM seam | **已完成：M-11.1～M-11.2** | 继续评估 UI Store 的窗口动作或大型页面 seam；保持公共接口和宿主契约，不触碰多账户和 VR overlay |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
@@ -102,6 +102,7 @@
 | `157331da` | M-10.3：提取 GameLog sessions 日期、搜索、分组过滤与 projection module；保留分页和 `searchLimit` 行为 |
 | `23981f39` | M-10.4：提取 now-playing worker ticker；保留媒体解析、1000ms 调度、完成清理和 Store 兼容入口 |
 | `b00564e2` | M-11.1：提取 Appearance DOM class adapter；保留无障碍、官方状态颜色、表格密度 class 契约和 Store 兼容入口 |
+| `9844d194` | M-11.2：提取 UI Store body drop guard adapter；保留注册时机、`drop` 事件和 `preventDefault()` 行为 |
 | `df65d955` | B-01.1：新增可信渲染来源策略；Electron 15 个 IPC handler 统一拒绝非 packaged renderer 与未启用的开发服务器来源 |
 | `5e84ad42` | B-01.2：为 174 个 .NET allowlist 方法补齐参数数量/基础类型 schema，并在 preload/main/Interop 边界复用校验 |
 | `82ff3fe8` | N-02.1：建立可注入的版本元数据解析、UTC 回退和文件读取契约 |
@@ -252,11 +253,9 @@ M-10.1～M-10.4 已全部完成并分别通过独立代码提交。M-10 本轮�
 
 1. **M-11.1 Appearance DOM class seam（已完成）**：新增 `src/services/appearanceDomAdapter.js`，承接 `document.documentElement.classList` 上的无障碍状态、官方状态颜色和表格密度 class；`src/stores/settings/appearance.js` 保留原有私有 `apply*` 入口、设置 action 和初始化时机。Adapter 通过注入 document/classList 测试，class 名称、增删顺序、返回值和 public interface 均未改变。改动前后均记录 Appearance/NavMenu 定向基线，并通过 `typecheck:js`、`test:refactor` 和生产构建。提交：`b00564e2`。
 
-M-11.1 已完成。M-11 后续可继续处理 UI Store 的 drop/窗口副作用或大型页面，但必须另立小切片；本轮不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
+2. **M-11.2 UI Store body drop guard（已完成）**：新增 `src/services/dropGuard.js`，承接 `document.body` 的 `drop` 监听注册、`preventDefault()` 和可测试的 cleanup；`src/stores/ui.js` 仅在原初始化位置调用 adapter，保留事件名、注册时机、默认行为阻止和截图管理器行为，不改 UI Store public interface。先以缺失模块得到预期 RED，再通过 adapter/Store 定向回归、`typecheck:js`、`test:refactor` 和生产构建。提交：`9844d194`。
 
-2. **M-11.2 UI Store body drop guard（计划中）**：`src/stores/ui.js` 目前在 Store 初始化时直接向 `document.body` 注册 `drop` 监听并调用 `preventDefault()`。先建立 `dropGuard` Adapter，保留注册时机、事件名和阻止默认行为；通过注入 document/body 测试注册与清理，不改 UI Store 的 public interface 或截图管理器行为。
-
-M-11.2 仍不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口；改动前后必须独立验证并提交。
+M-11.1～M-11.2 已完成并分别建立独立回滚点。M-11 后续可继续处理 UI Store 的窗口动作或大型页面 seam，但必须另立小切片；本轮不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
 
 ## 当前 M-00 细分任务
 
