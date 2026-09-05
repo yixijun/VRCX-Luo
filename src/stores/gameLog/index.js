@@ -21,6 +21,7 @@ import {
     isSessionsLocationInDateRange as isSessionsLocationInDateRangePure,
     toSessionsEpoch
 } from './sessionsFilters';
+import { createNowPlayingTicker } from './nowPlayingTicker';
 import { database } from '../../services/database';
 import { tryLoadPlayerList } from '../../coordinators/gameLogCoordinator';
 import { useAdvancedSettingsStore } from '../settings/advanced';
@@ -267,6 +268,14 @@ export const useGameLogStore = defineStore('GameLog', () => {
         vrStore.updateVrNowPlaying();
     }
 
+    const { updateNowPlaying } = createNowPlayingTicker({
+        getNowPlaying: () => nowPlaying.value,
+        clearNowPlaying,
+        formatSeconds,
+        updateView: () => vrStore.updateVrNowPlaying(),
+        schedule: (callback, delay) => workerTimers.setTimeout(callback, delay)
+    });
+
     /**
      *
      */
@@ -350,27 +359,6 @@ export const useGameLogStore = defineStore('GameLog', () => {
         userStore,
         advancedSettingsStore
     });
-
-    /**
-     *
-     */
-    function updateNowPlaying() {
-        const np = nowPlaying.value;
-        if (!nowPlaying.value.playing) {
-            return;
-        }
-
-        const now = Date.now() / 1000;
-        np.elapsed = Math.round((now - np.startTime) * 10) / 10;
-        if (np.elapsed >= np.length) {
-            clearNowPlaying();
-            return;
-        }
-        np.remainingText = formatSeconds(np.length - np.elapsed);
-        np.percentage = Math.round(((np.elapsed * 100) / np.length) * 10) / 10;
-        vrStore.updateVrNowPlaying();
-        workerTimers.setTimeout(() => updateNowPlaying(), 1000);
-    }
 
     /**
      *
