@@ -13,6 +13,21 @@ import { AccountSession } from './accountSession.js';
 import { dbVars } from './database/index.js';
 import { watchState } from './watchState.js';
 
+/**
+ * The primary account is represented by a lightweight stub while secondary
+ * accounts use a full AccountSession instance.  Keep the shared fields in a
+ * small structural type so the registry can safely contain both records.
+ *
+ * @typedef {{
+ *   userId: string,
+ *   userPrefix: string,
+ *   userInfo: { id: string, displayName: string },
+ *   label: string,
+ *   friendsCache: Map<string, object>,
+ *   destroy?: () => void
+ * }} PrimarySessionStub
+ */
+
 // ── Colour palette for account badges ──────────────────────────────────────────
 const ACCOUNT_COLOURS = [
     '#4ade80', // green
@@ -28,7 +43,7 @@ const ACCOUNT_COLOURS = [
 // ── Hub state ──────────────────────────────────────────────────────────────────
 
 const _state = reactive({
-    /** @type {Map<string, import('./accountSession.js').AccountSession>} */
+    /** @type {Map<string, import('./accountSession.js').AccountSession | PrimarySessionStub>} */
     sessions: new Map(),
 
     /** userId of the primary (main) account */
@@ -120,6 +135,7 @@ export const accountHub = {
         if (!_state.sessions.has(userId)) {
             // Stub session for the primary – we don't create a real AccountSession
             // because the primary already has all global Store machinery.
+            /** @type {PrimarySessionStub} */
             const stub = {
                 userId,
                 userPrefix,
