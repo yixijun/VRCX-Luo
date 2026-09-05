@@ -61,6 +61,9 @@ describe('InstancePlayerEventsPopover.vue', () => {
         expect(content.attributes('align')).toBe('end');
         expect(content.classes()).toContain('max-h-[var(--reka-popover-content-available-height)]');
         expect(content.classes()).toContain('overflow-hidden');
+        expect(content.attributes('style')).toMatch(
+            /height:\s*min\(24rem,\s*var\(--reka-popover-content-available-height,\s*24rem\)\)/
+        );
         expect(
             wrapper
                 .get('[data-testid="event-panel"]')
