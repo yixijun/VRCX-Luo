@@ -99,6 +99,7 @@ const InteropApi = require('./InteropApi');
 const { assertAllowedDotNetCall } = require('./dotnetCapabilityManifest.cjs');
 const { initializeDotnet } = require('./dotnetBootstrap.cjs');
 const { registerIpcHandlers } = require('./ipcHandlers.cjs');
+const { createTrustedRendererGuard } = require('./rendererSourcePolicy.cjs');
 const interopApi = new InteropApi();
 
 const OVERLAY_WRIST_FRAME_WIDTH = 512;
@@ -202,6 +203,10 @@ if (!gotTheLock) {
 
 registerIpcHandlers({
     ipcMain,
+    guard: createTrustedRendererGuard({
+        appRoot: rootDir,
+        allowDevServer: debug
+    }),
     handlers: {
         callDotNetMethod: (event, className, methodName, args) => {
             assertAllowedDotNetCall(className, methodName, args);

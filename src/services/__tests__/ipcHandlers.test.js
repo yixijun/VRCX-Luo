@@ -42,4 +42,34 @@ describe('registerIpcHandlers', () => {
         );
         expect(ipcMain.handle).toHaveBeenCalledTimes(handlerContracts.length);
     });
+
+    it('applies an optional guard to every registered handler', () => {
+        const registrations = [];
+        const ipcMain = {
+            handle: vi.fn((channel, handler) => {
+                registrations.push([channel, handler]);
+            })
+        };
+        const handlers = Object.fromEntries(
+            handlerContracts.map(([, name]) => [name, vi.fn()])
+        );
+        const guardedHandlers = new Map();
+        const guard = vi.fn((handler, channel) => {
+            const guarded = vi.fn(handler);
+            guardedHandlers.set(channel, guarded);
+            return guarded;
+        });
+
+        registerIpcHandlers({ ipcMain, handlers, guard });
+
+        expect(guard).toHaveBeenCalledTimes(handlerContracts.length);
+        for (const [channel, handlerName] of handlerContracts) {
+            expect(guard).toHaveBeenCalledWith(handlers[handlerName], channel);
+            expect(guardedHandlers.get(channel)).toBe(
+                registrations.find(
+                    ([registeredChannel]) => registeredChannel === channel
+                )?.[1]
+            );
+        }
+    });
 });

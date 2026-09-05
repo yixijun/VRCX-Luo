@@ -26,9 +26,13 @@ const IPC_HANDLER_CONTRACT = Object.freeze([
     Object.freeze(['app:setVSleepMode', 'setVSleepMode'])
 ]);
 
-function registerIpcHandlers({ ipcMain, handlers }) {
+function registerIpcHandlers({ ipcMain, handlers, guard = null }) {
     for (const [channel, handlerName] of IPC_HANDLER_CONTRACT) {
-        ipcMain.handle(channel, handlers[handlerName]);
+        const handler = handlers[handlerName];
+        ipcMain.handle(
+            channel,
+            typeof guard === 'function' ? guard(handler, channel) : handler
+        );
     }
 }
 
