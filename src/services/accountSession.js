@@ -22,6 +22,28 @@ import { useModalStore } from '../stores/modal';
 
 // ── Utility ────────────────────────────────────────────────────────────────────
 
+/**
+ * @typedef {{
+ *   method?: string,
+ *   params?: Record<string, any>,
+ *   headers?: Record<string, any>,
+ *   body?: string,
+ *   uploadImage?: boolean
+ * }} SecondaryRequestOptions
+ *
+ * @typedef {{
+ *   id: string,
+ *   state: string,
+ *   name?: string,
+ *   ref?: any,
+ *   $accountIds?: string[],
+ *   isVIP?: boolean,
+ *   memo?: string,
+ *   pendingOffline?: boolean,
+ *   $nickName?: string
+ * }} SecondaryFriendContext
+ */
+
 function isVagueLoc(loc) {
     return !loc || loc === 'private' || (typeof loc === 'string' && loc.startsWith('offline'));
 }
@@ -43,9 +65,7 @@ export class AccountSession {
         this.userPrefix = computeUserPrefix(userId);
         this.userInfo = reactive({ id: userId, displayName: '' });
         this.label = '?';
-        /**
-         * @type {Map<string, {id: string, state: string, ref?: object, $accountIds?: string[]}>}
-         */
+        /** @type {Map<string, SecondaryFriendContext>} */
         this.friendsCache = new Map();
 
         this._ws = null;
@@ -157,6 +177,9 @@ export class AccountSession {
     /**
      * Makes an API request using this account's secondary HTTP client.
      * Returns the parsed JSON response body.
+     * @param {string} endpoint
+     * @param {SecondaryRequestOptions} [options={}]
+     * @returns {Promise<any>}
      */
     async _requestRaw(endpoint, options = {}) {
         const apiBase = this._apiEndpoint || AppDebug.endpointDomain;
