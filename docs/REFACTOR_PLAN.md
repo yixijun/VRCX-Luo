@@ -29,7 +29,7 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-10 GameLog 深化 | **已完成：M-10.1～M-10.4** | M-10 已闭环；后续如需继续深化，另开 database 写入/事务或其它 Major seam；保持 `database` facade、日志 tuple 和 Store 兼容入口 |
-| Major | M-11 前端 UI 状态与 DOM seam | **已完成：M-11.1～M-11.3** | 继续评估 UI Store 的窗口动作或大型页面 seam；保持公共接口和宿主契约，不触碰多账户和 VR overlay |
+| Major | M-11 前端 UI 状态与 DOM seam | **进行中：M-11.4 计划中** | 先提取 UI Store 的托盘通知宿主 Adapter；保持状态计算、force 更新和双宿主调用，再评估是否停止本轮前端重构 |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
@@ -258,7 +258,9 @@ M-10.1～M-10.4 已全部完成并分别通过独立代码提交。M-10 本轮�
 
 3. **M-11.3 UI Store 对话框面包屑状态（已完成）**：已将 `pushDialogCrumb`、`setDialogCrumbLabel`、`jumpDialogCrumb`、`clearDialogCrumbs` 的数组状态变换移入 `src/stores/ui/dialogCrumbState.js`；`src/stores/ui.js` 保留原方法名、Vue ref 和 `openDialog`/`closeMainDialog`/`handleBreadcrumbClick` 协作方式。测试覆盖无效输入、重复项截断、label 更新、索引边界和清空行为，并以兼容转发接回 Store；页面、Coordinator、路由、窗口能力和 VR overlay 未修改。提交：`8556c0ef`。
 
-M-11.1～M-11.3 已完成并分别建立独立回滚点。M-11 后续如继续，应另立 UI Store 窗口动作或大型页面 seam；本轮不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
+4. **M-11.4 UI Store 托盘通知宿主 Adapter（计划中）**：将 `updateTrayIconNotify()` 内的 CEF `AppApi.SetTrayIconNotification()` 与 Linux Electron `window.electron.setTrayIconNotification()` 路由移入显式 capability Adapter；Store 保留通知状态计算、`force` 更新守卫、调用时机和 public interface。通过 fake host 验证双宿主方法名、布尔参数和路由，不改变 `notifiedMenus`、`notificationIconDot` 或 VR overlay。
+
+M-11.1～M-11.3 已完成并分别建立独立回滚点。M-11.4 完成后将评估是否达到本轮停止线；不再为了减少行数继续拆分，且本轮不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
 
 ## 当前 M-00 细分任务
 
