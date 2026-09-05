@@ -49,6 +49,50 @@ describe('gameLog.getSelfPresenceForLocations', () => {
     });
 });
 
+describe('gameLog read-query row projection', () => {
+    beforeEach(() => {
+        mocks.execute.mockReset();
+    });
+
+    test('lookupGameLogDatabase returns the shared projected row shape', async () => {
+        mocks.execute.mockImplementation(async (callback) => {
+            callback([
+                12,
+                '2025-01-01T12:00:00Z',
+                'External',
+                'Alice',
+                'wrld_1:1',
+                'usr_1',
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                'hello'
+            ]);
+            return undefined;
+        });
+
+        await expect(gameLog.lookupGameLogDatabase([], [], 5)).resolves.toEqual([
+            {
+                rowId: 12,
+                created_at: '2025-01-01T12:00:00Z',
+                type: 'External',
+                message: 'hello',
+                displayName: 'Alice',
+                userId: 'usr_1',
+                location: 'wrld_1:1'
+            }
+        ]);
+    });
+});
+
 describe('gameLog.getCoInstanceHistoryBetweenFriends', () => {
     beforeEach(() => {
         mocks.execute.mockReset();

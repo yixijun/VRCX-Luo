@@ -1,6 +1,7 @@
 import { dbVars } from '../database';
 
 import sqliteService from '../sqlite.js';
+import { projectGameLogRow } from './gameLogRowProjection.js';
 
 const gameLog = {
     async getGamelogDatabase() {
@@ -723,49 +724,7 @@ const gameLog = {
         };
         await sqliteService.execute(
             (dbRow) => {
-                const type = dbRow[2];
-                const row = {
-                    rowId: dbRow[0],
-                    created_at: dbRow[1],
-                    type
-                };
-                switch (type) {
-                    case 'Location':
-                        row.location = dbRow[4];
-                        row.worldId = dbRow[7];
-                        row.worldName = dbRow[8];
-                        row.time = dbRow[6];
-                        row.groupName = dbRow[9];
-                        break;
-                    case 'OnPlayerJoined':
-                    case 'OnPlayerLeft':
-                        row.displayName = dbRow[3];
-                        row.location = dbRow[4];
-                        row.userId = dbRow[5];
-                        row.time = dbRow[6];
-                        break;
-                    case 'PortalSpawn':
-                        row.displayName = dbRow[3];
-                        row.location = dbRow[4];
-                        row.userId = dbRow[5];
-                        row.instanceId = dbRow[10];
-                        row.worldName = dbRow[8];
-                        break;
-                    case 'VideoPlay':
-                        row.videoUrl = dbRow[11];
-                        row.videoName = dbRow[12];
-                        row.videoId = dbRow[13];
-                        row.location = dbRow[4];
-                        row.displayName = dbRow[3];
-                        row.userId = dbRow[5];
-                        break;
-                    case 'StringLoad':
-                    case 'ImageLoad':
-                        row.resourceUrl = dbRow[14];
-                        row.location = dbRow[4];
-                        break;
-                }
-                gamelogDatabase.push(row);
+                gamelogDatabase.push(projectGameLogRow(dbRow));
             },
             `SELECT ${baseColumns} FROM (${selects.join(' UNION ALL ')}) ORDER BY created_at DESC, id DESC LIMIT @limit`,
             args
@@ -922,57 +881,7 @@ const gameLog = {
         };
         await sqliteService.execute(
             (dbRow) => {
-                const row = {
-                    rowId: dbRow[0],
-                    created_at: dbRow[1],
-                    type: dbRow[2]
-                };
-                switch (dbRow[2]) {
-                    case 'Location':
-                        row.location = dbRow[4];
-                        row.worldId = dbRow[7];
-                        row.worldName = dbRow[8];
-                        row.time = dbRow[6];
-                        row.groupName = dbRow[9];
-                        break;
-                    case 'OnPlayerJoined':
-                    case 'OnPlayerLeft':
-                        row.displayName = dbRow[3];
-                        row.location = dbRow[4];
-                        row.userId = dbRow[5];
-                        row.time = dbRow[6];
-                        break;
-                    case 'PortalSpawn':
-                        row.displayName = dbRow[3];
-                        row.location = dbRow[4];
-                        row.userId = dbRow[5];
-                        row.instanceId = dbRow[10];
-                        row.worldName = dbRow[8];
-                        break;
-                    case 'VideoPlay':
-                        row.videoUrl = dbRow[11];
-                        row.videoName = dbRow[12];
-                        row.videoId = dbRow[13];
-                        row.location = dbRow[4];
-                        row.displayName = dbRow[3];
-                        row.userId = dbRow[5];
-                        break;
-                    case 'Event':
-                        row.data = dbRow[16];
-                        break;
-                    case 'External':
-                        row.message = dbRow[17];
-                        row.displayName = dbRow[3];
-                        row.userId = dbRow[5];
-                        row.location = dbRow[4];
-                        break;
-                    case 'StringLoad':
-                    case 'ImageLoad':
-                        row.resourceUrl = dbRow[14];
-                        row.location = dbRow[4];
-                        break;
-                }
-                gamelogDatabase.push(row);
+                gamelogDatabase.push(projectGameLogRow(dbRow));
             },
             `SELECT ${baseColumns} FROM (${selects.join(' UNION ALL ')}) ORDER BY created_at DESC, id DESC LIMIT @limit`,
             args
@@ -1144,58 +1053,7 @@ const gameLog = {
         };
         await sqliteService.execute(
             (dbRow) => {
-                const type = dbRow[2];
-                const row = {
-                    rowId: dbRow[0],
-                    created_at: dbRow[1],
-                    type
-                };
-                switch (type) {
-                    case 'Location':
-                        row.location = dbRow[4];
-                        row.worldId = dbRow[7];
-                        row.worldName = dbRow[8];
-                        row.time = dbRow[6];
-                        row.groupName = dbRow[9];
-                        break;
-                    case 'OnPlayerJoined':
-                    case 'OnPlayerLeft':
-                        row.displayName = dbRow[3];
-                        row.location = dbRow[4];
-                        row.userId = dbRow[5];
-                        row.time = dbRow[6];
-                        break;
-                    case 'PortalSpawn':
-                        row.displayName = dbRow[3];
-                        row.location = dbRow[4];
-                        row.userId = dbRow[5];
-                        row.instanceId = dbRow[10];
-                        row.worldName = dbRow[8];
-                        break;
-                    case 'VideoPlay':
-                        row.videoUrl = dbRow[11];
-                        row.videoName = dbRow[12];
-                        row.videoId = dbRow[13];
-                        row.location = dbRow[4];
-                        row.displayName = dbRow[3];
-                        row.userId = dbRow[5];
-                        break;
-                    case 'Event':
-                        row.data = dbRow[16];
-                        break;
-                    case 'External':
-                        row.message = dbRow[17];
-                        row.displayName = dbRow[3];
-                        row.userId = dbRow[5];
-                        row.location = dbRow[4];
-                        break;
-                    case 'StringLoad':
-                    case 'ImageLoad':
-                        row.resourceUrl = dbRow[14];
-                        row.location = dbRow[4];
-                        break;
-                }
-                gamelogDatabase.push(row);
+                gamelogDatabase.push(projectGameLogRow(dbRow));
             },
             `SELECT ${baseColumns} FROM (${selects.join(' UNION ALL ')}) ORDER BY created_at DESC, id DESC LIMIT @limit`,
             args
