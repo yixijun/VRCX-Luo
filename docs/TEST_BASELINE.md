@@ -235,20 +235,27 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：71 个文件、339 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
-## M-10.1 后置验证
+## M-10 后置验证
 
-GameLog Parser 切片只把原始 `LogWatcher` tuple 的字段映射移入纯 `gameLogParser` module；`LogWatcherService.parseRawGameLog()` 保留为兼容委托，未修改 `getAll()`、coordinator、C# 序列化或任何 Store/页面接口。
+2026-09-05，GameLog 深化的 M-10.1～M-10.4 全部完成。每一刀都先运行受影响测试，再做单一逻辑变更并立即重复验证；兼容 facade、页面调用、序列化格式、SQL/参数顺序、任务周期、debounce、timer 和并发语义均保持不变。
+
+| 切片 | 改动与定向结果 |
+|---|---|
+| M-10.1 Parser | `src/services/gameLogParser.js` 承接 19 个原始 tuple 映射；`LogWatcherService.parseRawGameLog()` 保留兼容委托。**基线 2 个文件/22 项 → 回归 2 个文件/23 项，全部通过**。提交：`296aa38a` |
+| M-10.2a row projection | `src/services/database/gameLogRowProjection.js` 承接 Location/lookup/search 返回行映射。数据库定向回归通过；提交：`aff0098b` |
+| M-10.2b query parameters | `src/services/database/gameLogQueryParameters.js` 承接 VIP 参数化/转义和 location/table filter flags，并接回 database facade。**3 个文件、22 项测试通过**；提交：`ac89133f`、`6fc90bec` |
+| M-10.3 sessions filters | `src/stores/gameLog/sessionsFilters.js` 承接日期范围、全局/成员/事件搜索、segment 分组投影和空段清理。**4 个文件、27 项测试通过**；提交：`157331da` |
+| M-10.4 now-playing ticker | `src/stores/gameLog/nowPlayingTicker.js` 通过显式 clock/timer/view 依赖承接 1000ms 更新、完成清理和视图刷新。**4 个文件、35 项测试通过**；提交：`23981f39` |
 
 | 检查项 | 命令 | 结果 |
 |---|---|---|
-| 改动前 GameLog 定向基线 | `npx vitest run src/services/__tests__/gameLog.test.js src/views/GameLog/__tests__/GameLogSessions.test.js --reporter=dot` | **通过：2 个文件、22 项测试** |
-| 改动后 GameLog 定向回归 | `npx vitest run src/services/__tests__/gameLog.test.js src/views/GameLog/__tests__/GameLogSessions.test.js --reporter=dot` | **通过：2 个文件、23 项测试**；新增纯 Parser 覆盖和兼容委托用例 |
+| M-10 合并定向回归 | `npx vitest run src/services/__tests__/gameLog.test.js src/services/database/__tests__/gameLog.test.js src/services/database/__tests__/gameLogRowProjection.test.js src/services/database/__tests__/gameLogQueryParameters.test.js src/stores/gameLog/__tests__/sessionsFilters.test.js src/stores/__tests__/nowPlayingTicker.test.js src/stores/__tests__/mediaParsers.test.js src/views/GameLog/__tests__/GameLog.test.js src/views/GameLog/__tests__/GameLogSessions.test.js --reporter=dot` | **通过：9 个文件、83 项测试** |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过：71 个文件、340 项测试** |
-| 生产构建 | `npm run prod` | **通过：4409 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
-| 格式检查 | `git diff --check` | **通过**；仅提示现有 CRLF 转换警告 |
+| 生产构建 | `npm run prod` | **通过：4413 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
 
-代码提交：`296aa38a`。未发布、未推送；后续 M-10.2 仍需先单独建立 database 只读查询基线。
+回滚记录：M-10.2b 首次整合因新参数 module 的 `args` 静态推断过宽导致 `typecheck:js` 失败，按回滚协议立即撤回未提交改动；随后拆成纯 module 与 facade 接入两个切片（`ac89133f`、`6fc90bec`）并通过全部门禁。以上代码提交均为独立本地回滚点，未发布、未推送。
 
 ## 后续门禁规则
 

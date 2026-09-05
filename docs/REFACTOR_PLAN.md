@@ -28,7 +28,7 @@
 | Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.12** | .NET bootstrap、IPC 注册、双宿主 contract、窗口状态、窗口事件、关闭守卫、托盘菜单、图标工厂、通知 projection、桌面通知 controller、托盘生命周期和点击 Bridge seam 已完成；通知 action IPC 仍可另行细分 |
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
-| Major | M-10 GameLog 深化 | **进行中：M-10.1 已完成** | 下一刀先拆数据库只读查询；保持 `database` facade、日志 tuple 和 Store 兼容入口 |
+| Major | M-10 GameLog 深化 | **已完成：M-10.1～M-10.4** | M-10 已闭环；后续如需继续深化，另开 database 写入/事务或其它 Major seam；保持 `database` facade、日志 tuple 和 Store 兼容入口 |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
@@ -95,6 +95,11 @@
 | `99bfd8d3` | M-07.11：提取托盘销毁与通知图标切换生命周期动作，保留重启/退出调用顺序 |
 | `267b95aa` | M-07.12：提取托盘点击打开主窗口 Bridge，保留 click listener 和 show 行为 |
 | `296aa38a` | M-10.1：提取纯 `parseRawGameLog` Parser module；保留 `LogWatcherService.parseRawGameLog()` 兼容委托、未知类型和原始字段映射 |
+| `aff0098b` | M-10.2a：提取 GameLog 数据库 row projection；保留 Location/lookup/search 的返回字段、顺序和 null 行为 |
+| `ac89133f` | M-10.2b：新增 GameLog 查询参数/过滤 flag 纯 module；覆盖参数顺序、VIP 转义和空过滤行为 |
+| `6fc90bec` | M-10.2b：将查询参数 module 接入 database facade；保留 SQL、`dbVars.userId`、参数顺序和旧查询入口 |
+| `157331da` | M-10.3：提取 GameLog sessions 日期、搜索、分组过滤与 projection module；保留分页和 `searchLimit` 行为 |
+| `23981f39` | M-10.4：提取 now-playing worker ticker；保留媒体解析、1000ms 调度、完成清理和 Store 兼容入口 |
 | `df65d955` | B-01.1：新增可信渲染来源策略；Electron 15 个 IPC handler 统一拒绝非 packaged renderer 与未启用的开发服务器来源 |
 | `5e84ad42` | B-01.2：为 174 个 .NET allowlist 方法补齐参数数量/基础类型 schema，并在 preload/main/Interop 边界复用校验 |
 | `82ff3fe8` | N-02.1：建立可注入的版本元数据解析、UTC 回退和文件读取契约 |
@@ -234,11 +239,12 @@ M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决�
 ## 当前 M-10 细分任务
 
 1. **M-10.1 GameLog Parser seam（已完成）**：新增 `src/services/gameLogParser.js`，把 `LogWatcher` 原始 tuple 到业务日志对象的纯字段映射移出 `src/services/gameLog.js`。`LogWatcherService.parseRawGameLog(dt, type, args)` 保留为兼容委托；`getAll()`、`gameLogCoordinator.addGameLogEvent()`、C# tuple 序列化和未知类型/空字段行为均未改变。现有 19 个映射用例改为直接覆盖纯 Parser，并增加 1 个兼容入口用例。提交：`296aa38a`。
-2. **M-10.2 数据库 GameLog 只读查询（待开始）**：从 `src/services/database/gameLog.js` 识别并提取查询参数/row projection module；先覆盖 `lookup/search` contract，再保持 SQL、`dbVars.userId`、排序和返回字段不变，不触碰写入和事务。
-3. **M-10.3 GameLog Store 会话查询（待开始）**：在 M-10.2 稳定后，提取 `src/stores/gameLog/index.js` 的 sessions filter/query projection；保留 `loadSessionsSegments()`、日期范围、全局搜索、分页和 `searchLimit` 行为，不修改 GameLog 页面组件。
-4. **M-10.4 GameLog worker/media 边界（待开始）**：最后再隔离 worker timer、媒体解析和 now-playing 状态，先建立显式 capability，再考虑 Store 内部 facade 收窄。
+2. **M-10.2a 数据库 row projection（已完成）**：新增 `src/services/database/gameLogRowProjection.js`，将 `getGameLogByLocation()`、`lookupGameLogDatabase()`、`searchGameLogDatabase()` 的重复行到日志对象映射移出 facade；保留 `type` 映射、字段顺序、`null`/`undefined`、portal/video/Event/External 等返回语义。提交：`aff0098b`。
+3. **M-10.2b 查询参数与过滤 module（已完成）**：新增 `src/services/database/gameLogQueryParameters.js`，集中 VIP 参数化/转义和 location/table filter flag 解析，并接回 database facade。SQL 文本、`dbVars.userId`、参数顺序、排序、返回字段和旧 `database` 入口保持不变；没有触碰写入或事务。提交：`ac89133f`、`6fc90bec`。
+4. **M-10.3 GameLog Store 会话查询（已完成）**：新增 `src/stores/gameLog/sessionsFilters.js`，提取日期范围、全局搜索、成员/事件/segment 过滤、分组投影和空段清理；`loadSessionsSegments()`、分页、`searchLimit`、debounce 和页面组件均保持不变。提交：`157331da`。
+5. **M-10.4 GameLog worker/media 边界（已完成）**：保留既有 `mediaParsers.js` module，并新增 `src/stores/gameLog/nowPlayingTicker.js`，以显式 timer/clock/view 依赖承接 now-playing 更新；保留 1000ms 周期、完成时清理、媒体解析和 Store 的 `setNowPlaying` 兼容入口。提交：`23981f39`。
 
-M-10.1 已完成并通过独立代码提交；当前下一步是 M-10.2，只读查询优先于写入/事务。多账户 B-02/M-05 和 `DbContext` 仍按要求暂缓。
+M-10.1～M-10.4 已全部完成并分别通过独立代码提交。M-10 本轮只深化 Parser、数据库只读 projection/参数、sessions 过滤和 now-playing ticker；数据库写入/事务、`DbContext`、多账户 B-02/M-05 仍按要求暂缓，后续工作另开任务，不在本轮扩大范围。
 
 ## 当前 M-00 细分任务
 
