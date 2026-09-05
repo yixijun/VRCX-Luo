@@ -23,6 +23,7 @@ const {
 const { bindWindowEventBridge } = require('./windowEventBridge.cjs');
 const { bindWindowCloseHandler } = require('./windowCloseHandler.cjs');
 const { createTrayContextMenu } = require('./trayContextMenu.cjs');
+const { createTrayInstance } = require('./trayIconFactory.cjs');
 
 //app.disableHardwareAcceleration();
 
@@ -608,31 +609,16 @@ function buildTrayContextMenu() {
 }
 
 function createTray() {
-    if (process.platform === 'darwin') {
-        const image = nativeImage.createFromPath(
-            path.join(rootDir, 'images/VRCX.png')
-        );
-        trayIcon = image.resize({ width: 16, height: 16 });
-
-        const imageNotify = nativeImage.createFromPath(
-            path.join(rootDir, 'images/VRCX_notify.png')
-        );
-        trayIconNotify = imageNotify.resize({ width: 16, height: 16 });
-    } else if (process.platform === 'linux') {
-        const image = nativeImage.createFromPath(
-            path.join(rootDir, 'images/VRCX.png')
-        );
-        trayIcon = image.resize({ width: 64, height: 64 });
-
-        const imageNotify = nativeImage.createFromPath(
-            path.join(rootDir, 'images/VRCX_notify.png')
-        );
-        trayIconNotify = imageNotify.resize({ width: 64, height: 64 });
-    } else {
-        trayIcon = path.join(rootDir, 'images/VRCX.ico');
-        trayIconNotify = path.join(rootDir, 'images/VRCX_notify.ico');
-    }
-    tray = new Tray(trayIcon);
+    const trayInstance = createTrayInstance({
+        platform: process.platform,
+        nativeImage,
+        Tray,
+        path,
+        rootDir
+    });
+    tray = trayInstance.tray;
+    trayIcon = trayInstance.trayIcon;
+    trayIconNotify = trayInstance.trayIconNotify;
     tray.setToolTip(buildTrayToolTip());
     tray.setContextMenu(buildTrayContextMenu());
 
