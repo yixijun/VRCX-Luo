@@ -2,7 +2,7 @@
 
 > 记录时间：2026-09-05
 >
-> 用途：记录 M-00 测试与契约门禁、B-01 宿主桥安全门禁及 N-02 版本来源门禁的当前基线。后续每个重构切片都必须与本文件中的对应命令对比；失败数量或错误类型增加时，停止当前切片并回滚当前 commit。
+> 用途：记录 M-00 测试与契约门禁、B-01 宿主桥安全门禁、N-02 版本来源门禁及 N-03 Shared/Localization 门禁的当前基线。后续每个重构切片都必须与本文件中的对应命令对比；失败数量或错误类型增加时，停止当前切片并回滚当前 commit。
 
 ## 当前工作树
 
@@ -11,6 +11,7 @@
 - `updateLoop` scheduler/task 拆分：已完成，不在本轮重复修改
 - B-01 宿主桥安全封口：已完成；来源策略和 174 个方法参数 schema 均有定向回归测试
 - N-02 版本与构建来源：已完成；根 `Version` 驱动 package/lock 同步，Electron/Vite/产物命名共用版本 reader，构建前 `check:version` 门禁已接入
+- N-03 Shared/Localization 边界：已完成；依赖方向 guard、语言包 contract 和 `check:architecture` CI 门禁已接入
 - schema 文件：`docs/schemas/screenshotMetadata-schema.json` 由 `npm run check:schema` 校验
 
 ## 命令结果
@@ -102,6 +103,22 @@ B-01 的来源 guard 在主进程注册的 15 个 IPC handler 前执行：packag
 | 生产构建 | `npm run prod` | **通过**；保留既有 router 动态 import 与 Node deprecation 警告 |
 
 N-02 的首次 Vite 接入尝试触发了跨 tsconfig 类型诊断，已由 `ffcc32a6` 回滚；安全重做 `271dfdca` 通过类型检查、测试和生产构建，未改变公共接口、序列化格式或并发语义。
+
+## N-03 后置验证
+
+2026-09-05，Shared/Localization 边界门禁完成。`src/shared` 与 `src/localization` 的新增反向项目依赖会被阻断；当前 14 条历史边显式登记为 legacy exceptions。语言包以 `en.json` 为 canonical key set，结构错误阻断，既有 fallback 缺失/额外 key 仅报告，不自动修改翻译资源。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| Shared/Localization 依赖方向 | `npm run check:dependency-direction` | **通过**：74 个源文件、14 条受限边，14 条均为已登记历史例外 |
+| Localization contract | `npm run check:localization` | **通过**：14 个语言包、2699 个 canonical key；13285 个 fallback 缺失、200 个额外 key 可见报告 |
+| 聚合架构门禁 | `npm run check:architecture` | **通过**：依赖方向与语言包检查统一入口 |
+| N-03 定向测试 | `npx vitest run src/services/__tests__/dependencyDirection.test.js src/services/__tests__/localizationContract.test.js --reporter=dot` | **通过**：2 个文件、7 项测试 |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：62 个文件、311 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+| 生产构建 | `npm run prod` | **通过**：4408 个模块；保留既有 router 动态 import 与 Node deprecation 警告 |
+
+N-03 的检查默认不自动修复遗留 key 差异；`check-localization.js --strict` 已保留为未来全量 parity 迁移的显式入口。新增门禁没有改变公共 interface、序列化格式、任务周期或并发语义。
 
 ## 后续门禁规则
 

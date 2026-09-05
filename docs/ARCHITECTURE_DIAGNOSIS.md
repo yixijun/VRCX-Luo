@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-07.1～M-07.3 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁，以及 N-02 版本来源与一致性门禁已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-07.1～M-07.3 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁、N-02 版本来源与一致性门禁，以及 N-03 Shared/Localization 依赖和语言包门禁已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-07.1～M-07.3 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁，以及 N-02 的共享版本元数据、package/lock 同步和一致性校验均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的 window/tray/notification 实现仍未迁移，多账户运行时功能仍按要求暂停。
+> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-07.1～M-07.3 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁、N-02 的共享版本元数据/package-lock 同步/一致性校验，以及 N-03 的 Shared/Localization 依赖方向 guard/语言包 contract/CI 聚合门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的 window/tray/notification 实现仍未迁移，多账户运行时功能仍按要求暂停。
 
 ## 结论摘要
 
@@ -31,7 +31,7 @@
 | `src/coordinators` | WebSocket/API/数据库事件编排 | store/API/database 耦合仍在；M-03 已把 UI implementation 收敛到 services adapter seam，M-09 已把 Group/Favorite/User 的角色、presence、持久化、收藏、本地化和自动状态决策深化为纯 module，后续继续拆 use-case |
 | `src/api` | REST/API endpoint 请求封装 | `window.request` 全局暴露；M-08 后缓存副作用经 `queryCache` adapter，Query resource 仍由 facade 组装，宿主全局和 API/Query 边界仍需后续收窄 |
 | `src/queries` | Query key、实体缓存、查询策略、resource registry | M-08 已集中 QueryClient side effect、scope key 和 resource registry；Pinia 与 Query 的实体数据所有权仍需继续明确 |
-| `src/shared` | 常量、工具函数、基础 UI 操作 | 目录过于宽泛；部分工具直接调用 `AppApi` 或修改 UI，容易形成反向依赖 |
+| `src/shared` | 常量、工具函数、基础 UI 操作 | 目录仍包含 UI、store、API 和 service 历史职责；N-03 已建立依赖方向 guard，当前 14 条遗留反向边显式登记并可见，新增反向边会阻断 |
 | `src/composables` | 可复用的 Composition 行为 | 总体边界较合理，但生命周期和 worker 相关测试警告较多 |
 | `src/plugins` | i18n、router、组件、Sentry、interop 初始化 | 初始化顺序复杂；router 存在静态和动态混合导入，构建有 chunk 警告 |
 | `src/ipc-electron` | Renderer 到 Electron 的 IPC 代理 | M-01.3 保留动态 Proxy 兼容 facade；preload/main/InteropApi 共享 manifest 参数校验，main 的全部 15 个 IPC handler 另经可信来源 guard |
@@ -40,9 +40,9 @@
 | `Dotnet.Tests` | C# WinForms 测试项目 | 已接入 xUnit、正式测试发现和 Windows CI job；测试通过 STA 辅助器执行 |
 | `src/vr` | VR overlay 和 VR 页面 | `Vr.vue` 超过 2000 行，VR UI、状态和平台行为混杂 |
 | `src/workers` | 后台任务和定时 worker | 异步边界较隐蔽，独立测试接缝不足 |
-| `src/localization` | 多语言 JSON 和翻译辅助 | translation key 漂移风险，缺少自动一致性检查 |
+| `src/localization` | 多语言 JSON 和翻译辅助 | N-03 已增加以 `en.json` 为 canonical 的结构/key 检查；非英文缺失和额外 key 仍按 fallback/漂移报告，不自动改写译文 |
 | `Installer`、`build-scripts` | 安装包、构建、发布脚本 | Windows shell 假设较多；N-02 已将 JS 构建脚本接入共享版本 reader 和 `check:version` 门禁，CEF job 仍按环境生成 `Installer/version_define.nsh` |
-| `.github/workflows` | CI、构建和发布 | 已支持 PR 与手动触发；`quality_js` 和 C# 测试为阻断门禁，全量测试、lint/format 保留可见 report-only 基线 |
+| `.github/workflows` | CI、构建和发布 | 已支持 PR 与手动触发；`quality_js`、Shared/Localization 架构检查和 C# 测试为阻断门禁，全量测试、lint/format 保留可见 report-only 基线 |
 
 ## 2. 文档盘点
 
@@ -276,6 +276,20 @@ flowchart LR
 | `npm run prod` | **通过**；保留既有 router 动态 import 与 Node deprecation 警告 |
 
 N-02 的首次 Vite 接入尝试触发了 `typecheck:js` 的跨 tsconfig 诊断，已在同一切片内按回滚协议由 `ffcc32a6` 回滚；随后以 `271dfdca` 建立显式 CJS 类型检查边界，最终回归通过，未扩大既有失败基线。
+
+### N-03 后置验证（2026-09-05）
+
+| 检查项 | 结果 |
+|---|---|
+| Shared/Localization 依赖方向扫描 | **通过**：74 个源文件、14 条受限边，全部为已登记历史例外 |
+| Localization contract | **通过**：14 个语言包、2699 个英文 canonical key；13285 个 fallback 缺失和 200 个额外 key 作为 report-only 漂移 |
+| N-03 定向测试 | **通过：2 个文件、7 项测试** |
+| `npm run check:architecture` | **通过**：依赖方向与语言包结构检查聚合入口 |
+| `npm run test:refactor -- --reporter=dot` | **通过：62 个文件、311 项测试** |
+| `npm run typecheck:js` | **通过：0 diagnostics** |
+| `npm run prod` | **通过**；4408 个模块构建完成，保留既有 router 动态 import 与 Node deprecation 警告 |
+
+N-03 只增加静态检查、测试和 CI 门禁，没有迁移现有 Shared 运行时职责，也没有自动重写语言包；后续可在独立切片中逐条消化 14 条遗留反向边和 200 个额外 key。
 
 ### 术语说明
 
