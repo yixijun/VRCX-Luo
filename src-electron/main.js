@@ -22,6 +22,7 @@ const {
 } = require('./windowState.cjs');
 const { bindWindowEventBridge } = require('./windowEventBridge.cjs');
 const { bindWindowCloseHandler } = require('./windowCloseHandler.cjs');
+const { createTrayContextMenu } = require('./trayContextMenu.cjs');
 
 //app.disableHardwareAcceleration();
 
@@ -583,65 +584,27 @@ function buildTrayToolTip() {
 }
 
 function buildTrayContextMenu() {
-    const template = [
-        { label: '打开 VRCX-Luo', click: () => mainWindow.show() },
-        { type: 'separator' },
-        {
-            label: areDesktopNotificationsEnabled()
-                ? '关闭桌面通知'
-                : '启用桌面通知',
-            type: 'checkbox',
-            checked: areDesktopNotificationsEnabled(),
-            click: () => {
-                const enabled = !areDesktopNotificationsEnabled();
-                VRCXStorage.Set(
-                    'VRCX_desktopNotificationsEnabled',
-                    String(enabled)
-                );
-                notifyDesktopNotificationsChanged(enabled);
-                tray?.setContextMenu(buildTrayContextMenu());
+    return createTrayContextMenu({
+        Menu,
+        mainWindow,
+        debug,
+        areDesktopNotificationsEnabled,
+        isTraySilentModeEnabled,
+        isVSleepModeEnabled,
+        setStorageValue: (key, value) => VRCXStorage.Set(key, value),
+        notifyDesktopNotificationsChanged,
+        notifyTraySilentModeChanged,
+        notifyVSleepModeChanged,
+        refreshContextMenu: () => {
+            if (tray) {
+                tray.setContextMenu(buildTrayContextMenu());
             }
         },
-        {
-            label: '静音模式',
-            type: 'checkbox',
-            checked: isTraySilentModeEnabled(),
-            click: () => {
-                const enabled = !isTraySilentModeEnabled();
-                VRCXStorage.Set('VRCX_traySilentMode', String(enabled));
-                notifyTraySilentModeChanged(enabled);
-                tray?.setContextMenu(buildTrayContextMenu());
-            }
+        setAppIsQuitting: (value) => {
+            appIsQuitting = value;
         },
-        {
-            label: 'V睡模式',
-            type: 'checkbox',
-            checked: isVSleepModeEnabled(),
-            click: () => {
-                const enabled = !isVSleepModeEnabled();
-                VRCXStorage.Set('VRCX_vSleepMode', String(enabled));
-                notifyVSleepModeChanged(enabled);
-                tray?.setContextMenu(buildTrayContextMenu());
-            }
-        }
-    ];
-    if (debug) {
-        template.push({
-            label: '开发者工具',
-            click: () => mainWindow.webContents.openDevTools()
-        });
-    }
-    template.push(
-        { type: 'separator' },
-        {
-            label: '退出 VRCX-Luo',
-            click: () => {
-                appIsQuitting = true;
-                app.quit();
-            }
-        }
-    );
-    return Menu.buildFromTemplate(template);
+        app
+    });
 }
 
 function createTray() {
