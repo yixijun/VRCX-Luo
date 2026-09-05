@@ -3,7 +3,12 @@
     "compilerOptions": {
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.checkjs.tsbuildinfo"
     },
-    "include": ["src/**/*.js", "src/**/*.jsx", "src/types/**/*.d.ts"],
+    "include": [
+        "src/**/*.js",
+        "src/**/*.jsx",
+        "src/types/**/*.d.ts",
+        "src-electron/versionMetadata.cjs"
+    ],
     "exclude": [
         "node_modules",
         "build",
