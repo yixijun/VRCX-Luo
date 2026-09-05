@@ -104,7 +104,7 @@ M-01 已完成三个低风险宿主 seam；B-01 现已完成动态 bridge 的来
 
 ## 当前 N-02 细分任务
 
-1. **N-02.1 版本元数据纯契约（已完成）**：新增 `src-electron/versionMetadata.cjs`，集中描述 `Version` 文本清理、时间戳到 package 版本的转换、七字符 nightly 后缀识别和注入式回退值；新增 `src/services/__tests__/versionMetadata.test.js` 覆盖稳定版、时间戳版、nightly 和空值回退。此切片仅建立可测试 seam，未接入 Electron、Vite 或构建脚本，因此不改变现有运行时行为。提交：待本切片完成后记录。
+1. **N-02.1 版本元数据纯契约（已完成）**：新增 `src-electron/versionMetadata.cjs`，集中描述 `Version` 文本清理、时间戳到 package 版本的转换、七字符 nightly 后缀识别和注入式回退值；新增 `src/services/__tests__/versionMetadata.test.js` 覆盖稳定版、时间戳版、nightly 和空值回退。此切片仅建立可测试 seam，未接入 Electron、Vite 或构建脚本，因此不改变现有运行时行为。提交：`82ff3fe8`。
 2. **N-02.2 构建与宿主接入（未开始）**：将 `patch-package-version.js`、`vite.config.js`、`main.js` 和产物命名脚本逐步改为消费同一版本元数据，保留既有显示字符串、序列化格式和构建产物命名语义。
 3. **N-02.3 来源一致性门禁（未开始）**：增加构建前校验，阻止 `Version`、`package.json` 和宿主注入值发生无提示漂移，并补充文档与 CI 输出。
 
