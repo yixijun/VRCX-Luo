@@ -13,6 +13,7 @@ import { applyUser, showUserDialog } from '../coordinators/userCoordinator';
 import { useModalStore } from './modal';
 import { useUserStore } from './user';
 import { watchState } from '../services/watchState';
+import { getClipboardText } from '../services/clipboardAdapter';
 
 export const useSearchStore = defineStore('Search', () => {
     const userStore = useUserStore();
@@ -97,15 +98,7 @@ export const useSearchStore = defineStore('Search', () => {
     }
 
     async function directAccessPaste() {
-        let cbText = '';
-        if (LINUX) {
-            cbText = await window.electron.getClipboardText();
-        } else {
-            cbText = await AppApi.GetClipboard().catch((e) => {
-                console.log(e);
-                return '';
-            });
-        }
+        const cbText = await getClipboardText();
 
         let trimemd = cbText.trim();
         if (!directAccessParse(trimemd)) {

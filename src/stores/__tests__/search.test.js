@@ -4,6 +4,8 @@ import { ref } from 'vue';
 
 import en from '../../localization/en.json';
 
+const mockGetClipboardText = vi.hoisted(() => vi.fn());
+
 vi.mock('../../views/Feed/Feed.vue', () => ({
     default: { template: '<div />' }
 }));
@@ -62,6 +64,9 @@ vi.mock('../../services/config', () => ({
 vi.mock('../../services/jsonStorage', () => ({ default: vi.fn() }));
 vi.mock('../../services/watchState', () => ({
     watchState: { isLoggedIn: false }
+}));
+vi.mock('../../services/clipboardAdapter', () => ({
+    getClipboardText: mockGetClipboardText
 }));
 vi.mock('vue-i18n', async (importOriginal) => {
     const actual = await importOriginal();
@@ -172,6 +177,18 @@ describe('useSearchStore', () => {
         setActivePinia(createPinia());
         store = useSearchStore();
         vi.clearAllMocks();
+        mockGetClipboardText.mockResolvedValue('');
+    });
+
+    describe('directAccessPaste', () => {
+        test('parses trimmed clipboard text through the host adapter', async () => {
+            mockGetClipboardText.mockResolvedValue('  usr_clipboard  ');
+
+            await store.directAccessPaste();
+
+            expect(mockGetClipboardText).toHaveBeenCalledOnce();
+            expect(mockShowUserDialog).toHaveBeenCalledWith('usr_clipboard');
+        });
     });
 
     describe('directAccessParse', () => {
