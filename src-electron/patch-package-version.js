@@ -1,45 +1,90 @@
 const fs = require('fs');
 const path = require('path');
 
-const rootDir = path.join(__dirname, '..');
-const versionFilePath = path.join(rootDir, 'Version');
-const packageJsonPath = path.join(rootDir, 'package.json');
+const {
+    getUtcDateVersion,
+    readVersionMetadata
+} = require('./versionMetadata.cjs');
 
-let version = '';
-try {
-    version = fs.readFileSync(versionFilePath, 'utf8').trim();
-    var index = version.indexOf('T');
-    if (index > 0) {
-        // Remove time part from version
-        version = version.substring(0, index).replaceAll('-', '.');
+const defaultRootDir = path.join(__dirname, '..');
+
+function updatePackageVersions({
+    rootDir = defaultRootDir,
+    fsModule = fs,
+    now = new Date()
+} = {}) {
+    const versionFilePath = path.join(rootDir, 'Version');
+    const packageJsonPath = path.join(rootDir, 'package.json');
+    const packageLockPath = path.join(rootDir, 'package-lock.json');
+
+    let metadata;
+    try {
+        metadata = readVersionMetadata({
+            versionFilePath,
+            fallbackPackageVersion: getUtcDateVersion(now),
+            readFile: (filePath, encoding) =>
+                fsModule.readFileSync(filePath, encoding)
+        });
+    } catch (err) {
+        console.error('Error reading Version file:', err);
+        throw err;
     }
-    if (!version || version === 'Nightly Build') {
-        version = new Date().toISOString().split('T')[0].replaceAll('-', '.');
+
+    let packageJson;
+    try {
+        packageJson = JSON.parse(
+            fsModule.readFileSync(packageJsonPath, 'utf8')
+        );
+    } catch (err) {
+        console.error('Error reading package.json:', err);
+        throw err;
     }
-} catch (err) {
-    console.error('Error reading Version file:', err);
-    process.exit(1);
+
+    let packageLock;
+    try {
+        packageLock = JSON.parse(
+            fsModule.readFileSync(packageLockPath, 'utf8')
+        );
+        if (!packageLock.packages?.['']) {
+            throw new Error('package-lock.json is missing its root package');
+        }
+    } catch (err) {
+        console.error('Error reading package-lock.json:', err);
+        throw err;
+    }
+
+    packageJson.version = metadata.packageVersion;
+    packageLock.version = metadata.packageVersion;
+    packageLock.packages[''].version = metadata.packageVersion;
+
+    try {
+        fsModule.writeFileSync(
+            packageJsonPath,
+            `${JSON.stringify(packageJson, null, 4)}\n`,
+            'utf8'
+        );
+        fsModule.writeFileSync(
+            packageLockPath,
+            `${JSON.stringify(packageLock, null, 4)}\n`,
+            'utf8'
+        );
+        console.log(
+            `Updated version in package.json to: ${metadata.packageVersion}`
+        );
+    } catch (err) {
+        console.error('Error writing package versions:', err);
+        throw err;
+    }
+
+    return metadata;
 }
 
-let packageJson = {};
-try {
-    const packageData = fs.readFileSync(packageJsonPath, 'utf8');
-    packageJson = JSON.parse(packageData);
-} catch (err) {
-    console.error('Error reading package.json:', err);
-    process.exit(1);
+if (require.main === module) {
+    try {
+        updatePackageVersions();
+    } catch {
+        process.exit(1);
+    }
 }
 
-packageJson.version = version;
-
-try {
-    fs.writeFileSync(
-        packageJsonPath,
-        JSON.stringify(packageJson, null, 4),
-        'utf8'
-    );
-    console.log(`Updated version in package.json to: ${version}`);
-} catch (err) {
-    console.error('Error writing to package.json:', err);
-    process.exit(1);
-}
+module.exports = { updatePackageVersions };
