@@ -257,6 +257,22 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 
 回滚记录：M-10.2b 首次整合因新参数 module 的 `args` 静态推断过宽导致 `typecheck:js` 失败，按回滚协议立即撤回未提交改动；随后拆成纯 module 与 facade 接入两个切片（`ac89133f`、`6fc90bec`）并通过全部门禁。以上代码提交均为独立本地回滚点，未发布、未推送。
 
+## M-11.1 后置验证
+
+2026-09-05，Appearance Store 的三个 DOM class implementation 已移入 `src/services/appearanceDomAdapter.js`。Store 仍保留旧的 `applyAccessibleStatusClass()`、`applyOfficialStatusColorsClass()`、`applyTableDensity()` 兼容入口；class 名称、增删顺序、初始化时机和设置 action 未改变。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前 Appearance/NavMenu 定向基线 | `npx vitest run src/stores/__tests__/uiNotifications.test.js src/shared/utils/base/__tests__/ui.test.js src/components/nav-menu/composables/__tests__/useNavTheme.test.js src/components/nav-menu/__tests__/NavMenu.test.js --reporter=dot` | **4 个文件、21 项测试；19 项通过，NavMenu 2 项既有 `DropdownMenuPortal` mock 失败** |
+| M-11.1 Adapter RED → GREEN | `npx vitest run src/services/__tests__/appearanceDomAdapter.test.js --reporter=dot` | **先因模块不存在失败，接入实现后 1 个文件、3 项通过** |
+| 改动后 Appearance/NavMenu 定向回归 | 同上基线命令并加入 `appearanceDomAdapter.test.js` | **5 个文件、24 项测试；22 项通过，仍为同 2 项既有 NavMenu mock 失败，未新增失败** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过：72 个测试文件、343 项测试** |
+| 生产构建 | `npm run prod` | **通过：4414 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
+
+首次接入尝试因自定义嵌套 JSDoc typedef 误描述 `Document` 而导致类型检查失败，已按回滚协议撤回未提交改动；第二次使用显式嵌套参数契约后通过全部门禁。代码提交：`b00564e2`。未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

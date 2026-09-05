@@ -29,7 +29,7 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-10 GameLog 深化 | **已完成：M-10.1～M-10.4** | M-10 已闭环；后续如需继续深化，另开 database 写入/事务或其它 Major seam；保持 `database` facade、日志 tuple 和 Store 兼容入口 |
-| Major | M-11 前端 UI 状态与 DOM seam | **进行中：M-11.1 计划中** | 先提取 Appearance Store 的 DOM class adapter；保持设置入口和 class 名称不变，再评估 UI Store/drop 与大型页面 |
+| Major | M-11 前端 UI 状态与 DOM seam | **已完成：M-11.1** | 继续评估 UI Store/drop 与大型页面；不触碰多账户和 VR overlay |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
@@ -101,6 +101,7 @@
 | `6fc90bec` | M-10.2b：将查询参数 module 接入 database facade；保留 SQL、`dbVars.userId`、参数顺序和旧查询入口 |
 | `157331da` | M-10.3：提取 GameLog sessions 日期、搜索、分组过滤与 projection module；保留分页和 `searchLimit` 行为 |
 | `23981f39` | M-10.4：提取 now-playing worker ticker；保留媒体解析、1000ms 调度、完成清理和 Store 兼容入口 |
+| `b00564e2` | M-11.1：提取 Appearance DOM class adapter；保留无障碍、官方状态颜色、表格密度 class 契约和 Store 兼容入口 |
 | `df65d955` | B-01.1：新增可信渲染来源策略；Electron 15 个 IPC handler 统一拒绝非 packaged renderer 与未启用的开发服务器来源 |
 | `5e84ad42` | B-01.2：为 174 个 .NET allowlist 方法补齐参数数量/基础类型 schema，并在 preload/main/Interop 边界复用校验 |
 | `82ff3fe8` | N-02.1：建立可注入的版本元数据解析、UTC 回退和文件读取契约 |
@@ -249,9 +250,9 @@ M-10.1～M-10.4 已全部完成并分别通过独立代码提交。M-10 本轮�
 
 ## 当前 M-11 细分任务
 
-1. **M-11.1 Appearance DOM class seam（计划中）**：`src/stores/settings/appearance.js` 目前直接修改 `document.documentElement.classList`，涉及无障碍状态、官方状态颜色和表格密度三个 UI class。先建立显式 `appearanceDomAdapter`，由 Store 保留原有私有兼容入口和设置 action；Adapter 通过注入 document/classList 测试，不改变 class 名称、增删顺序或初始化时机。改动前先记录 Appearance/NavMenu 定向基线，改动后再跑同一组测试、`typecheck:js` 和 `test:refactor`。
+1. **M-11.1 Appearance DOM class seam（已完成）**：新增 `src/services/appearanceDomAdapter.js`，承接 `document.documentElement.classList` 上的无障碍状态、官方状态颜色和表格密度 class；`src/stores/settings/appearance.js` 保留原有私有 `apply*` 入口、设置 action 和初始化时机。Adapter 通过注入 document/classList 测试，class 名称、增删顺序、返回值和 public interface 均未改变。改动前后均记录 Appearance/NavMenu 定向基线，并通过 `typecheck:js`、`test:refactor` 和生产构建。提交：`b00564e2`。
 
-M-11 暂不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口；每个后续 seam 仍需独立提交。
+M-11.1 已完成。M-11 后续可继续处理 UI Store 的 drop/窗口副作用或大型页面，但必须另立小切片；本轮不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
 
 ## 当前 M-00 细分任务
 
