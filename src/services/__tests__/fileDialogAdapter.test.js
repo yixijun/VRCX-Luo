@@ -1,6 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { createFileDialogAdapter } from '../fileDialogAdapter';
+import {
+    createDirectoryDialogAdapter,
+    createFileDialogAdapter
+} from '../fileDialogAdapter';
 
 describe('createFileDialogAdapter', () => {
     it('forwards CEF selector arguments and the selected path', async () => {
@@ -73,5 +76,55 @@ describe('createFileDialogAdapter', () => {
         });
 
         await expect(openFileDialog()).rejects.toBe(error);
+    });
+});
+
+describe('createDirectoryDialogAdapter', () => {
+    it('forwards the CEF default path and selected directory', async () => {
+        const OpenFolderSelectorDialog = vi
+            .fn()
+            .mockResolvedValue('C:/VRCX/prints');
+        const openDirectoryDialog = createDirectoryDialogAdapter({
+            isWindows: true,
+            appApi: { OpenFolderSelectorDialog }
+        });
+
+        await expect(
+            openDirectoryDialog({ defaultPath: 'C:/VRCX' })
+        ).resolves.toBe('C:/VRCX/prints');
+        expect(OpenFolderSelectorDialog).toHaveBeenCalledWith('C:/VRCX');
+    });
+
+    it('uses the Electron directory picker without a CEF-only path argument', async () => {
+        const electronOpenDirectoryDialog = vi
+            .fn()
+            .mockResolvedValue('/home/user/prints');
+        const openDirectoryDialog = createDirectoryDialogAdapter({
+            isWindows: false,
+            electronApi: { openDirectoryDialog: electronOpenDirectoryDialog }
+        });
+
+        await expect(
+            openDirectoryDialog({ defaultPath: '/home/user' })
+        ).resolves.toBe('/home/user/prints');
+        expect(electronOpenDirectoryDialog).toHaveBeenCalledWith();
+    });
+
+    it('preserves host-specific directory cancellation values', async () => {
+        const cefOpenDirectoryDialog = createDirectoryDialogAdapter({
+            isWindows: true,
+            appApi: {
+                OpenFolderSelectorDialog: vi.fn().mockResolvedValue('')
+            }
+        });
+        const electronOpenDirectoryDialog = createDirectoryDialogAdapter({
+            isWindows: false,
+            electronApi: {
+                openDirectoryDialog: vi.fn().mockResolvedValue(null)
+            }
+        });
+
+        await expect(cefOpenDirectoryDialog()).resolves.toBe('');
+        await expect(electronOpenDirectoryDialog()).resolves.toBeNull();
     });
 });

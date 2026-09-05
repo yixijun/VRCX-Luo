@@ -15,6 +15,7 @@ import { watchState } from '../../services/watchState';
 
 import configRepository from '../../services/config';
 import webApiService from '../../services/webapi';
+import { openDirectoryDialog } from '../../services/fileDialogAdapter';
 
 export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const gameStore = useGameStore();
@@ -1052,12 +1053,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         }
 
         state.folderSelectorDialogVisible = true;
-        let newFolder = '';
-        if (WINDOWS) {
-            newFolder = await AppApi.OpenFolderSelectorDialog(oldPath);
-        } else {
-            newFolder = await window.electron.openDirectoryDialog();
-        }
+        const newFolder = await openDirectoryDialog({ defaultPath: oldPath });
 
         state.folderSelectorDialogVisible = false;
         return newFolder;
