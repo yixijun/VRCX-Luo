@@ -305,6 +305,24 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 
 代码提交：`8556c0ef`。未发布、未推送。M-11.3 只移动数组状态 implementation，未改变 UI Store 的 Store/页面兼容入口或其他宿主行为。
 
+## M-11.4 后置验证
+
+2026-09-05，UI Store 的托盘通知宿主调用已移入 `src/services/trayIconNotificationAdapter.js`。Store 继续保留通知状态计算、`force`/变化守卫、调用时机和 public interface；Windows CEF 仍调用 `AppApi.SetTrayIconNotification`，Linux Electron 仍调用 `window.electron.setTrayIconNotification`。`notifiedMenus`、`notificationIconDot`、序列化格式、并发和 VR overlay 均未改变。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前宿主/Store 定向基线 | `npx vitest run src/stores/__tests__/uiNotifications.test.js src/services/__tests__/hostCapabilityContract.test.js src/services/__tests__/trayLifecycle.test.js --reporter=dot` | **通过：3 个文件、15 项测试** |
+| M-11.4 Adapter RED → GREEN | `npx vitest run src/services/__tests__/trayIconNotificationAdapter.test.js --reporter=dot` | **先因模块不存在得到预期 RED；实现后 1 个文件、2 项 fake-host 路由测试通过** |
+| Adapter/Store 定向回归 | `npx vitest run src/services/__tests__/trayIconNotificationAdapter.test.js src/stores/__tests__/uiNotifications.test.js src/services/__tests__/hostCapabilityContract.test.js src/services/__tests__/trayLifecycle.test.js --reporter=dot` | **通过：4 个文件、17 项测试** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过：74 个测试文件、346 项测试** |
+| 生产构建 | `npm run prod` | **通过：4417 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
+
+定向测试仍会输出既有的 VRChat 状态请求失败、GitHub release JSON 空响应和 jsdom Canvas 未实现日志；它们与 M-11.4 无关，未新增失败。代码提交：`e2957f69`。文档提交将在本节更新后单独建立；未发布、未推送。
+
+M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止线已达到；后续不再自动拆分剩余 router/窗口动作或大型组件，优先复现和修复 Windows CEF 按触发键后 wrist/HUD 不显示的问题。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
