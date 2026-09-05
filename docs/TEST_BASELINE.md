@@ -147,6 +147,17 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：64 个文件、318 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-07.5 后置验证
+
+窗口事件 Bridge 切片只迁移 `webContents` 缩放、窗口几何/状态/焦点事件的监听和 renderer 通知；保留既有 channel 名称、payload、事件顺序、缩放持久化键及视觉缩放限制。未修改关闭守卫、托盘、通知、VR overlay 或 renderer interface。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 窗口状态/事件定向测试 | `npx vitest run src/services/__tests__/windowState.test.js src/services/__tests__/windowEventBridge.test.js --reporter=dot` | **通过**：2 个文件、7 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/windowEventBridge.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：65 个文件、321 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

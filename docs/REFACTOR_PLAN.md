@@ -25,7 +25,7 @@
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
 | Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | M-00/B-01 已完成；M-01/M-04 解锁后再收窄宿主/数据库 capability |
-| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.4** | .NET bootstrap、IPC 注册、双宿主 contract 和窗口状态 seam 已完成；tray/notification 仍可另行细分 |
+| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.5** | .NET bootstrap、IPC 注册、双宿主 contract、窗口状态和窗口事件 seam 已完成；tray/notification 仍可另行细分 |
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
@@ -84,6 +84,8 @@
 | `2e9ae9df` | M-07.1：提取 Electron .NET 宿主同步初始化 module，保留原调用顺序、参数、同步性和异常传播 |
 | `a0f13775` | M-07.2：提取 Electron IPC handler 注册 module，保留 15 个 channel、注册顺序和 handler 引用 |
 | `ed1b36ec` | M-07.3：建立 CEF/Electron capability method、参数、IPC channel 与取消/错误语义契约测试 |
+| `0c74ce3f` | M-07.4：提取 Electron 窗口状态读取/动作 Adapter，保留旧状态解析和启动最小化行为 |
+| `99d3070f` | M-07.5：提取 Electron 窗口事件 Bridge，保留缩放、几何、状态和焦点通知行为 |
 | `df65d955` | B-01.1：新增可信渲染来源策略；Electron 15 个 IPC handler 统一拒绝非 packaged renderer 与未启用的开发服务器来源 |
 | `5e84ad42` | B-01.2：为 174 个 .NET allowlist 方法补齐参数数量/基础类型 schema，并在 preload/main/Interop 边界复用校验 |
 | `82ff3fe8` | N-02.1：建立可注入的版本元数据解析、UTC 回退和文件读取契约 |
@@ -188,8 +190,9 @@ M-06 低风险 seam 已完成：`src/stores/notification/index.js` 继续作为�
 2. **M-07.2 IPC handler module（已完成）**：新增 `src-electron/ipcHandlers.cjs`，集中 15 个 `ipcMain.handle` channel 的注册；`main.js` 继续组装原有 handler 实现，channel、注册顺序、参数 envelope、返回/异常语义保持不变。注册契约测试 1/1 通过。提交：`a0f13775`。
 3. **M-07.3 双宿主 contract test（已完成）**：新增 `src/services/hostCapabilityContract.js` 与测试，固化 clipboard、file/directory dialog、desktop notification、tray notification、VR state 七类 CEF/Electron method name、参数形状、Electron IPC channel 及取消/错误语义；双宿主契约测试 2/2 通过。提交：`ed1b36ec`。
 4. **M-07.4 窗口状态 Adapter（已完成）**：新增 `src-electron/windowState.cjs`，通过 `readWindowConfig()` 和 `applyStoredWindowState()` 接收存储/窗口依赖；`main.js` 继续保留 `createWindow()`、`applyWindowState()` 兼容入口，尺寸、缩放、启动最小化、托盘隐藏和持久化状态动作保持不变。新增 4 项回归测试，并明确保留旧代码对 `VRCX_WindowState=0` 的 `parseInt(...) || -1` 兼容结果。提交：`0c74ce3f`。
+5. **M-07.5 窗口事件 Bridge（已完成）**：新增 `src-electron/windowEventBridge.cjs`，接收窗口、`webContents`、初始缩放值和存储写入依赖，集中绑定加载后缩放、快捷键/缩放变更、几何变化、窗口状态和焦点事件。保留原有 channel 名称、payload 类型、事件注册顺序、缩放持久化键及 `setVisualZoomLevelLimits(1, 5)` 行为；`main.js` 仅组装依赖并调用 Bridge。新增 3 项回归测试。提交：`99d3070f`。
 
-M-07 已完成本计划定义的四项首批 seam：.NET bootstrap、IPC handler 注册、双宿主 capability contract 和窗口状态 Adapter。`main.js` 仍保留窗口创建/事件绑定、托盘、通知等行为实现；后续可继续按独立细分拆出窗口事件、tray、notification。多账户 B-02/M-05 继续按要求暂缓。
+M-07 已完成本计划定义的五项首批 seam：.NET bootstrap、IPC handler 注册、双宿主 capability contract、窗口状态 Adapter 和窗口事件 Bridge。`main.js` 仍保留窗口创建、关闭守卫、托盘、通知等行为实现；后续可继续按独立细分拆出 close handler、tray、notification。多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-08 细分任务
 
