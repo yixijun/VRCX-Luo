@@ -31,7 +31,7 @@
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03 已完成，下一步进入 N-04，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 进入 N-04；保持依赖方向与语言包契约门禁，多账户 B-02/M-05 继续暂缓 |
-| Minor | N-04 第三方/生成文件治理 | 未开始 | 建立版本矩阵，生成代码不作为首批目标 |
+| Minor | N-04 第三方/生成文件治理 | **进行中：N-04.1～N-04.2** | 版本矩阵与生成文件规则已建立；下一步接入 CI，并保持不自动升级/不改生成代码 |
 
 ## 已完成切片
 
@@ -127,6 +127,14 @@ N-02 已完成。根 `Version` 是唯一人工维护的版本来源，package/lo
 N-03 已完成。最终检查扫描 74 个 Shared/Localization 源文件、14 个受限边（均为已登记历史例外），验证 14 个语言包和 2699 个英文 canonical key；当前 fallback 缺失 13285 项、额外 key 200 项均为可见报告，不改变现有 fallback 运行时行为。N-03 只增加静态门禁和测试，没有改变公共 interface、序列化格式、任务周期或并发语义。
 
 下一步进入 N-04（第三方/生成文件治理）；多账户 B-02/M-05 仍按要求暂缓。
+
+## 当前 N-04 细分任务
+
+1. **N-04.1 依赖版本矩阵（已完成）**：新增 `build-scripts/dependencyVersionMatrix.cjs` 与 `check-dependency-version-matrix.js`，读取 npm manifest/lockfile 和三个 .NET 宿主项目；阻断根版本漂移、关键包缺失、重复引用及同项目耦合包不一致，跨宿主漂移只报告不自动修改。纳入 NodeApi/Generator 的 x64/arm64 漂移观测；新增 `src/services/__tests__/dependencyVersionMatrix.test.js`，提交：`5401a792`、`9b36ab80`。
+2. **N-04.2 生成文件治理文档（已完成）**：新增 [`DEPENDENCY_VERSION_MATRIX.md`](./DEPENDENCY_VERSION_MATRIX.md) 与 [`GENERATED_FILE_POLICY.md`](./GENERATED_FILE_POLICY.md)，统一记录版本检查入口、当前漂移、生成代码/原生二进制/构建产物来源及修改边界；不修改任何生成结果，本次文档变更单独提交。
+3. **N-04.3 CI 门禁（待开始）**：在 JavaScript 质量 job 复用 `npm run check:dependency-matrix`，只阻断结构性错误并保留跨宿主漂移可见。
+
+N-04 当前只建立观察和治理边界，不做第三方版本升级，不改 OpenVR 生成绑定、WinForms Designer 或构建时注入的 Installer 文件。
 
 ## 当前 M-02 细分任务
 

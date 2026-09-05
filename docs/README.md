@@ -23,6 +23,8 @@
 - [Bio Diff 英文标点问题记录](./BIO_DIFF_ENGLISH_PUNCTUATION_BUG.md)
 - [截图元数据 JSON Schema](./schemas/screenshotMetadata-schema.json)
 - [第三方 Dotnet 库来源](./third-party-libs.md)
+- [第三方依赖版本矩阵](./DEPENDENCY_VERSION_MATRIX.md)
+- [生成文件与第三方二进制治理](./GENERATED_FILE_POLICY.md)
 - 多语言 README：[`README-translations/`](./README-translations/)
 
 ## 文档约定
