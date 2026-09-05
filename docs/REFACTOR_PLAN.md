@@ -29,7 +29,7 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-10 GameLog 深化 | **已完成：M-10.1～M-10.4** | M-10 已闭环；后续如需继续深化，另开 database 写入/事务或其它 Major seam；保持 `database` facade、日志 tuple 和 Store 兼容入口 |
-| Major | M-11 前端 UI 状态与 DOM seam | **已完成：M-11.1** | 继续评估 UI Store/drop 与大型页面；不触碰多账户和 VR overlay |
+| Major | M-11 前端 UI 状态与 DOM seam | **进行中：M-11.2 计划中** | 先提取 UI Store 的 body drop guard；保持 drop 阻止行为，再评估窗口动作与大型页面；不触碰多账户和 VR overlay |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
@@ -253,6 +253,10 @@ M-10.1～M-10.4 已全部完成并分别通过独立代码提交。M-10 本轮�
 1. **M-11.1 Appearance DOM class seam（已完成）**：新增 `src/services/appearanceDomAdapter.js`，承接 `document.documentElement.classList` 上的无障碍状态、官方状态颜色和表格密度 class；`src/stores/settings/appearance.js` 保留原有私有 `apply*` 入口、设置 action 和初始化时机。Adapter 通过注入 document/classList 测试，class 名称、增删顺序、返回值和 public interface 均未改变。改动前后均记录 Appearance/NavMenu 定向基线，并通过 `typecheck:js`、`test:refactor` 和生产构建。提交：`b00564e2`。
 
 M-11.1 已完成。M-11 后续可继续处理 UI Store 的 drop/窗口副作用或大型页面，但必须另立小切片；本轮不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
+
+2. **M-11.2 UI Store body drop guard（计划中）**：`src/stores/ui.js` 目前在 Store 初始化时直接向 `document.body` 注册 `drop` 监听并调用 `preventDefault()`。先建立 `dropGuard` Adapter，保留注册时机、事件名和阻止默认行为；通过注入 document/body 测试注册与清理，不改 UI Store 的 public interface 或截图管理器行为。
+
+M-11.2 仍不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口；改动前后必须独立验证并提交。
 
 ## 当前 M-00 细分任务
 
