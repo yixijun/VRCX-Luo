@@ -28,7 +28,7 @@
 | Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.3** | M-00 已完成；window/tray/notification 可另行细分 |
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
-| Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
+| Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-04 第三方/生成文件治理 | **已完成：N-04.1～N-04.3** | 保持版本矩阵阻断结构性错误、报告跨宿主漂移；生成代码与构建注入文件继续按治理规则维护 |
@@ -135,6 +135,13 @@ N-03 已完成。最终检查扫描 74 个 Shared/Localization 源文件、14 �
 3. **N-04.3 CI 门禁（已完成）**：在 JavaScript 质量 job 复用 `npm run check:dependency-matrix`，只阻断结构性错误并保留跨宿主漂移可见；提交：`0b1fc204`。
 
 N-04 已完成：版本矩阵、生成文件规则和 PR 质量门禁均已建立。当前已知跨宿主漂移（NLog、System.Data.SQLite、System.Management、NodeApi/Generator）只做可见报告，不做无验证升级；OpenVR 生成绑定、WinForms Designer 和构建时注入的 Installer 文件均未修改。后续若要升级第三方依赖，必须按本矩阵单依赖、单宿主切片执行并保留完整 Git 回滚点。
+
+## 当前 N-01 细分任务
+
+1. **N-01.1 领域上下文（已完成）**：新增根目录 `CONTEXT.md`，统一 Renderer、CEF host、Electron host、Capability、Friend presence、Group instance、Update loop、VR overlay/HUD 等领域词汇，并记录公共 Interface、周期、来源安全和多账户暂缓不变量。
+2. **N-01.2 ADR 索引与决策（已完成）**：新增 `docs/adr/README.md` 及 ADR-0001～0004，记录兼容入口/Adapter 渐进式重构、双宿主 capability 契约、版本/生成文件治理和多账户暂缓；本切片只改文档并单独提交。
+
+N-01 已完成。后续架构建议必须使用 `Module / Interface / Seam / Adapter / Depth / Leverage / Locality` 词汇，并先检查 ADR 是否已有约束；多账户恢复需要显式重新评估，不从其他任务间接带入。
 
 ## 当前 M-02 细分任务
 

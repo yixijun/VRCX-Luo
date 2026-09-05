@@ -57,7 +57,7 @@
 | `docs/BIO_DIFF_ENGLISH_PUNCTUATION_BUG.md` | Bio Diff 缺陷记录 | 缺少可重复的回归测试矩阵 |
 | `docs/schemas/screenshotMetadata-schema.json` | 截图元数据 JSON Schema | 已恢复为可解析 JSON，并由 `npm run check:schema` 和 CI 校验；后续可补充字段语义校验 |
 | `docs/third-party-libs.md`、`docs/DEPENDENCY_VERSION_MATRIX.md` | Dotnet/前端第三方依赖来源与版本 | N-04.1 已建立只读版本矩阵；跨宿主漂移仍需平台验证，许可证与安全审计信息继续按来源补齐 |
-| `CONTEXT.md`、`docs/adr/` | 领域词汇和架构决策 | 当前不存在，架构知识主要依赖代码和过时文档 |
+| `CONTEXT.md`、`docs/adr/` | 领域词汇和架构决策 | N-01 已建立领域上下文与 4 条 ADR；后续重构应先对照不变量和暂缓范围 |
 
 ## 3. 跨层耦合和问题清单
 
