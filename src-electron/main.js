@@ -16,6 +16,10 @@ const fs = require('fs');
 const https = require('https');
 const { resolveClosePromptResponse } = require('./closeToTrayDecision.cjs');
 const { readVersionMetadata } = require('./versionMetadata.cjs');
+const {
+    applyStoredWindowState,
+    readWindowConfig
+} = require('./windowState.cjs');
 
 //app.disableHardwareAcceleration();
 
@@ -388,11 +392,9 @@ function tryRelaunchWithArgs(args) {
 function createWindow() {
     app.commandLine.appendSwitch('enable-speech-dispatcher');
 
-    const x = parseInt(VRCXStorage.Get('VRCX_LocationX')) || 0;
-    const y = parseInt(VRCXStorage.Get('VRCX_LocationY')) || 0;
-    const width = parseInt(VRCXStorage.Get('VRCX_SizeWidth')) || 1920;
-    const height = parseInt(VRCXStorage.Get('VRCX_SizeHeight')) || 1080;
-    const zoomLevel = parseFloat(VRCXStorage.Get('VRCX_ZoomLevel')) || 0;
+    const { x, y, width, height, zoomLevel } = readWindowConfig({
+        getValue: (key) => VRCXStorage.Get(key)
+    });
     mainWindow = new BrowserWindow({
         x,
         y,
@@ -1101,28 +1103,11 @@ function tryCopyFromWinePrefix() {
 }
 
 function applyWindowState() {
-    if (VRCXStorage.Get('VRCX_StartAsMinimizedState') === 'true' && startup) {
-        if (getCloseToTray()) {
-            mainWindow.hide();
-            return;
-        }
-        mainWindow.minimize();
-        return;
-    }
-    const windowState = parseInt(VRCXStorage.Get('VRCX_WindowState')) || -1;
-    switch (windowState) {
-        case -1:
-            break;
-        case 0:
-            mainWindow.restore();
-            break;
-        case 1:
-            mainWindow.minimize();
-            break;
-        case 2:
-            mainWindow.maximize();
-            break;
-    }
+    applyStoredWindowState(mainWindow, {
+        getValue: (key) => VRCXStorage.Get(key),
+        startup,
+        getCloseToTray
+    });
 }
 
 app.whenReady().then(() => {
