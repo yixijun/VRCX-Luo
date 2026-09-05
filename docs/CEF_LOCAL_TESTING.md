@@ -62,6 +62,36 @@ if ($remaining) {
 
 不要在等待失败后直接批量强杀子进程，应先检查主进程、父进程 ID 和命令行。
 
+## VR Overlay 不显示（Windows CEF 故障记录）
+
+### 现象
+
+在 Windows CEF 测试版中按下 VR 触发键后，手腕叠加和 HMD HUD 同时不显示；同一台机器的安装版可以正常显示。这个现象不能直接判断为 `src/vr` 页面或手柄按键逻辑被改坏，应先确认 Overlay IPC 和 VR 激活状态。
+
+### 诊断结论（2026-09-05）
+
+本次故障首先发生在 Overlay IPC 启动层：
+
+- 测试版旧实例的主日志出现 `HttpListenerException`（“句柄无效”）和此前的 `34582` 端口冲突。
+- Overlay 子进程虽然记录了 `VRCX overlay client initialized`，但随后在数秒内 `Disconnection happened, type: Error`，因此不会创建或更新手腕/HMD Overlay。
+- 只停止测试版主进程并重新启动后，主日志应出现 `Overlay IPC server started`；本次以提升权限启动后，`127.0.0.1:34582` 正常处于监听状态。
+- 测试版若使用 `--config` 指向隔离目录，页面可能停在 `#/login`。未登录时前端 update loop 不会发送 `SetVR(active=true, ...)`，即使 SteamVR 正在运行也不会启动 Overlay。
+
+安装版日志中同时出现 `Overlay IPC connected, count: 1` 和 Overlay 客户端的 `Connection happened`，这才是可以响应触发键的完整链路。相关实现位于 [`OverlayServer.cs`](../Dotnet/OverlayWebSocket/OverlayServer.cs)、[`OverlayClient.cs`](../Dotnet/Overlay/Cef/OverlayClient.cs)、[`VRCXVRCef.cs`](../Dotnet/Overlay/Cef/VRCXVRCef.cs) 和 [`vr.js`](../src/stores/vr.js)。
+
+### 排查顺序
+
+1. 找到本次启动实例实际使用的日志目录：默认是 `%APPDATA%\VRCX\logs`；传入 `--config=<目录>` 后，日志在该目录下的 `logs` 子目录。
+2. 在最新主日志中确认 `Overlay IPC server started`。如果看到 `HttpListenerException`、`句柄无效` 或端口冲突，先不要排查 VR 页面。
+3. 确认 `34582` 被监听，并且没有多个同一路径的测试版主进程。只结束命令行中不含 `--type=` 的主进程，等待 CEF 子进程自然退出；不要按进程名批量强杀。
+4. 如果普通权限启动仍报告“句柄无效”，在保留相同配置参数的前提下用管理员权限启动测试版；这是本次机器上的验证性绕过，不应据此修改 VR 业务代码。
+5. 登录测试版，确认 SteamVR、VRChat 和所需 Overlay 设置均已开启，再按触发键。若 `VRCX_vSleepMode=true`，HMD HUD 被关闭是预期行为，但它不应单独阻止手腕叠加。
+6. IPC 正常后，主日志应出现 `Overlay IPC connected, count: 1`，对应的 `VRCX.Overlay*.log` 应出现 `Connection happened`。缺少这两条时，触发键不会进入 `VRCXVRCef.ProcessOverlay1/ProcessOverlay2`。
+
+### 验证记录
+
+本次未修改 VR 或 CEF 生产代码。VR、`gameCoordinator` 和 update loop 相关回归测试为 4 个文件、9 个测试全部通过；工作区保持干净。后续若在“已登录 + SteamVR 运行 + IPC 已连接”的条件下仍能复现，必须先补充失败回归测试，再按一次只改一个逻辑的规则处理。
+
 ## 构建与启动
 
 也可以运行 `build-windows-local.bat` 完成前后端构建；该脚本使用上面的安全停止流程，不会
