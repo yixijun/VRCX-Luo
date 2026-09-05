@@ -15,8 +15,12 @@ namespace VRCX
         private const int NotificationCardHeight = 92;
         private const int NotificationCardGap = 8;
         private const int FooterHeight = 42;
+        private const int SurfaceFrame = 2;
+        private const int ActionButtonSize = 30;
+        private const int ActionButtonGap = 4;
 
         private readonly FlowLayoutPanel _content;
+        private readonly Panel _surface;
         private readonly Timer _dismissTimer;
         private readonly Timer _showAnimationTimer;
         private readonly ToolTip _toolTip;
@@ -47,10 +51,18 @@ namespace VRCX
                 BackColor = _palette.Background,
                 Dock = DockStyle.Fill,
                 FlowDirection = FlowDirection.TopDown,
-                Padding = new Padding(12, 10, 12, 10),
+                Padding = new Padding(11, 10, 11, 10),
                 WrapContents = false
             };
-            Controls.Add(_content);
+            _surface = new Panel
+            {
+                BackColor = _palette.Border,
+                Dock = DockStyle.Fill,
+                Margin = new Padding(0),
+                Padding = new Padding(1)
+            };
+            _surface.Controls.Add(_content);
+            Controls.Add(_surface);
 
             _toolTip = new ToolTip
             {
@@ -99,6 +111,7 @@ namespace VRCX
             _palette = TrayNotificationPalette.From(snapshot.Theme);
             BackColor = _palette.Background;
             ForeColor = _palette.Foreground;
+            _surface.BackColor = _palette.Border;
             _content.BackColor = _palette.Background;
 
             _content.SuspendLayout();
@@ -123,6 +136,7 @@ namespace VRCX
 
             var contentHeight =
                 20
+                + SurfaceFrame
                 + HeaderHeight
                 + visibleItems.Count * (NotificationCardHeight + NotificationCardGap)
                 + (visibleItems.Count > 0 ? FooterHeight : 0);
@@ -195,13 +209,21 @@ namespace VRCX
                 Size = new Size(ContentWidth, HeaderHeight)
             };
 
+            panel.Controls.Add(new Panel
+            {
+                BackColor = _palette.Border,
+                Location = new Point(0, HeaderHeight - 1),
+                Margin = new Padding(0),
+                Size = new Size(ContentWidth, 1)
+            });
+
             var title = new Label
             {
                 AutoEllipsis = true,
                 BackColor = Color.Transparent,
-                Font = new Font(Font.FontFamily, 10.25F, FontStyle.Bold),
+                Font = new Font(Font.FontFamily, 10F, FontStyle.Bold),
                 ForeColor = _palette.Foreground,
-                Location = new Point(2, 9),
+                Location = new Point(2, 10),
                 Size = new Size(270, 24),
                 Text = "待处理通知"
             };
@@ -210,15 +232,15 @@ namespace VRCX
             var badgeWidth = total > 99 ? 38 : 30;
             var badge = new Label
             {
-                BackColor = _palette.Destructive,
+                BackColor = TrayDrawing.Blend(_palette.Surface, _palette.Primary, 0.22F),
                 Font = new Font(Font.FontFamily, 8F, FontStyle.Bold),
-                ForeColor = Color.White,
-                Location = new Point(ContentWidth - badgeWidth - 2, 8),
-                Size = new Size(badgeWidth, 22),
+                ForeColor = _palette.Foreground,
+                Location = new Point(ContentWidth - badgeWidth - 2, 9),
+                Size = new Size(badgeWidth, 24),
                 Text = total > 99 ? "99+" : total.ToString(),
                 TextAlign = ContentAlignment.MiddleCenter
             };
-            badge.Region = TrayDrawing.CreateRoundedRegion(badge.ClientRectangle, 7);
+            badge.Region = TrayDrawing.CreateRoundedRegion(badge.ClientRectangle, 8);
             panel.Controls.Add(badge);
             return panel;
         }
@@ -232,7 +254,7 @@ namespace VRCX
                 Name = "TrayNotificationCard",
                 Size = new Size(ContentWidth, NotificationCardHeight)
             };
-            panel.Region = TrayDrawing.CreateRoundedRegion(panel.ClientRectangle, 7);
+            panel.Region = TrayDrawing.CreateRoundedRegion(panel.ClientRectangle, 8);
 
             var avatar = new TrayAvatarControl(
                 GetAvatarText(item),
@@ -288,7 +310,9 @@ namespace VRCX
             panel.Controls.Add(typeLabel);
 
             var actions = item.Actions.Take(3).ToList();
-            var actionWidth = actions.Count * 34 + Math.Max(0, actions.Count - 1) * 4;
+            var actionWidth =
+                actions.Count * ActionButtonSize +
+                Math.Max(0, actions.Count - 1) * ActionButtonGap;
             var actionX = ContentWidth - actionWidth - 10;
             var body = new Label
             {
@@ -305,10 +329,10 @@ namespace VRCX
             foreach (var action in actions)
             {
                 var button = CreateActionButton(action);
-                button.Location = new Point(actionX, 49);
+                button.Location = new Point(actionX, 52);
                 button.Click += (_, _) => ActionRequested?.Invoke(action.Id, item.Id);
                 panel.Controls.Add(button);
-                actionX += 38;
+                actionX += ActionButtonSize + ActionButtonGap;
             }
 
             WireCardInteraction(panel, item.Id);
@@ -323,6 +347,13 @@ namespace VRCX
                 Margin = new Padding(0),
                 Size = new Size(ContentWidth, FooterHeight)
             };
+            panel.Controls.Add(new Panel
+            {
+                BackColor = _palette.Border,
+                Location = new Point(0, 0),
+                Margin = new Padding(0),
+                Size = new Size(ContentWidth, 1)
+            });
             var button = new TrayTextButton("全部忽略", _palette)
             {
                 Location = new Point(ContentWidth - 100, 5),
@@ -363,7 +394,7 @@ namespace VRCX
             var button = new TrayIconButton(icon, style, _palette)
             {
                 AccessibleName = action.Label,
-                Size = new Size(34, 34),
+                Size = new Size(ActionButtonSize, ActionButtonSize),
                 TabStop = false
             };
             _toolTip.SetToolTip(button, action.Label);
@@ -588,6 +619,7 @@ namespace VRCX
         internal Color Primary { get; }
         internal Color PrimaryForeground { get; }
         internal Color Destructive { get; }
+        internal Color Border => TrayDrawing.Blend(Background, Foreground, 0.10F);
         internal Color AvatarBackground => TrayDrawing.Blend(Surface, Primary, 0.14F);
 
         private TrayNotificationPalette(
