@@ -19,7 +19,7 @@
 | Blocker 条件项 | B-01 宿主桥安全封口 | 条件性 Major；暂缓 | 先完成 Electron/CEF 方法清单和可信内容判定 |
 | Blocker 条件项 | B-02 多账户数据隔离 | **按要求暂缓** | 不改 `dbVars`、`accountHub` 和次号生命周期 |
 | Major | M-00 测试与 CI 门禁 | **M-00.1 已完成；M-00.2 单账户范围完成；剩余多账户诊断按要求暂缓；门禁仍为红** | 多账户恢复后继续收敛剩余诊断，再评估 lint/format 债务和 CI 硬门禁 |
-| Major | M-01 宿主 capability adapter | **进行中：M-01.1～M-01.2a** | 继续迁移目录选择单调用点；动态 bridge allowlist 仍等待 B-01 方法清单 |
+| Major | M-01 宿主 capability adapter | **进行中：M-01.1～M-01.2b** | 继续完成动态 bridge allowlist；不改多账户 B-02/M-05 |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
 | Major | M-03 编排层纯化 | **已完成：M-03.6** | 进入 M-00；M-06 低风险 seam 已完成 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
@@ -74,12 +74,13 @@
 | `7fddf930` | M-00.1：补齐 `typescript` 开发依赖，使 `typecheck:js` 可以实际执行 |
 | `feb584b9` | M-01.1：提取 CEF/Electron 剪贴板 capability adapter，保留 `directAccessPaste()` 兼容入口和 CEF 失败回退 |
 | `f4050150` | M-01.2a：提取 CEF/Electron 文件选择 capability，保留自定义通知音频的取消值和持久化行为 |
+| `62c29b7c` | M-01.2b：提取 CEF/Electron 目录选择 capability，保留旧路径提示、取消值和并发守卫 |
 
 ## 当前 M-01 细分任务
 
 1. **M-01.1 剪贴板 capability adapter（已完成）**：新增 `src/services/clipboardAdapter.js`，以依赖注入统一 Electron `getClipboardText` 与 CEF `AppApi.GetClipboard`；保留 Electron 异常传播和 CEF 异常记录后返回空字符串的既有行为。`src/stores/search.js` 的 `directAccessPaste()` 公共入口和解析/提示流程不变；新增 CEF/Electron 路由、CEF 失败回退及搜索调用回归测试。提交：`feb584b9`。
 2. **M-01.2a 文件选择 capability（已完成）**：新增 `src/services/fileDialogAdapter.js`，以显式 options 封装 CEF `OpenFileSelectorDialog` 与 Electron `openFileDialog`；仅迁移 `useNotificationsSettingsStore.selectCustomNotificationSound()`，保留 CEF 取消 `''`、Electron 取消 `null/undefined` 的原始返回值和既有 `if (!filePath)` 语义。adapter 与通知 Store 回归测试共 2 个文件、6 个用例通过；提交：`f4050150`。
-3. **M-01.2b 目录选择 capability（待开始）**：先固化 CEF 取消返回 `oldPath`、Electron 取消返回 `null` 以及初始路径差异，再迁移 `folderSelectorDialog()`；不改并发守卫。
+3. **M-01.2b 目录选择 capability（已完成）**：`src/services/fileDialogAdapter.js` 新增目录选择 implementation；Windows CEF 继续接收 `oldPath`，Electron 继续无参打开目录选择器；`folderSelectorDialog()` 的可见状态守卫、返回值和异常传播保持不变。adapter 与设置对话框回归共 2 个文件、24 个用例通过；提交：`62c29b7c`。
 4. **M-01.3 动态 bridge allowlist（等待 B-01）**：完成 Electron/CEF 方法清单、可信内容判定和参数 schema 后，再收窄 `callDotNetMethod`，避免提前破坏旧调用方。
 
 M-01 已建立两个低风险宿主 seam；后续仍按单调用点、旧 facade 保留和定向测试推进。多账户 B-02/M-05 继续按要求暂缓。

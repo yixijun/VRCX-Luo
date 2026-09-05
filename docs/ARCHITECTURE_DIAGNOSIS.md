@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a 文件选择 capability、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam 及 M-09 Group/Favorite/User 纯 module 切片已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a 的 CEF/Electron 文件选择 capability、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator/store 公共 interface 保持不变，其他架构风险尚未改动。
+> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam，以及 M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module 已落地；coordinator/store 公共 interface 保持不变，其他架构风险尚未改动。
 
 ## 结论摘要
 
@@ -27,7 +27,7 @@
 | `src/views` | 页面级功能、路由页面、业务流程组合 | 页面直接读写 store、数据库和宿主 API；查询、事件监听、窗口控制混在页面；存在多个 900～1300 行页面 |
 | `src/components` | 对话框、列表、卡片、表格等可复用 UI | 复用组件大量依赖全局 store、router、toast、DOM；不少组件实际承担完整业务流程 |
 | `src/stores` | Pinia 状态、派生数据、部分业务命令 | 同时访问 API、数据库、Electron、DOM 和 coordinator；通知 store 已通过 M-06 建立 projection/persistence/queue module，但兼容 facade 仍较大，其他上帝 store 与循环依赖仍在 |
-| `src/services` | 数据库、账号会话、配置、SQLite、聚合视图 | database facade 过宽；`dbVars` 是可变全局上下文；数据模块反向依赖 UI；M-01.1/M-01.2a 已新增 clipboard/file capability，目录、数据库和动态 bridge 能力仍待迁移 |
+| `src/services` | 数据库、账号会话、配置、SQLite、聚合视图 | database facade 过宽；`dbVars` 是可变全局上下文；数据模块反向依赖 UI；M-01.1/M-01.2a/2b 已新增 clipboard/file/directory capability，数据库和动态 bridge 能力仍待迁移 |
 | `src/coordinators` | WebSocket/API/数据库事件编排 | store/API/database 耦合仍在；M-03 已把 UI implementation 收敛到 services adapter seam，M-09 已把 Group/Favorite/User 的角色、presence、持久化、收藏、本地化和自动状态决策深化为纯 module，后续继续拆 use-case |
 | `src/api` | REST/API endpoint 请求封装 | `window.request` 全局暴露；M-08 后缓存副作用经 `queryCache` adapter，Query resource 仍由 facade 组装，宿主全局和 API/Query 边界仍需后续收窄 |
 | `src/queries` | Query key、实体缓存、查询策略、resource registry | M-08 已集中 QueryClient side effect、scope key 和 resource registry；Pinia 与 Query 的实体数据所有权仍需继续明确 |
@@ -72,7 +72,8 @@
 | `src/coordinators/favoriteCoordinator.js` | 本地 world/avatar/friend 收藏分组、缓存、API、数据库和 Toast 混合 | Major → 已完成 M-09.5/M-09.6 | 本地实体和好友 id projection 已集中到 `favoriteLocalProjection`；后续再拆事件/持久化 use-case |
 | `src/stores/ui.js` | store 同时管理状态、router、DOM drop 事件、开发者工具和窗口行为 | Major | 拆成 UI state 与 window actions；平台操作通过 adapter |
 | `src/stores/search.js` | `directAccessPaste` 同时选择 Electron/CEF 剪贴板桥和解析流程 | Major → 已完成 M-01.1 | 剪贴板读取已移入 `clipboardAdapter`；保留 `directAccessPaste()` 兼容入口，后续再拆 direct-access use-case |
-| `src/stores/settings/notifications.js` | `selectCustomNotificationSound` 同时选择 Electron/CEF 文件桥并持久化设置 | Major → 已完成 M-01.2a | 文件选择已移入 `fileDialogAdapter`；保留取消值和设置 Store 公共接口，目录选择另行迁移 |
+| `src/stores/settings/notifications.js` | `selectCustomNotificationSound` 同时选择 Electron/CEF 文件桥并持久化设置 | Major → 已完成 M-01.2a | 文件选择已移入 `fileDialogAdapter`；保留取消值和设置 Store 公共接口 |
+| `src/stores/settings/advanced.js` | `folderSelectorDialog` 同时选择 Electron/CEF 目录桥，并维护并发可见状态 | Major → 已完成 M-01.2b | 目录选择已移入 `fileDialogAdapter`；保留旧路径提示、取消值、可见状态守卫和设置 Store 公共 interface |
 | `src/stores/settings/appearance.js` | store 直接修改 `document.documentElement`，并访问 API/数据库 | Major | 提取主题 adapter/composable；store 只保存偏好和派生状态 |
 | `src/stores/notification/index.js` | 通知状态、数据库、API、托盘、Electron、router、dialog、Toast 混合 | Major → 已完成 M-06.1～M-06.4 低风险 seam | 已提取通知领域 projection、偏好 persistence、seen queue；保留旧 action 兼容入口和 tray adapter。后续更深拆分等待 M-01/M-04 capability 契约 |
 | `src/services/sqlite.js` | 数据模块反向依赖 modal、i18n、外链打开 | Major | SQLite 层只抛结构化错误；由上层负责提示、翻译和导航 |
@@ -216,6 +217,7 @@ flowchart LR
 - 先迁移窗口/存储能力，再迁移数据库和系统操作。
 - M-01.1 已先迁移剪贴板读取：`src/services/clipboardAdapter.js` 通过显式依赖分别封装 Electron `getClipboardText` 和 CEF `AppApi.GetClipboard`；`src/stores/search.js` 只保留兼容入口，解析和提示行为未改动。
 - M-01.2a 已迁移自定义通知音频文件选择：`src/services/fileDialogAdapter.js` 通过显式 options 分别封装 Electron filters 与 CEF legacy 参数；`selectCustomNotificationSound()` 继续保留 `if (!filePath)` 取消语义和持久化顺序。
+- M-01.2b 已迁移目录选择：同一 capability module 通过 `createDirectoryDialogAdapter()` 封装 CEF 的旧路径 hint 与 Electron 的无参 dialog；`folderSelectorDialog()` 保留旧的可见状态 guard、错误传播和 host-specific cancellation value。
 
 这是高 leverage 的架构接缝（seam）：新旧实现可以短期并存，不需要一次性改写业务代码。
 
@@ -251,6 +253,7 @@ flowchart LR
 | M-06 Notification Store 定向测试 | 5 个测试文件、30 个测试通过 |
 | M-01.1 clipboard/search 定向测试 | 2 个测试文件、29 个测试通过；adapter 路由与 CEF 失败回退均覆盖 |
 | M-01.2a file-dialog/notifications 定向测试 | 2 个测试文件、6 个测试通过；CEF/Electron 参数、取消值、异常传播和 Store 持久化均覆盖 |
+| M-01.2b directory-dialog/Settings 回归 | 2 个测试文件、24 个测试通过；CEF 旧路径、Electron 无参调用、取消值和设置对话框行为均覆盖 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | 工具链已补齐并可执行；当前仍有 14 条既有 TypeScript/JavaScript 诊断，已先消除 `updateLoop.js(65,28)`、Group API `bool`、Avatar 空参数、Notification typedef、V2 projection 误标参数、Feed 差异函数旧参数名、邀请 `rsvp` 误标参数、13 个上传选项误报、World/Instance API `ref` 推断误报、request 自定义 Error 字段误报、全部 Query key 解构参数误报、WebApi 二级账号 bridge 方法误报、Sentry 原始异常 message 误报、WorldDialog 两个 composable 的 toast 属性误报、quickSearch worker 临时字段误报、ConfigRepository 数值解析误报、cacheCoordinator SDK 版本属性误报、devtool SDK 版本属性误报、format 工具转换误报、localization URL/Error 参数误报、表格 debounce 定时器误报、FileReader ArrayBuffer 参数误报、主题 link 元素误报、Group API 重复方法误报、游戏注册表值解析误报、上传协调器 Blob.size 参数误报、manual relations 建议结果字段误报、game-log Dayjs 算术误报、Group API `order/sortBy` 必填误报、`useSearchGroup` 活动参数推断误报、`useSearchWorld` 缓存配置/活动参数推断误报、查询缓存日志目标误报、通知偏好过滤返回类型误报、导航配置过滤回调字面量误报、`$throw` 必然抛错返回类型误报、activity top-worlds 参数契约误报、friend store 重复导出键误报、Previous Instances actions `onLaunch` 必填误报、tray notification 投影可选输入误报、托盘通知 bridge 方法误报、旧版 Notification 查询字段必填误报、`getQuickInviteResponseParams` 返回类型误报、托盘自定义事件 `detail` 类型误报、游戏日志分页布尔值误报、搜索用户投影类型误报、WebSocket 离线用户载荷类型误报、GroupDialog 数量替换类型误报、`openDialog` label 可选属性误报、高级设置日期算术误报、本地化 CLI 文件 IO/临时对象类型误报、外观路由名类型误报、通用设置关闭行为/解析类型误报、图表互友图读取与元数据契约误报、收藏分组映射返回类型误报、图库上传 DOM 类型误报、通知超时弹窗类型误报、VRCX 窗口动态状态断言误报、Favorites composable 默认参数误报、recent-action 冷却解析类型误报、光子事件详情回调契约误报、Vite 资源内联回调 overload 误报、Group 语言 projection 输入契约误报、Group 对话框响应契约误报、二次加载结果契约误报及 Group 注册表 JSON 输入契约误报，尚未作为阻断式 CI 门禁 |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
