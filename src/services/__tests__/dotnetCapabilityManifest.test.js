@@ -3,8 +3,13 @@ import { describe, expect, it } from 'vitest';
 import manifest from '../../../src-electron/dotnetCapabilityManifest.cjs';
 import InteropApi from '../../../src-electron/InteropApi.js';
 
-const { assertAllowedDotNetCall, isAllowedDotNetClass, isAllowedDotNetMethod } =
-    manifest;
+const {
+    assertAllowedDotNetCall,
+    DOTNET_CAPABILITIES,
+    DOTNET_CAPABILITY_SCHEMAS,
+    isAllowedDotNetClass,
+    isAllowedDotNetMethod
+} = manifest;
 
 describe('dotnet capability manifest', () => {
     it('contains every renderer-facing Electron host class', () => {
@@ -58,6 +63,88 @@ describe('dotnet capability manifest', () => {
         expect(() =>
             assertAllowedDotNetCall('AppApiElectron', 'GetVersion', undefined)
         ).toThrow(/args must be an array/);
+    });
+
+    it('defines a parameter schema for every allowlisted method', () => {
+        for (const [className, methods] of Object.entries(
+            DOTNET_CAPABILITIES
+        )) {
+            expect(
+                Object.keys(DOTNET_CAPABILITY_SCHEMAS[className]).sort()
+            ).toEqual([...methods].sort());
+        }
+    });
+
+    it('enforces method-specific arity and primitive argument types', () => {
+        expect(() =>
+            assertAllowedDotNetCall('AppApiElectron', 'SetVR', [
+                true,
+                false,
+                true,
+                false,
+                1
+            ])
+        ).not.toThrow();
+        expect(() =>
+            assertAllowedDotNetCall('AppApiElectron', 'SetVR', [
+                true,
+                false,
+                true,
+                false,
+                'left'
+            ])
+        ).toThrow(/argument 5 is invalid/);
+        expect(() =>
+            assertAllowedDotNetCall('AppApiElectron', 'GetVersion', [
+                'unexpected'
+            ])
+        ).toThrow(/expected 0 arguments/);
+        expect(() =>
+            assertAllowedDotNetCall('AppApiElectron', 'OpenLink', [{}])
+        ).toThrow(/argument 1 is invalid/);
+    });
+
+    it('keeps optional and host-specific values compatible with existing calls', () => {
+        expect(() =>
+            assertAllowedDotNetCall(
+                'AppApiElectron',
+                'OpenFileSelectorDialog',
+                [null, '.json', 'JSON Files (*.json)|*.json']
+            )
+        ).not.toThrow();
+        expect(() =>
+            assertAllowedDotNetCall('AppApiElectron', 'SetVRChatRegistryKey', [
+                'KEY',
+                'value'
+            ])
+        ).not.toThrow();
+        expect(() =>
+            assertAllowedDotNetCall('SQLite', 'Execute', [
+                'select @value',
+                new Map([['value', null]])
+            ])
+        ).not.toThrow();
+        expect(() =>
+            assertAllowedDotNetCall('Discord', 'SetAssets', [
+                null,
+                'state',
+                null,
+                'large',
+                'large text',
+                null,
+                null,
+                0,
+                0,
+                null,
+                0,
+                0,
+                null,
+                null,
+                null,
+                0,
+                0
+            ])
+        ).not.toThrow();
     });
 
     it('enforces the manifest at the main-process .NET boundary', () => {
