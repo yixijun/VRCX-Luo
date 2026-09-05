@@ -410,6 +410,31 @@
         );
     });
 
+    function getOfflineTimestamp(friend) {
+        const value = friend?.ref?.$offline_for;
+        if (typeof value === 'number') {
+            return Number.isFinite(value) && value > 0 ? value : null;
+        }
+        if (typeof value === 'string' && value.trim() !== '') {
+            const timestamp = Number(value);
+            return Number.isFinite(timestamp) && timestamp > 0 ? timestamp : null;
+        }
+        return null;
+    }
+
+    function compareByOfflineRecency(a, b) {
+        const aTime = getOfflineTimestamp(a);
+        const bTime = getOfflineTimestamp(b);
+        if (aTime === null && bTime === null) return 0;
+        if (aTime === null) return 1;
+        if (bTime === null) return -1;
+        return bTime - aTime;
+    }
+
+    const offlineFriendsByRecency = computed(() =>
+        offlineFriends.value.slice().sort(compareByOfflineRecency)
+    );
+
     // VIP friends divide by group
     const vipFriendsDivideByGroup = computed(() => {
         const remoteFriendsByGroup = groupedByGroupKeyFavoriteFriends.value;
@@ -703,12 +728,12 @@
             });
         }
 
-        if (offlineFriends.value.length) {
+        if (offlineFriendsByRecency.value.length) {
             rows.push(
                 buildToggleRow({
                     key: 'offline-header',
                     label: t('side_panel.offline'),
-                    count: offlineFriends.value.length,
+                    count: offlineFriendsByRecency.value.length,
                     expanded: isOfflineFriends.value,
                     onClick: toggleOfflineFriends
                 })
@@ -716,7 +741,7 @@
         }
 
         if (isOfflineFriends.value) {
-            offlineFriends.value.forEach((friend, idx) => {
+            offlineFriendsByRecency.value.forEach((friend, idx) => {
                 rows.push(buildFriendRow(friend, `offline:${friend?.id ?? idx}`));
             });
         }

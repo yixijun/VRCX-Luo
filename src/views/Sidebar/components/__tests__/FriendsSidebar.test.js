@@ -295,6 +295,25 @@ describe('FriendsSidebar.vue', () => {
         expect(wrapper.text()).toContain('usr_online');
     });
 
+    test('sorts offline friends by most recent offline time first', async () => {
+        const olderOffline = makeFriend('usr_old', 'offline');
+        olderOffline.state = 'offline';
+        olderOffline.ref.$offline_for = 1_000;
+        const recentOffline = makeFriend('usr_recent', 'offline');
+        recentOffline.state = 'offline';
+        recentOffline.ref.$offline_for = 2_000;
+        mocks.friendStore.offlineFriends.value = [olderOffline, recentOffline];
+
+        const wrapper = mount(FriendsSidebar);
+        await flushPromises();
+        await nextTick();
+
+        expect(wrapper.findAll('[data-testid="friend-item"]').map((item) => item.text())).toEqual([
+            'usr_recent',
+            'usr_old'
+        ]);
+    });
+
     test('keeps floating controls inside the visible sidebar tab', async () => {
         const wrapper = mount(FriendsSidebar);
         await flushPromises();
