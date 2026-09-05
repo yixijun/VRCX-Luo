@@ -90,9 +90,11 @@ vi.mock('../../../../components/ui/toggle-group', () => ({
 }));
 
 vi.mock('lucide-vue-next', () => ({
+    ArrowRightLeft: { template: '<span />' },
     LogIn: { template: '<span />' },
     LogOut: { template: '<span />' },
     ListFilter: { template: '<span />' },
+    UsersRound: { template: '<span />' },
     RefreshCw: { template: '<span />' }
 }));
 
@@ -151,6 +153,12 @@ describe('InstancePlayerEvents.vue', () => {
         ]);
         expect(wrapper.get('[data-testid="presence-menu-trigger"]').exists()).toBe(true);
         expect(wrapper.get('[data-testid="presence-filter-menu"]').classes()).toContain('flex-col');
+        expect(wrapper.get('[data-testid="presence-identity-row"]').classes()).toEqual(
+            expect.arrayContaining(['grid', 'grid-cols-[auto_minmax(0,1fr)]', 'items-center'])
+        );
+        expect(wrapper.get('[data-testid="presence-direction-row"]').classes()).toEqual(
+            expect.arrayContaining(['grid', 'grid-cols-[auto_minmax(0,1fr)]', 'items-center'])
+        );
 
         await wrapper.get('[data-testid="filter-friends"]').trigger('click');
         expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);
