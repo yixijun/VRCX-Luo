@@ -27,6 +27,7 @@
         "lint:eslint": "eslint .",
         "lint:oxlint": "oxlint .",
         "check:schema": "node build-scripts/validate-screenshot-metadata-schema.js",
+        "check:version": "node build-scripts/check-version-consistency.js",
         "typecheck:js": "tsc -p tsconfig.checkjs.json --pretty false",
         "test": "vitest run",
         "test:refactor": "vitest run src/coordinators/__tests__ src/services/__tests__ src/queries/__tests__ src/stores/notification/__tests__ src/stores/updateLoopTasks --reporter=dot --maxWorkers=2",
@@ -34,8 +35,8 @@
         "build:licenses": "node ./build-scripts/generate-third-party-licenses.js",
         "prod": "cross-env PLATFORM=windows vite build src && npm run build:licenses",
         "prod-linux": "cross-env PLATFORM=linux vite build src && npm run build:licenses",
-        "build-electron": "node ./src-electron/download-dotnet-runtime.js --arch=x64 && node ./src-electron/patch-package-version.js && electron-builder --x64 --publish never",
-        "build-electron-arm64": "node ./src-electron/download-dotnet-runtime.js --arch=arm64 && node ./src-electron/patch-package-version.js && electron-builder --arm64 --publish never",
+        "build-electron": "node ./src-electron/download-dotnet-runtime.js --arch=x64 && node ./src-electron/patch-package-version.js && node ./build-scripts/check-version-consistency.js && electron-builder --x64 --publish never",
+        "build-electron-arm64": "node ./src-electron/download-dotnet-runtime.js --arch=arm64 && node ./src-electron/patch-package-version.js && node ./build-scripts/check-version-consistency.js && electron-builder --arm64 --publish never",
         "postbuild-electron": "node ./src-electron/patch-node-api-dotnet.js --arch=x64 && node ./src-electron/rename-builds.js --arch=x64",
         "postbuild-electron-arm64": "node ./src-electron/patch-node-api-dotnet.js --arch=arm64 && node ./src-electron/rename-builds.js --arch=arm64",
         "start-electron": "electron . --hot-reload"
