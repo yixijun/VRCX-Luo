@@ -9,6 +9,12 @@ import { installBodyDropGuard } from '../services/dropGuard';
 import { refreshCustomCss } from '../shared/utils/base/ui';
 import { updateLocalizedStrings } from '../plugins/i18n';
 import { useAppearanceSettingsStore } from './settings/appearance';
+import {
+    clearDialogCrumbs as createEmptyDialogCrumbs,
+    jumpDialogCrumb as jumpDialogCrumbState,
+    pushDialogCrumb as pushDialogCrumbState,
+    setDialogCrumbLabel as setDialogCrumbLabelState
+} from './ui/dialogCrumbState';
 import { useAvatarStore } from './avatar';
 import { useGroupStore } from './group';
 import { showGroupDialog } from '../coordinators/groupCoordinator';
@@ -79,51 +85,15 @@ export const useUiStore = defineStore('Ui', () => {
     });
 
     function pushDialogCrumb(data) {
-        const { type, id, label } = data;
-        if (!type || !id) {
-            return;
-        }
-        const items = dialogCrumbs.value;
-        const last = items[items.length - 1];
-        if (last && last.type === type && last.id === id) {
-            if (label && last.label !== label) {
-                last.label = label;
-            }
-            return;
-        }
-        const existingIndex = items.findIndex(
-            (item) => item.type === type && item.id === id
-        );
-        if (existingIndex !== -1) {
-            items.splice(existingIndex + 1);
-            if (label) {
-                items[existingIndex].label = label;
-            }
-            return;
-        }
-        if (!data.label) {
-            data.label = data.id;
-        }
-        items.push(data);
+        pushDialogCrumbState(dialogCrumbs.value, data);
     }
 
     function setDialogCrumbLabel(type, id, label) {
-        if (!type || !id || !label) {
-            return;
-        }
-        const item = dialogCrumbs.value.find(
-            (entry) => entry.type === type && entry.id === id
-        );
-        if (item) {
-            item.label = label;
-        }
+        setDialogCrumbLabelState(dialogCrumbs.value, type, id, label);
     }
 
     function jumpDialogCrumb(index) {
-        if (index < 0 || index >= dialogCrumbs.value.length) {
-            return;
-        }
-        dialogCrumbs.value.splice(index + 1);
+        jumpDialogCrumbState(dialogCrumbs.value, index);
     }
 
     function jumpBackDialogCrumb() {
@@ -182,7 +152,7 @@ export const useUiStore = defineStore('Ui', () => {
     }
 
     function clearDialogCrumbs() {
-        dialogCrumbs.value = [];
+        dialogCrumbs.value = createEmptyDialogCrumbs();
     }
 
     function closeMainDialog() {

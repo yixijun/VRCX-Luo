@@ -153,3 +153,27 @@ describe('useUiStore - notification methods', () => {
         });
     });
 });
+
+describe('useUiStore - dialog crumb methods', () => {
+    let store;
+
+    beforeEach(() => {
+        setActivePinia(createPinia());
+        store = useUiStore();
+        store.dialogCrumbs = [];
+    });
+
+    test('keeps the breadcrumb actions available through the Store', () => {
+        store.pushDialogCrumb({ type: 'user', id: 'u1' });
+        store.pushDialogCrumb({ type: 'world', id: 'w1' });
+        store.setDialogCrumbLabel('world', 'w1', 'World');
+        store.jumpDialogCrumb(0);
+
+        expect(store.dialogCrumbs).toEqual([
+            { type: 'user', id: 'u1', label: 'u1' }
+        ]);
+
+        store.clearDialogCrumbs();
+        expect(store.dialogCrumbs).toEqual([]);
+    });
+});
