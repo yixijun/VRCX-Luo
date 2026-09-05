@@ -8,7 +8,7 @@
 
 ## 当前策略
 
-多账户相关工作（B-02、M-05）按用户要求暂缓，不再扩大其实现范围。当前优先处理单账户数据刷新和测试门禁，避免继续触碰 `dbVars` 热切换、账号 Store 替换和跨账号聚合。
+多账户相关工作（B-02、M-05）按用户要求暂缓，不再扩大其实现范围。当前优先处理单账户宿主 capability、数据刷新和测试门禁，避免继续触碰 `dbVars` 热切换、账号 Store 替换和跨账号聚合。
 
 架构目标是把浅（shallow）的编排模块逐步深化（deepening）：在稳定的 interface 上建立 seam，用 adapter 隔离实现，让每次改动保持 locality，并获得可验证的 leverage。
 
@@ -19,7 +19,7 @@
 | Blocker 条件项 | B-01 宿主桥安全封口 | 条件性 Major；暂缓 | 先完成 Electron/CEF 方法清单和可信内容判定 |
 | Blocker 条件项 | B-02 多账户数据隔离 | **按要求暂缓** | 不改 `dbVars`、`accountHub` 和次号生命周期 |
 | Major | M-00 测试与 CI 门禁 | **M-00.1 已完成；M-00.2 单账户范围完成；剩余多账户诊断按要求暂缓；门禁仍为红** | 多账户恢复后继续收敛剩余诊断，再评估 lint/format 债务和 CI 硬门禁 |
-| Major | M-01 宿主 capability adapter | 未开始 | 依赖 B-01 方法清单；保留旧 facade |
+| Major | M-01 宿主 capability adapter | **进行中：M-01.1 剪贴板 capability** | 继续迁移单调用点宿主能力；动态 bridge allowlist 仍等待 B-01 方法清单 |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
 | Major | M-03 编排层纯化 | **已完成：M-03.6** | 进入 M-00；M-06 低风险 seam 已完成 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
@@ -72,6 +72,15 @@
 | `f8629638` | M-06.3：提取通知中心偏好 persistence interface |
 | `e8115bf2` | M-06.4：提取通知已读去重、串行处理和重试 queue module |
 | `7fddf930` | M-00.1：补齐 `typescript` 开发依赖，使 `typecheck:js` 可以实际执行 |
+| `feb584b9` | M-01.1：提取 CEF/Electron 剪贴板 capability adapter，保留 `directAccessPaste()` 兼容入口和 CEF 失败回退 |
+
+## 当前 M-01 细分任务
+
+1. **M-01.1 剪贴板 capability adapter（已完成）**：新增 `src/services/clipboardAdapter.js`，以依赖注入统一 Electron `getClipboardText` 与 CEF `AppApi.GetClipboard`；保留 Electron 异常传播和 CEF 异常记录后返回空字符串的既有行为。`src/stores/search.js` 的 `directAccessPaste()` 公共入口和解析/提示流程不变；新增 CEF/Electron 路由、CEF 失败回退及搜索调用回归测试。提交：`feb584b9`。
+2. **M-01.2 文件/目录选择 capability（待开始）**：先固化 CEF 取消与 Electron 返回值的行为矩阵，再迁移单调用点；不改 `AppApi` 兼容 facade。
+3. **M-01.3 动态 bridge allowlist（等待 B-01）**：完成 Electron/CEF 方法清单、可信内容判定和参数 schema 后，再收窄 `callDotNetMethod`，避免提前破坏旧调用方。
+
+M-01 已建立首个低风险宿主 seam；后续仍按单调用点、旧 facade 保留和定向测试推进。多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-02 细分任务
 
