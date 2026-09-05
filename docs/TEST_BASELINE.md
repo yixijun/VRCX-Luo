@@ -169,6 +169,17 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：66 个文件、324 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-07.7 后置验证
+
+托盘上下文菜单 Adapter 切片只迁移菜单模板和点击动作；保留菜单顺序、中文文案、checkbox 读取、存储键/字符串值、renderer 通知、菜单重建、开发者工具和退出语义。未修改托盘图标/生命周期、桌面通知实现、VR overlay 或 renderer interface。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 托盘菜单/关闭决策定向测试 | `npx vitest run src/services/__tests__/trayContextMenu.test.js src/shared/utils/__tests__/closeToTrayDecision.test.js src/services/__tests__/windowCloseHandler.test.js --reporter=dot` | **通过**：3 个文件、7 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/trayContextMenu.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：67 个文件、327 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

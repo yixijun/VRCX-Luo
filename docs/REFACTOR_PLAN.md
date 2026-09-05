@@ -25,7 +25,7 @@
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
 | Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | M-00/B-01 已完成；M-01/M-04 解锁后再收窄宿主/数据库 capability |
-| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.6** | .NET bootstrap、IPC 注册、双宿主 contract、窗口状态、窗口事件和关闭守卫 seam 已完成；tray/notification 仍可另行细分 |
+| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.7** | .NET bootstrap、IPC 注册、双宿主 contract、窗口状态、窗口事件、关闭守卫和托盘菜单 seam 已完成；tray lifecycle/notification 仍可另行细分 |
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
@@ -87,6 +87,7 @@
 | `0c74ce3f` | M-07.4：提取 Electron 窗口状态读取/动作 Adapter，保留旧状态解析和启动最小化行为 |
 | `99d3070f` | M-07.5：提取 Electron 窗口事件 Bridge，保留缩放、几何、状态和焦点通知行为 |
 | `09b7b908` | M-07.6：提取 Electron 窗口关闭守卫 Adapter，保留托盘、提示、偏好持久化和退出语义 |
+| `b965804f` | M-07.7：提取 Electron 托盘上下文菜单 Adapter，保留开关、持久化、通知和退出动作 |
 | `df65d955` | B-01.1：新增可信渲染来源策略；Electron 15 个 IPC handler 统一拒绝非 packaged renderer 与未启用的开发服务器来源 |
 | `5e84ad42` | B-01.2：为 174 个 .NET allowlist 方法补齐参数数量/基础类型 schema，并在 preload/main/Interop 边界复用校验 |
 | `82ff3fe8` | N-02.1：建立可注入的版本元数据解析、UTC 回退和文件读取契约 |
@@ -193,8 +194,9 @@ M-06 低风险 seam 已完成：`src/stores/notification/index.js` 继续作为�
 4. **M-07.4 窗口状态 Adapter（已完成）**：新增 `src-electron/windowState.cjs`，通过 `readWindowConfig()` 和 `applyStoredWindowState()` 接收存储/窗口依赖；`main.js` 继续保留 `createWindow()`、`applyWindowState()` 兼容入口，尺寸、缩放、启动最小化、托盘隐藏和持久化状态动作保持不变。新增 4 项回归测试，并明确保留旧代码对 `VRCX_WindowState=0` 的 `parseInt(...) || -1` 兼容结果。提交：`0c74ce3f`。
 5. **M-07.5 窗口事件 Bridge（已完成）**：新增 `src-electron/windowEventBridge.cjs`，接收窗口、`webContents`、初始缩放值和存储写入依赖，集中绑定加载后缩放、快捷键/缩放变更、几何变化、窗口状态和焦点事件。保留原有 channel 名称、payload 类型、事件注册顺序、缩放持久化键及 `setVisualZoomLevelLimits(1, 5)` 行为；`main.js` 仅组装依赖并调用 Bridge。新增 3 项回归测试。提交：`99d3070f`。
 6. **M-07.6 窗口关闭守卫 Adapter（已完成）**：新增 `src-electron/windowCloseHandler.cjs`，通过显式依赖承接 `close` 事件中的退出状态、关闭到托盘、提示框、偏好持久化、最小化/退出动作和并发提示守卫；`main.js` 继续提供状态 getter/setter 与宿主实现，保留原有 dialog options、存储键、动作顺序、`app.quit()` 和 finally 清理语义。新增 3 项回归测试。提交：`09b7b908`。
+7. **M-07.7 托盘上下文菜单 Adapter（已完成）**：新增 `src-electron/trayContextMenu.cjs`，通过显式依赖承接打开窗口、桌面通知/静音/V 睡开关、开发者工具和退出动作；保留菜单顺序、中文文案、checkbox 状态、存储键/字符串值、通知回调、菜单重建和 `app.quit()` 语义。新增 3 项回归测试。提交：`b965804f`。
 
-M-07 已完成本计划定义的六项首批 seam：.NET bootstrap、IPC handler 注册、双宿主 capability contract、窗口状态 Adapter、窗口事件 Bridge 和窗口关闭守卫 Adapter。`main.js` 仍保留窗口创建、托盘、通知等行为实现；后续可继续按独立细分拆出 tray、notification。多账户 B-02/M-05 继续按要求暂缓。
+M-07 已完成本计划定义的七项首批 seam：.NET bootstrap、IPC handler 注册、双宿主 capability contract、窗口状态 Adapter、窗口事件 Bridge、窗口关闭守卫 Adapter 和托盘上下文菜单 Adapter。`main.js` 仍保留窗口创建、托盘生命周期/图标、通知等行为实现；后续可继续按独立细分拆出 tray lifecycle、notification。多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-08 细分任务
 
