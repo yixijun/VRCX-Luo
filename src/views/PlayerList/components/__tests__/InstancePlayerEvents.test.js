@@ -58,10 +58,17 @@ vi.mock('../../../../components/ui/toggle-group', () => ({
         props: ['modelValue'],
         emits: ['update:model-value'],
         template:
-            '<div data-testid="presence-filter">' +
+            '<div v-bind="$attrs" data-testid="presence-filter">' +
+            '<template v-if="$attrs[\'data-testid\'] === \'presence-direction-filter\'">' +
+            '<button data-testid="filter-direction-all" @click="$emit(\'update:model-value\', \'all\')">all</button>' +
+            '<button data-testid="filter-joined" @click="$emit(\'update:model-value\', \'joined\')">joined</button>' +
+            '<button data-testid="filter-left" @click="$emit(\'update:model-value\', \'left\')">left</button>' +
+            '</template>' +
+            '<template v-else>' +
             '<button data-testid="filter-all" @click="$emit(\'update:model-value\', \'all\')">all</button>' +
             '<button data-testid="filter-friends" @click="$emit(\'update:model-value\', \'friends\')">friends</button>' +
             '<button data-testid="filter-strangers" @click="$emit(\'update:model-value\', \'strangers\')">strangers</button>' +
+            '</template>' +
             '<slot />' +
             '</div>'
     },
@@ -133,6 +140,18 @@ describe('InstancePlayerEvents.vue', () => {
         expect(wrapper.text()).not.toContain('Stranger');
 
         await wrapper.get('[data-testid="filter-strangers"]').trigger('click');
+        expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);
+        expect(wrapper.text()).toContain('Stranger');
+        expect(wrapper.text()).not.toContain('Friend');
+
+        await wrapper.get('[data-testid="filter-direction-all"]').trigger('click');
+        await wrapper.get('[data-testid="filter-all"]').trigger('click');
+        await wrapper.get('[data-testid="filter-joined"]').trigger('click');
+        expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);
+        expect(wrapper.text()).toContain('Friend');
+        expect(wrapper.text()).not.toContain('Stranger');
+
+        await wrapper.get('[data-testid="filter-left"]').trigger('click');
         expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);
         expect(wrapper.text()).toContain('Stranger');
         expect(wrapper.text()).not.toContain('Friend');

@@ -3,7 +3,7 @@
         class="instance-player-events flex h-full min-h-0 flex-col overflow-hidden"
         data-testid="instance-player-events">
         <div
-            class="instance-player-events__toolbar flex shrink-0 items-center gap-2 border-b border-border px-2 py-1"
+            class="instance-player-events__toolbar flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border px-2 py-1"
             :aria-label="t('view.player_list.presence.filters_label')">
             <span class="shrink-0 text-xs font-medium text-muted-foreground">
                 {{ t('view.player_list.presence.title') }}
@@ -13,8 +13,33 @@
                 type="single"
                 variant="outline"
                 size="sm"
+                :model-value="directionFilter"
+                class="min-w-0 shrink-0"
+                data-testid="presence-direction-filter"
+                @update:model-value="handleDirectionFilterChange">
+                <ToggleGroupItem value="all" class="h-7 gap-1 px-2 text-xs">
+                    {{ t('view.player_list.presence.all') }}
+                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="joined" class="h-7 gap-1 px-2 text-xs">
+                    <LogIn class="size-3" />
+                    {{ t('view.player_list.presence.joined') }}
+                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ joinedCount }}</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="left" class="h-7 gap-1 px-2 text-xs">
+                    <LogOut class="size-3" />
+                    {{ t('view.player_list.presence.left') }}
+                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ leftCount }}</span>
+                </ToggleGroupItem>
+            </ToggleGroup>
+
+            <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
                 :model-value="filter"
                 class="min-w-0 shrink-0"
+                data-testid="presence-identity-filter"
                 @update:model-value="handleFilterChange">
                 <ToggleGroupItem value="all" class="h-7 gap-1 px-2 text-xs">
                     {{ t('view.player_list.presence.all') }}
@@ -121,6 +146,7 @@
     const { t } = useI18n();
     const friendStore = useFriendStore();
     const filter = ref('all');
+    const directionFilter = ref('all');
     const events = ref([]);
     const loading = ref(false);
     const loadError = ref(false);
@@ -134,16 +160,25 @@
     );
 
     const allCount = computed(() => eventRows.value.length);
+    const joinedCount = computed(() => eventRows.value.filter((event) => event.type === 'OnPlayerJoined').length);
+    const leftCount = computed(() => eventRows.value.filter((event) => event.type === 'OnPlayerLeft').length);
     const friendsCount = computed(() => eventRows.value.filter((event) => event.isFriend).length);
     const strangersCount = computed(() => eventRows.value.filter((event) => !event.isFriend).length);
     const filteredEvents = computed(() => {
+        let rows = eventRows.value;
+        if (directionFilter.value === 'joined') {
+            rows = rows.filter((event) => event.type === 'OnPlayerJoined');
+        } else if (directionFilter.value === 'left') {
+            rows = rows.filter((event) => event.type === 'OnPlayerLeft');
+        }
+
         if (filter.value === 'friends') {
-            return eventRows.value.filter((event) => event.isFriend);
+            return rows.filter((event) => event.isFriend);
         }
         if (filter.value === 'strangers') {
-            return eventRows.value.filter((event) => !event.isFriend);
+            return rows.filter((event) => !event.isFriend);
         }
-        return eventRows.value;
+        return rows;
     });
 
     function isFriend(event) {
@@ -163,6 +198,12 @@
     function handleFilterChange(value) {
         if (['all', 'friends', 'strangers'].includes(value)) {
             filter.value = value;
+        }
+    }
+
+    function handleDirectionFilterChange(value) {
+        if (['all', 'joined', 'left'].includes(value)) {
+            directionFilter.value = value;
         }
     }
 
