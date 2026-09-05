@@ -29,7 +29,7 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-10 GameLog 深化 | **已完成：M-10.1～M-10.4** | M-10 已闭环；后续如需继续深化，另开 database 写入/事务或其它 Major seam；保持 `database` facade、日志 tuple 和 Store 兼容入口 |
-| Major | M-11 前端 UI 状态与 DOM seam | **已完成：M-11.1～M-11.4** | 本轮前端重构达到停止线；转入 VR CEF wrist/HUD 问题和功能验证，仅在出现高 leverage seam 时重启 |
+| Major | M-11 前端 UI 状态与 DOM seam | **已完成：M-11.1～M-11.4** | 本轮前端重构达到停止线；Windows CEF wrist/HUD 触发问题已由用户确认解决，转入功能观察，仅在出现高 leverage seam 时重启 |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
@@ -261,7 +261,7 @@ M-10.1～M-10.4 已全部完成并分别通过独立代码提交。M-10 本轮�
 
 4. **M-11.4 UI Store 托盘通知宿主 Adapter（已完成）**：已将 `updateTrayIconNotify()` 内的 CEF `AppApi.SetTrayIconNotification()` 与 Linux Electron `window.electron.setTrayIconNotification()` 路由移入 `src/services/trayIconNotificationAdapter.js`；Store 保留通知状态计算、`force` 更新守卫、调用时机和 public interface。fake host 覆盖双宿主方法名、布尔参数和路由；`notifiedMenus`、`notificationIconDot`、VR overlay 均未改变。提交：`e2957f69`。
 
-M-11.1～M-11.4 已完成并分别建立独立回滚点。本轮前端 UI 重构停止线已达到：不再为了减少行数继续拆分，下一步转入 Windows CEF wrist/HUD 触发问题的复现与修复验证；只有出现能显著降低跨层耦合且可独立回滚的高 leverage seam 时才重启 M-11。整个 M-11 未触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
+M-11.1～M-11.4 已完成并分别建立独立回滚点。本轮前端 UI 重构停止线已达到：不再为了减少行数继续拆分。Windows CEF 按触发键后 wrist/HUD 不显示问题已由用户在测试版手动确认解决；该结论记录为功能验证结果，不归因于 M-11.4 的托盘 Adapter 变更。后续进入功能观察，只有出现能显著降低跨层耦合且可独立回滚的高 leverage seam 时才重启 M-11。整个 M-11 未触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
 
 ## 当前 M-00 细分任务
 
