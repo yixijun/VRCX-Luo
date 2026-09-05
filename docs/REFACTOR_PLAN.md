@@ -29,6 +29,7 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-10 GameLog 深化 | **已完成：M-10.1～M-10.4** | M-10 已闭环；后续如需继续深化，另开 database 写入/事务或其它 Major seam；保持 `database` facade、日志 tuple 和 Store 兼容入口 |
+| Major | M-11 前端 UI 状态与 DOM seam | **进行中：M-11.1 计划中** | 先提取 Appearance Store 的 DOM class adapter；保持设置入口和 class 名称不变，再评估 UI Store/drop 与大型页面 |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
 | Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 保持版本一致性门禁；N-03/N-04 已完成，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | **已完成：N-03.1～N-03.3** | 保持依赖方向与语言包契约门禁；N-04 已完成，多账户 B-02/M-05 继续暂缓 |
@@ -245,6 +246,12 @@ M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决�
 5. **M-10.4 GameLog worker/media 边界（已完成）**：保留既有 `mediaParsers.js` module，并新增 `src/stores/gameLog/nowPlayingTicker.js`，以显式 timer/clock/view 依赖承接 now-playing 更新；保留 1000ms 周期、完成时清理、媒体解析和 Store 的 `setNowPlaying` 兼容入口。提交：`23981f39`。
 
 M-10.1～M-10.4 已全部完成并分别通过独立代码提交。M-10 本轮只深化 Parser、数据库只读 projection/参数、sessions 过滤和 now-playing ticker；数据库写入/事务、`DbContext`、多账户 B-02/M-05 仍按要求暂缓，后续工作另开任务，不在本轮扩大范围。
+
+## 当前 M-11 细分任务
+
+1. **M-11.1 Appearance DOM class seam（计划中）**：`src/stores/settings/appearance.js` 目前直接修改 `document.documentElement.classList`，涉及无障碍状态、官方状态颜色和表格密度三个 UI class。先建立显式 `appearanceDomAdapter`，由 Store 保留原有私有兼容入口和设置 action；Adapter 通过注入 document/classList 测试，不改变 class 名称、增删顺序或初始化时机。改动前先记录 Appearance/NavMenu 定向基线，改动后再跑同一组测试、`typecheck:js` 和 `test:refactor`。
+
+M-11 暂不触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口；每个后续 seam 仍需独立提交。
 
 ## 当前 M-00 细分任务
 

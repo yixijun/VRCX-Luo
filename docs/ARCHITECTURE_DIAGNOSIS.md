@@ -74,7 +74,7 @@
 | `src/stores/search.js` | `directAccessPaste` 同时选择 Electron/CEF 剪贴板桥和解析流程 | Major → 已完成 M-01.1 | 剪贴板读取已移入 `clipboardAdapter`；保留 `directAccessPaste()` 兼容入口，后续再拆 direct-access use-case |
 | `src/stores/settings/notifications.js` | `selectCustomNotificationSound` 同时选择 Electron/CEF 文件桥并持久化设置 | Major → 已完成 M-01.2a | 文件选择已移入 `fileDialogAdapter`；保留取消值和设置 Store 公共接口 |
 | `src/stores/settings/advanced.js` | `folderSelectorDialog` 同时选择 Electron/CEF 目录桥，并维护并发可见状态 | Major → 已完成 M-01.2b | 目录选择已移入 `fileDialogAdapter`；保留旧路径提示、取消值、可见状态守卫和设置 Store 公共 interface |
-| `src/stores/settings/appearance.js` | store 直接修改 `document.documentElement`，并访问 API/数据库 | Major | 提取主题 adapter/composable；store 只保存偏好和派生状态 |
+| `src/stores/settings/appearance.js` | store 直接修改 `document.documentElement`，并访问 API/数据库 | Major → M-11.1 计划中 | 先提取无障碍状态、官方状态颜色和表格密度的 `appearanceDomAdapter`；保留设置入口和 class 契约，再继续收窄主题/偏好 I/O |
 | `src/stores/notification/index.js` | 通知状态、数据库、API、托盘、Electron、router、dialog、Toast 混合 | Major → 已完成 M-06.1～M-06.4 低风险 seam | 已提取通知领域 projection、偏好 persistence、seen queue；保留旧 action 兼容入口和 tray adapter。后续更深拆分等待 M-01/M-04 capability 契约 |
 | `src/services/sqlite.js` | 数据模块反向依赖 modal、i18n、外链打开 | Major | SQLite 层只抛结构化错误；由上层负责提示、翻译和导航 |
 | `src/services/accountSession.js` | 会话、登录/2FA、好友缓存、WebSocket、定时器、原始 SQL、modal 混合 | Major | 分离 session transport、认证用例、缓存持久化和调度器 |
@@ -106,7 +106,7 @@
 | Store | `src/stores/instance.js`（1411） | 实例模型、加入/离开、API、平台动作 | instance state / join-leave use-case |
 | Store | `src/stores/friend.js`（1385） | 好友、在线状态、排序、数据库、账号聚合 | friend entity / presence / aggregation |
 | Store | `src/stores/gameLog/index.js`（1164） | 日志、worker、媒体、数据库、统计；M-10.3 已抽出 sessions 过滤，M-10.4 已抽出 now-playing ticker | ingestion / query / parser；后续可继续收窄 worker 与数据库 capability |
-| Store | `src/stores/settings/appearance.js`（1235） | 设置、主题 DOM、文化设置、API、数据库 | preference state / theme adapter |
+| Store | `src/stores/settings/appearance.js`（1235） | 设置、主题 DOM、文化设置、API、数据库 | preference state / theme adapter；M-11.1 先处理 DOM class seam |
 | Store | `src/stores/settings/advanced.js`（1130） | 系统设置、文件操作、HTTP、清理、Toast | settings state / system actions |
 | Store | `src/stores/auth.js`（1039） | 登录、token、账号切换、自动登录、宿主调用 | auth state / auth use-case / account context |
 | Store | `src/stores/vrcx.js`（871） | 应用启动、迁移、配置、更新、数据库修复 | app lifecycle / migration |
