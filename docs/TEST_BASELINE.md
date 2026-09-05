@@ -289,6 +289,22 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 
 代码提交：`9844d194`。未发布、未推送。M-11.2 未修改 `src/vr`、CEF/Electron bridge、窗口接口、多账户会话或任何公共页面调用方。
 
+## M-11.3 后置验证
+
+2026-09-05，UI Store 的对话框面包屑数组状态变换已移入 `src/stores/ui/dialogCrumbState.js`。Store 继续保留 `pushDialogCrumb()`、`setDialogCrumbLabel()`、`jumpDialogCrumb()`、`clearDialogCrumbs()` 原有 public interface；重复项截断、默认 label、label 更新、索引边界和清空语义未改变，页面、Coordinator、路由、窗口能力和 VR overlay 未修改。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前 Store/页面定向基线 | `npx vitest run src/stores/__tests__/uiNotifications.test.js src/components/dialogs/__tests__/MainDialogContainer.test.js --reporter=dot` | **通过：2 个文件、13 项测试** |
+| M-11.3 Module RED → GREEN | `npx vitest run src/stores/__tests__/dialogCrumbState.test.js --reporter=dot` | **按行为逐步先得到预期 RED，再实现对应接口；最终 1 个文件、9 项测试通过** |
+| M-11.3 Store/页面定向回归 | `npx vitest run src/stores/__tests__/dialogCrumbState.test.js src/stores/__tests__/uiNotifications.test.js src/components/dialogs/__tests__/MainDialogContainer.test.js --reporter=dot` | **通过：3 个文件、23 项测试** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过：73 个测试文件、344 项测试** |
+| 生产构建 | `npm run prod` | **通过：4416 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
+
+代码提交：`8556c0ef`。未发布、未推送。M-11.3 只移动数组状态 implementation，未改变 UI Store 的 Store/页面兼容入口或其他宿主行为。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-10.1～M-10.4 GameLog 深化切片、M-11.1 Appearance DOM class seam、M-11.2 UI Store body drop guard seam、M-07.1～M-07.12 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁、N-02 版本来源与一致性门禁，以及 N-03 Shared/Localization 依赖和语言包门禁已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-10.1～M-10.4 GameLog 深化切片、M-11.1 Appearance DOM class seam、M-11.2 UI Store body drop guard seam、M-11.3 UI Store 对话框面包屑状态 seam、M-07.1～M-07.12 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁、N-02 版本来源与一致性门禁，以及 N-03 Shared/Localization 依赖和语言包门禁已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-10.1～M-10.4 的 GameLog parser、数据库只读 row projection/查询参数、sessions 过滤和 now-playing ticker module、M-11.1 的 Appearance DOM class adapter、M-11.2 的 UI Store body drop guard adapter、M-07.1～M-07.12 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract/窗口状态/窗口事件/窗口关闭守卫/托盘菜单/托盘图标工厂/托盘通知 projection/桌面通知 controller/托盘生命周期动作/托盘点击 Bridge、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁、N-02 的共享版本元数据/package-lock 同步/一致性校验，以及 N-03 的 Shared/Localization 依赖方向 guard/语言包 contract/CI 聚合门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的通知 action IPC 实现仍未迁移，多账户运行时功能仍按要求暂停。
+> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-10.1～M-10.4 的 GameLog parser、数据库只读 row projection/查询参数、sessions 过滤和 now-playing ticker module、M-11.1 的 Appearance DOM class adapter、M-11.2 的 UI Store body drop guard adapter、M-11.3 的 UI Store 对话框面包屑状态 module、M-07.1～M-07.12 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract/窗口状态/窗口事件/窗口关闭守卫/托盘菜单/托盘图标工厂/托盘通知 projection/桌面通知 controller/托盘生命周期动作/托盘点击 Bridge、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁、N-02 的共享版本元数据/package-lock 同步/一致性校验，以及 N-03 的 Shared/Localization 依赖方向 guard/语言包 contract/CI 聚合门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的通知 action IPC 实现仍未迁移，多账户运行时功能仍按要求暂停。
 
 ## 结论摘要
 
@@ -70,7 +70,7 @@
 | `src/coordinators/authCoordinator.js` | 原先直接创建登出 Noty 并执行 router 跳转 | Major → 已完成 M-03.3/M-03.5 | Router 和登出欢迎通知均经 adapter；保留旧 `runLogoutFlow` interface |
 | `src/coordinators/groupCoordinator.js` | 原先在 Group 更新流程内计算角色/presence/持久化/语言 projection 并发送通知 | Major → 已完成 M-09.1～M-09.4 | 角色、语言、presence 和持久化均已提取为纯 module；保留 `applyGroup`、`applyPresenceGroups` 和通知顺序 |
 | `src/coordinators/favoriteCoordinator.js` | 本地 world/avatar/friend 收藏分组、缓存、API、数据库和 Toast 混合 | Major → 已完成 M-09.5/M-09.6 | 本地实体和好友 id projection 已集中到 `favoriteLocalProjection`；后续再拆事件/持久化 use-case |
-| `src/stores/ui.js` | store 同时管理状态、router、DOM drop 事件、开发者工具和窗口行为 | Major → M-11.3 计划中 | body `drop` guard 已移入 `src/services/dropGuard.js`；下一刀先提取对话框面包屑状态，再拆 UI state 与 window actions，保持 Store public interface |
+| `src/stores/ui.js` | store 同时管理状态、router、DOM drop 事件、开发者工具和窗口行为 | Major → 已完成 M-11.2/M-11.3 | body `drop` guard 与对话框面包屑状态已移出；后续再拆 UI state 与 window actions，保持 Store public interface |
 | `src/stores/search.js` | `directAccessPaste` 同时选择 Electron/CEF 剪贴板桥和解析流程 | Major → 已完成 M-01.1 | 剪贴板读取已移入 `clipboardAdapter`；保留 `directAccessPaste()` 兼容入口，后续再拆 direct-access use-case |
 | `src/stores/settings/notifications.js` | `selectCustomNotificationSound` 同时选择 Electron/CEF 文件桥并持久化设置 | Major → 已完成 M-01.2a | 文件选择已移入 `fileDialogAdapter`；保留取消值和设置 Store 公共接口 |
 | `src/stores/settings/advanced.js` | `folderSelectorDialog` 同时选择 Electron/CEF 目录桥，并维护并发可见状态 | Major → 已完成 M-01.2b | 目录选择已移入 `fileDialogAdapter`；保留旧路径提示、取消值、可见状态守卫和设置 Store 公共 interface |
@@ -330,9 +330,16 @@ M-10.1～M-10.4 均遵守一次一步和测试门禁：没有改变 LogWatcher I
 | M-11.2 JavaScript 类型检查 | **通过：0 diagnostics** |
 | M-11.2 生产构建 | **通过：4415 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
 | M-11.2 格式检查 | **通过**：`git diff --check`；仅提示既有 CRLF 转换警告 |
-| Git 回滚点 | `b00564e2`、`9844d194`；未发布、未推送 |
+| M-11.3 改动前 Store/页面基线 | **通过：2 个文件、13 项测试**；`uiNotifications` 8 项、`MainDialogContainer` 5 项 |
+| M-11.3 Module RED → GREEN | **符合门禁**：先因 `dialogCrumbState` 模块和 `clearDialogCrumbs` 接口不存在得到预期失败；实现后 1 个文件、9 项测试通过 |
+| M-11.3 Store/页面定向回归 | **通过：3 个文件、23 项测试**；面包屑 Module 9 项、UI Store 9 项、MainDialogContainer 5 项 |
+| M-11.3 JavaScript 类型检查 | **通过：0 diagnostics** |
+| M-11.3 全量重构 smoke | **通过：73 个测试文件、344 项测试** |
+| M-11.3 生产构建 | **通过：4416 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| M-11.3 格式检查 | **通过**：`git diff --check`；仅提示既有 CRLF 转换警告 |
+| Git 回滚点 | `b00564e2`、`9844d194`、`8556c0ef`；未发布、未推送 |
 
-M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAdapter`；M-11.2 将 UI Store 的 body `drop` guard 移到 `dropGuard` adapter。两刀均保留原注册/初始化时机、事件名、`preventDefault()`、设置 action、Store/页面 public interface 和 VR overlay 行为；UI Store 仍保留 router、窗口动作等后续职责，下一步必须另开小切片。
+M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAdapter`；M-11.2 将 UI Store 的 body `drop` guard 移到 `dropGuard` adapter；M-11.3 将 UI Store 的对话框面包屑数组状态变换移到 `dialogCrumbState` module。三刀均保留原注册/初始化时机、事件名、`preventDefault()`、设置 action、面包屑重复/截断/label/边界行为、Store/页面 public interface 和 VR overlay 行为；UI Store 仍保留 router、窗口动作等后续职责，下一步必须另开小切片。
 
 ### 术语说明
 
