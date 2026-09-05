@@ -498,4 +498,32 @@ describe('StatusBar.vue - Servers indicator', () => {
 
         expect(input.element.value).toBe('135');
     });
+
+    test('keeps the idle WebSocket sparkline stroke inside the canvas bounds', async () => {
+        const yCoordinates = [];
+        const context = {
+            setTransform: vi.fn(),
+            clearRect: vi.fn(),
+            beginPath: vi.fn(),
+            moveTo: vi.fn((_x, y) => yCoordinates.push(y)),
+            lineTo: vi.fn((_x, y) => yCoordinates.push(y)),
+            stroke: vi.fn()
+        };
+        const getContextSpy = vi
+            .spyOn(HTMLCanvasElement.prototype, 'getContext')
+            .mockReturnValue(context);
+        let wrapper;
+
+        try {
+            wrapper = mountStatusBar();
+            await nextTick();
+            await Promise.resolve();
+
+            expect(yCoordinates.length).toBeGreaterThan(0);
+            expect(Math.max(...yCoordinates)).toBeLessThan(12);
+        } finally {
+            wrapper?.unmount();
+            getContextSpy.mockRestore();
+        }
+    });
 });

@@ -880,7 +880,9 @@
         ctx.beginPath();
         for (let i = 0; i < data.length; i++) {
             const x = i * step;
-            const y = h - (data[i] / max) * (h - 2);
+            // Keep the stroke one pixel inside the canvas so an idle (zero-value)
+            // sparkline does not get clipped at the bottom edge.
+            const y = Math.max(1, Math.min(h - 1, h - (data[i] / max) * (h - 2)));
             if (i === 0) {
                 ctx.moveTo(x, y);
             } else {
