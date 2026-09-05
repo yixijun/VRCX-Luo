@@ -97,6 +97,7 @@ if (process.arch === 'arm64' && fs.existsSync(armPath)) {
 
 const InteropApi = require('./InteropApi');
 const { assertAllowedDotNetCall } = require('./dotnetCapabilityManifest.cjs');
+const { initializeDotnet } = require('./dotnetBootstrap.cjs');
 const interopApi = new InteropApi();
 
 const OVERLAY_WRIST_FRAME_WIDTH = 512;
@@ -118,17 +119,7 @@ function createOverlayWindowShm() {
     fs.writeFileSync(OVERLAY_SHM_PATH, Buffer.alloc(OVERLAY_FRAME_SIZE + 1));
 }
 
-interopApi.getDotNetObject('ProgramElectron').PreInit(version, args);
-interopApi.getDotNetObject('VRCXStorage').Load();
-interopApi.getDotNetObject('ProgramElectron').Init();
-interopApi.getDotNetObject('SQLite').Init();
-interopApi.getDotNetObject('AppApiElectron').Init();
-interopApi.getDotNetObject('Discord').Init();
-interopApi.getDotNetObject('WebApi').Init();
-interopApi.getDotNetObject('LogWatcher').Init();
-
-interopApi.getDotNetObject('SystemMonitorElectron').Init();
-interopApi.getDotNetObject('AppApiVrElectron').Init();
+initializeDotnet({ interopApi, version, args });
 
 ipcMain.handle('callDotNetMethod', (event, className, methodName, args) => {
     assertAllowedDotNetCall(className, methodName, args);
