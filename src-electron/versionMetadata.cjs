@@ -1,4 +1,12 @@
+const fs = require('fs');
+const path = require('path');
+
 const NIGHTLY_HASH_LENGTH = 7;
+const DEFAULT_VERSION_FILE_PATH = path.join(__dirname, '..', 'Version');
+
+function getUtcDateVersion(now = new Date()) {
+    return now.toISOString().split('T')[0].replaceAll('-', '.');
+}
 
 function normalizeVersionText(versionText) {
     return typeof versionText === 'string' ? versionText.trim() : '';
@@ -40,9 +48,21 @@ function createVersionMetadata(
     };
 }
 
+function readVersionMetadata({
+    versionFilePath = DEFAULT_VERSION_FILE_PATH,
+    fallbackPackageVersion = '',
+    readFile = fs.readFileSync
+} = {}) {
+    return createVersionMetadata(readFile(versionFilePath, 'utf8'), {
+        fallbackPackageVersion
+    });
+}
+
 module.exports = {
     createVersionMetadata,
+    getUtcDateVersion,
     isNightlyVersion,
     normalizeVersionText,
+    readVersionMetadata,
     toPackageVersion
 };

@@ -1,6 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { createVersionMetadata } from '../../../src-electron/versionMetadata.cjs';
+import {
+    createVersionMetadata,
+    getUtcDateVersion,
+    readVersionMetadata
+} from '../../../src-electron/versionMetadata.cjs';
 
 describe('version metadata', () => {
     it('normalizes a stable Version value without changing its public value', () => {
@@ -58,5 +62,28 @@ describe('version metadata', () => {
             packageVersion: '2026.09.05',
             isNightly: false
         });
+    });
+
+    it('reads Version through an injected file reader', () => {
+        const readFile = vi.fn(() => ' 2026.08.23\n');
+
+        expect(
+            readVersionMetadata({
+                versionFilePath: 'Version',
+                fallbackPackageVersion: '2026.01.01',
+                readFile
+            })
+        ).toEqual({
+            sourceVersion: '2026.08.23',
+            packageVersion: '2026.08.23',
+            isNightly: false
+        });
+        expect(readFile).toHaveBeenCalledWith('Version', 'utf8');
+    });
+
+    it('formats the fallback package version in UTC', () => {
+        expect(getUtcDateVersion(new Date('2026-09-05T23:30:00.000Z'))).toBe(
+            '2026.09.05'
+        );
     });
 });
