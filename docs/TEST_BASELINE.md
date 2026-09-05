@@ -235,6 +235,21 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：71 个文件、339 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-10.1 后置验证
+
+GameLog Parser 切片只把原始 `LogWatcher` tuple 的字段映射移入纯 `gameLogParser` module；`LogWatcherService.parseRawGameLog()` 保留为兼容委托，未修改 `getAll()`、coordinator、C# 序列化或任何 Store/页面接口。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前 GameLog 定向基线 | `npx vitest run src/services/__tests__/gameLog.test.js src/views/GameLog/__tests__/GameLogSessions.test.js --reporter=dot` | **通过：2 个文件、22 项测试** |
+| 改动后 GameLog 定向回归 | `npx vitest run src/services/__tests__/gameLog.test.js src/views/GameLog/__tests__/GameLogSessions.test.js --reporter=dot` | **通过：2 个文件、23 项测试**；新增纯 Parser 覆盖和兼容委托用例 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过：71 个文件、340 项测试** |
+| 生产构建 | `npm run prod` | **通过：4409 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示现有 CRLF 转换警告 |
+
+代码提交：`296aa38a`。未发布、未推送；后续 M-10.2 仍需先单独建立 database 只读查询基线。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

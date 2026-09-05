@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-07.1～M-07.12 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁、N-02 版本来源与一致性门禁，以及 N-03 Shared/Localization 依赖和语言包门禁已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-10.1 GameLog Parser seam、M-07.1～M-07.12 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁、N-02 版本来源与一致性门禁，以及 N-03 Shared/Localization 依赖和语言包门禁已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-07.1～M-07.12 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract/窗口状态/窗口事件/窗口关闭守卫/托盘菜单/托盘图标工厂/托盘通知 projection/桌面通知 controller/托盘生命周期动作/托盘点击 Bridge、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁、N-02 的共享版本元数据/package-lock 同步/一致性校验，以及 N-03 的 Shared/Localization 依赖方向 guard/语言包 contract/CI 聚合门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的通知 action IPC 实现仍未迁移，多账户运行时功能仍按要求暂停。
+> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-10.1 的纯 `gameLogParser` module 与 `LogWatcherService` 兼容委托、M-07.1～M-07.12 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract/窗口状态/窗口事件/窗口关闭守卫/托盘菜单/托盘图标工厂/托盘通知 projection/桌面通知 controller/托盘生命周期动作/托盘点击 Bridge、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁、N-02 的共享版本元数据/package-lock 同步/一致性校验，以及 N-03 的 Shared/Localization 依赖方向 guard/语言包 contract/CI 聚合门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的通知 action IPC 实现仍未迁移，多账户运行时功能仍按要求暂停。
 
 ## 结论摘要
 
@@ -79,7 +79,8 @@
 | `src/services/sqlite.js` | 数据模块反向依赖 modal、i18n、外链打开 | Major | SQLite 层只抛结构化错误；由上层负责提示、翻译和导航 |
 | `src/services/accountSession.js` | 会话、登录/2FA、好友缓存、WebSocket、定时器、原始 SQL、modal 混合 | Major | 分离 session transport、认证用例、缓存持久化和调度器 |
 | `src/services/database/index.js` | facade 过宽，`window.database` 全局暴露，`dbVars` 可变 | Major | 按领域拆 database module；引入显式 `DbContext`；保留兼容 facade |
-| `src/services/database/gameLog.js` | 约 2200 行，写入、查询、媒体解析、聚合、统计全混在一起 | Major | 先拆只读查询，再拆写入和 parser，避免一次性重写 SQL |
+| `src/services/gameLog.js` | LogWatcher 宿主 I/O、批量读取和原始 tuple 映射曾混在一起；M-10.1 已把纯 Parser 移到 `gameLogParser.js`，保留兼容委托 | Major → 已完成 M-10.1 | 后续只收窄 `getAll/setDateTill/reset` 的宿主 capability，不改公开方法 |
+| `src/services/database/gameLog.js` | 约 2295 行，写入、查询、媒体解析、聚合、统计全混在一起 | Major → M-10.2 待开始 | 先拆只读查询和 row projection，再拆写入，避免一次性重写 SQL |
 | `src/services/aggregatedView.js` | 使用 `accountHub.allSessions` / `primaryPrefix`，但对应 getter 不存在 | Major | 定义明确的账号元数据 interface，并为标签、颜色和 primary 判断增加契约测试 |
 | `src/api/index.js`、`src/queries` | API、Query cache、Pinia 可能重复持有实体数据 | Major → 已完成 M-08.1～M-08.3 | Query side effect、scope key 和 resource registry 已统一到 Query layer；继续明确 Pinia/Query 的实体唯一来源，并收窄全局 request facade |
 | `src/stores/updateLoop.js` | 兼容入口和依赖组装仍集中；任务实现已移到独立模块 | Major | 已完成第一刀；后续可把宿主 capability 注入进一步收窄，继续保留兼容 facade |
@@ -104,7 +105,7 @@
 | Store | `src/stores/photon.js`（1831） | Photon 事件、实例状态、网络同步、数据库 | Photon transport / instance projection |
 | Store | `src/stores/instance.js`（1411） | 实例模型、加入/离开、API、平台动作 | instance state / join-leave use-case |
 | Store | `src/stores/friend.js`（1385） | 好友、在线状态、排序、数据库、账号聚合 | friend entity / presence / aggregation |
-| Store | `src/stores/gameLog/index.js`（1236） | 日志、worker、媒体、数据库、统计 | ingestion / query / parser |
+| Store | `src/stores/gameLog/index.js`（1351） | 日志、worker、媒体、数据库、统计；M-10.1 已先把 LogWatcher Parser 移出 service | ingestion / query / parser；下一刀是 database read-only query |
 | Store | `src/stores/settings/appearance.js`（1235） | 设置、主题 DOM、文化设置、API、数据库 | preference state / theme adapter |
 | Store | `src/stores/settings/advanced.js`（1130） | 系统设置、文件操作、HTTP、清理、Toast | settings state / system actions |
 | Store | `src/stores/auth.js`（1039） | 登录、token、账号切换、自动登录、宿主调用 | auth state / auth use-case / account context |
@@ -132,6 +133,7 @@ flowchart LR
     Coords["coordinators"]
     Api["src/api + src/queries"]
     Services["account / config / session modules"]
+    GameLogParser["gameLogParser (pure parser)"]
     Db["database facade + sqlite"]
     Shared["src/shared"]
     Workers["workers + updateLoop"]
@@ -166,6 +168,7 @@ flowchart LR
 
     Services --> Db
     Services --> Bridge
+    Services -. parser seam .-> GameLogParser
     Workers --> Stores
     Workers --> Coords
 
@@ -230,7 +233,8 @@ flowchart LR
 - 按 feed、activity、gameLog、favorites、notifications 等领域拆出 database module。
 - 用显式账号上下文替代可变全局 `dbVars`。
 - 保留现有 `database.xxx()` facade，将旧方法转发到新模块。
-- 第一阶段优先拆 gameLog 的只读查询，避免先动写入和事务。
+- M-10.1 已先把 `src/services/gameLog.js` 中的 `parseRawGameLog` 移到无宿主依赖的 `src/services/gameLogParser.js`；`LogWatcherService` 仍提供原方法作为兼容 interface。
+- 下一阶段优先拆 `src/services/database/gameLog.js` 的只读查询，避免先动写入和事务。
 - 为 prefix、事务和账号切换增加 contract test。
 
 这里的关键是保持旧接口和新 implementation 可以并存，避免大面积改动调用方。
@@ -290,6 +294,18 @@ N-02 的首次 Vite 接入尝试触发了 `typecheck:js` 的跨 tsconfig 诊断�
 | `npm run prod` | **通过**；4408 个模块构建完成，保留既有 router 动态 import 与 Node deprecation 警告 |
 
 N-03 只增加静态检查、测试和 CI 门禁，没有迁移现有 Shared 运行时职责，也没有自动重写语言包；后续可在独立切片中逐条消化 14 条遗留反向边和 200 个额外 key。
+
+### M-10.1 后置验证（2026-09-05）
+
+| 检查项 | 结果 |
+|---|---|
+| GameLog 定向基线 → 回归 | **22/22 → 23/23 通过**；纯 Parser 19 个映射用例和兼容委托用例均通过 |
+| `npm run test:refactor -- --reporter=dot` | **通过：71 个测试文件、340 项测试** |
+| `npm run typecheck:js` | **通过：0 diagnostics** |
+| `npm run prod` | **通过：4409 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| Git 回滚点 | 代码提交 `296aa38a`；未发布、未推送 |
+
+M-10.1 只深化 Parser module，没有改变 LogWatcher I/O、coordinator 调用、C# tuple 序列化、Store/页面 interface 或并发语义；M-10.2 的数据库只读查询仍未开始。
 
 ### 术语说明
 
