@@ -30,6 +30,8 @@ jobs:
         run: npm run typecheck:js
       - name: Validate screenshot metadata schema
         run: npm run check:schema
+      - name: Check shared dependency direction and localization contract
+        run: npm run check:architecture
       - name: Run refactor smoke tests
         run: npm run test:refactor
       - name: Build renderer and license manifest

@@ -26,6 +26,7 @@
         "lint": "npm run lint:oxlint && npm run lint:eslint",
         "lint:eslint": "eslint .",
         "lint:oxlint": "oxlint .",
+        "check:architecture": "node build-scripts/check-architecture.js",
         "check:dependency-direction": "node build-scripts/check-dependency-direction.js",
         "check:localization": "node build-scripts/check-localization.js",
         "check:schema": "node build-scripts/validate-screenshot-metadata-schema.js",
