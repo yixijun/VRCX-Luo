@@ -53,6 +53,17 @@ vi.mock('../../../../components/ui/button', () => ({
     }
 }));
 
+vi.mock('../../../../components/ui/dropdown-menu', () => ({
+    DropdownMenu: { template: '<div data-testid="presence-dropdown"><slot /></div>' },
+    DropdownMenuTrigger: {
+        template: '<div data-testid="presence-menu-trigger" v-bind="$attrs"><slot /></div>'
+    },
+    DropdownMenuContent: {
+        template: '<div data-testid="presence-filter-content" v-bind="$attrs"><slot /></div>'
+    },
+    DropdownMenuSeparator: { template: '<hr />' }
+}));
+
 vi.mock('../../../../components/ui/toggle-group', () => ({
     ToggleGroup: {
         props: ['modelValue'],
@@ -81,6 +92,7 @@ vi.mock('../../../../components/ui/toggle-group', () => ({
 vi.mock('lucide-vue-next', () => ({
     LogIn: { template: '<span />' },
     LogOut: { template: '<span />' },
+    ListFilter: { template: '<span />' },
     RefreshCw: { template: '<span />' }
 }));
 
@@ -137,10 +149,8 @@ describe('InstancePlayerEvents.vue', () => {
             'presence-identity-filter',
             'presence-direction-filter'
         ]);
-        expect(wrapper.get('.instance-player-events__toolbar').classes()).toContain('flex-nowrap');
-        expect(wrapper.get('[data-testid="presence-filter-menu"]').classes()).toEqual(
-            expect.arrayContaining(['flex-1', 'overflow-x-auto', 'scrollbar-hidden'])
-        );
+        expect(wrapper.get('[data-testid="presence-menu-trigger"]').exists()).toBe(true);
+        expect(wrapper.get('[data-testid="presence-filter-menu"]').classes()).toContain('flex-col');
 
         await wrapper.get('[data-testid="filter-friends"]').trigger('click');
         expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);

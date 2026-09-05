@@ -5,61 +5,77 @@
         <div
             class="instance-player-events__toolbar flex shrink-0 flex-nowrap items-center gap-1 overflow-hidden border-b border-border px-2 py-1"
             :aria-label="t('view.player_list.presence.filters_label')">
-            <span class="shrink-0 text-xs font-medium text-muted-foreground">
-                {{ t('view.player_list.presence.title') }}
-            </span>
+            <DropdownMenu>
+                <DropdownMenuTrigger as-child>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="h-7 min-w-0 shrink-0 gap-1 px-2 text-xs"
+                        :aria-label="t('view.player_list.presence.filters_label')"
+                        :title="t('view.player_list.presence.filters_label')"
+                        data-testid="presence-filter-trigger">
+                        <ListFilter class="size-3.5 shrink-0" />
+                        <span class="truncate">{{ t('view.player_list.presence.title') }}</span>
+                    </Button>
+                </DropdownMenuTrigger>
 
-            <div
-                class="flex min-w-0 flex-1 flex-nowrap items-center gap-1 overflow-x-auto overscroll-x-contain whitespace-nowrap scrollbar-hidden"
-                data-testid="presence-filter-menu">
-                <ToggleGroup
-                    type="single"
-                    variant="outline"
-                    size="sm"
-                    :model-value="filter"
-                    class="shrink-0"
-                    data-testid="presence-identity-filter"
-                    @update:model-value="handleFilterChange">
-                    <ToggleGroupItem value="all" class="h-7 gap-1 px-2 text-xs">
-                        {{ t('view.player_list.presence.all') }}
-                        <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="friends" class="h-7 gap-1 px-2 text-xs">
-                        {{ t('view.player_list.presence.friends') }}
-                        <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ friendsCount }}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="strangers" class="h-7 gap-1 px-2 text-xs">
-                        {{ t('view.player_list.presence.strangers') }}
-                        <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ strangersCount }}</span>
-                    </ToggleGroupItem>
-                </ToggleGroup>
+                <DropdownMenuContent
+                    align="start"
+                    side="bottom"
+                    :side-offset="4"
+                    class="w-auto min-w-[17rem] p-2"
+                    data-testid="presence-filter-content">
+                    <div class="flex min-w-0 flex-col gap-1" data-testid="presence-filter-menu">
+                        <ToggleGroup
+                            type="single"
+                            variant="outline"
+                            size="sm"
+                            :model-value="filter"
+                            class="w-full"
+                            data-testid="presence-identity-filter"
+                            @update:model-value="handleFilterChange">
+                            <ToggleGroupItem value="all" class="h-7 flex-1 gap-1 px-2 text-xs">
+                                {{ t('view.player_list.presence.all') }}
+                                <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="friends" class="h-7 flex-1 gap-1 px-2 text-xs">
+                                {{ t('view.player_list.presence.friends') }}
+                                <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ friendsCount }}</span>
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="strangers" class="h-7 flex-1 gap-1 px-2 text-xs">
+                                {{ t('view.player_list.presence.strangers') }}
+                                <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ strangersCount }}</span>
+                            </ToggleGroupItem>
+                        </ToggleGroup>
 
-                <span class="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden="true" />
+                        <DropdownMenuSeparator class="my-1" />
 
-                <ToggleGroup
-                    type="single"
-                    variant="outline"
-                    size="sm"
-                    :model-value="directionFilter"
-                    class="shrink-0"
-                    data-testid="presence-direction-filter"
-                    @update:model-value="handleDirectionFilterChange">
-                    <ToggleGroupItem value="all" class="h-7 gap-1 px-2 text-xs">
-                        {{ t('view.player_list.presence.all') }}
-                        <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="joined" class="h-7 gap-1 px-2 text-xs">
-                        <LogIn class="size-3" />
-                        {{ t('view.player_list.presence.joined') }}
-                        <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ joinedCount }}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem value="left" class="h-7 gap-1 px-2 text-xs">
-                        <LogOut class="size-3" />
-                        {{ t('view.player_list.presence.left') }}
-                        <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ leftCount }}</span>
-                    </ToggleGroupItem>
-                </ToggleGroup>
-            </div>
+                        <ToggleGroup
+                            type="single"
+                            variant="outline"
+                            size="sm"
+                            :model-value="directionFilter"
+                            class="w-full"
+                            data-testid="presence-direction-filter"
+                            @update:model-value="handleDirectionFilterChange">
+                            <ToggleGroupItem value="all" class="h-7 flex-1 gap-1 px-2 text-xs">
+                                {{ t('view.player_list.presence.all') }}
+                                <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="joined" class="h-7 flex-1 gap-1 px-2 text-xs">
+                                <LogIn class="size-3" />
+                                {{ t('view.player_list.presence.joined') }}
+                                <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ joinedCount }}</span>
+                            </ToggleGroupItem>
+                            <ToggleGroupItem value="left" class="h-7 flex-1 gap-1 px-2 text-xs">
+                                <LogOut class="size-3" />
+                                {{ t('view.player_list.presence.left') }}
+                                <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ leftCount }}</span>
+                            </ToggleGroupItem>
+                        </ToggleGroup>
+                    </div>
+                </DropdownMenuContent>
+            </DropdownMenu>
 
             <Button
                 variant="ghost"
@@ -130,7 +146,7 @@
 
 <script setup>
     import { computed, ref, watch } from 'vue';
-    import { LogIn, LogOut, RefreshCw } from 'lucide-vue-next';
+    import { ListFilter, LogIn, LogOut, RefreshCw } from 'lucide-vue-next';
     import { useI18n } from 'vue-i18n';
 
     import { database } from '../../../services/database';
@@ -140,6 +156,12 @@
     import UserIdentityInline from '../../../components/UserIdentityInline.vue';
     import { Badge } from '../../../components/ui/badge';
     import { Button } from '../../../components/ui/button';
+    import {
+        DropdownMenu,
+        DropdownMenuContent,
+        DropdownMenuSeparator,
+        DropdownMenuTrigger
+    } from '../../../components/ui/dropdown-menu';
     import { ToggleGroup, ToggleGroupItem } from '../../../components/ui/toggle-group';
 
     const props = defineProps({
