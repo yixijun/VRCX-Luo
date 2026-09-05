@@ -73,6 +73,20 @@ describe('dependency version matrix', () => {
         expect(result.errors).toEqual([]);
         expect(result.drifts).toEqual([
             {
+                dependency: 'Microsoft.JavaScript.NodeApi',
+                entries: [
+                    { project: 'VRCX-Electron.csproj', version: '0.9.19' },
+                    { project: 'VRCX-Electron-arm64.csproj', version: '0.9.18' }
+                ]
+            },
+            {
+                dependency: 'Microsoft.JavaScript.NodeApi.Generator',
+                entries: [
+                    { project: 'VRCX-Electron.csproj', version: '0.9.19' },
+                    { project: 'VRCX-Electron-arm64.csproj', version: '0.9.18' }
+                ]
+            },
+            {
                 dependency: 'NLog',
                 entries: [
                     { project: 'VRCX-Electron.csproj', version: '6.1.2' },

@@ -22,6 +22,8 @@ const COUPLED_DOTNET_PACKAGES = [
 
 const SHARED_DOTNET_PACKAGES = [
     'DiscordRichPresence',
+    'Microsoft.JavaScript.NodeApi',
+    'Microsoft.JavaScript.NodeApi.Generator',
     'NLog',
     'Newtonsoft.Json',
     'SixLabors.ImageSharp',
