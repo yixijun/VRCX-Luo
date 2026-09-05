@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-07.1～M-07.3 Electron composition-root seam，以及 M-00.1～M-00.3 测试/CI 门禁已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-07.1～M-07.3 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁，以及 N-02 版本来源与一致性门禁已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-07.1～M-07.3 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract，以及 M-00.1～M-00.3 的 JavaScript 类型收敛、重构 smoke 集和分阶段 CI 门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的 window/tray/notification 实现仍未迁移，多账户运行时功能仍按要求暂停。
+> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-07.1～M-07.3 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁，以及 N-02 的共享版本元数据、package/lock 同步和一致性校验均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的 window/tray/notification 实现仍未迁移，多账户运行时功能仍按要求暂停。
 
 ## 结论摘要
 
@@ -41,7 +41,7 @@
 | `src/vr` | VR overlay 和 VR 页面 | `Vr.vue` 超过 2000 行，VR UI、状态和平台行为混杂 |
 | `src/workers` | 后台任务和定时 worker | 异步边界较隐蔽，独立测试接缝不足 |
 | `src/localization` | 多语言 JSON 和翻译辅助 | translation key 漂移风险，缺少自动一致性检查 |
-| `Installer`、`build-scripts` | 安装包、构建、发布脚本 | Windows shell 假设较多，版本和产物来源不够集中 |
+| `Installer`、`build-scripts` | 安装包、构建、发布脚本 | Windows shell 假设较多；N-02 已将 JS 构建脚本接入共享版本 reader 和 `check:version` 门禁，CEF job 仍按环境生成 `Installer/version_define.nsh` |
 | `.github/workflows` | CI、构建和发布 | 已支持 PR 与手动触发；`quality_js` 和 C# 测试为阻断门禁，全量测试、lint/format 保留可见 report-only 基线 |
 
 ## 2. 文档盘点
@@ -92,7 +92,7 @@
 | `Dotnet.Tests/VRCX.Cef.Tests.csproj` | C# 测试发现曾被 `OutputType=Exe` 绕过 | Major | 已改为正式测试项目，`dotnet test` 当前发现并通过 3 个测试，且由 Windows CI job 执行 |
 | `docs/schemas/screenshotMetadata-schema.json` | Schema 结构校验此前缺失 | Major | 已增加 `check:schema` 脚本并接入 CI，后续补字段语义/样例校验 |
 | `docs/DATABASE_SCHEMA.md`、`docs/JIRAI_FEATURES.md` | 文档与代码状态、表结构、行数不一致 | Minor | 描述稳定契约；易变的统计信息改为脚本生成 |
-| `package.json`、`Version` | 版本号来源不一致 | Minor → N-02.1 已建立纯解析 seam | 继续将 Electron、Vite 和构建脚本接入同一版本元数据，并保留当前对外格式 |
+| `package.json`、`Version` | 版本号来源不一致 | Minor → N-02 已完成 | 根 `Version` 作为唯一人工来源；package/lock 同步和 `check:version` 构建前门禁已建立，Electron/Vite/产物命名共用解析契约；Installer 版本仍由 CEF job 注入 |
 
 ## 4. 上帝组件和上帝 store
 
@@ -264,6 +264,18 @@ flowchart LR
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
 | C# 测试项目构建 | 通过：0 警告、0 错误 |
 | `screenshotMetadata-schema.json` | JSON 解析和 5 属性结构检查通过 |
+
+### N-02 后置验证（2026-09-05）
+
+| 检查项 | 结果 |
+|---|---|
+| 版本元数据/同步/一致性定向测试 | **通过：4 个文件、11 项测试** |
+| `npm run check:version` | **通过**：`2026.08.23 -> 2026.08.23` |
+| `npm run test:refactor -- --reporter=dot` | **通过：60 个文件、304 项测试** |
+| `npm run typecheck:js` | **通过：0 diagnostics** |
+| `npm run prod` | **通过**；保留既有 router 动态 import 与 Node deprecation 警告 |
+
+N-02 的首次 Vite 接入尝试触发了 `typecheck:js` 的跨 tsconfig 诊断，已在同一切片内按回滚协议由 `ffcc32a6` 回滚；随后以 `271dfdca` 建立显式 CJS 类型检查边界，最终回归通过，未扩大既有失败基线。
 
 ### 术语说明
 

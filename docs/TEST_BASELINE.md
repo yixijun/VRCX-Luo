@@ -2,7 +2,7 @@
 
 > 记录时间：2026-09-05
 >
-> 用途：记录 M-00 测试与契约门禁及 B-01 宿主桥安全门禁的当前基线。后续每个重构切片都必须与本文件中的对应命令对比；失败数量或错误类型增加时，停止当前切片并回滚当前 commit。
+> 用途：记录 M-00 测试与契约门禁、B-01 宿主桥安全门禁及 N-02 版本来源门禁的当前基线。后续每个重构切片都必须与本文件中的对应命令对比；失败数量或错误类型增加时，停止当前切片并回滚当前 commit。
 
 ## 当前工作树
 
@@ -10,6 +10,7 @@
 - 基线建立前工作树：干净；当前工作树应在每个独立切片提交后恢复干净
 - `updateLoop` scheduler/task 拆分：已完成，不在本轮重复修改
 - B-01 宿主桥安全封口：已完成；来源策略和 174 个方法参数 schema 均有定向回归测试
+- N-02 版本与构建来源：已完成；根 `Version` 驱动 package/lock 同步，Electron/Vite/产物命名共用版本 reader，构建前 `check:version` 门禁已接入
 - schema 文件：`docs/schemas/screenshotMetadata-schema.json` 由 `npm run check:schema` 校验
 
 ## 命令结果
@@ -87,6 +88,20 @@ B-01 的来源 guard 在主进程注册的 15 个 IPC handler 前执行：packag
 | C# format | report-only | 遗留格式基线，结果在 CI 中可见 |
 
 当前没有增加“改动文件 lint 必须通过”的伪硬门禁：全仓 lint/format 基线仍为红色，直接启用会让现有分支无法区分新增回归。后续每个切片必须维持上述 report-only 结果不恶化，再逐步收紧。
+
+## N-02 后置验证
+
+2026-09-05，版本来源统一切片完成。根 `Version` 保持唯一人工维护来源；package/lock 由同步脚本生成，Electron、Vite 和产物命名脚本通过共享 `versionMetadata.cjs` 读取；`check:version` 校验 package metadata 与 `Version` 的推导结果，并接入 Electron 构建命令。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 版本元数据/同步/一致性定向测试 | `npx vitest run src/services/__tests__/versionMetadata.test.js src/services/__tests__/versionPackageSync.test.js src/services/__tests__/versionConsistency.test.js src/services/__tests__/versionConsistencyCli.test.js --reporter=dot` | **通过**：4 个文件、11 项测试 |
+| 版本来源一致性 | `npm run check:version` | **通过**：`2026.08.23 -> 2026.08.23` |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：60 个文件、304 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+| 生产构建 | `npm run prod` | **通过**；保留既有 router 动态 import 与 Node deprecation 警告 |
+
+N-02 的首次 Vite 接入尝试触发了跨 tsconfig 类型诊断，已由 `ffcc32a6` 回滚；安全重做 `271dfdca` 通过类型检查、测试和生产构建，未改变公共接口、序列化格式或并发语义。
 
 ## 后续门禁规则
 

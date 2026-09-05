@@ -29,7 +29,7 @@
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
-| Minor | N-02 版本与构建来源 | **进行中：N-02.1** | 先固化 `Version` 的纯解析契约，再统一 package 和宿主注入来源 |
+| Minor | N-02 版本与构建来源 | **已完成：N-02.1～N-02.3** | 进入 N-03；保持版本一致性门禁，多账户 B-02/M-05 继续暂缓 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
 | Minor | N-04 第三方/生成文件治理 | 未开始 | 建立版本矩阵，生成代码不作为首批目标 |
 
@@ -86,6 +86,11 @@
 | `ed1b36ec` | M-07.3：建立 CEF/Electron capability method、参数、IPC channel 与取消/错误语义契约测试 |
 | `df65d955` | B-01.1：新增可信渲染来源策略；Electron 15 个 IPC handler 统一拒绝非 packaged renderer 与未启用的开发服务器来源 |
 | `5e84ad42` | B-01.2：为 174 个 .NET allowlist 方法补齐参数数量/基础类型 schema，并在 preload/main/Interop 边界复用校验 |
+| `82ff3fe8` | N-02.1：建立可注入的版本元数据解析、UTC 回退和文件读取契约 |
+| `5f42e3b6` / `83883a59` | N-02.2：集中版本文件读取并同步 package.json/package-lock.json 版本 |
+| `ffcc32a6` / `271dfdca` | N-02.2：按回滚协议撤回跨 tsconfig 的 Vite 接入，并建立安全的类型检查边界 |
+| `25d0e823` / `c59a2be3` | N-02.2：让 Electron 版本显示和构建产物命名消费共享版本元数据 |
+| `664abe3b` | N-02.3：加入 `check:version` 一致性门禁并接入 Electron 构建前流程 |
 
 ## 当前 M-01 细分任务
 
@@ -104,9 +109,13 @@ M-01 已完成三个低风险宿主 seam；B-01 现已完成动态 bridge 的来
 
 ## 当前 N-02 细分任务
 
-1. **N-02.1 版本元数据纯契约（已完成）**：新增 `src-electron/versionMetadata.cjs`，集中描述 `Version` 文本清理、时间戳到 package 版本的转换、七字符 nightly 后缀识别和注入式回退值；新增 `src/services/__tests__/versionMetadata.test.js` 覆盖稳定版、时间戳版、nightly 和空值回退。此切片仅建立可测试 seam，未接入 Electron、Vite 或构建脚本，因此不改变现有运行时行为。提交：`82ff3fe8`。
-2. **N-02.2 构建与宿主接入（未开始）**：将 `patch-package-version.js`、`vite.config.js`、`main.js` 和产物命名脚本逐步改为消费同一版本元数据，保留既有显示字符串、序列化格式和构建产物命名语义。
-3. **N-02.3 来源一致性门禁（未开始）**：增加构建前校验，阻止 `Version`、`package.json` 和宿主注入值发生无提示漂移，并补充文档与 CI 输出。
+1. **N-02.1 版本元数据纯契约（已完成）**：新增 `src-electron/versionMetadata.cjs`，集中描述 `Version` 文本清理、时间戳到 package 版本的转换、七字符 nightly 后缀识别、UTC 日期回退和注入式文件读取；新增 `src/services/__tests__/versionMetadata.test.js` 覆盖稳定版、时间戳版、nightly、空值回退和文件读取。此切片先建立可测试 seam，不改变现有运行时行为。主提交：`82ff3fe8`；计划记录提交：`7d391b05`。
+2. **N-02.2 构建与宿主接入（已完成）**：`src-electron/patch-package-version.js` 通过共享 reader 将根 `Version` 转换并同步写入 `package.json`、`package-lock.json` 及其根 package entry；`src/vite.config.js`、`src-electron/main.js` 和 `src-electron/rename-builds.js` 均消费同一 `versionMetadata.cjs`，保留既有 Electron 显示字符串、nightly 判定、序列化字段和产物命名语义。相关提交：`5f42e3b6`、`83883a59`、`271dfdca`、`25d0e823`、`c59a2be3`。
+3. **N-02.3 来源一致性门禁（已完成）**：新增 `src-electron/versionConsistency.cjs` 与 `build-scripts/check-version-consistency.js`，以 `Version` 推导的 package 版本检查 `package.json`、`package-lock.json` 和 lockfile 根 package entry；`npm run check:version` 可单独执行，并已接入 `build-electron`/`build-electron-arm64` 的构建前流程。相关提交：`664abe3b`。
+
+N-02 已完成。根 `Version` 是唯一人工维护的版本来源，package/lock 是构建同步产物，Electron/Vite/产物命名脚本共用同一解析契约；当前仓库实际版本为 `2026.08.23`。N-02 范围不扩展到 CI 中按构建环境生成的 `Installer/version_define.nsh`，避免改变 CEF 构建注入流程；该文件仍由现有 Windows CEF job 在构建时写入。初次直接让 Vite 跨 tsconfig 引用 CJS 导致 `typecheck:js` 失败，已按回滚协议由 `ffcc32a6` 立即回滚，并以 `271dfdca` 采用显式类型检查边界后通过验证。
+
+下一步进入 N-03（Shared/Localization 边界）；多账户 B-02/M-05 仍按要求暂缓。
 
 ## 当前 M-02 细分任务
 
