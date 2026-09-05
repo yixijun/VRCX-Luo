@@ -21,6 +21,7 @@ const {
     readWindowConfig
 } = require('./windowState.cjs');
 const { bindWindowEventBridge } = require('./windowEventBridge.cjs');
+const { bindWindowCloseHandler } = require('./windowCloseHandler.cjs');
 
 //app.disableHardwareAcceleration();
 
@@ -439,69 +440,22 @@ function createWindow() {
         setStorageValue: (key, value) => VRCXStorage.Set(key, value)
     });
 
-    mainWindow.on('close', async (event) => {
-        if (appIsQuitting) {
-            return;
-        }
-
-        if (getCloseToTray()) {
-            event.preventDefault();
-            mainWindow.hide();
-            return;
-        }
-
-        if (!shouldPromptCloseToTray()) {
-            return;
-        }
-
-        event.preventDefault();
-        if (closePromptInProgress) {
-            return;
-        }
-
-        closePromptInProgress = true;
-        try {
-            const { response, checkboxChecked } = await dialog.showMessageBox(
-                mainWindow,
-                {
-                    type: 'question',
-                    title: '关闭 VRCX-Luo',
-                    message: '是否最小化到系统托盘？',
-                    detail: '最小化后 VRCX-Luo 会继续在后台运行，可从托盘图标重新打开。',
-                    buttons: ['最小化到托盘', '直接退出', '取消'],
-                    defaultId: 0,
-                    cancelId: 2,
-                    checkboxLabel: '以后不再提示',
-                    checkboxChecked: false,
-                    noLink: true
-                }
-            );
-
-            const decision = resolveClosePromptResponse(
-                response,
-                checkboxChecked
-            );
-            if (decision.action === 'cancel') {
-                return;
-            }
-
-            if (decision.persistPreference) {
-                VRCXStorage.Set('VRCX_CloseToTrayPrompt', 'false');
-                VRCXStorage.Set(
-                    'VRCX_CloseToTray',
-                    String(decision.closeToTrayEnabled)
-                );
-            }
-
-            if (decision.action === 'minimize') {
-                mainWindow.hide();
-            } else {
-                appIsQuitting = true;
-                app.quit();
-            }
-        } finally {
-            closePromptInProgress = false;
-        }
+    bindWindowCloseHandler({
+        window: mainWindow,
+        app,
+        dialog,
+        getCloseToTray,
+        shouldPromptCloseToTray,
+        resolvePromptResponse: resolveClosePromptResponse,
+        getAppIsQuitting: () => appIsQuitting,
+        setAppIsQuitting: (value) => {
+            appIsQuitting = value;
+        },
+        getClosePromptInProgress: () => closePromptInProgress,
+        setClosePromptInProgress: (value) => {
+            closePromptInProgress = value;
+        },
+        setStorageValue: (key, value) => VRCXStorage.Set(key, value)
     });
 
 }
