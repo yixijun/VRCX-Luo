@@ -82,7 +82,7 @@
 1. **M-01.1 剪贴板 capability adapter（已完成）**：新增 `src/services/clipboardAdapter.js`，以依赖注入统一 Electron `getClipboardText` 与 CEF `AppApi.GetClipboard`；保留 Electron 异常传播和 CEF 异常记录后返回空字符串的既有行为。`src/stores/search.js` 的 `directAccessPaste()` 公共入口和解析/提示流程不变；新增 CEF/Electron 路由、CEF 失败回退及搜索调用回归测试。提交：`feb584b9`。
 2. **M-01.2a 文件选择 capability（已完成）**：新增 `src/services/fileDialogAdapter.js`，以显式 options 封装 CEF `OpenFileSelectorDialog` 与 Electron `openFileDialog`；仅迁移 `useNotificationsSettingsStore.selectCustomNotificationSound()`，保留 CEF 取消 `''`、Electron 取消 `null/undefined` 的原始返回值和既有 `if (!filePath)` 语义。adapter 与通知 Store 回归测试共 2 个文件、6 个用例通过；提交：`f4050150`。
 3. **M-01.2b 目录选择 capability（已完成）**：`src/services/fileDialogAdapter.js` 新增目录选择 implementation；Windows CEF 继续接收 `oldPath`，Electron 继续无参打开目录选择器；`folderSelectorDialog()` 的可见状态守卫、返回值和异常传播保持不变。adapter 与设置对话框回归共 2 个文件、24 个用例通过；提交：`62c29b7c`。
-4. **M-01.3 动态 bridge allowlist（已完成）**：新增 `src-electron/dotnetCapabilityManifest.cjs`，覆盖 renderer 实际使用的 9 类宿主对象、主进程启动对象及其现有公开方法；`preload`、主进程 IPC handler、`InteropApi` 和 renderer Proxy 均拒绝未知 class/method，IPC 参数 envelope 必须是数组。119 个静态 renderer 调用已与 manifest 审计匹配，正常公开 facade 和 CEF 路径未改动；细粒度参数类型与可信渲染来源判定保留给 B-01 后续安全切片。提交：`55177762`。
+4. **M-01.3 动态 bridge allowlist（已完成）**：新增 `src-electron/dotnetCapabilityManifest.cjs`，覆盖 renderer 实际使用的 9 类宿主对象、主进程启动对象及其现有公开方法；`preload`、主进程 IPC handler 和 `InteropApi` 均拒绝未知 class/method，IPC 参数 envelope 必须是数组，renderer Proxy 保留原动态 facade 以避免跨 tsconfig/宿主边界依赖。119 个静态 renderer 调用已与 manifest 审计匹配，正常公开 facade 和 CEF 路径未改动；细粒度参数类型与可信渲染来源判定保留给 B-01 后续安全切片。主实现提交：`55177762`；边界修正提交：`41ddac90`。
 
 M-01 已完成三个低风险宿主 seam：剪贴板、文件/目录选择和动态 Dotnet bridge allowlist；后续进入 M-07 composition root。多账户 B-02/M-05 继续按要求暂缓。
 
