@@ -25,7 +25,7 @@
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
 | Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | M-00/B-01 已完成；M-01/M-04 解锁后再收窄宿主/数据库 capability |
-| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.11** | .NET bootstrap、IPC 注册、双宿主 contract、窗口状态、窗口事件、关闭守卫、托盘菜单、图标工厂、通知 projection、桌面通知 controller 和托盘生命周期 seam 已完成；tray click/通知 action IPC 仍可另行细分 |
+| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.12** | .NET bootstrap、IPC 注册、双宿主 contract、窗口状态、窗口事件、关闭守卫、托盘菜单、图标工厂、通知 projection、桌面通知 controller、托盘生命周期和点击 Bridge seam 已完成；通知 action IPC 仍可另行细分 |
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
@@ -92,6 +92,7 @@
 | `b678aa49` | M-07.9：提取托盘通知 snapshot 规范化与 tooltip projection，保留限制、文案和 fallback 语义 |
 | `02321a27` | M-07.10：提取桌面通知 controller，保留启用判断、替换、关闭清理和显示语义 |
 | `99bfd8d3` | M-07.11：提取托盘销毁与通知图标切换生命周期动作，保留重启/退出调用顺序 |
+| `267b95aa` | M-07.12：提取托盘点击打开主窗口 Bridge，保留 click listener 和 show 行为 |
 | `df65d955` | B-01.1：新增可信渲染来源策略；Electron 15 个 IPC handler 统一拒绝非 packaged renderer 与未启用的开发服务器来源 |
 | `5e84ad42` | B-01.2：为 174 个 .NET allowlist 方法补齐参数数量/基础类型 schema，并在 preload/main/Interop 边界复用校验 |
 | `82ff3fe8` | N-02.1：建立可注入的版本元数据解析、UTC 回退和文件读取契约 |
@@ -203,8 +204,9 @@ M-06 低风险 seam 已完成：`src/stores/notification/index.js` 继续作为�
 9. **M-07.9 托盘通知 projection（已完成）**：新增 `src-electron/trayNotificationProjection.cjs`，承接 snapshot 的对象/数组校验、数量和 action 限制、字符串化及 tooltip 文本生成；`main.js` 继续负责 snapshot 生命周期、托盘 tooltip 更新和通知 action IPC。保留默认文案、最多 4 条快照/3 条 tooltip、截断长度和空列表 fallback。新增 2 项回归测试。提交：`b678aa49`。
 10. **M-07.10 桌面通知 controller（已完成）**：新增 `src-electron/desktopNotificationController.cjs`，通过显式 Notification、启用判断和 active notification getter/setter 承接桌面通知创建、旧通知替换、关闭清理和显示；`main.js` 保留 IPC handler interface、参数顺序和宿主依赖组装。第一次测试替身错误地同步触发 close 事件，按回滚协议撤销后改用异步 close 语义重新验证；最终提交：`02321a27`。
 11. **M-07.11 托盘生命周期动作（已完成）**：新增 `src-electron/trayLifecycle.cjs`，通过显式 tray getter/setter 和图标引用承接销毁清理与普通/通知图标切换；`main.js` 保留重启、before-quit、通知 IPC 的调用位置和状态变量。新增 3 项回归测试。提交：`99bfd8d3`。
+12. **M-07.12 托盘点击 Bridge（已完成）**：在 `src-electron/trayLifecycle.cjs` 增加 `bindTrayClick()`，承接 `click → mainWindow.show()` listener；`main.js` 保留 Tray 创建顺序和窗口依赖组装。新增 1 项回归测试。提交：`267b95aa`。
 
-M-07 已完成本计划定义的十一项首批 seam：.NET bootstrap、IPC handler 注册、双宿主 capability contract、窗口状态 Adapter、窗口事件 Bridge、窗口关闭守卫 Adapter、托盘上下文菜单 Adapter、托盘图标工厂、托盘通知 projection、桌面通知 controller 和托盘生命周期动作。`main.js` 仍保留窗口创建、托盘 click 绑定、通知 action IPC 和宿主生命周期等行为实现；后续可继续按独立细分拆出 tray click/notification action。多账户 B-02/M-05 继续按要求暂缓。
+M-07 已完成本计划定义的十二项首批 seam：.NET bootstrap、IPC handler 注册、双宿主 capability contract、窗口状态 Adapter、窗口事件 Bridge、窗口关闭守卫 Adapter、托盘上下文菜单 Adapter、托盘图标工厂、托盘通知 projection、桌面通知 controller、托盘生命周期动作和托盘点击 Bridge。`main.js` 仍保留窗口创建、通知 action IPC 和宿主生命周期等行为实现；通知 action IPC 当前未发现生产调用，后续按使用证据再决定是否拆分。多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-08 细分任务
 

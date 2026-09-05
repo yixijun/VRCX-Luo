@@ -224,6 +224,17 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：71 个文件、338 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-07.12 后置验证
+
+托盘点击 Bridge 切片只迁移 `click → mainWindow.show()` listener；保留 Tray 创建顺序、窗口引用和显示行为。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 托盘生命周期/点击定向测试 | `npx vitest run src/services/__tests__/trayLifecycle.test.js src/services/__tests__/trayIconFactory.test.js src/services/__tests__/trayContextMenu.test.js --reporter=dot` | **通过**：3 个文件、10 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/trayLifecycle.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：71 个文件、339 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
