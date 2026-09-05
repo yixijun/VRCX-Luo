@@ -300,6 +300,9 @@ describe('PlayerList.vue', () => {
         );
         const button = popover.get('[data-testid="toggle-player-events"]');
         expect(button.text()).toBe('');
+        expect(wrapper.get('.player-list__summary-action').classes()).toContain(
+            'justify-end'
+        );
         expect(popover.attributes('data-location')).toBe('');
         expect(wrapper.find('.player-list__table-toolbar').exists()).toBe(
             false

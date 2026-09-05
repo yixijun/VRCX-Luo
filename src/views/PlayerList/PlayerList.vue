@@ -136,7 +136,7 @@
                             </div>
                         </div>
                         <div
-                            class="player-list__summary-action ml-5 flex w-28 shrink-0 items-start justify-center pt-1">
+                            class="player-list__summary-action ml-5 flex w-28 shrink-0 items-start justify-end pr-1 pt-1">
                             <InstancePlayerEventsPopover :location="currentInstanceTag" />
                         </div>
                         <div class="ml-5" style="display: flex; flex-direction: column">
