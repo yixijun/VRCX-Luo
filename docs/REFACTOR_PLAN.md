@@ -139,7 +139,7 @@ N-04 已完成：版本矩阵、生成文件规则和 PR 质量门禁均已建�
 ## 当前 N-01 细分任务
 
 1. **N-01.1 领域上下文（已完成）**：新增根目录 `CONTEXT.md`，统一 Renderer、CEF host、Electron host、Capability、Friend presence、Group instance、Update loop、VR overlay/HUD 等领域词汇，并记录公共 Interface、周期、来源安全和多账户暂缓不变量。
-2. **N-01.2 ADR 索引与决策（已完成）**：新增 `docs/adr/README.md` 及 ADR-0001～0004，记录兼容入口/Adapter 渐进式重构、双宿主 capability 契约、版本/生成文件治理和多账户暂缓；本切片只改文档并单独提交。
+2. **N-01.2 ADR 索引与决策（已完成）**：新增 `docs/adr/README.md` 及 ADR-0001～0004，记录兼容入口/Adapter 渐进式重构、双宿主 capability 契约、版本/生成文件治理和多账户暂缓；本切片只改文档并单独提交：`745a230a`。
 
 N-01 已完成。后续架构建议必须使用 `Module / Interface / Seam / Adapter / Depth / Leverage / Locality` 词汇，并先检查 ADR 是否已有约束；多账户恢复需要显式重新评估，不从其他任务间接带入。
 
