@@ -1,10 +1,11 @@
 import { LogWatcherService } from '../gameLog.js';
+import { parseRawGameLog } from '../gameLogParser.js';
 
 const svc = new LogWatcherService();
 
 describe('parseRawGameLog', () => {
     test('parses location type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'location', [
+        const log = parseRawGameLog('2024-01-01', 'location', [
             'wrld_123:456',
             'Test World'
         ]);
@@ -17,7 +18,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses location-destination type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'location-destination', [
+        const log = parseRawGameLog('2024-01-01', 'location-destination', [
             'wrld_abc:789'
         ]);
         expect(log).toEqual({
@@ -28,7 +29,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses player-joined type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'player-joined', [
+        const log = parseRawGameLog('2024-01-01', 'player-joined', [
             'TestUser',
             'usr_123'
         ]);
@@ -41,7 +42,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses player-left type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'player-left', [
+        const log = parseRawGameLog('2024-01-01', 'player-left', [
             'TestUser',
             'usr_123'
         ]);
@@ -55,7 +56,7 @@ describe('parseRawGameLog', () => {
 
     test('parses notification type', () => {
         const json = '{"type":"invite"}';
-        const log = svc.parseRawGameLog('2024-01-01', 'notification', [json]);
+        const log = parseRawGameLog('2024-01-01', 'notification', [json]);
         expect(log).toEqual({
             dt: '2024-01-01',
             type: 'notification',
@@ -64,7 +65,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses event type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'event', ['some-event']);
+        const log = parseRawGameLog('2024-01-01', 'event', ['some-event']);
         expect(log).toEqual({
             dt: '2024-01-01',
             type: 'event',
@@ -73,7 +74,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses video-play type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'video-play', [
+        const log = parseRawGameLog('2024-01-01', 'video-play', [
             'https://example.com/video.mp4',
             'Player1'
         ]);
@@ -86,7 +87,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses resource-load-string type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'resource-load-string', [
+        const log = parseRawGameLog('2024-01-01', 'resource-load-string', [
             'https://example.com/res'
         ]);
         expect(log).toEqual({
@@ -97,7 +98,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses resource-load-image type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'resource-load-image', [
+        const log = parseRawGameLog('2024-01-01', 'resource-load-image', [
             'https://example.com/img.png'
         ]);
         expect(log).toEqual({
@@ -108,7 +109,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses avatar-change type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'avatar-change', [
+        const log = parseRawGameLog('2024-01-01', 'avatar-change', [
             'User1',
             'CoolAvatar'
         ]);
@@ -121,7 +122,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses photon-id type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'photon-id', [
+        const log = parseRawGameLog('2024-01-01', 'photon-id', [
             'User1',
             '42'
         ]);
@@ -134,7 +135,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses screenshot type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'screenshot', [
+        const log = parseRawGameLog('2024-01-01', 'screenshot', [
             '/path/to/screenshot.png'
         ]);
         expect(log).toEqual({
@@ -145,7 +146,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses sticker-spawn type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'sticker-spawn', [
+        const log = parseRawGameLog('2024-01-01', 'sticker-spawn', [
             'usr_abc',
             'StickerUser',
             'inv_123'
@@ -160,7 +161,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses video-sync type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'video-sync', [
+        const log = parseRawGameLog('2024-01-01', 'video-sync', [
             '123.456'
         ]);
         expect(log).toEqual({
@@ -171,7 +172,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses vrcx type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'vrcx', ['some-data']);
+        const log = parseRawGameLog('2024-01-01', 'vrcx', ['some-data']);
         expect(log).toEqual({
             dt: '2024-01-01',
             type: 'vrcx',
@@ -180,7 +181,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses api-request type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'api-request', [
+        const log = parseRawGameLog('2024-01-01', 'api-request', [
             'https://api.vrchat.cloud/api/1/users'
         ]);
         expect(log).toEqual({
@@ -191,7 +192,7 @@ describe('parseRawGameLog', () => {
     });
 
     test('parses udon-exception type', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'udon-exception', [
+        const log = parseRawGameLog('2024-01-01', 'udon-exception', [
             'NullRef'
         ]);
         expect(log).toEqual({
@@ -208,13 +209,19 @@ describe('parseRawGameLog', () => {
             'openvr-init',
             'desktop-mode'
         ]) {
-            const log = svc.parseRawGameLog('2024-01-01', type, []);
+            const log = parseRawGameLog('2024-01-01', type, []);
             expect(log).toEqual({ dt: '2024-01-01', type });
         }
     });
 
     test('handles unknown type gracefully', () => {
-        const log = svc.parseRawGameLog('2024-01-01', 'unknown-type', ['foo']);
+        const log = parseRawGameLog('2024-01-01', 'unknown-type', ['foo']);
         expect(log).toEqual({ dt: '2024-01-01', type: 'unknown-type' });
+    });
+
+    test('keeps the service method as a compatibility delegate', () => {
+        expect(
+            svc.parseRawGameLog('2024-01-01', 'event', ['some-event'])
+        ).toEqual(parseRawGameLog('2024-01-01', 'event', ['some-event']));
     });
 });
