@@ -323,6 +323,22 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 
 M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止线已达到；Windows CEF 按触发键后 wrist/HUD 不显示问题已由用户在测试版手动确认解决，本记录不将其归因于 M-11.4 的托盘 Adapter 变更。后续不再自动拆分剩余 router/窗口动作或大型组件，转入功能观察。
 
+## 功能变更：离线好友按最近离线时间排序
+
+2026-09-05，侧栏离线分组改为按 `friend.ref.$offline_for` 毫秒时间戳倒序显示，最近离线的好友在最上方。无时间戳的旧数据排在有时间戳数据之后，并保持彼此原顺序；好友状态 transition、Store public interface、序列化格式、多账户合并视图和 VR overlay 均未修改。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前侧栏基线 | `npx vitest run src/views/Sidebar/components/__tests__/FriendsSidebar.test.js --reporter=dot` | **通过：1 个文件、5 项测试** |
+| 行为 RED | `npx vitest run src/views/Sidebar/components/__tests__/FriendsSidebar.test.js -t "sorts offline friends by most recent offline time first" --reporter=dot` | **预期失败**：旧顺序为 `usr_old`、`usr_recent`，未满足最近离线在前 |
+| 行为 GREEN/侧栏回归 | `npx vitest run src/views/Sidebar/components/__tests__/FriendsSidebar.test.js --reporter=dot` | **通过：1 个文件、6 项测试** |
+| Sidebar 组件目录回归 | `npx vitest run src/views/Sidebar/components/__tests__ --reporter=dot` | **通过：7 个文件、34 项测试**；仅输出既有删除失败日志，无测试失败 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 生产构建 | `npm run prod` | **通过：4417 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
+
+共享好友排序旧测试的既有基线仍有 3 项失败（时间实例、None、空排序数组），本次没有修改该模块，也未增加失败。代码提交：`ba12266d`。未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

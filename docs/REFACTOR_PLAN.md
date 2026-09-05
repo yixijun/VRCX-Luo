@@ -263,6 +263,10 @@ M-10.1～M-10.4 已全部完成并分别通过独立代码提交。M-10 本轮�
 
 M-11.1～M-11.4 已完成并分别建立独立回滚点。本轮前端 UI 重构停止线已达到：不再为了减少行数继续拆分。Windows CEF 按触发键后 wrist/HUD 不显示问题已由用户在测试版手动确认解决；该结论记录为功能验证结果，不归因于 M-11.4 的托盘 Adapter 变更。后续进入功能观察，只有出现能显著降低跨层耦合且可独立回滚的高 leverage seam 时才重启 M-11。整个 M-11 未触碰 `src/vr`、多账户会话、窗口/宿主契约或公共页面接口。
 
+## 近期功能变更
+
+1. **离线好友按最近离线时间排序（已完成）**：`src/views/Sidebar/components/FriendsSidebar.vue` 的离线分组现在按 `friend.ref.$offline_for` 毫秒时间戳倒序排列，最近离线的好友显示在最上方；无时间戳的旧数据排在有时间戳数据之后，并保持彼此原顺序。只调整单账户侧栏显示层，未修改好友状态写入、Store public interface 或多账户合并视图。测试与构建结果记录在 `docs/TEST_BASELINE.md`，代码提交：`ba12266d`。
+
 ## 当前 M-00 细分任务
 
 1. **M-00.1 JavaScript typecheck 工具链（已完成）**：将 `typescript@^5.9.3` 加入 `devDependencies` 并锁定到 `package-lock.json`，修复 `typecheck:js` 过去因找不到 `tsc` 而无法执行的问题。提交：`7fddf930`。

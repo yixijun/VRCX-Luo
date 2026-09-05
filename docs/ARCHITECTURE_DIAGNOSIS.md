@@ -348,6 +348,10 @@ M-10.1～M-10.4 均遵守一次一步和测试门禁：没有改变 LogWatcher I
 
 M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAdapter`；M-11.2 将 UI Store 的 body `drop` guard 移到 `dropGuard` adapter；M-11.3 将 UI Store 的对话框面包屑数组状态变换移到 `dialogCrumbState` module；M-11.4 将 CEF/Linux 托盘通知宿主路由移到 `trayIconNotificationAdapter`。四刀均保留原注册/初始化时机、事件名、`preventDefault()`、设置 action、面包屑重复/截断/label/边界行为、托盘通知状态计算/`force` 守卫、Store/页面 public interface 和 VR overlay 行为。本轮前端 UI 已达到停止线，剩余 router、窗口动作和大组件不再为减行数继续拆分。Windows CEF wrist/HUD 触发问题已由用户在测试版手动确认解决（不归因于 M-11.4），后续进入功能观察；只有出现高 leverage seam 时才重启 M-11。
 
+### 近期功能变更：离线好友排序
+
+`FriendsSidebar.vue` 的单账户离线分组已按 `friend.ref.$offline_for` 毫秒时间戳实现“最近离线在上”倒序排序；缺少时间戳的旧数据作为稳定 fallback，不改变其相互顺序。该变更只作用于侧栏显示层，未修改好友状态 transition、Store interface、`dbVars`、多账户合并视图或 VR overlay。代码提交为 `ba12266d`，验证结果见 `docs/TEST_BASELINE.md`。
+
 ### 术语说明
 
 本文的“模块（module）”指可独立维护的代码边界；“接口（interface）”是调用方依赖的稳定契约；“adapter”用于隔离不同宿主实现；“接缝（seam）”允许新旧实现并存；“高 leverage”表示一次改动能降低多个调用方的复杂度；“局部性”表示修改影响范围可控。
