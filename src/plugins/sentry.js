@@ -9,6 +9,7 @@ export async function isSentryOptedIn() {
 
 /**
  * Guarded import, prevents leaking Sentry into non-nightly bundles.
+ * @returns {any}
  */
 export function getSentry() {
     return NIGHTLY ? import('@sentry/vue') : null;
