@@ -6,6 +6,7 @@ import { useRouter } from 'vue-router';
 
 import { AppDebug } from '../services/appConfig';
 import { installBodyDropGuard } from '../services/dropGuard';
+import { setTrayIconNotification } from '../services/trayIconNotificationAdapter';
 import { refreshCustomCss } from '../shared/utils/base/ui';
 import { updateLocalizedStrings } from '../plugins/i18n';
 import { useAppearanceSettingsStore } from './settings/appearance';
@@ -304,11 +305,7 @@ export const useUiStore = defineStore('Ui', () => {
 
         if (trayIconNotify.value !== newState || force) {
             trayIconNotify.value = newState;
-            if (LINUX) {
-                window.electron.setTrayIconNotification(trayIconNotify.value);
-                return;
-            }
-            AppApi.SetTrayIconNotification(trayIconNotify.value);
+            setTrayIconNotification(trayIconNotify.value);
         }
     }
     updateTrayIconNotify(true);
