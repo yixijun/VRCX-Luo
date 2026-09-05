@@ -208,8 +208,20 @@ describe('GroupDialogPhotosTab.vue', () => {
 
         test('renders refresh button', () => {
             const wrapper = mountComponent();
-            const button = wrapper.find('button');
+            const button = wrapper.find('.group-gallery-refresh');
             expect(button.exists()).toBe(true);
+        });
+
+        test('places refresh button in the gallery header', () => {
+            const wrapper = mountComponent();
+            expect(wrapper.find('.group-gallery-toolbar').exists()).toBe(false);
+            expect(
+                wrapper
+                    .find(
+                        '.group-gallery-content-header .group-gallery-refresh'
+                    )
+                    .exists()
+            ).toBe(true);
         });
 
         test('shows upload button for gallery managers', () => {
@@ -254,7 +266,7 @@ describe('GroupDialogPhotosTab.vue', () => {
     describe('loading state', () => {
         test('refresh button is enabled initially', () => {
             const wrapper = mountComponent();
-            const button = wrapper.find('button');
+            const button = wrapper.find('.group-gallery-refresh');
             expect(button.attributes('disabled')).toBeUndefined();
         });
     });

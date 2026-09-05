@@ -1,17 +1,4 @@
 <template>
-    <div class="group-content-block group-gallery-toolbar">
-        <TooltipWrapper :content="t('dialog.group.gallery.refresh')" side="top">
-            <Button
-                class="rounded-full"
-                variant="ghost"
-                size="icon-sm"
-                :disabled="isGroupGalleryLoading || isUploading"
-                @click="getGroupGalleries">
-                <Spinner v-if="isGroupGalleryLoading" />
-                <RefreshCw v-else />
-            </Button>
-        </TooltipWrapper>
-    </div>
     <input ref="uploadInputRef" class="hidden" type="file" accept="image/*" @change="uploadToCurrentGallery" />
     <TabsUnderline
         v-model="groupDialogGalleryCurrentName"
@@ -41,6 +28,17 @@
                             v-text="gallery.description || '-'" />
                     </div>
                     <div class="group-gallery-content-actions">
+                        <TooltipWrapper :content="t('dialog.group.gallery.refresh')" side="top">
+                            <Button
+                                class="group-gallery-refresh rounded-full"
+                                variant="outline"
+                                size="icon-sm"
+                                :disabled="isGroupGalleryLoading || isUploading"
+                                @click="getGroupGalleries">
+                                <Spinner v-if="isGroupGalleryLoading" />
+                                <RefreshCw v-else />
+                            </Button>
+                        </TooltipWrapper>
                         <TooltipWrapper
                             v-if="canUploadToGallery(gallery)"
                             :content="t('dialog.group.gallery.upload')"
@@ -193,14 +191,6 @@
 </script>
 
 <style scoped>
-    .group-gallery-toolbar {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 0.25rem;
-        padding: 0.375rem 0.5rem;
-    }
-
     .group-gallery-block {
         overflow: visible;
     }
@@ -219,6 +209,7 @@
         display: flex;
         flex: none;
         align-items: center;
+        gap: 0.25rem;
     }
 
     .group-gallery-description {
