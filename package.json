@@ -26,6 +26,7 @@
         "lint": "npm run lint:oxlint && npm run lint:eslint",
         "lint:eslint": "eslint .",
         "lint:oxlint": "oxlint .",
+        "check:dependency-direction": "node build-scripts/check-dependency-direction.js",
         "check:schema": "node build-scripts/validate-screenshot-metadata-schema.js",
         "check:version": "node build-scripts/check-version-consistency.js",
         "typecheck:js": "tsc -p tsconfig.checkjs.json --pretty false",
