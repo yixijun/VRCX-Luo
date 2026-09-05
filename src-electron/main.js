@@ -96,6 +96,7 @@ if (process.arch === 'arm64' && fs.existsSync(armPath)) {
 }
 
 const InteropApi = require('./InteropApi');
+const { assertAllowedDotNetCall } = require('./dotnetCapabilityManifest.cjs');
 const interopApi = new InteropApi();
 
 const OVERLAY_WRIST_FRAME_WIDTH = 512;
@@ -130,6 +131,7 @@ interopApi.getDotNetObject('SystemMonitorElectron').Init();
 interopApi.getDotNetObject('AppApiVrElectron').Init();
 
 ipcMain.handle('callDotNetMethod', (event, className, methodName, args) => {
+    assertAllowedDotNetCall(className, methodName, args);
     return interopApi.callMethod(className, methodName, args);
 });
 

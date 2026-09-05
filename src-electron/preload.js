@@ -7,6 +7,7 @@
  * https://www.electronjs.org/docs/latest/tutorial/sandbox
  */
 const { contextBridge, ipcRenderer, app } = require('electron');
+const { assertAllowedDotNetCall } = require('./dotnetCapabilityManifest.cjs');
 
 const managedListeners = new Map();
 
@@ -31,6 +32,7 @@ function registerManagedListener(channel, callback, mapKey = channel) {
 
 contextBridge.exposeInMainWorld('interopApi', {
     callDotNetMethod: (className, methodName, args) => {
+        assertAllowedDotNetCall(className, methodName, args);
         return ipcRenderer.invoke(
             'callDotNetMethod',
             className,

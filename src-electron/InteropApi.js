@@ -1,4 +1,8 @@
 const dotnet = require('node-api-dotnet/net9.0');
+const {
+    assertAllowedDotNetCall,
+    isAllowedDotNetClass
+} = require('./dotnetCapabilityManifest.cjs');
 
 class InteropApi {
     constructor() {
@@ -7,6 +11,9 @@ class InteropApi {
     }
 
     getDotNetObject(className) {
+        if (!isAllowedDotNetClass(className)) {
+            throw new Error(`.NET class is not allowed: ${className}`);
+        }
         if (!this.createdObjects[className]) {
             console.log(`Creating new instance of ${className}`);
             this.createdObjects[className] = new dotnet.VRCX[className]();
@@ -16,6 +23,7 @@ class InteropApi {
 
     callMethod(className, methodName, args) {
         try {
+            assertAllowedDotNetCall(className, methodName, args);
             const obj = this.getDotNetObject(className);
             if (typeof obj[methodName] !== 'function') {
                 throw new Error(
