@@ -32,6 +32,7 @@ const {
     createDesktopNotificationController
 } = require('./desktopNotificationController.cjs');
 const {
+    bindTrayClick,
     destroyTray: destroyTrayInstance,
     setTrayIcon: setTrayIconInstance
 } = require('./trayLifecycle.cjs');
@@ -590,9 +591,7 @@ function createTray() {
     tray.setToolTip(buildTrayToolTip());
     tray.setContextMenu(buildTrayContextMenu());
 
-    tray.on('click', () => {
-        mainWindow.show();
-    });
+    bindTrayClick({ tray, mainWindow });
 }
 
 function setTrayIconNotification(notify) {

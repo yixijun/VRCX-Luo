@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import {
+    bindTrayClick,
     destroyTray,
     setTrayIcon
 } from '../../../src-electron/trayLifecycle.cjs';
@@ -43,5 +44,21 @@ describe('tray lifecycle', () => {
 
         expect(tray.setImage).toHaveBeenNthCalledWith(1, 'normal.ico');
         expect(tray.setImage).toHaveBeenNthCalledWith(2, 'notify.ico');
+    });
+
+    it('binds a tray click to showing the main window', () => {
+        const handlers = new Map();
+        const tray = {
+            on: vi.fn((eventName, handler) => {
+                handlers.set(eventName, handler);
+            })
+        };
+        const mainWindow = { show: vi.fn() };
+
+        bindTrayClick({ tray, mainWindow });
+        handlers.get('click')();
+
+        expect(tray.on).toHaveBeenCalledWith('click', expect.any(Function));
+        expect(mainWindow.show).toHaveBeenCalledOnce();
     });
 });

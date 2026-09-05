@@ -13,4 +13,10 @@ function setTrayIcon({ getTray, trayIcon, trayIconNotify, notify }) {
     }
 }
 
-module.exports = { destroyTray, setTrayIcon };
+function bindTrayClick({ tray, mainWindow }) {
+    tray.on('click', () => {
+        mainWindow.show();
+    });
+}
+
+module.exports = { bindTrayClick, destroyTray, setTrayIcon };
