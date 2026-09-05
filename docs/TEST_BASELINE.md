@@ -213,6 +213,17 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：70 个文件、335 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-07.11 后置验证
+
+托盘生命周期动作切片只迁移 `destroyTray()` 和 `setTrayIconNotification()` 的内部实现；保留空值守卫、destroy 后清空引用、普通/通知图标选择及重启、退出、通知 IPC 的调用位置。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 托盘生命周期/菜单定向测试 | `npx vitest run src/services/__tests__/trayLifecycle.test.js src/services/__tests__/trayIconFactory.test.js src/services/__tests__/trayContextMenu.test.js src/services/__tests__/trayNotificationProjection.test.js --reporter=dot` | **通过**：4 个文件、11 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/trayLifecycle.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：71 个文件、338 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
