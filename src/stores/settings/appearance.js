@@ -24,6 +24,7 @@ import {
     updateTrustColorClasses
 } from '../../shared/utils/base/ui';
 import { computeTrustLevel, getNameColour } from '../../shared/utils';
+import { createAppearanceDomAdapter } from '../../services/appearanceDomAdapter';
 import { database } from '../../services/database';
 
 import { loadLocalizedStrings } from '../../plugins';
@@ -49,6 +50,7 @@ export const useAppearanceSettingsStore = defineStore(
         const router = useRouter();
         const uiStore = useUiStore();
         const { locale } = useI18n();
+        const appearanceDomAdapter = createAppearanceDomAdapter();
 
         const MAX_TABLE_PAGE_SIZE = 1000;
         const DEFAULT_TABLE_PAGE_SIZES = [10, 15, 20, 25, 50, 100];
@@ -959,12 +961,9 @@ export const useAppearanceSettingsStore = defineStore(
          *
          */
         function applyAccessibleStatusClass() {
-            const classList = document.documentElement.classList;
-            classList.remove('accessible-status-indicators');
-
-            if (accessibleStatusIndicators.value) {
-                classList.add('accessible-status-indicators');
-            }
+            appearanceDomAdapter.applyAccessibleStatusIndicators(
+                accessibleStatusIndicators.value
+            );
         }
 
         /**
@@ -984,12 +983,9 @@ export const useAppearanceSettingsStore = defineStore(
          *
          */
         function applyOfficialStatusColorsClass() {
-            const classList = document.documentElement.classList;
-            classList.remove('vrcx-status-colors');
-
-            if (!useOfficialStatusColors.value) {
-                classList.add('vrcx-status-colors');
-            }
+            appearanceDomAdapter.applyOfficialStatusColors(
+                useOfficialStatusColors.value
+            );
         }
 
         /**
@@ -1200,14 +1196,7 @@ export const useAppearanceSettingsStore = defineStore(
          * @param density
          */
         function applyTableDensity(density) {
-            const classList = document.documentElement.classList;
-            classList.remove('is-compact-table', 'is-comfortable-table');
-            if (density === 'compact') {
-                classList.add('is-compact-table');
-            }
-            if (density === 'comfortable') {
-                classList.add('is-comfortable-table');
-            }
+            appearanceDomAdapter.applyTableDensity(density);
         }
 
         return {
