@@ -180,6 +180,17 @@ N-04 没有修改公共 interface、序列化格式、任务周期、并发逻�
 | 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：67 个文件、327 项测试 |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
 
+## M-07.8 后置验证
+
+托盘图标工厂切片只迁移平台图标路径/尺寸选择和 `Tray` 实例创建；保留 macOS/Linux 缩放尺寸、Windows `.ico` 路径、图标引用和后续 tooltip/context menu/click 绑定顺序。未修改托盘生命周期、通知、VR overlay 或 renderer interface。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 托盘图标/菜单定向测试 | `npx vitest run src/services/__tests__/trayIconFactory.test.js src/services/__tests__/trayContextMenu.test.js --reporter=dot` | **通过**：2 个文件、7 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/trayIconFactory.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：68 个文件、330 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
