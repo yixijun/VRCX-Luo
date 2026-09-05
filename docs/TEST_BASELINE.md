@@ -136,6 +136,17 @@ N-03 的检查默认不自动修复遗留 key 差异；`check-localization.js --
 
 N-04 没有修改公共 interface、序列化格式、任务周期、并发逻辑、第三方版本或生成结果；CI 仅新增 `npm run check:dependency-matrix` 阻断结构性错误。
 
+## M-07.4 后置验证
+
+窗口状态 Adapter 切片只迁移持久化配置读取和窗口状态动作；第一次测试假设 `VRCX_WindowState=0` 会触发 `restore()`，发现旧实现的 `parseInt(...) || -1` 会将其视为无动作后，按回滚协议撤回该假设并保留实际兼容行为。
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 窗口状态定向测试 | `npx vitest run src/services/__tests__/windowState.test.js --reporter=dot` | **通过**：1 个文件、4 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`node --check src-electron/windowState.cjs` | **通过** |
+| 重构 smoke | `npm run test:refactor -- --reporter=dot` | **通过**：64 个文件、318 项测试 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

@@ -25,7 +25,7 @@
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
 | Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | M-00/B-01 已完成；M-01/M-04 解锁后再收窄宿主/数据库 capability |
-| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.3** | M-00 已完成；window/tray/notification 可另行细分 |
+| Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.4** | .NET bootstrap、IPC 注册、双宿主 contract 和窗口状态 seam 已完成；tray/notification 仍可另行细分 |
 | Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | **已完成：N-01.1～N-01.2** | 维护领域上下文与 ADR；新增决策必须先更新文档再改代码 |
@@ -187,8 +187,9 @@ M-06 低风险 seam 已完成：`src/stores/notification/index.js` 继续作为�
 1. **M-07.1 Dotnet bootstrap seam（已完成）**：新增 `src-electron/dotnetBootstrap.cjs`，由 `initializeDotnet({ interopApi, version, args })` 集中 Electron 启动阶段的 10 个同步 .NET 调用；`main.js` 仅组装依赖并调用该 module。保留调用次数、顺序、参数、同步性质和异常传播；不改窗口、托盘、IPC、VR overlay 或 renderer interface。fake interop 顺序测试 1/1 通过。提交：`2e9ae9df`。
 2. **M-07.2 IPC handler module（已完成）**：新增 `src-electron/ipcHandlers.cjs`，集中 15 个 `ipcMain.handle` channel 的注册；`main.js` 继续组装原有 handler 实现，channel、注册顺序、参数 envelope、返回/异常语义保持不变。注册契约测试 1/1 通过。提交：`a0f13775`。
 3. **M-07.3 双宿主 contract test（已完成）**：新增 `src/services/hostCapabilityContract.js` 与测试，固化 clipboard、file/directory dialog、desktop notification、tray notification、VR state 七类 CEF/Electron method name、参数形状、Electron IPC channel 及取消/错误语义；双宿主契约测试 2/2 通过。提交：`ed1b36ec`。
+4. **M-07.4 窗口状态 Adapter（已完成）**：新增 `src-electron/windowState.cjs`，通过 `readWindowConfig()` 和 `applyStoredWindowState()` 接收存储/窗口依赖；`main.js` 继续保留 `createWindow()`、`applyWindowState()` 兼容入口，尺寸、缩放、启动最小化、托盘隐藏和持久化状态动作保持不变。新增 4 项回归测试，并明确保留旧代码对 `VRCX_WindowState=0` 的 `parseInt(...) || -1` 兼容结果。提交：`0c74ce3f`。
 
-M-07 已完成本计划定义的三项首批 seam：.NET bootstrap、IPC handler 注册和双宿主 capability contract。`main.js` 仍保留窗口、托盘、通知等行为实现；若继续降低主进程复杂度，这些属于后续独立细分。多账户 B-02/M-05 继续按要求暂缓。
+M-07 已完成本计划定义的四项首批 seam：.NET bootstrap、IPC handler 注册、双宿主 capability contract 和窗口状态 Adapter。`main.js` 仍保留窗口创建/事件绑定、托盘、通知等行为实现；后续可继续按独立细分拆出窗口事件、tray、notification。多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-08 细分任务
 

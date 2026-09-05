@@ -84,7 +84,7 @@
 | `src/api/index.js`、`src/queries` | API、Query cache、Pinia 可能重复持有实体数据 | Major → 已完成 M-08.1～M-08.3 | Query side effect、scope key 和 resource registry 已统一到 Query layer；继续明确 Pinia/Query 的实体唯一来源，并收窄全局 request facade |
 | `src/stores/updateLoop.js` | 兼容入口和依赖组装仍集中；任务实现已移到独立模块 | Major | 已完成第一刀；后续可把宿主 capability 注入进一步收窄，继续保留兼容 facade |
 | `src-electron/preload.js`、`src-electron/main.js`、`src-electron/InteropApi.js`、`src/ipc-electron/interopApi.js` | 动态 class/method IPC 曾缺少 allowlist、参数 envelope 和可信来源边界 | Major → 已完成 M-01.3/B-01 | 共享 `dotnetCapabilityManifest.cjs` 收敛允许的 class/method 与 174 个方法 schema；main 的 15 个 IPC handler 通过 `rendererSourcePolicy.cjs` 拒绝非信任 document，renderer Proxy 保留兼容 facade |
-| `src-electron/main.js` | 主进程约 1182 行，窗口、托盘、通知、IPC、Dotnet 启动集中 | Major → M-07.1～M-07.3 首批 seam 完成 | Dotnet 启动与 IPC 注册已移出，双宿主 contract 已可执行；window、tray、notification 行为实现仍可独立拆分 |
+| `src-electron/main.js` | 主进程约 1182 行，窗口、托盘、通知、IPC、Dotnet 启动集中 | Major → M-07.1～M-07.4 首批 seam 完成 | Dotnet 启动、IPC 注册和窗口状态读取/动作已移出，双宿主 contract 已可执行；窗口事件、tray、notification 行为实现仍可独立拆分 |
 | `Dotnet/VRCX-Cef.csproj`、`Dotnet/VRCX-Electron*.csproj` | CEF/Electron 目标框架和依赖版本漂移 | Major → N-04.1 已建立观测 | 版本矩阵阻断结构性错误并报告 NLog、SQLite、System.Management、NodeApi 等平台漂移；升级仍需单独验证 |
 | `src` 多处生产文件 | 大量文件直接绕过边界访问 database 或宿主全局对象 | Major | 用 lint boundary 限制跨层 import，逐步迁移到 use-case/adapter |
 | `.github/workflows/ci.yaml`、`package.json` | CI 已由 PR/手动触发；类型检查和重构 smoke 已纳入阻断门禁，全量测试与 lint/format 仍有历史红线 | Major → M-00.1～M-00.3 已完成 | 保持 report-only 结果可见并逐类收敛遗留债务；后续再收紧全量 test、lint、format |
