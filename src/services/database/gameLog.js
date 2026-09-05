@@ -1,6 +1,13 @@
 import { dbVars } from '../database';
 
 import sqliteService from '../sqlite.js';
+import {
+    buildEscapedVipFilter,
+    buildParameterizedVipFilter,
+    GAME_LOG_LOCATION_FILTER_MAP,
+    GAME_LOG_TABLE_FILTER_MAP,
+    resolveGameLogFilterFlags
+} from './gameLogQueryParameters.js';
 import { projectGameLogRow } from './gameLogRowProjection.js';
 
 const gameLog = {
@@ -596,58 +603,17 @@ const gameLog = {
     },
 
     async getGameLogByLocation(instanceId, filters, vipList = []) {
-        let vipQuery = '';
-        const vipArgs = {};
-        if (vipList.length > 0) {
-            const vipPlaceholders = [];
-            vipList.forEach((vip, i) => {
-                const key = `@vip_${i}`;
-                vipArgs[key] = vip;
-                vipPlaceholders.push(key);
-            });
-            vipQuery = `AND user_id IN (${vipPlaceholders.join(', ')})`;
-        }
-        let location = true;
-        let onplayerjoined = true;
-        let onplayerleft = true;
-        let portalspawn = true;
-        let videoplay = true;
-        let resourceload_string = true;
-        let resourceload_image = true;
-        if (filters.length > 0) {
-            location = false;
-            onplayerjoined = false;
-            onplayerleft = false;
-            portalspawn = false;
-            videoplay = false;
-            resourceload_string = false;
-            resourceload_image = false;
-            filters.forEach((filter) => {
-                switch (filter) {
-                    case 'Location':
-                        location = true;
-                        break;
-                    case 'OnPlayerJoined':
-                        onplayerjoined = true;
-                        break;
-                    case 'OnPlayerLeft':
-                        onplayerleft = true;
-                        break;
-                    case 'PortalSpawn':
-                        portalspawn = true;
-                        break;
-                    case 'VideoPlay':
-                        videoplay = true;
-                        break;
-                    case 'StringLoad':
-                        resourceload_string = true;
-                        break;
-                    case 'ImageLoad':
-                        resourceload_image = true;
-                        break;
-                }
-            });
-        }
+        const { query: vipQuery, args: vipArgs } =
+            buildParameterizedVipFilter(vipList);
+        const {
+            location,
+            onplayerjoined,
+            onplayerleft,
+            portalspawn,
+            videoplay,
+            resourceload_string,
+            resourceload_image
+        } = resolveGameLogFilterFlags(filters, GAME_LOG_LOCATION_FILTER_MAP);
 
         const baseColumns = [
             'id',
@@ -757,68 +723,18 @@ const gameLog = {
             'data',
             'message'
         ].join(', ');
-        let vipQuery = '';
-        if (vipList.length > 0) {
-            vipQuery = 'AND user_id IN (';
-            for (var i = 0; i < vipList.length; i++) {
-                vipQuery += `'${vipList[i].replaceAll("'", "''")}'`;
-                if (i < vipList.length - 1) {
-                    vipQuery += ', ';
-                }
-            }
-            vipQuery += ')';
-        }
-        let location = true;
-        let onplayerjoined = true;
-        let onplayerleft = true;
-        let portalspawn = true;
-        let msgevent = true;
-        let external = true;
-        let videoplay = true;
-        let resourceload_string = true;
-        let resourceload_image = true;
-        if (filters.length > 0) {
-            location = false;
-            onplayerjoined = false;
-            onplayerleft = false;
-            portalspawn = false;
-            msgevent = false;
-            external = false;
-            videoplay = false;
-            resourceload_string = false;
-            resourceload_image = false;
-            filters.forEach((filter) => {
-                switch (filter) {
-                    case 'Location':
-                        location = true;
-                        break;
-                    case 'OnPlayerJoined':
-                        onplayerjoined = true;
-                        break;
-                    case 'OnPlayerLeft':
-                        onplayerleft = true;
-                        break;
-                    case 'PortalSpawn':
-                        portalspawn = true;
-                        break;
-                    case 'Event':
-                        msgevent = true;
-                        break;
-                    case 'External':
-                        external = true;
-                        break;
-                    case 'VideoPlay':
-                        videoplay = true;
-                        break;
-                    case 'StringLoad':
-                        resourceload_string = true;
-                        break;
-                    case 'ImageLoad':
-                        resourceload_image = true;
-                        break;
-                }
-            });
-        }
+        const vipQuery = buildEscapedVipFilter(vipList);
+        const {
+            location,
+            onplayerjoined,
+            onplayerleft,
+            portalspawn,
+            msgevent,
+            external,
+            videoplay,
+            resourceload_string,
+            resourceload_image
+        } = resolveGameLogFilterFlags(filters, GAME_LOG_TABLE_FILTER_MAP);
         const selects = [];
         if (location) {
             selects.push(
@@ -906,68 +822,19 @@ const gameLog = {
         if (search.startsWith('wrld_') || search.startsWith('grp_')) {
             return this.getGameLogByLocation(search, filters, vipList);
         }
-        let vipQuery = '';
-        const vipArgs = {};
-        if (vipList.length > 0) {
-            const vipPlaceholders = [];
-            vipList.forEach((vip, i) => {
-                const key = `@vip_${i}`;
-                vipArgs[key] = vip;
-                vipPlaceholders.push(key);
-            });
-            vipQuery = `AND user_id IN (${vipPlaceholders.join(', ')})`;
-        }
-        let location = true;
-        let onplayerjoined = true;
-        let onplayerleft = true;
-        let portalspawn = true;
-        let msgevent = true;
-        let external = true;
-        let videoplay = true;
-        let resourceload_string = true;
-        let resourceload_image = true;
-        if (filters.length > 0) {
-            location = false;
-            onplayerjoined = false;
-            onplayerleft = false;
-            portalspawn = false;
-            msgevent = false;
-            external = false;
-            videoplay = false;
-            resourceload_string = false;
-            resourceload_image = false;
-            filters.forEach((filter) => {
-                switch (filter) {
-                    case 'Location':
-                        location = true;
-                        break;
-                    case 'OnPlayerJoined':
-                        onplayerjoined = true;
-                        break;
-                    case 'OnPlayerLeft':
-                        onplayerleft = true;
-                        break;
-                    case 'PortalSpawn':
-                        portalspawn = true;
-                        break;
-                    case 'Event':
-                        msgevent = true;
-                        break;
-                    case 'External':
-                        external = true;
-                        break;
-                    case 'VideoPlay':
-                        videoplay = true;
-                        break;
-                    case 'StringLoad':
-                        resourceload_string = true;
-                        break;
-                    case 'ImageLoad':
-                        resourceload_image = true;
-                        break;
-                }
-            });
-        }
+        const { query: vipQuery, args: vipArgs } =
+            buildParameterizedVipFilter(vipList);
+        const {
+            location,
+            onplayerjoined,
+            onplayerleft,
+            portalspawn,
+            msgevent,
+            external,
+            videoplay,
+            resourceload_string,
+            resourceload_image
+        } = resolveGameLogFilterFlags(filters, GAME_LOG_TABLE_FILTER_MAP);
         const searchLike = `%${search}%`;
         const selects = [];
         const baseColumns = [
