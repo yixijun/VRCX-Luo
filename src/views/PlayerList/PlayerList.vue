@@ -136,31 +136,8 @@
                             </div>
                         </div>
                         <div
-                            class="player-list__summary-action ml-3 flex w-28 shrink-0 items-start justify-center pt-1">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                class="size-8"
-                                :class="showPlayerEvents && 'bg-accent text-accent-foreground'"
-                                :aria-pressed="showPlayerEvents"
-                                :aria-label="
-                                    t(
-                                        showPlayerEvents
-                                            ? 'view.player_list.presence.back_to_players'
-                                            : 'view.player_list.presence.show'
-                                    )
-                                "
-                                :title="
-                                    t(
-                                        showPlayerEvents
-                                            ? 'view.player_list.presence.back_to_players'
-                                            : 'view.player_list.presence.show'
-                                    )
-                                "
-                                data-testid="toggle-player-events"
-                                @click="togglePlayerEvents">
-                                <History class="size-4" />
-                            </Button>
+                            class="player-list__summary-action ml-5 flex w-28 shrink-0 items-start justify-center pt-1">
+                            <InstancePlayerEventsPopover :location="currentInstanceTag" />
                         </div>
                         <div class="ml-5" style="display: flex; flex-direction: column">
                             <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
@@ -201,6 +178,9 @@
                         </div>
                     </div>
 
+                    <div v-if="!currentInstanceWorld.ref.id" class="mb-2 flex justify-end">
+                        <InstancePlayerEventsPopover :location="currentInstanceTag" />
+                    </div>
                     <div class="mb-2" v-if="photonLoggingEnabled" ref="playerListPhotonRef">
                         <PhotonEventTable @show-chatbox-blacklist="showChatboxBlacklistDialog" />
                     </div>
@@ -215,12 +195,7 @@
 
             <ResizablePanel :default-size="100 - summarySize" :min-size="tableMinSize" :order="2">
                 <div class="current-instance-table flex h-full min-h-0 min-w-0 flex-col">
-                    <InstancePlayerEvents
-                        v-if="showPlayerEvents"
-                        :location="currentInstanceTag"
-                        class="min-h-0 flex-1" />
                     <DataTableLayout
-                        v-else
                         class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75!"
                         :table="playerListTable"
                         auto-height
@@ -233,34 +208,11 @@
 
         <div v-else class="current-instance-table flex h-full min-h-0 min-w-0 flex-col">
             <div class="player-list__table-toolbar flex shrink-0 items-center border-b border-border px-1 py-1">
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    class="ml-auto size-8"
-                    :class="showPlayerEvents && 'bg-accent text-accent-foreground'"
-                    :aria-pressed="showPlayerEvents"
-                    :aria-label="
-                        t(
-                            showPlayerEvents
-                                ? 'view.player_list.presence.back_to_players'
-                                : 'view.player_list.presence.show'
-                        )
-                    "
-                    :title="
-                        t(
-                            showPlayerEvents
-                                ? 'view.player_list.presence.back_to_players'
-                                : 'view.player_list.presence.show'
-                        )
-                    "
-                    data-testid="toggle-player-events"
-                    @click="togglePlayerEvents">
-                    <History class="size-4" />
-                </Button>
+                <div class="ml-auto flex shrink-0">
+                    <InstancePlayerEventsPopover :location="currentInstanceTag" />
+                </div>
             </div>
-            <InstancePlayerEvents v-if="showPlayerEvents" :location="currentInstanceTag" class="min-h-0 flex-1" />
             <DataTableLayout
-                v-else
                 class="[&_th]:px-2.5! [&_th]:py-0.75! [&_td]:px-2.5! [&_td]:py-0.75!"
                 :table="playerListTable"
                 auto-height
@@ -276,7 +228,7 @@
 
 <script setup>
     import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-    import { Apple, History, Home, Image, Monitor, Smartphone } from 'lucide-vue-next';
+    import { Apple, Home, Image, Monitor, Smartphone } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
@@ -290,7 +242,6 @@
     } from '../../stores';
     import { commaNumber, formatDateFilter } from '../../shared/utils';
     import { Badge } from '../../components/ui/badge';
-    import { Button } from '../../components/ui/button';
     import { DataTableLayout } from '../../components/ui/data-table';
     import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable';
     import { createColumns } from './columns.jsx';
@@ -303,7 +254,7 @@
     import { showWorldDialog } from '../../coordinators/worldCoordinator';
 
     import PhotonEventTable from './components/PhotonEventTable.vue';
-    import InstancePlayerEvents from './components/InstancePlayerEvents.vue';
+    import InstancePlayerEventsPopover from './components/InstancePlayerEventsPopover.vue';
     import { useUserDisplay } from '../../composables/useUserDisplay';
 
     const { randomUserColours } = storeToRefs(useAppearanceSettingsStore());
@@ -337,7 +288,6 @@
     const summaryMaxSize = ref(68);
     const tableMinSize = ref(32);
     const currentSummarySize = ref(42);
-    const showPlayerEvents = ref(false);
     const isPlayerListSplitterDragging = ref(false);
     const summaryOffset = ref(0);
     const summaryOffsetStorageKey = 'VRCX_playerListSummaryOffset';
@@ -349,10 +299,6 @@
         () => Boolean(currentInstanceWorld.value?.ref?.id) || Boolean(photonLoggingEnabled.value)
     );
     const currentInstanceTag = computed(() => currentInstanceLocation.value?.tag || '');
-
-    function togglePlayerEvents() {
-        showPlayerEvents.value = !showPlayerEvents.value;
-    }
 
     function getElement(componentRef) {
         return componentRef?.$el ?? componentRef ?? null;

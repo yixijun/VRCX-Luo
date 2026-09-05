@@ -179,11 +179,11 @@ vi.mock('../dialogs/ChatboxBlacklistDialog.vue', () => ({
     }
 }));
 
-vi.mock('../components/InstancePlayerEvents.vue', () => ({
+vi.mock('../components/InstancePlayerEventsPopover.vue', () => ({
     default: {
         props: ['location'],
         template:
-            '<div data-testid="instance-player-events" :data-location="location" />'
+            '<div data-testid="instance-player-events-popover" :data-location="location"><button data-testid="toggle-player-events"><span /></button></div>'
     }
 }));
 
@@ -295,48 +295,29 @@ describe('PlayerList.vue', () => {
         mocks.currentInstanceWorld.value.ref.id = 'wrld_123';
         const wrapper = mount(PlayerList);
 
-        const button = wrapper.get(
-            '.player-list__summary-action [data-testid="toggle-player-events"]'
+        const popover = wrapper.get(
+            '.player-list__summary-action [data-testid="instance-player-events-popover"]'
         );
+        const button = popover.get('[data-testid="toggle-player-events"]');
         expect(button.text()).toBe('');
-        expect(button.attributes('title')).toBe(
-            'view.player_list.presence.show'
-        );
+        expect(popover.attributes('data-location')).toBe('');
         expect(wrapper.find('.player-list__table-toolbar').exists()).toBe(
             false
         );
     });
 
-    test('toggles the room activity panel without changing the player table source', async () => {
+    test('keeps the player table mounted while the activity popover is available', () => {
         mocks.currentInstanceLocation.value = { tag: 'wrld_123:instance_1' };
         const wrapper = mount(PlayerList);
 
         expect(
-            wrapper.find('[data-testid="instance-player-events"]').exists()
-        ).toBe(false);
-        await wrapper
-            .get('[data-testid="toggle-player-events"]')
-            .trigger('click');
-
-        expect(
             wrapper
-                .get('[data-testid="instance-player-events"]')
+                .get('[data-testid="instance-player-events-popover"]')
                 .attributes('data-location')
         ).toBe('wrld_123:instance_1');
         expect(wrapper.find('[data-testid="row-click-with-id"]').exists()).toBe(
-            false
-        );
-
-        await wrapper
-            .get('[data-testid="toggle-player-events"]')
-            .trigger('click');
-        expect(
-            wrapper.find('[data-testid="instance-player-events"]').exists()
-        ).toBe(false);
-        expect(wrapper.find('[data-testid="row-click-with-id"]').exists()).toBe(
             true
         );
-        wrapper.unmount();
     });
 
     test('clears the manual layout when the room instance changes', async () => {
