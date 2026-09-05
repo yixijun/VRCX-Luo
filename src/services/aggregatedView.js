@@ -17,7 +17,7 @@ import sqliteService from './sqlite.js';
  * The resulting ctx objects include a `$accountIds` array indicating which
  * accounts consider this person a friend.
  *
- * @param {import('../stores/friend').SortedFriend[]} primarySortedFriends
+ * @param {{ id: string }[]} primarySortedFriends
  *   The `sortedFriends` array from the primary account's FriendStore.
  * @returns {Map<string, object>}
  */
@@ -142,9 +142,11 @@ function parseDbRow(dbRow) {
     row.$accountId = null;
     row.$accountColor = null;
     row.$accountLabel = null;
-    const session = accountHub.allSessions.find(
-        s => (s.userPrefix || s.dbPrefix) === prefix
-    );
+    const session = accountHub.allSessions.find(s => {
+        /** @type {{ userPrefix?: string, dbPrefix?: string }} */
+        const account = s;
+        return (account.userPrefix || account.dbPrefix) === prefix;
+    });
     if (session) {
         row.$accountId = session.userId;
         row.$accountColor = accountHub.getAccountColor(session.userId);
