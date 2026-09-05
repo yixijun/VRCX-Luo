@@ -20,6 +20,7 @@ const {
     applyStoredWindowState,
     readWindowConfig
 } = require('./windowState.cjs');
+const { bindWindowEventBridge } = require('./windowEventBridge.cjs');
 
 //app.disableHardwareAcceleration();
 
@@ -432,37 +433,11 @@ function createWindow() {
     // Open the DevTools.
     // mainWindow.webContents.openDevTools()
 
-    mainWindow.webContents.on('did-finish-load', () => {
-        mainWindow.webContents.setZoomLevel(zoomLevel);
-        mainWindow.webContents.send('setZoomLevel', zoomLevel);
+    bindWindowEventBridge({
+        window: mainWindow,
+        initialZoomLevel: zoomLevel,
+        setStorageValue: (key, value) => VRCXStorage.Set(key, value)
     });
-
-    mainWindow.webContents.on('before-input-event', (event, input) => {
-        if (input.control && input.key === '=') {
-            const currentZoom = mainWindow.webContents.getZoomLevel() + 1;
-            mainWindow.webContents.setZoomLevel(currentZoom);
-            VRCXStorage.Set('VRCX_ZoomLevel', currentZoom.toString());
-            mainWindow.webContents.send('setZoomLevel', currentZoom);
-        }
-        if (input.control && input.key === '-') {
-            const currentZoom = mainWindow.webContents.getZoomLevel() - 1;
-            mainWindow.webContents.setZoomLevel(currentZoom);
-            VRCXStorage.Set('VRCX_ZoomLevel', currentZoom.toString());
-            mainWindow.webContents.send('setZoomLevel', currentZoom);
-        }
-    });
-
-    mainWindow.webContents.on('zoom-changed', (event, zoomDirection) => {
-        let currentZoom = mainWindow.webContents.getZoomLevel();
-        if (zoomDirection === 'in') {
-            mainWindow.webContents.setZoomLevel(++currentZoom);
-        } else {
-            mainWindow.webContents.setZoomLevel(--currentZoom);
-        }
-        VRCXStorage.Set('VRCX_ZoomLevel', currentZoom.toString());
-        mainWindow.webContents.send('setZoomLevel', currentZoom);
-    });
-    mainWindow.webContents.setVisualZoomLevelLimits(1, 5);
 
     mainWindow.on('close', async (event) => {
         if (appIsQuitting) {
@@ -529,39 +504,6 @@ function createWindow() {
         }
     });
 
-    mainWindow.on('resize', () => {
-        const [width, height] = mainWindow
-            .getSize()
-            .map((size) => size.toString());
-        mainWindow.webContents.send('setWindowSize', { width, height });
-    });
-
-    mainWindow.on('move', () => {
-        const [x, y] = mainWindow
-            .getPosition()
-            .map((coord) => coord.toString());
-        mainWindow.webContents.send('setWindowPosition', { x, y });
-    });
-
-    mainWindow.on('maximize', () => {
-        mainWindow.webContents.send('setWindowState', '2');
-    });
-
-    mainWindow.on('minimize', () => {
-        mainWindow.webContents.send('setWindowState', '1');
-    });
-
-    mainWindow.on('unmaximize', () => {
-        mainWindow.webContents.send('setWindowState', '0');
-    });
-
-    mainWindow.on('restore', () => {
-        mainWindow.webContents.send('setWindowState', '0');
-    });
-
-    mainWindow.on('focus', () => {
-        mainWindow.webContents.send('onBrowserFocus');
-    });
 }
 
 let overlayWindow = undefined;
