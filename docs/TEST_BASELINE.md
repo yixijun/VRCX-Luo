@@ -2,13 +2,14 @@
 
 > 记录时间：2026-09-05
 >
-> 用途：记录 M-00 测试与契约门禁的当前基线。后续每个重构切片都必须与本文件中的对应命令对比；失败数量或错误类型增加时，停止当前切片并回滚当前 commit。
+> 用途：记录 M-00 测试与契约门禁及 B-01 宿主桥安全门禁的当前基线。后续每个重构切片都必须与本文件中的对应命令对比；失败数量或错误类型增加时，停止当前切片并回滚当前 commit。
 
 ## 当前工作树
 
 - 当前分支：`master`
 - 基线建立前工作树：干净；当前工作树应在每个独立切片提交后恢复干净
 - `updateLoop` scheduler/task 拆分：已完成，不在本轮重复修改
+- B-01 宿主桥安全封口：已完成；来源策略和 174 个方法参数 schema 均有定向回归测试
 - schema 文件：`docs/schemas/screenshotMetadata-schema.json` 由 `npm run check:schema` 校验
 
 ## 命令结果
@@ -37,6 +38,20 @@
 
 本切片只涉及 `Dotnet.Tests` 测试项目和测试代码；未修改产品运行时、公共接口、序列化格式或并发逻辑。
 
+## B-01 后置验证
+
+| 检查 | 命令 | 结果 |
+|---|---|---|
+| 可信 renderer source policy、IPC guard、Dotnet 参数 schema | `npx vitest run src/services/__tests__/rendererSourcePolicy.test.js src/services/__tests__/ipcHandlers.test.js src/services/__tests__/dotnetCapabilityManifest.test.js --reporter=dot` | **通过**：3 个文件、13 个测试 |
+| 重构 smoke（含 B-01） | `npm run test:refactor -- --reporter=dot` | **通过**：56 个文件、293 项测试 |
+| Electron/CJS 语法 | `node --check src-electron/main.js`、`rendererSourcePolicy.cjs`、`dotnetCapabilityManifest.cjs`、`ipcHandlers.cjs` | **通过** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过**：0 diagnostics |
+| JSON Schema 结构检查 | `npm run check:schema` | **通过**：5 个属性 |
+| Windows C# 测试 | `dotnet test Dotnet.Tests/VRCX.Cef.Tests.csproj --no-restore` | **通过**：3/3 |
+| 生产构建 | `npm run prod` | **通过**；保留既有 router 动态 import 与 Node deprecation 警告 |
+
+B-01 的来源 guard 在主进程注册的 15 个 IPC handler 前执行：packaged 模式只允许 `build/html/index.html` 与 `build/html/vr.html`，`--hot-reload` 仅增加 localhost:9000 的对应页面；CEF 绑定路径不变。参数 schema 只拒绝不匹配的方法/参数，既有合法调用、序列化格式、任务周期和并发顺序保持不变。
+
 ## 失败分类
 
 ### 完整前端测试
@@ -52,7 +67,7 @@
 
 - `typecheck:js`：已补齐 TypeScript CLI 并清零 JavaScript/TypeScript 诊断，现作为阻断门禁。
 - `Dotnet.Tests`：已引入正式测试框架和可发现的测试项目，并接入 Windows CI job；继续保留 WinForms 的 STA 线程约束。
-- `test:refactor`：新增覆盖 coordinator、services、queries、notification 和 updateLoop task 的 smoke 集，当前 55 个文件、285 项测试通过。
+- `test:refactor`：新增覆盖 coordinator、services、queries、notification、updateLoop task 和 B-01 bridge security 的 smoke 集，当前 56 个文件、293 项测试通过。
 - Oxlint / Oxfmt：当前全仓基线仍为 45 errors/79 warnings 与 209 个格式差异；CI 保留可见 report-only 结果，不在本任务中一次性重排全仓文件。
 - Schema：`npm run check:schema` 已作为阻断检查，防止文件再次出现语法漂移。
 
@@ -64,7 +79,7 @@
 |---|---|---|
 | JavaScript typecheck | 阻断 | 0 diagnostics |
 | Screenshot metadata schema | 阻断 | 5 properties |
-| `npm run test:refactor` | 阻断 | 55 个文件、285 项测试通过 |
+| `npm run test:refactor` | 阻断 | 56 个文件、293 项测试通过 |
 | `npm run prod` | 阻断 | 构建通过；保留既有动态 import 与 Node deprecation 警告 |
 | C# `dotnet test` | 阻断（Windows） | 3/3 通过 |
 | 全量前端测试 | report-only | 24/255 文件失败、88/2395 测试失败、3 个未处理错误 |

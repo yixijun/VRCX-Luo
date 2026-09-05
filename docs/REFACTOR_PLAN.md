@@ -16,18 +16,18 @@
 
 | 优先级 | 任务 | 当前状态 | 下一步 |
 |---|---|---|---|
-| Blocker 条件项 | B-01 宿主桥安全封口 | 条件性 Major；allowlist 已完成，来源判定待补 | 补充可信渲染来源判定和按方法细粒度参数 schema |
+| Blocker 条件项 | B-01 宿主桥安全封口 | **已完成：B-01.1～B-01.3** | 转入 N-02；保持可信来源与参数 schema 门禁，多账户 B-02/M-05 继续暂缓 |
 | Blocker 条件项 | B-02 多账户数据隔离 | **按要求暂缓** | 不改 `dbVars`、`accountHub` 和次号生命周期 |
-| Major | M-00 测试与 CI 门禁 | **已完成：M-00.1～M-00.3（分阶段门禁）** | 转入 B-01/N-02；全仓 lint/format/完整测试债务继续报告化收敛，多账户功能仍暂停 |
-| Major | M-01 宿主 capability adapter | **已完成：M-01.1～M-01.3** | 进入 M-07 Electron composition root；B-01 仅继续处理可信来源/细粒度 schema |
+| Major | M-00 测试与 CI 门禁 | **已完成：M-00.1～M-00.3（分阶段门禁）** | 转入 N-02；全仓 lint/format/完整测试债务继续报告化收敛，多账户功能仍暂停 |
+| Major | M-01 宿主 capability adapter | **已完成：M-01.1～M-01.3** | 保持 B-01 来源与参数门禁；进入 N-02 |
 | Major | M-02 数据刷新链路契约化 | **已完成：M-02.5** | 进入 M-03 编排层纯化 |
-| Major | M-03 编排层纯化 | **已完成：M-03.6** | M-00 已完成；继续按总览推进 B-01/N-02 |
+| Major | M-03 编排层纯化 | **已完成：M-03.6** | M-00/B-01 已完成；继续按总览推进 N-02 |
 | Major | M-04 数据库 facade 深化 | 暂缓 | 等多账户方案恢复后再引入 `DbContext` |
 | Major | M-05 账号会话与聚合视图 | **按要求暂缓** | 依赖 B-02，不进入当前迭代 |
-| Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | M-00 已完成；M-01/M-04 解锁后再收窄宿主/数据库 capability |
+| Major | M-06 Notification Store 拆分 | **已完成：M-06.4（低风险 seam）** | M-00/B-01 已完成；M-01/M-04 解锁后再收窄宿主/数据库 capability |
 | Major | M-07 Electron composition root / 双宿主契约 | **已完成：M-07.1～M-07.3** | M-00 已完成；window/tray/notification 可另行细分 |
-| Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00 已完成；多账户 B-02/M-05 继续暂缓 |
-| Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00 已完成；多账户 B-02/M-05 继续暂缓 |
+| Major | M-08 API/Query 缓存所有权 | **已完成：M-08.3** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
+| Major | M-09 其余上帝模块 | **已完成：M-09.8** | M-00/B-01 已完成；多账户 B-02/M-05 继续暂缓 |
 | Minor | N-01 文档与 ADR | 部分完成 | 稳定决策后再新增 `CONTEXT.md`/ADR |
 | Minor | N-02 版本与构建来源 | 未开始 | 统一 `Version`、package 和宿主注入来源 |
 | Minor | N-03 Shared/Localization 边界 | 未开始 | 增加依赖方向和翻译 key 检查 |
@@ -84,15 +84,23 @@
 | `2e9ae9df` | M-07.1：提取 Electron .NET 宿主同步初始化 module，保留原调用顺序、参数、同步性和异常传播 |
 | `a0f13775` | M-07.2：提取 Electron IPC handler 注册 module，保留 15 个 channel、注册顺序和 handler 引用 |
 | `ed1b36ec` | M-07.3：建立 CEF/Electron capability method、参数、IPC channel 与取消/错误语义契约测试 |
+| `df65d955` | B-01.1：新增可信渲染来源策略；Electron 15 个 IPC handler 统一拒绝非 packaged renderer 与未启用的开发服务器来源 |
+| `5e84ad42` | B-01.2：为 174 个 .NET allowlist 方法补齐参数数量/基础类型 schema，并在 preload/main/Interop 边界复用校验 |
 
 ## 当前 M-01 细分任务
 
 1. **M-01.1 剪贴板 capability adapter（已完成）**：新增 `src/services/clipboardAdapter.js`，以依赖注入统一 Electron `getClipboardText` 与 CEF `AppApi.GetClipboard`；保留 Electron 异常传播和 CEF 异常记录后返回空字符串的既有行为。`src/stores/search.js` 的 `directAccessPaste()` 公共入口和解析/提示流程不变；新增 CEF/Electron 路由、CEF 失败回退及搜索调用回归测试。提交：`feb584b9`。
 2. **M-01.2a 文件选择 capability（已完成）**：新增 `src/services/fileDialogAdapter.js`，以显式 options 封装 CEF `OpenFileSelectorDialog` 与 Electron `openFileDialog`；仅迁移 `useNotificationsSettingsStore.selectCustomNotificationSound()`，保留 CEF 取消 `''`、Electron 取消 `null/undefined` 的原始返回值和既有 `if (!filePath)` 语义。adapter 与通知 Store 回归测试共 2 个文件、6 个用例通过；提交：`f4050150`。
 3. **M-01.2b 目录选择 capability（已完成）**：`src/services/fileDialogAdapter.js` 新增目录选择 implementation；Windows CEF 继续接收 `oldPath`，Electron 继续无参打开目录选择器；`folderSelectorDialog()` 的可见状态守卫、返回值和异常传播保持不变。adapter 与设置对话框回归共 2 个文件、24 个用例通过；提交：`62c29b7c`。
-4. **M-01.3 动态 bridge allowlist（已完成）**：新增 `src-electron/dotnetCapabilityManifest.cjs`，覆盖 renderer 实际使用的 8 类宿主对象（`AppApiVr` 在 Electron 中映射为 `AppApiVrElectron`）、主进程启动对象及其现有公开方法；`preload`、主进程 IPC handler 和 `InteropApi` 均拒绝未知 class/method，IPC 参数 envelope 必须是数组，renderer Proxy 保留原动态 facade 以避免跨 tsconfig/宿主边界依赖。119 个静态 renderer 调用已与 manifest 审计匹配，正常公开 facade 和 CEF 路径未改动；细粒度参数类型与可信渲染来源判定保留给 B-01 后续安全切片。主实现提交：`55177762`；边界修正提交：`41ddac90`。
+4. **M-01.3 动态 bridge allowlist（已完成）**：新增 `src-electron/dotnetCapabilityManifest.cjs`，覆盖 renderer 实际使用的 8 类宿主对象（`AppApiVr` 在 Electron 中映射为 `AppApiVrElectron`）、主进程启动对象及其现有公开方法；`preload`、主进程 IPC handler 和 `InteropApi` 均拒绝未知 class/method，IPC 参数 envelope 必须是数组，renderer Proxy 保留原动态 facade 以避免跨 tsconfig/宿主边界依赖。119 个静态 renderer 调用已与 manifest 审计匹配，正常公开 facade 和 CEF 路径未改动；细粒度参数类型与可信渲染来源由 B-01 完成。主实现提交：`55177762`；边界修正提交：`41ddac90`。
 
-M-01 已完成三个低风险宿主 seam：剪贴板、文件/目录选择和动态 Dotnet bridge allowlist；M-07 composition root 的首批 seam 已完成。多账户 B-02/M-05 继续按要求暂缓。
+### 当前 B-01 细分任务
+
+1. **B-01.1 可信渲染来源判定（已完成）**：新增 `src-electron/rendererSourcePolicy.cjs`，只信任 `build/html/index.html`、`build/html/vr.html` 两个 packaged document；开发模式仅额外信任 `http://localhost:9000/index.html` 与 `/vr.html`。`ipcHandlers.cjs` 提供可选 guard，`main.js` 为全部 15 个 IPC channel 统一注入 guard；优先读取 `event.senderFrame.url`，旧 Electron 才回退到 `sender.getURL()`。非信任来源在进入 handler 前抛错，CEF 绑定与合法 Electron 调用不变。提交：`df65d955`。
+2. **B-01.2 按方法参数 schema（已完成）**：`dotnetCapabilityManifest.cjs` 为 11 个宿主 class、174 个 allowlist method 建立显式 schema，校验参数数量及 string/boolean/number/integer/array/object/bytes 基础类型，保留可选值、Map/dictionary、注册表和 Discord 空字符串等既有合法输入。preload、main handler、`src-electron/InteropApi.js` 继续复用 `assertAllowedDotNetCall()`；未知 class/method 与非法参数均在宿主调用前拒绝。提交：`5e84ad42`。
+3. **B-01.3 安全回归与门禁（已完成）**：新增可信来源策略、IPC guard、schema 覆盖与非法参数回归测试；`test:refactor` 通过 56 个文件/293 项测试，`typecheck:js`、`check:schema`、生产构建和 C# 3/3 测试均通过。未修改 renderer facade、公共 API 签名、序列化格式、任务周期或并发逻辑。
+
+M-01 已完成三个低风险宿主 seam；B-01 现已完成动态 bridge 的来源与参数安全封口；M-07 composition root 的首批 seam 也已完成。多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-02 细分任务
 
@@ -111,7 +119,7 @@ M-01 已完成三个低风险宿主 seam：剪贴板、文件/目录选择和动
 - **M-02.5.2 WebSocket reconnect**：新增纯 `scheduleWebSocketReconnect` module，固定 5 秒延迟并在回调时读取登录、好友加载和 socket 空位守卫；`websocket.js` 仅负责组装默认 adapter，兼容原有断线行为。提交为 `283251e2`。
 - **M-02.5.3 polling cancellation**：沿用 `updateLoopScheduler` 的 start/stop interface，现有 fake-clock 测试验证 stop 会清理 pending timer，未改生产逻辑。
 
-M-02、M-03 编排层纯化、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存所有权和 M-00 测试与 CI 门禁已完成。当前按总览推进 B-01/N-02；多账户 B-02/M-05 继续按要求暂缓。
+M-02、M-03 编排层纯化、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存所有权、M-00 测试与 CI 门禁和 B-01 宿主桥安全封口已完成。当前按总览推进 N-02；多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-03 细分任务
 
@@ -147,7 +155,7 @@ M-07 已完成本计划定义的三项首批 seam：.NET bootstrap、IPC handler
 2. **M-08.2 Cache scope key factory（已完成）**：在 `queryKeys` 中增加 favorite、friend、group、inventory、gallery scope key，替换 API 层裸数组；实际 key 值和前缀失效范围保持不变。提交：`38db4161`。
 3. **M-08.3 Query resource registry（已完成）**：新增 `createQueryResourceRegistry` module，将资源 key、policy 和 queryFn 的 registry 归入 Query layer；API request facade 只注入 transport implementation，保留 `queryRequest.fetch` interface、资源名称和策略。提交：`7f422d0f`。
 
-M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，API/认证层通过 adapter seam 使用缓存；scope key 和 resource registry 具备独立测试表面。M-00 测试与 CI 门禁随后完成；当前按总览推进 B-01/N-02，多账户 B-02/M-05 继续按要求暂缓。
+M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，API/认证层通过 adapter seam 使用缓存；scope key 和 resource registry 具备独立测试表面。M-00 测试与 CI 门禁及 B-01 宿主桥安全封口随后完成；当前按总览推进 N-02，多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-09 细分任务
 
@@ -160,7 +168,7 @@ M-08 已完成：QueryClient 的生产 side effect 已集中到 `src/queries`，
 7. **M-09.7 User 语言 projection（已完成）**：新增 `userLanguageProjection` module，提取配置事件中的语言条目映射，保持语言 key 枚举顺序和旧 interface。提交：`9020880a`。
 8. **M-09.8 User 自动状态决策（已完成）**：新增 `userAutoStateDecision` module，提取自动状态/描述的纯决策，保持现有守卫、Group 访问类型映射、远程/本地好友组筛选、状态文案和 `updateAutoStateChange` interface 不变。提交：`80fa011f`。
 
-M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。M-00 测试与 CI 门禁随后完成；当前按总览推进 B-01/N-02，多账户 B-02/M-05 继续按要求暂缓。
+M-09 已完成：Group、Favorite、User 三个 coordinator 的低风险纯决策与 projection seam 已建立；所有切片均独立提交并通过受影响测试，M09 全量回归未增加既有失败。M-00 测试与 CI 门禁及 B-01 宿主桥安全封口随后完成；当前按总览推进 N-02，多账户 B-02/M-05 继续按要求暂缓。
 
 ## 当前 M-00 细分任务
 
@@ -207,8 +215,8 @@ M-00.2 已开始：首个低风险切片修正 `gameStateTask` 的 `getLogLines`
 
 ### M-00 完成口径
 
-- 阻断门禁：`npm run typecheck:js`（0 diagnostics）、`npm run check:schema`（5 properties）、`npm run test:refactor`（55 个文件/285 项测试）、`npm run prod`、C# `dotnet test`（3/3）。
-- 可见但暂不阻断：完整 `npm test`（255 个文件：231 通过、24 失败；2395 项测试：2307 通过、88 失败；3 个未处理错误）、`npm run lint`（45 errors/79 warnings）、`npm run format:check`（209 个文件）、C# format。
+- 阻断门禁：`npm run typecheck:js`（0 diagnostics）、`npm run check:schema`（5 properties）、`npm run test:refactor`（56 个文件/293 项测试）、`npm run prod`、C# `dotnet test`（3/3）。
+- 可见但暂不阻断：完整 `npm test`（255 个文件：231 通过、24 失败；2395 项测试：2307 通过、88 失败；3 个未处理错误；B-01 定向测试通过）、`npm run lint`（45 errors/79 warnings）、`npm run format:check`（209 个文件）、C# format。
 - 这些 report-only 检查不会被隐藏，也不会把既有红色基线误报为绿色；后续每个切片仍需保证失败数量和错误类别不增加。
 
 ## 每个切片的回滚协议

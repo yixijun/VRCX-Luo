@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-07.1～M-07.3 Electron composition-root seam，以及 M-00.1～M-00.3 测试/CI 门禁已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-07.1～M-07.3 Electron composition-root seam，以及 M-00.1～M-00.3 测试/CI 门禁已落地，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-07.1～M-07.3 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract，以及 M-00.1～M-00.3 的 JavaScript 类型收敛、重构 smoke 集和分阶段 CI 门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的 window/tray/notification 实现仍未迁移，多账户运行时功能仍按要求暂停。
+> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-07.1～M-07.3 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract，以及 M-00.1～M-00.3 的 JavaScript 类型收敛、重构 smoke 集和分阶段 CI 门禁均已落地；coordinator/store 公共 interface 保持不变，`main.js` 的 window/tray/notification 实现仍未迁移，多账户运行时功能仍按要求暂停。
 
 ## 结论摘要
 
@@ -12,7 +12,7 @@
 - `src/stores` 64 个文件、约 2.8 万行；`src/coordinators` 31 个文件、约 0.8 万行。
 - 约 17 个 store 依赖 coordinator，约 20 个 coordinator 反向依赖 store。
 - 约 54 个生产文件直接依赖数据库模块，约 52 个生产文件直接访问 `AppApi`、`VRCXStorage`、`LogWatcher` 等宿主全局对象。
-- 当前没有确认必须停版的无条件 Blocker；动态 .NET bridge 如果未来允许不可信渲染内容调用，风险应升级为 Blocker。
+- B-01 已封口动态 .NET/IPC bridge 的来源与参数边界；当前没有确认必须停版的无条件 Blocker。若新增 renderer document、开发端口或宿主方法，必须先更新策略/manifest 与回归测试。
 
 严重程度含义：
 
@@ -27,15 +27,15 @@
 | `src/views` | 页面级功能、路由页面、业务流程组合 | 页面直接读写 store、数据库和宿主 API；查询、事件监听、窗口控制混在页面；存在多个 900～1300 行页面 |
 | `src/components` | 对话框、列表、卡片、表格等可复用 UI | 复用组件大量依赖全局 store、router、toast、DOM；不少组件实际承担完整业务流程 |
 | `src/stores` | Pinia 状态、派生数据、部分业务命令 | 同时访问 API、数据库、Electron、DOM 和 coordinator；通知 store 已通过 M-06 建立 projection/persistence/queue module，但兼容 facade 仍较大，其他上帝 store 与循环依赖仍在 |
-| `src/services` | 数据库、账号会话、配置、SQLite、聚合视图 | database facade 过宽；`dbVars` 是可变全局上下文；数据模块反向依赖 UI；M-01.1/M-01.2a/2b 已新增 clipboard/file/directory capability，数据库和动态 bridge 能力仍待迁移 |
+| `src/services` | 数据库、账号会话、配置、SQLite、聚合视图 | database facade 过宽；`dbVars` 是可变全局上下文；数据模块反向依赖 UI；M-01.1/M-01.2a/2b 已新增 clipboard/file/directory capability，宿主 bridge 的来源/参数门禁已由 B-01 收口 |
 | `src/coordinators` | WebSocket/API/数据库事件编排 | store/API/database 耦合仍在；M-03 已把 UI implementation 收敛到 services adapter seam，M-09 已把 Group/Favorite/User 的角色、presence、持久化、收藏、本地化和自动状态决策深化为纯 module，后续继续拆 use-case |
 | `src/api` | REST/API endpoint 请求封装 | `window.request` 全局暴露；M-08 后缓存副作用经 `queryCache` adapter，Query resource 仍由 facade 组装，宿主全局和 API/Query 边界仍需后续收窄 |
 | `src/queries` | Query key、实体缓存、查询策略、resource registry | M-08 已集中 QueryClient side effect、scope key 和 resource registry；Pinia 与 Query 的实体数据所有权仍需继续明确 |
 | `src/shared` | 常量、工具函数、基础 UI 操作 | 目录过于宽泛；部分工具直接调用 `AppApi` 或修改 UI，容易形成反向依赖 |
 | `src/composables` | 可复用的 Composition 行为 | 总体边界较合理，但生命周期和 worker 相关测试警告较多 |
 | `src/plugins` | i18n、router、组件、Sentry、interop 初始化 | 初始化顺序复杂；router 存在静态和动态混合导入，构建有 chunk 警告 |
-| `src/ipc-electron` | Renderer 到 Electron 的 IPC 代理 | M-01.3 保留动态 Proxy 兼容 facade；所有调用在 preload/main/InteropApi 边界经过 manifest 校验，细粒度参数类型仍待 B-01 |
-| `src-electron` | 主进程、窗口、托盘、IPC、C# 启动 | `main.js` 约 1182 行，窗口、托盘、通知、IPC、Dotnet 行为仍集中；M-07.1 已把 10 个同步 .NET 初始化调用移入 `dotnetBootstrap.cjs`，M-07.2 已把 IPC channel 注册移入 `ipcHandlers.cjs`，M-07.3 已固化双宿主 capability contract |
+| `src/ipc-electron` | Renderer 到 Electron 的 IPC 代理 | M-01.3 保留动态 Proxy 兼容 facade；preload/main/InteropApi 共享 manifest 参数校验，main 的全部 15 个 IPC handler 另经可信来源 guard |
+| `src-electron` | 主进程、窗口、托盘、IPC、C# 启动 | `main.js` 约 1182 行，窗口、托盘、通知、IPC、Dotnet 行为仍集中；M-07.1 已把 10 个同步 .NET 初始化调用移入 `dotnetBootstrap.cjs`，M-07.2 已把 IPC channel 注册移入 `ipcHandlers.cjs`，M-07.3 已固化双宿主 capability contract，B-01 新增 renderer source policy 与统一 IPC guard |
 | `Dotnet` | CEF/Electron C# 宿主、SQLite、日志、VR overlay | CEF/Electron 两套项目目标框架和依赖版本存在漂移；部分 C# 类过大 |
 | `Dotnet.Tests` | C# WinForms 测试项目 | 已接入 xUnit、正式测试发现和 Windows CI job；测试通过 STA 辅助器执行 |
 | `src/vr` | VR overlay 和 VR 页面 | `Vr.vue` 超过 2000 行，VR UI、状态和平台行为混杂 |
@@ -83,7 +83,7 @@
 | `src/services/aggregatedView.js` | 使用 `accountHub.allSessions` / `primaryPrefix`，但对应 getter 不存在 | Major | 定义明确的账号元数据 interface，并为标签、颜色和 primary 判断增加契约测试 |
 | `src/api/index.js`、`src/queries` | API、Query cache、Pinia 可能重复持有实体数据 | Major → 已完成 M-08.1～M-08.3 | Query side effect、scope key 和 resource registry 已统一到 Query layer；继续明确 Pinia/Query 的实体唯一来源，并收窄全局 request facade |
 | `src/stores/updateLoop.js` | 兼容入口和依赖组装仍集中；任务实现已移到独立模块 | Major | 已完成第一刀；后续可把宿主 capability 注入进一步收窄，继续保留兼容 facade |
-| `src-electron/preload.js`、`src-electron/main.js`、`src-electron/InteropApi.js`、`src/ipc-electron/interopApi.js` | 动态 class/method IPC 曾缺少 allowlist 和参数 envelope | Major → 已完成 M-01.3 | 共享 `dotnetCapabilityManifest.cjs` 收敛允许的 class/method；preload、main handler 和 InteropApi 三层校验，renderer Proxy 保留兼容 facade；按方法细粒度类型与可信来源判定留给 B-01 |
+| `src-electron/preload.js`、`src-electron/main.js`、`src-electron/InteropApi.js`、`src/ipc-electron/interopApi.js` | 动态 class/method IPC 曾缺少 allowlist、参数 envelope 和可信来源边界 | Major → 已完成 M-01.3/B-01 | 共享 `dotnetCapabilityManifest.cjs` 收敛允许的 class/method 与 174 个方法 schema；main 的 15 个 IPC handler 通过 `rendererSourcePolicy.cjs` 拒绝非信任 document，renderer Proxy 保留兼容 facade |
 | `src-electron/main.js` | 主进程约 1182 行，窗口、托盘、通知、IPC、Dotnet 启动集中 | Major → M-07.1～M-07.3 首批 seam 完成 | Dotnet 启动与 IPC 注册已移出，双宿主 contract 已可执行；window、tray、notification 行为实现仍可独立拆分 |
 | `Dotnet/VRCX-Cef.csproj`、`Dotnet/VRCX-Electron.csproj` | CEF/Electron 目标框架和依赖版本漂移 | Major | 建立共享宿主 contract、版本矩阵和双宿主 contract test |
 | `src` 多处生产文件 | 大量文件直接绕过边界访问 database 或宿主全局对象 | Major | 用 lint boundary 限制跨层 import，逐步迁移到 use-case/adapter |
@@ -218,7 +218,7 @@ flowchart LR
 - M-01.1 已先迁移剪贴板读取：`src/services/clipboardAdapter.js` 通过显式依赖分别封装 Electron `getClipboardText` 和 CEF `AppApi.GetClipboard`；`src/stores/search.js` 只保留兼容入口，解析和提示行为未改动。
 - M-01.2a 已迁移自定义通知音频文件选择：`src/services/fileDialogAdapter.js` 通过显式 options 分别封装 Electron filters 与 CEF legacy 参数；`selectCustomNotificationSound()` 继续保留 `if (!filePath)` 取消语义和持久化顺序。
 - M-01.2b 已迁移目录选择：同一 capability module 通过 `createDirectoryDialogAdapter()` 封装 CEF 的旧路径 hint 与 Electron 的无参 dialog；`folderSelectorDialog()` 保留旧的可见状态 guard、错误传播和 host-specific cancellation value。
-- M-01.3 已收敛动态 Dotnet bridge：`dotnetCapabilityManifest.cjs` 统一 renderer-facing class/method 清单；preload、main process 和 `InteropApi` 三层校验，renderer Proxy 仍保留旧动态 facade；`assertAllowedDotNetCall()` 只增加 class/method 与数组 envelope 检查，不改变既有合法参数值。
+- M-01.3 已收敛动态 Dotnet bridge：`dotnetCapabilityManifest.cjs` 统一 renderer-facing class/method 清单；preload、main process 和 `InteropApi` 三层校验，renderer Proxy 仍保留旧动态 facade。B-01 在同一 manifest 上补齐 174 个方法的参数数量/基础类型 schema，并新增 `rendererSourcePolicy.cjs`；`main.js` 注册的 15 个 IPC handler 均先校验 `senderFrame.url`（兼容旧 Electron 才回退 `sender.getURL()`），仅接受 packaged `index.html`/`vr.html`，开发模式仅接受 localhost:9000 对应页面。
 - M-07.1～M-07.3 已提取 Electron composition-root 首批 seam：`dotnetBootstrap.cjs` 通过显式依赖执行原有 10 个同步初始化调用；`ipcHandlers.cjs` 集中 15 个 IPC channel 注册；`hostCapabilityContract.js` 固化七类 CEF/Electron capability 的 method、参数、channel 与取消/错误语义。所有改动均保留原顺序、参数、同步/异常行为，窗口、托盘、VR overlay 与 renderer interface 未改变。
 
 这是高 leverage 的架构接缝（seam）：新旧实现可以短期并存，不需要一次性改写业务代码。
@@ -240,7 +240,7 @@ flowchart LR
 | 检查项 | 结果 |
 |---|---|
 | `npm run prod` | 成功；存在 router 动态导入警告和 Node deprecation 警告 |
-| `npm test` | 当前 255 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-06/M-07/M-08/M-09 新增测试通过，既有失败数量未增加 |
+| `npm test` | 当前 255 个测试文件中 24 个失败、88 个断言失败并有 3 个既有未处理异常；M-06/M-07/M-08/M-09/B-01 新增测试通过，既有失败数量未增加 |
 | updateLoop/task 定向测试 | 13 个测试文件、28 个测试通过 |
 | M-03 adapter 定向测试 | DOM input、Toast、Router、关系建议通知、登出欢迎通知及 coordinator 回归测试通过 |
 | M-09.1 Group 决策定向测试 | 4 个测试文件、20 个测试通过 |
@@ -256,11 +256,11 @@ flowchart LR
 | M-01.1 clipboard/search 定向测试 | 2 个测试文件、29 个测试通过；adapter 路由与 CEF 失败回退均覆盖 |
 | M-01.2a file-dialog/notifications 定向测试 | 2 个测试文件、6 个测试通过；CEF/Electron 参数、取消值、异常传播和 Store 持久化均覆盖 |
 | M-01.2b directory-dialog/Settings 回归 | 2 个测试文件、24 个测试通过；CEF 旧路径、Electron 无参调用、取消值和设置对话框行为均覆盖 |
-| M-01.3 Dotnet bridge manifest | manifest 契约 4 个测试通过；119 个静态 renderer 调用与清单匹配；主进程/renderer 语法检查和生产构建通过 |
+| M-01.3 Dotnet bridge manifest | manifest 契约、参数 schema 与来源 guard 共 3 个定向测试文件、13 个测试通过；174 个方法均有 schema，主进程/renderer 语法检查和生产构建通过 |
 | M-07.1～M-07.3 Electron composition root / 双宿主 contract | IPC 注册测试 1 个、双宿主契约测试 2 个通过；与 M-01 capability 回归合计 6 个文件、18 个测试通过；格式、Node 语法和生产构建通过 |
 | `npm run lint` | 失败：约 45 个错误、79 个警告 |
 | `npm run typecheck:js` | **通过：0 diagnostics**；210 条既有诊断已通过 M-00.2 的静态契约切片清零，未修改多账户运行时流程 |
-| `npm run test:refactor` | **通过：55 个测试文件、285 项测试**；覆盖 coordinator、services、queries、notification 和 updateLoop task 的回归 smoke |
+| `npm run test:refactor` | **通过：56 个测试文件、293 项测试**；覆盖 coordinator、services、queries、notification、updateLoop task 和 B-01 bridge security 的回归 smoke |
 | `dotnet test` | 已发现并通过 3 个测试；WinForms 用 STA 辅助器运行 |
 | C# 测试项目构建 | 通过：0 警告、0 错误 |
 | `screenshotMetadata-schema.json` | JSON 解析和 5 属性结构检查通过 |
