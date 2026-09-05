@@ -15,6 +15,7 @@ const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
 const https = require('https');
 const { resolveClosePromptResponse } = require('./closeToTrayDecision.cjs');
+const { readVersionMetadata } = require('./versionMetadata.cjs');
 
 //app.disableHardwareAcceleration();
 
@@ -1020,14 +1021,14 @@ function getHomePath() {
 
 function getVersion() {
     try {
-        const versionFile = fs
-            .readFileSync(path.join(rootDir, 'Version'), 'utf8')
-            .trim();
+        const { sourceVersion: versionFile, isNightly } =
+            readVersionMetadata({
+                versionFilePath: path.join(rootDir, 'Version')
+            });
 
         // look for trailing git hash "-22bcd96" to indicate nightly build
-        const version = versionFile.split('-');
         console.log('Version:', versionFile);
-        if (version.length > 0 && version[version.length - 1].length == 7) {
+        if (isNightly) {
             return `VRCX (Linux) Nightly ${versionFile}`;
         } else {
             return `VRCX (Linux) ${versionFile}`;
