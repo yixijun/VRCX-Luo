@@ -1,7 +1,3 @@
-import manifest from '../../src-electron/dotnetCapabilityManifest.cjs';
-
-const { isAllowedDotNetClass, isAllowedDotNetMethod } = manifest;
-
 class InteropApi {
     constructor() {
         return new Proxy(this, {
@@ -12,16 +8,10 @@ class InteropApi {
                 // If the property is not a method of InteropApi,
                 // treat it as a .NET class name
                 if (typeof prop === 'string' && !target[prop]) {
-                    if (!isAllowedDotNetClass(prop)) {
-                        return undefined;
-                    }
                     return new Proxy(
                         {},
                         {
                             get(_, methodName) {
-                                if (!isAllowedDotNetMethod(prop, methodName)) {
-                                    return undefined;
-                                }
                                 // Return a method that calls the .NET method dynamically
                                 return async (...args) => {
                                     return await target.callMethod(
