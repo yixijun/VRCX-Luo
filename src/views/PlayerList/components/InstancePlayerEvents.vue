@@ -3,11 +3,35 @@
         class="instance-player-events flex h-full min-h-0 flex-col overflow-hidden"
         data-testid="instance-player-events">
         <div
-            class="instance-player-events__toolbar flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border px-2 py-1"
+            class="instance-player-events__toolbar flex shrink-0 flex-wrap items-center gap-1 border-b border-border px-2 py-1"
             :aria-label="t('view.player_list.presence.filters_label')">
             <span class="shrink-0 text-xs font-medium text-muted-foreground">
                 {{ t('view.player_list.presence.title') }}
             </span>
+
+            <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                :model-value="filter"
+                class="min-w-0 shrink-0"
+                data-testid="presence-identity-filter"
+                @update:model-value="handleFilterChange">
+                <ToggleGroupItem value="all" class="h-7 gap-1 px-2 text-xs">
+                    {{ t('view.player_list.presence.all') }}
+                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="friends" class="h-7 gap-1 px-2 text-xs">
+                    {{ t('view.player_list.presence.friends') }}
+                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ friendsCount }}</span>
+                </ToggleGroupItem>
+                <ToggleGroupItem value="strangers" class="h-7 gap-1 px-2 text-xs">
+                    {{ t('view.player_list.presence.strangers') }}
+                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ strangersCount }}</span>
+                </ToggleGroupItem>
+            </ToggleGroup>
+
+            <span class="mx-0.5 h-4 w-px shrink-0 bg-border" aria-hidden="true" />
 
             <ToggleGroup
                 type="single"
@@ -30,28 +54,6 @@
                     <LogOut class="size-3" />
                     {{ t('view.player_list.presence.left') }}
                     <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ leftCount }}</span>
-                </ToggleGroupItem>
-            </ToggleGroup>
-
-            <ToggleGroup
-                type="single"
-                variant="outline"
-                size="sm"
-                :model-value="filter"
-                class="min-w-0 shrink-0"
-                data-testid="presence-identity-filter"
-                @update:model-value="handleFilterChange">
-                <ToggleGroupItem value="all" class="h-7 gap-1 px-2 text-xs">
-                    {{ t('view.player_list.presence.all') }}
-                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="friends" class="h-7 gap-1 px-2 text-xs">
-                    {{ t('view.player_list.presence.friends') }}
-                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ friendsCount }}</span>
-                </ToggleGroupItem>
-                <ToggleGroupItem value="strangers" class="h-7 gap-1 px-2 text-xs">
-                    {{ t('view.player_list.presence.strangers') }}
-                    <span class="text-[0.6875rem] tabular-nums text-muted-foreground">{{ strangersCount }}</span>
                 </ToggleGroupItem>
             </ToggleGroup>
 

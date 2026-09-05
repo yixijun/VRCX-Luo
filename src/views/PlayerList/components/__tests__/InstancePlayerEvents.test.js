@@ -58,7 +58,7 @@ vi.mock('../../../../components/ui/toggle-group', () => ({
         props: ['modelValue'],
         emits: ['update:model-value'],
         template:
-            '<div v-bind="$attrs" data-testid="presence-filter">' +
+            '<div v-bind="$attrs" data-testid="presence-filter" :data-filter="$attrs[\'data-testid\']">' +
             '<template v-if="$attrs[\'data-testid\'] === \'presence-direction-filter\'">' +
             '<button data-testid="filter-direction-all" @click="$emit(\'update:model-value\', \'all\')">all</button>' +
             '<button data-testid="filter-joined" @click="$emit(\'update:model-value\', \'joined\')">joined</button>' +
@@ -133,6 +133,10 @@ describe('InstancePlayerEvents.vue', () => {
         expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(2);
         expect(wrapper.text()).toContain('short:2026-09-05T10:03:00.000Z');
         expect(wrapper.text()).toContain('view.player_list.presence.left');
+        expect(wrapper.findAll('[data-filter]').map((group) => group.attributes('data-filter'))).toEqual([
+            'presence-identity-filter',
+            'presence-direction-filter'
+        ]);
 
         await wrapper.get('[data-testid="filter-friends"]').trigger('click');
         expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);
