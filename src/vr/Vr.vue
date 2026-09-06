@@ -1473,6 +1473,7 @@
     import WristOriginMarker from './components/WristOriginMarker.vue';
     import { dispatchWristPointerClick, normalizeWristPointer } from './wristPointer';
     import {
+        createWristPointerDesktopTestSnapshot,
         installWristPointerDesktopTest,
         isWristPointerDesktopTestEnabled
     } from './wristPointerDesktopTest';
@@ -1572,6 +1573,12 @@
         window.$vr.vrState = vrState;
 
         if (isWristPointerDesktopTestEnabled()) {
+            const snapshot = createWristPointerDesktopTestSnapshot();
+            configUpdate(JSON.stringify(snapshot.config));
+            updateOnlineFriendCount(snapshot.onlineFriendCount);
+            lastLocationUpdate(JSON.stringify(snapshot.lastLocation));
+            wristFeedUpdate(JSON.stringify(snapshot.wristFeed));
+
             removeWristPointerDesktopTest = installWristPointerDesktopTest({
                 element: document.querySelector('.wrist'),
                 onMove: wristPointerMove,

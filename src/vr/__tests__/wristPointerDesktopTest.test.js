@@ -55,6 +55,13 @@ describe('wristPointerDesktopTest', () => {
         await expect(api.ToggleSystemMonitor(true)).resolves.toBeUndefined();
     });
 
+    it('allows the simulator to expose the snapshot device list through its API', async () => {
+        const devices = [['headset', 'connected', 'charging', '86', 'Running_OK']];
+        const api = createWristPointerDesktopTestApi({ devices });
+
+        expect(await api.GetVRDevices()).toEqual(devices);
+    });
+
     it('provides a representative overlay snapshot for the desktop simulator', () => {
         const now = 1_700_000_000_000;
         const snapshot = createWristPointerDesktopTestSnapshot(now);

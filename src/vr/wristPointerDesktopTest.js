@@ -102,15 +102,20 @@ export function createWristPointerDesktopTestSnapshot(now = Date.now()) {
  * Creates the minimal AppApiVr surface needed to render the wrist overlay
  * without a CEF/OpenVR host.
  *
+ * @param {{devices?: string[][]}=} options
  * @returns {Record<string, () => Promise<unknown>>}
  */
-export function createWristPointerDesktopTestApi() {
+export function createWristPointerDesktopTestApi({ devices = [] } = {}) {
+    const testDevices = Array.isArray(devices)
+        ? devices.map((device) => [...device])
+        : [];
+
     return {
         VrInit: async () => undefined,
         ToggleSystemMonitor: async () => undefined,
         CurrentCulture: async () => 'en-gb',
         CustomVrScript: async () => '',
-        GetVRDevices: async () => [],
+        GetVRDevices: async () => testDevices.map((device) => [...device]),
         GetExecuteVrOverlayFunctionQueue: async () => [],
         GetWristPointerQueue: async () => [],
         CpuUsage: async () => 0,

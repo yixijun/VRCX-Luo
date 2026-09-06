@@ -6,12 +6,16 @@ import { initPlugins } from '../plugins';
 import Vr from './Vr.vue';
 import {
     createWristPointerDesktopTestApi,
+    createWristPointerDesktopTestSnapshot,
     isWristPointerDesktopTestEnabled
 } from './wristPointerDesktopTest';
 
 if (isWristPointerDesktopTestEnabled()) {
+    const desktopTestSnapshot = createWristPointerDesktopTestSnapshot();
     window.__VRCX_WRIST_POINTER_DESKTOP_TEST__ = true;
-    window.AppApiVr = createWristPointerDesktopTestApi();
+    window.AppApiVr = createWristPointerDesktopTestApi({
+        devices: desktopTestSnapshot.devices
+    });
     window.SQLite = {
         Execute: async () => [],
         ExecuteJson: async () => '[]',

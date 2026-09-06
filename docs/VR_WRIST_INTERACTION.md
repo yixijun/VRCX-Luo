@@ -29,6 +29,8 @@ vr.html?wrist-pointer-test=1
 
 在该页面中，鼠标移动会映射为手背上的扳机指针，离开手背区域会隐藏指针，按下鼠标会显示按压状态，点击会触发带 `data-vr-action` 控件的扳机操作。命中白名单控件时会阻止浏览器原生点击再执行一次，避免页面切换重复触发；普通内容仍保留原生行为。
 
+挂载时会通过正式版同名的 `$vr.configUpdate`、`$vr.wristFeedUpdate`、`$vr.lastLocationUpdate` 和 `$vr.updateOnlineFriendCount` 入口注入一组确定性的演示快照，同时提供头显、左右手柄和基站状态。这样桌面画面使用的仍是正式 VR 模板、尺寸和数据入口，不会再因为没有 CEF/OpenVR 推送而显示空壳；快照仅用于布局和交互验证，不代表实时账户数据。
+
 调试模式注入的是只读的 `AppApiVr` 安全替身，不访问 CEF、Electron、OpenVR 或真实配置数据库。未携带该参数时不会安装任何鼠标监听，也不会绕过原有宿主绑定，因此正式版布局和交互保持不变。
 
 可用本地静态预览验证：先执行 `npm run prod`，再运行 `npx vite preview src --host 127.0.0.1 --port 9001`，打开 `http://127.0.0.1:9001/vr.html?wrist-pointer-test=1`。该预览只验证 Vue 页面、原点移动和页面按钮，不代表 SteamVR 姿态、Overlay 尺寸或 C# 射线已经通过硬件验证。
