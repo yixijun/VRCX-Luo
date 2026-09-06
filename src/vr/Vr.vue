@@ -1472,6 +1472,10 @@
     import VrLocation from './components/VrLocation.vue';
     import WristOriginMarker from './components/WristOriginMarker.vue';
     import { dispatchWristPointerClick, normalizeWristPointer } from './wristPointer';
+    import {
+        installWristPointerDesktopTest,
+        isWristPointerDesktopTestEnabled
+    } from './wristPointerDesktopTest';
 
     import * as workerTimers from 'worker-timers';
 
@@ -1538,6 +1542,7 @@
     let updateVrElectronLoopTimeoutId = null;
     let updateVrPointerLoopTimeoutId = null;
     let cleanHudFeedLoopTimeoutId = null;
+    let removeWristPointerDesktopTest = null;
 
     onMounted(() => {
         window.$vr = {};
@@ -1566,6 +1571,15 @@
 
         window.$vr.vrState = vrState;
 
+        if (isWristPointerDesktopTestEnabled()) {
+            removeWristPointerDesktopTest = installWristPointerDesktopTest({
+                element: document.querySelector('.wrist'),
+                onMove: wristPointerMove,
+                onClick: wristPointerClick,
+                hand: 'right'
+            });
+        }
+
         if (LINUX) {
             updateVrElectronLoop();
             updateVrPointerLoop();
@@ -1581,6 +1595,9 @@
 
     onBeforeUnmount(() => {
         isUnmounted = true;
+
+        removeWristPointerDesktopTest?.();
+        removeWristPointerDesktopTest = null;
 
         if (updateStatsLoopTimeoutId !== null) {
             workerTimers.clearTimeout(updateStatsLoopTimeoutId);

@@ -12,6 +12,7 @@ declare global {
         $pinia: any;
         $vr: any;
         $debug: AppDebug;
+        __VRCX_WRIST_POINTER_DESKTOP_TEST__?: boolean;
         AppApi: AppApi;
         AppApiVr: AppApiVr;
         WebApi: WebApi;

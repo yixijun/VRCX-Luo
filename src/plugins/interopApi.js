@@ -5,6 +5,9 @@ import vrcxJsonStorage from '../services/jsonStorage.js';
 
 export async function initInteropApi(isVrOverlay = false) {
     if (isVrOverlay) {
+        if (window.__VRCX_WRIST_POINTER_DESKTOP_TEST__) {
+            return;
+        }
         if (WINDOWS) {
             await CefSharp.BindObjectAsync('AppApiVr');
         } else {
