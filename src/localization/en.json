@@ -3118,6 +3118,8 @@
         },
         "crash": {
             "vrcx_reload": "VRCX was reloaded for stability",
+            "desktop_mode": "desktop mode",
+            "vr_mode": "VR mode",
             "vrchat_relaunch_title": "VRChat may have crashed",
             "vrchat_relaunch_description": "VRChat appears to have crashed in {mode}. Rejoin the last instance?",
             "vrchat_relaunch_confirm": "Restart now",

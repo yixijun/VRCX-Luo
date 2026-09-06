@@ -4,6 +4,11 @@ import {
     deleteVRChatCache as _deleteVRChatCache,
     isRealInstance
 } from '../shared/utils';
+import {
+    CRASH_RECOVERY_POLICY,
+    getCrashRecoveryPolicy
+} from '../shared/crashRecovery';
+import { i18n } from '../plugins/i18n';
 import { database } from '../services/database';
 import { useAdvancedSettingsStore } from '../stores/settings/advanced';
 import { useAvatarStore } from '../stores/avatar';
@@ -161,14 +166,20 @@ export async function runDeleteVRChatCacheFlow(ref) {
 }
 
 /**
- * Checks if VRChat crashed and attempts to relaunch.
+ * Checks if VRChat crashed and applies the configured mode-specific policy.
  */
 export function runCheckIfGameCrashedFlow() {
     const advancedSettingsStore = useAdvancedSettingsStore();
     const locationStore = useLocationStore();
     const gameStore = useGameStore();
+    const modalStore = useModalStore();
 
-    if (!advancedSettingsStore.relaunchVRChatAfterCrash) {
+    const recoveryPolicy = getCrashRecoveryPolicy({
+        isGameNoVR: gameStore.isGameNoVR,
+        desktopPolicy: advancedSettingsStore.crashRecoveryDesktopMode,
+        vrPolicy: advancedSettingsStore.crashRecoveryVRMode
+    });
+    if (recoveryPolicy === CRASH_RECOVERY_POLICY.IGNORE) {
         return;
     }
     const { location } = locationStore.lastLocation;
@@ -186,16 +197,48 @@ export function runCheckIfGameCrashedFlow() {
             return;
         }
         gameStore.setLastCrashedTime(new Date());
-        // wait a bit for SteamVR to potentially close before deciding to relaunch
-        let restartDelay = 8000;
-        if (gameStore.isGameNoVR) {
-            // wait for game to close before relaunching
-            restartDelay = 2000;
+
+        const scheduleRestart = () => {
+            // wait a bit for SteamVR to potentially close before relaunching
+            const restartDelay = gameStore.isGameNoVR ? 2000 : 8000;
+            workerTimers.setTimeout(
+                () => runRestartCrashedGameFlow(location),
+                restartDelay
+            );
+        };
+
+        if (recoveryPolicy === CRASH_RECOVERY_POLICY.RESTART) {
+            scheduleRestart();
+            return;
         }
-        workerTimers.setTimeout(
-            () => runRestartCrashedGameFlow(location),
-            restartDelay
+
+        const mode = i18n.global.t(
+            gameStore.isGameNoVR
+                ? 'message.crash.desktop_mode'
+                : 'message.crash.vr_mode'
         );
+        modalStore
+            .confirm({
+                title: i18n.global.t('message.crash.vrchat_relaunch_title'),
+                description: i18n.global.t(
+                    'message.crash.vrchat_relaunch_description',
+                    { mode }
+                ),
+                confirmText: i18n.global.t(
+                    'message.crash.vrchat_relaunch_confirm'
+                ),
+                cancelText: i18n.global.t(
+                    'message.crash.vrchat_relaunch_cancel'
+                )
+            })
+            .then(({ ok }) => {
+                if (ok) {
+                    scheduleRestart();
+                }
+            })
+            .catch((error) => {
+                console.error('Crash recovery prompt failed', error);
+            });
     });
 }
 

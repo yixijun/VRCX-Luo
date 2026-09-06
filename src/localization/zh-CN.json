@@ -3170,6 +3170,8 @@
         },
         "crash": {
             "vrcx_reload": "为保证稳定性，VRCX 已重新加载",
+            "desktop_mode": "桌面模式",
+            "vr_mode": "VR 模式",
             "vrchat_relaunch_title": "检测到 VRChat 可能崩溃",
             "vrchat_relaunch_description": "VRChat 似乎在{mode}下崩溃了，要重新加入崩溃前的房间吗？",
             "vrchat_relaunch_confirm": "立即重启",
