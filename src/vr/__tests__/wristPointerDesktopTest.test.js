@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import {
     createWristPointerDesktopTestApi,
+    createWristPointerDesktopTestSnapshot,
     installWristPointerDesktopTest,
     isWristPointerDesktopTestEnabled
 } from '../wristPointerDesktopTest';
@@ -52,6 +53,33 @@ describe('wristPointerDesktopTest', () => {
         expect(await api.GetUptime()).toBe(0);
         await expect(api.VrInit()).resolves.toBeUndefined();
         await expect(api.ToggleSystemMonitor(true)).resolves.toBeUndefined();
+    });
+
+    it('provides a representative overlay snapshot for the desktop simulator', () => {
+        const now = 1_700_000_000_000;
+        const snapshot = createWristPointerDesktopTestSnapshot(now);
+
+        expect(snapshot.config).toMatchObject({
+            overlayNotifications: true,
+            hideDevicesFromFeed: false,
+            minimalFeed: true,
+            backgroundEnabled: false,
+            appLanguage: 'en'
+        });
+        expect(snapshot.onlineFriendCount).toBeGreaterThan(0);
+        expect(snapshot.wristFeed.length).toBeGreaterThan(0);
+        expect(snapshot.wristFeed.every((feed) => feed.created_at <= now)).toBe(
+            true
+        );
+        expect(snapshot.lastLocation.playerList.length).toBeGreaterThan(0);
+        expect(snapshot.lastLocation.friendList.length).toBeGreaterThan(0);
+        expect(snapshot.devices).toEqual(
+            expect.arrayContaining([
+                expect.arrayContaining(['headset', 'connected']),
+                expect.arrayContaining(['leftController', 'connected']),
+                expect.arrayContaining(['rightController', 'connected'])
+            ])
+        );
     });
 
     it('maps desktop pointer movement to normalized wrist coordinates', () => {

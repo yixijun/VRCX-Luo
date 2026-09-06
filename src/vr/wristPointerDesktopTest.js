@@ -17,6 +17,88 @@ export function isWristPointerDesktopTestEnabled(
 }
 
 /**
+ * Creates a local-only state snapshot that exercises the same data surfaces as
+ * the real VR overlay. It is intentionally deterministic so screenshots and
+ * browser checks are repeatable without a running host process.
+ *
+ * @param {number=} now
+ * @returns {{config: object, onlineFriendCount: number, lastLocation: object, wristFeed: object[], devices: string[][]}}
+ */
+export function createWristPointerDesktopTestSnapshot(now = Date.now()) {
+    const timestamp = Number.isFinite(now) ? now : Date.now();
+    const feed = (type, age, values = {}) => ({
+        type,
+        created_at: timestamp - age,
+        isFriend: false,
+        isFavorite: false,
+        ...values
+    });
+
+    return {
+        config: {
+            overlayNotifications: true,
+            hideDevicesFromFeed: false,
+            vrOverlayCpuUsage: false,
+            minimalFeed: true,
+            notificationPosition: 'topCenter',
+            notificationTimeout: 3000,
+            photonOverlayMessageTimeout: 3000,
+            notificationTheme: 'sunset',
+            backgroundEnabled: false,
+            dtHour12: false,
+            pcUptimeOnFeed: false,
+            appLanguage: 'en',
+            notificationOpacity: 100,
+            isWristDisabled: false
+        },
+        onlineFriendCount: 4,
+        lastLocation: {
+            date: timestamp - 5 * 60 * 1000,
+            location: 'wrld_desktop_test',
+            name: 'Desktop Wrist Test',
+            playerList: ['demo-friend', 'demo-user', 'demo-guest'],
+            friendList: ['demo-friend'],
+            progressPie: false,
+            onlineFor: timestamp - 45 * 60 * 1000
+        },
+        wristFeed: [
+            feed('OnPlayerJoined', 15 * 1000, {
+                displayName: 'Demo Friend',
+                isFriend: true,
+                tagColour: '#67c23a'
+            }),
+            feed('GPS', 45 * 1000, {
+                displayName: 'Demo Friend',
+                isFriend: true,
+                location: 'wrld_desktop_test',
+                worldName: 'Desktop Wrist Test'
+            }),
+            feed('Status', 90 * 1000, {
+                displayName: 'Bored painter',
+                status: 'online',
+                previousStatus: 'busy',
+                statusDescription: 'Online',
+                previousStatusDescription: 'Busy'
+            }),
+            feed('OnPlayerLeft', 2 * 60 * 1000, {
+                displayName: 'Demo Guest',
+                tagColour: '#909399'
+            }),
+            feed('Offline', 3 * 60 * 1000, {
+                displayName: 'Demo User',
+                isFriend: true
+            })
+        ],
+        devices: [
+            ['headset', 'connected', 'charging', '86', 'Running_OK'],
+            ['leftController', 'connected', '', '72', 'Running_OK'],
+            ['rightController', 'connected', '', '68', 'Running_OK'],
+            ['base', 'connected', '', '2', 'Running_OK']
+        ]
+    };
+}
+
+/**
  * Creates the minimal AppApiVr surface needed to render the wrist overlay
  * without a CEF/OpenVR host.
  *
