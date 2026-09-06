@@ -31,6 +31,26 @@ public class WristPointerMathTests
     }
 
     [Fact]
+    public void TipRayAppliesComponentOffsetAndOrientationInTrackingSpace()
+    {
+        var success = WristPointerMath.TryCreateTipRay(
+            deviceOrigin: new Vector3(1f, 2f, 3f),
+            deviceAxisX: new Vector3(0f, 0f, -1f),
+            deviceAxisY: new Vector3(0f, 1f, 0f),
+            deviceAxisZ: new Vector3(1f, 0f, 0f),
+            componentOrigin: new Vector3(0.1f, 0.2f, 0.3f),
+            componentAxisX: new Vector3(1f, 0f, 0f),
+            componentAxisY: new Vector3(0f, 1f, 0f),
+            componentAxisZ: new Vector3(0f, 0f, 1f),
+            out var ray
+        );
+
+        Assert.True(success);
+        Assert.Equal(new Vector3(1.3f, 2.2f, 2.9f), ray.Source);
+        Assert.Equal(new Vector3(-1f, 0f, 0f), ray.Direction);
+    }
+
+    [Fact]
     public void OverlayUvIsConvertedFromLowerLeftToUpperLeftCoordinates()
     {
         var success = WristPointerMath.TryConvertOverlayUv(0.25f, 0.8f, out var x, out var y);

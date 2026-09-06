@@ -16,6 +16,35 @@ public static class WristPointerMath
         return new Vector3(-matrixM2, -matrixM6, -matrixM10);
     }
 
+    /// <summary>
+    /// Builds a world-space pointer ray from the controller pose and its
+    /// render-model tip (the pose SteamVR exposes for aim/pointer input).
+    /// Both transforms are expressed in the same tracking space.
+    /// </summary>
+    public static bool TryCreateTipRay(
+        Vector3 deviceOrigin,
+        Vector3 deviceAxisX,
+        Vector3 deviceAxisY,
+        Vector3 deviceAxisZ,
+        Vector3 componentOrigin,
+        Vector3 componentAxisX,
+        Vector3 componentAxisY,
+        Vector3 componentAxisZ,
+        out WristPointerRay ray
+    )
+    {
+        var source = deviceOrigin +
+            deviceAxisX * componentOrigin.X +
+            deviceAxisY * componentOrigin.Y +
+            deviceAxisZ * componentOrigin.Z;
+        var componentForward = -componentAxisZ;
+        var direction = deviceAxisX * componentForward.X +
+            deviceAxisY * componentForward.Y +
+            deviceAxisZ * componentForward.Z;
+
+        return TryNormalizeRay(source, direction, out ray);
+    }
+
     public static bool TryNormalizeRay(Vector3 source, Vector3 direction, out WristPointerRay ray)
     {
         ray = default;

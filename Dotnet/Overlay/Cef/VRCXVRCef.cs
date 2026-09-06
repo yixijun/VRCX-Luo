@@ -46,6 +46,7 @@ namespace VRCX
         private string _lastWristPointerMovePayload;
         private bool _wristPointerTriggerWasPressed;
         private ETrackedControllerRole _wristControllerRole = ETrackedControllerRole.Invalid;
+        private readonly WristPointerPoseResolver _wristPointerPoseResolver = new();
 
         private const int HMD_HEIGHT = 1024;
         private const int WRIST_SIZE = 512;
@@ -594,17 +595,32 @@ namespace VRCX
                 var pose = poses[i];
                 if (overlay != null && overlayHandle != 0 && overlayVisible && pose.bPoseIsValid)
                 {
-                    var direction = WristPointerMath.GetControllerForward(
-                        pose.mDeviceToAbsoluteTracking.m2,
-                        pose.mDeviceToAbsoluteTracking.m6,
-                        pose.mDeviceToAbsoluteTracking.m10
+                    var devicePose = pose.mDeviceToAbsoluteTracking;
+                    var hasTipPose = _wristPointerPoseResolver.TryGetTipPose(
+                        system,
+                        i,
+                        pointerRole,
+                        ref state,
+                        out var tipPose
                     );
-                    var source = new Vector3(
-                        pose.mDeviceToAbsoluteTracking.m3,
-                        pose.mDeviceToAbsoluteTracking.m7,
-                        pose.mDeviceToAbsoluteTracking.m11
-                    );
-                    if (WristPointerMath.TryNormalizeRay(source, direction, out var ray))
+                    var rayValid = hasTipPose
+                        ? WristPointerMath.TryCreateTipRay(
+                            new Vector3(devicePose.m3, devicePose.m7, devicePose.m11),
+                            new Vector3(devicePose.m0, devicePose.m4, devicePose.m8),
+                            new Vector3(devicePose.m1, devicePose.m5, devicePose.m9),
+                            new Vector3(devicePose.m2, devicePose.m6, devicePose.m10),
+                            new Vector3(tipPose.m3, tipPose.m7, tipPose.m11),
+                            new Vector3(tipPose.m0, tipPose.m4, tipPose.m8),
+                            new Vector3(tipPose.m1, tipPose.m5, tipPose.m9),
+                            new Vector3(tipPose.m2, tipPose.m6, tipPose.m10),
+                            out var ray
+                        )
+                        : WristPointerMath.TryNormalizeRay(
+                            new Vector3(devicePose.m3, devicePose.m7, devicePose.m11),
+                            WristPointerMath.GetControllerForward(devicePose.m2, devicePose.m6, devicePose.m10),
+                            out ray
+                        );
+                    if (rayValid)
                     {
                         var intersectionParams = new VROverlayIntersectionParams_t
                         {
@@ -676,6 +692,7 @@ namespace VRCX
             _lastWristPointerMovePayload = null;
             _wristPointerTriggerWasPressed = false;
             _wristControllerRole = ETrackedControllerRole.Invalid;
+            _wristPointerPoseResolver.Reset();
         }
 
         internal EVROverlayError ProcessDashboard(CVROverlay overlay, ref ulong dashboardHandle, bool dashboardVisible)
