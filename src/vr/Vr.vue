@@ -1,6 +1,7 @@
 <template>
     <div id="x-app" class="flex w-screen h-screen overflow-hidden cursor-default x-app-type">
         <div class="wrist" :class="{ background: config && config.backgroundEnabled }">
+            <WristOriginMarker />
             <div class="x-container" style="flex: 1">
                 <div class="x-friend-list" ref="list" style="color: var(--vr-text-secondary)">
                     <template v-if="config && config.minimalFeed">
@@ -1464,6 +1465,7 @@
     import { timeToText } from '../shared/utils/base/format';
 
     import VrLocation from './components/VrLocation.vue';
+    import WristOriginMarker from './components/WristOriginMarker.vue';
 
     import * as workerTimers from 'worker-timers';
 
