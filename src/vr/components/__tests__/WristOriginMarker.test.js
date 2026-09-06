@@ -8,10 +8,12 @@ describe('WristOriginMarker.vue', () => {
         const wrapper = mount(WristOriginMarker);
         const marker = wrapper.get('[data-wrist-origin="controller"]');
 
-        expect(marker.attributes('data-origin-anchor')).toBe('center');
+        expect(marker.attributes('data-origin-anchor')).toBe('overlay-origin');
+        expect(marker.attributes('data-position-space')).toBe(
+            'tracked-device-relative'
+        );
         expect(marker.attributes('aria-hidden')).toBe('true');
-        expect(marker.find('.wrist-origin-marker__ring').exists()).toBe(true);
-        expect(marker.find('.wrist-origin-marker__dot').exists()).toBe(true);
-        expect(marker.findAll('.wrist-origin-marker__line')).toHaveLength(2);
+        expect(marker.element.tagName).toBe('SPAN');
+        expect(marker.element.childElementCount).toBe(0);
     });
 });
