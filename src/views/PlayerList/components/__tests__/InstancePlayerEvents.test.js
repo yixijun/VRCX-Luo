@@ -74,7 +74,7 @@ vi.mock('../../../../components/ui/toggle-group', () => ({
     },
     ToggleGroupItem: {
         props: ['value'],
-        template: '<span :data-value="value"><slot /></span>'
+        template: '<span v-bind="$attrs" :data-value="value"><slot /></span>'
     }
 }));
 
@@ -139,8 +139,12 @@ describe('InstancePlayerEvents.vue', () => {
         ]);
         expect(wrapper.find('[data-testid="presence-menu-trigger"]').exists()).toBe(false);
         expect(wrapper.get('[data-testid="presence-filter-bar"]').classes()).toEqual(
-            expect.arrayContaining(['flex-1', 'flex-nowrap', 'overflow-x-auto', 'scrollbar-hidden'])
+            expect.arrayContaining(['flex-1', 'flex-col', 'justify-center', 'overflow-hidden'])
         );
+        expect(wrapper.get('[data-testid="presence-filter-bar"]').classes()).toEqual(
+            expect.arrayContaining(['flex-col', 'justify-center', 'gap-0'])
+        );
+        expect(wrapper.findAll('[data-value]').every((item) => item.classes().includes('h-3.5'))).toBe(true);
 
         await wrapper.get('[data-testid="filter-friends"]').trigger('click');
         expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);
