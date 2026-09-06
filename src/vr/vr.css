@@ -282,12 +282,6 @@ button {
     overflow: hidden;
 }
 
-.wrist-page-panel {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow: hidden;
-}
-
 .x-containerbottom {
     padding: 3px 10px 2px;
     overflow: hidden;
