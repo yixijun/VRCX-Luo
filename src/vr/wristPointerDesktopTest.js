@@ -135,13 +135,13 @@ export function installWristPointerDesktopTest({
     element.addEventListener('pointerleave', handlePointerLeave);
     element.addEventListener('pointerdown', handlePointerDown);
     element.addEventListener('pointerup', handlePointerUp);
-    element.addEventListener('click', handleClick);
+    element.addEventListener('click', handleClick, true);
 
     return () => {
         element.removeEventListener?.('pointermove', handlePointerMove);
         element.removeEventListener?.('pointerleave', handlePointerLeave);
         element.removeEventListener?.('pointerdown', handlePointerDown);
         element.removeEventListener?.('pointerup', handlePointerUp);
-        element.removeEventListener?.('click', handleClick);
+        element.removeEventListener?.('click', handleClick, true);
     };
 }

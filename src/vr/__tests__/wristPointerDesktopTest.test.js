@@ -157,6 +157,50 @@ describe('wristPointerDesktopTest', () => {
         cleanup();
     });
 
+    it('captures explicit action clicks before the native action handler runs', () => {
+        const element = document.createElement('div');
+        const action = document.createElement('button');
+        action.dataset.vrAction = 'wrist-page-devices';
+        element.className = 'wrist';
+        element.append(action);
+        document.body.append(element);
+        vi.spyOn(element, 'getBoundingClientRect').mockReturnValue({
+            left: 10,
+            top: 20,
+            width: 100,
+            height: 200,
+            right: 110,
+            bottom: 220,
+            x: 10,
+            y: 20,
+            toJSON: () => {}
+        });
+        const nativeClick = vi.fn();
+        action.addEventListener('click', nativeClick);
+        const onMove = vi.fn();
+        const onClick = vi.fn();
+        const cleanup = installWristPointerDesktopTest({
+            element,
+            onMove,
+            onClick
+        });
+
+        action.dispatchEvent(
+            new MouseEvent('click', {
+                bubbles: true,
+                detail: 1,
+                clientX: 40,
+                clientY: 60
+            })
+        );
+
+        expect(nativeClick).not.toHaveBeenCalled();
+        expect(onClick).toHaveBeenCalledOnce();
+
+        cleanup();
+        element.remove();
+    });
+
     it('removes desktop listeners when the simulator is cleaned up', () => {
         const element = createTestElement();
         const onMove = vi.fn();
