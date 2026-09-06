@@ -356,6 +356,10 @@ M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAd
 
 桌面测试页原先只创建了安全 `AppApiVr` 替身，却没有执行正式 VR 初始化链路依赖的 `config`、feed、位置和设备数据推送，因此页面表现为空壳。当前仅在显式 `wrist-pointer-test=1` 时，通过与正式宿主相同的 `$vr.configUpdate`、`$vr.wristFeedUpdate`、`$vr.lastLocationUpdate` 和 `$vr.updateOnlineFriendCount` 入口注入确定性快照；设备列表由同一调试替身返回。该修正没有扩大生产桥接权限，没有改变 CEF/Electron 行为，也没有改变 `Vr.vue` 的正式布局或 public interface。实现和测试分别落在 `1f6454ea`、`57288b01`，验证记录见 `docs/TEST_BASELINE.md` 和 `docs/VR_WRIST_INTERACTION.md`。
 
+### 近期功能修正：房间进出筛选记忆
+
+`InstancePlayerEvents.vue` 的身份与方向筛选状态现在由 `useLocalStorage` 保存，键为 `VRCX_instancePlayerEventsFilters`。悬浮窗关闭会卸载事件列表组件，但再次打开（包括应用重启后）会恢复上次选择；读取值经过白名单校验，非法值回退到 `all`。该变更只增加显示偏好持久化，没有改变 `location` 查询、好友判定、事件排序、组件 props、数据库接口、并发行为或多账户会话。
+
 ### 术语说明
 
 本文的“模块（module）”指可独立维护的代码边界；“接口（interface）”是调用方依赖的稳定契约；“adapter”用于隔离不同宿主实现；“接缝（seam）”允许新旧实现并存；“高 leverage”表示一次改动能降低多个调用方的复杂度；“局部性”表示修改影响范围可控。

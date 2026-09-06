@@ -58,7 +58,7 @@ vi.mock('../../../../components/ui/toggle-group', () => ({
         props: ['modelValue'],
         emits: ['update:model-value'],
         template:
-            '<div v-bind="$attrs" data-testid="presence-filter" :data-filter="$attrs[\'data-testid\']">' +
+            '<div v-bind="$attrs" data-testid="presence-filter" :data-filter="$attrs[\'data-testid\']" :data-model-value="modelValue">' +
             '<template v-if="$attrs[\'data-testid\'] === \'presence-direction-filter\'">' +
             '<button data-testid="filter-direction-all" @click="$emit(\'update:model-value\', \'all\')">all</button>' +
             '<button data-testid="filter-joined" @click="$emit(\'update:model-value\', \'joined\')">joined</button>' +
@@ -92,6 +92,7 @@ describe('InstancePlayerEvents.vue', () => {
     beforeEach(() => {
         mocks.getGameLogByLocation.mockReset();
         mocks.lookupUser.mockReset();
+        window.localStorage.clear();
         mocks.friends = new Map([
             ['usr_friend', { ref: { id: 'usr_friend', displayName: 'Friend' } }]
         ]);
@@ -209,6 +210,55 @@ describe('InstancePlayerEvents.vue', () => {
             .trigger('click');
         await flushPromises();
         expect(mocks.getGameLogByLocation).toHaveBeenCalledTimes(2);
+    });
+
+    test('remembers both filters after the room activity panel is closed', async () => {
+        mocks.getGameLogByLocation.mockResolvedValue([
+            {
+                rowId: 2,
+                created_at: '2026-09-05T10:02:00.000Z',
+                type: 'OnPlayerLeft',
+                displayName: 'Friend',
+                userId: 'usr_friend'
+            },
+            {
+                rowId: 1,
+                created_at: '2026-09-05T10:01:00.000Z',
+                type: 'OnPlayerJoined',
+                displayName: 'Friend',
+                userId: 'usr_friend'
+            }
+        ]);
+
+        const wrapper = mount(InstancePlayerEvents, {
+            props: { location: 'wrld_123:instance_1' }
+        });
+        await flushPromises();
+
+        await wrapper.get('[data-testid="filter-friends"]').trigger('click');
+        await wrapper.get('[data-testid="filter-joined"]').trigger('click');
+        await flushPromises();
+        wrapper.unmount();
+
+        const reopened = mount(InstancePlayerEvents, {
+            props: { location: 'wrld_123:instance_1' }
+        });
+        await flushPromises();
+
+        expect(
+            reopened
+                .get('[data-testid="presence-identity-filter"]')
+                .attributes('data-model-value')
+        ).toBe('friends');
+        expect(
+            reopened
+                .get('[data-testid="presence-direction-filter"]')
+                .attributes('data-model-value')
+        ).toBe('joined');
+        const rows = reopened.findAll('.instance-player-events__row');
+        expect(rows).toHaveLength(1);
+        expect(rows[0].text()).toContain('view.player_list.presence.joined');
+        expect(rows[0].text()).not.toContain('view.player_list.presence.left');
     });
 
     test('shows an empty state without querying when no room is selected', async () => {

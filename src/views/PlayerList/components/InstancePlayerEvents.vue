@@ -151,6 +151,7 @@
 </template>
 
 <script setup>
+    import { useLocalStorage } from '@vueuse/core';
     import { computed, ref, watch } from 'vue';
     import { ArrowRightLeft, LogIn, LogOut, RefreshCw, UsersRound } from 'lucide-vue-next';
     import { useI18n } from 'vue-i18n';
@@ -173,8 +174,41 @@
 
     const { t } = useI18n();
     const friendStore = useFriendStore();
-    const filter = ref('all');
-    const directionFilter = ref('all');
+    const PRESENCE_FILTER_STORAGE_KEY = 'VRCX_instancePlayerEventsFilters';
+    const identityFilterValues = ['all', 'friends', 'strangers'];
+    const directionFilterValues = ['all', 'joined', 'left'];
+    const filterPreferences = useLocalStorage(PRESENCE_FILTER_STORAGE_KEY, {
+        identity: 'all',
+        direction: 'all'
+    });
+
+    function readFilterPreference(key, values) {
+        const value = filterPreferences.value?.[key];
+        return values.includes(value) ? value : 'all';
+    }
+
+    function writeFilterPreference(key, value) {
+        const current =
+            filterPreferences.value && typeof filterPreferences.value === 'object' ? filterPreferences.value : {};
+        filterPreferences.value = { ...current, [key]: value };
+    }
+
+    const filter = computed({
+        get: () => readFilterPreference('identity', identityFilterValues),
+        set: (value) => {
+            if (identityFilterValues.includes(value)) {
+                writeFilterPreference('identity', value);
+            }
+        }
+    });
+    const directionFilter = computed({
+        get: () => readFilterPreference('direction', directionFilterValues),
+        set: (value) => {
+            if (directionFilterValues.includes(value)) {
+                writeFilterPreference('direction', value);
+            }
+        }
+    });
     const events = ref([]);
     const loading = ref(false);
     const loadError = ref(false);

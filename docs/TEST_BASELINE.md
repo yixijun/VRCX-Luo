@@ -366,6 +366,21 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 | 浏览器手动验证 | `http://127.0.0.1:9001/vr.html?wrist-pointer-test=1#/` | **通过**：动态 5 条、设备 4 个、在线好友 4 个；鼠标原点可移动 |
 | Git 回滚点 | `1f6454ea`、`57288b01` | 未发布、未推送 |
 
+## 功能修正：房间进出筛选记忆
+
+2026-09-06，房间进出悬浮窗的身份筛选（全部/仅好友/陌生人）和方向筛选（全部/进入/离开）改为通过 `useLocalStorage` 保存到 `VRCX_instancePlayerEventsFilters`。关闭悬浮窗导致组件卸载后，重新打开仍恢复上次选择；应用重启后也会保留。读取时只接受既有筛选值，非法或损坏值回退为“全部”；查询参数、事件顺序、组件 public props、并发语义和多账户逻辑均未改变。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前组件基线 | `npx vitest run src/views/PlayerList/components/__tests__/InstancePlayerEvents.test.js --reporter=dot` | **通过：1 个文件、3 项测试** |
+| 记忆行为 RED → GREEN | 同上定向命令 | **先因重开后筛选回到 `all` 得到预期失败；实现后通过：1 个文件、4 项测试** |
+| PlayerList 相关回归 | `npx vitest run src/views/PlayerList/__tests__ src/views/PlayerList/components/__tests__ --reporter=dot` | **通过：5 个文件、25 项测试**；保留既有未注册组件/`ariaPressed` 警告 |
+| 目标文件 Lint | `npx eslint src/views/PlayerList/components/InstancePlayerEvents.vue src/views/PlayerList/components/__tests__/InstancePlayerEvents.test.js` | **通过** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 生产构建 | `npm run prod` | **通过：4425 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有 CRLF 转换警告 |
+| Git 回滚点 | 本次独立提交 | 未发布、未推送 |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
