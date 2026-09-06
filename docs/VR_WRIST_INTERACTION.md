@@ -13,17 +13,11 @@
 - 腕部 Overlay 的鼠标缩放固定为 `512×512`，`ComputeOverlayIntersection` 返回的像素坐标先按该范围归一化，再将 OpenVR 的左下角原点转换为 DOM 的左上角坐标；Vue 端最终将其限制到 `0..1`，以百分比移动实心原点标记。
 - 扳机只在“未按下 → 按下”的边沿产生一次点击，松开后才允许下一次点击，避免长按重复触发。
 
-## 页面切换
+## 页面布局
 
-手背顶部提供三个紧凑图标页签：
+当前沿用正式版手背布局：好友动态、VR 设备状态和底部运行状态按原有顺序同时显示，不额外加入页面切换条。实心原点和点击桥接作为独立的交互层叠加在页面之上，默认不可见，因此不会改变正式版的视觉结构。
 
-| 页面 | 标识 | 内容 |
-|---|---|---|
-| 动态 | `wrist-page-feed` | 好友动态/当前 Feed |
-| 设备 | `wrist-page-devices` | VR 设备与追踪器状态 |
-| 状态 | `wrist-page-status` | 播放、连接和运行状态 |
-
-页签和普通鼠标共用同一个 DOM 事件路径。可点击元素必须显式声明 `data-vr-action`，指针点击桥只会派发到该白名单元素，避免误触页面其他节点。
+如果后续重新引入页面切换，页签和普通鼠标应共用同一个 DOM 事件路径；可点击元素必须显式声明 `data-vr-action`，指针点击桥只派发到白名单元素，避免误触页面其他节点。
 
 ## 双宿主数据流
 
@@ -36,15 +30,13 @@ CEF: ExecuteScriptAsync        Electron: latest-state queue
         └──────────────► Vr.vue ◄────────┘
                          │
               normalize → marker / click dispatch
-                         │
-                    page tab actions
 ```
 
 CEF 直接执行渲染器脚本；Electron 使用独立的最新状态队列，避免被原有 500ms .NET 命令队列拖慢。原有 VR 状态轮询和公共 `SetVR` 接口未改变。
 
 ## 扩展约定
 
-1. 新增手背页面时，在 `WristPageTabs.vue` 注册唯一 `id`、图标和无障碍标签，并在 `Vr.vue` 增加对应 `v-show` 面板。
+1. 若新增手背页面切换，在 `WristPageTabs.vue` 注册唯一 `id`、图标和无障碍标签，并在 `Vr.vue` 增加对应面板；默认布局不应被改变。
 2. 页面内需要扳机操作的控件声明 `data-vr-action`；不应在 pointer bridge 中增加页面/业务判断。
 3. 保持指针 payload 的字段：`x`、`y`、`visible`、`pressed`、`hand`。坐标范围和点击边沿由桥接层统一处理。
 4. 修改 C# bridge capability 时同步更新 `src-electron/dotnetCapabilityManifest.cjs` 与对应测试。
