@@ -1330,7 +1330,12 @@
                     },
                     "relaunch_vrchat": {
                         "header": "崩溃后重启",
-                        "description": "重新加入崩溃前的房间"
+                        "description": "分别设置桌面模式和 VR 模式在崩溃后的处理方式",
+                        "desktop": "桌面模式",
+                        "vr": "VR 模式",
+                        "ask": "崩溃后询问",
+                        "restart": "立即重启",
+                        "ignore": "不处理"
                     },
                     "vrchat_quit_fix": {
                         "header": "修复 VRChat 关闭问题",
@@ -3164,7 +3169,11 @@
             "delete_failed": "删除图片元数据失败"
         },
         "crash": {
-            "vrcx_reload": "为保证稳定性，VRCX 已重新加载"
+            "vrcx_reload": "为保证稳定性，VRCX 已重新加载",
+            "vrchat_relaunch_title": "检测到 VRChat 可能崩溃",
+            "vrchat_relaunch_description": "VRChat 似乎在{mode}下崩溃了，要重新加入崩溃前的房间吗？",
+            "vrchat_relaunch_confirm": "立即重启",
+            "vrchat_relaunch_cancel": "忽略本次"
         },
         "image": {
             "downloading": "正在下载图片...",

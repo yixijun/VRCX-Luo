@@ -1312,7 +1312,12 @@
                     },
                     "relaunch_vrchat": {
                         "header": "Auto Relaunch VRChat After Crash",
-                        "description": "Automatically relaunch and rejoin the last instance after a crash."
+                        "description": "Choose what to do after a VRChat crash for each mode.",
+                        "desktop": "Desktop mode",
+                        "vr": "VR mode",
+                        "ask": "Ask after crash",
+                        "restart": "Restart immediately",
+                        "ignore": "Do nothing"
                     },
                     "vrchat_quit_fix": {
                         "header": "Force Quit VRChat on Exit",
@@ -3112,7 +3117,11 @@
             "delete_failed": "Failed to delete screenshot metadata"
         },
         "crash": {
-            "vrcx_reload": "VRCX was reloaded for stability"
+            "vrcx_reload": "VRCX was reloaded for stability",
+            "vrchat_relaunch_title": "VRChat may have crashed",
+            "vrchat_relaunch_description": "VRChat appears to have crashed in {mode}. Rejoin the last instance?",
+            "vrchat_relaunch_confirm": "Restart now",
+            "vrchat_relaunch_cancel": "Ignore"
         },
         "image": {
             "downloading": "Downloading image...",

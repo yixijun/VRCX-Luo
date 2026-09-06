@@ -4,7 +4,46 @@
             <SettingsItem
                 :label="t('view.settings.advanced.advanced.relaunch_vrchat.header')"
                 :description="t('view.settings.advanced.advanced.relaunch_vrchat.description')">
-                <Switch :model-value="relaunchVRChatAfterCrash" @update:modelValue="setRelaunchVRChatAfterCrash" />
+                <div class="flex flex-col items-end gap-1.5">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-muted-foreground">
+                            {{ t('view.settings.advanced.advanced.relaunch_vrchat.desktop') }}
+                        </span>
+                        <Select
+                            :model-value="crashRecoveryDesktopMode"
+                            @update:modelValue="setCrashRecoveryDesktopMode">
+                            <SelectTrigger class="w-36" size="sm">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="option in crashRecoveryOptions"
+                                    :key="option.value"
+                                    :value="option.value">
+                                    {{ t(option.labelKey) }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs text-muted-foreground">
+                            {{ t('view.settings.advanced.advanced.relaunch_vrchat.vr') }}
+                        </span>
+                        <Select :model-value="crashRecoveryVRMode" @update:modelValue="setCrashRecoveryVRMode">
+                            <SelectTrigger class="w-36" size="sm">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem
+                                    v-for="option in crashRecoveryOptions"
+                                    :key="option.value"
+                                    :value="option.value">
+                                    {{ t(option.labelKey) }}
+                                </SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
             </SettingsItem>
 
             <SettingsItem
@@ -415,6 +454,7 @@
     import { disableGameLogDialog } from '@/coordinators/gameLogCoordinator';
     import { clearVRCXCache } from '@/coordinators/vrcxCoordinator';
     import { openExternalLink } from '@/shared/utils';
+    import { CRASH_RECOVERY_POLICY } from '@/shared/crashRecovery';
 
     import PhotonSettings from '../PhotonSettings.vue';
     import RegistryBackupDialog from '../../../Tools/dialogs/RegistryBackupDialog.vue';
@@ -452,7 +492,8 @@
 
     const {
         enablePrimaryPassword,
-        relaunchVRChatAfterCrash,
+        crashRecoveryDesktopMode,
+        crashRecoveryVRMode,
         vrcQuitFix,
         autoSweepVRChatCache,
         selfInviteOverride,
@@ -469,7 +510,8 @@
     } = storeToRefs(advancedSettingsStore);
 
     const {
-        setRelaunchVRChatAfterCrash,
+        setCrashRecoveryDesktopMode,
+        setCrashRecoveryVRMode,
         setVrcQuitFix,
         setAutoSweepVRChatCache,
         setSelfInviteOverride,
@@ -489,6 +531,21 @@
     const visits = ref(null);
     const selectedPurgePeriod = ref('180');
     const isPurgeDialogVisible = ref(false);
+
+    const crashRecoveryOptions = [
+        {
+            value: CRASH_RECOVERY_POLICY.ASK,
+            labelKey: 'view.settings.advanced.advanced.relaunch_vrchat.ask'
+        },
+        {
+            value: CRASH_RECOVERY_POLICY.RESTART,
+            labelKey: 'view.settings.advanced.advanced.relaunch_vrchat.restart'
+        },
+        {
+            value: CRASH_RECOVERY_POLICY.IGNORE,
+            labelKey: 'view.settings.advanced.advanced.relaunch_vrchat.ignore'
+        }
+    ];
 
     const cacheSize = reactive({
         cachedUsers: 0,

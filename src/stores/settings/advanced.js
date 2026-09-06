@@ -6,6 +6,10 @@ import { useI18n } from 'vue-i18n';
 import { logWebRequest } from '../../services/appConfig';
 import { database } from '../../services/database';
 import { languageCodes } from '../../localization';
+import {
+    CRASH_RECOVERY_POLICY,
+    resolveCrashRecoveryPolicy
+} from '../../shared/crashRecovery';
 import { useGameStore } from '../game';
 import { useModalStore } from '../modal';
 import { useUpdateLoopStore } from '../updateLoop';
@@ -33,6 +37,12 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const enablePrimaryPassword = ref(false);
     const bioLanguage = ref('en');
     const relaunchVRChatAfterCrash = ref(false);
+    const crashRecoveryDesktopMode = ref(
+        /** @type {'ask' | 'restart' | 'ignore'} */ (CRASH_RECOVERY_POLICY.IGNORE)
+    );
+    const crashRecoveryVRMode = ref(
+        /** @type {'ask' | 'restart' | 'ignore'} */ (CRASH_RECOVERY_POLICY.IGNORE)
+    );
     const vrcQuitFix = ref(true);
     const autoSweepVRChatCache = ref(false);
     const selfInviteOverride = ref(false);
@@ -88,6 +98,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             enablePrimaryPasswordConfig,
             bioLanguageConfig,
             relaunchVRChatAfterCrashConfig,
+            crashRecoveryDesktopModeConfig,
+            crashRecoveryVRModeConfig,
             vrcQuitFixConfig,
             autoSweepVRChatCacheConfig,
             selfInviteOverrideConfig,
@@ -126,6 +138,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             configRepository.getBool('enablePrimaryPassword', false),
             configRepository.getString('VRCX_bioLanguage'),
             configRepository.getBool('VRCX_relaunchVRChatAfterCrash', false),
+            configRepository.getString('VRCX_crashRecoveryDesktopMode'),
+            configRepository.getString('VRCX_crashRecoveryVRMode'),
             configRepository.getBool('VRCX_vrcQuitFix', true),
             configRepository.getBool('VRCX_autoSweepVRChatCache', false),
             configRepository.getBool('VRCX_selfInviteOverride', false),
@@ -182,6 +196,14 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
 
         enablePrimaryPassword.value = enablePrimaryPasswordConfig;
         relaunchVRChatAfterCrash.value = relaunchVRChatAfterCrashConfig;
+        crashRecoveryDesktopMode.value = resolveCrashRecoveryPolicy(
+            crashRecoveryDesktopModeConfig,
+            relaunchVRChatAfterCrashConfig
+        );
+        crashRecoveryVRMode.value = resolveCrashRecoveryPolicy(
+            crashRecoveryVRModeConfig,
+            relaunchVRChatAfterCrashConfig
+        );
         vrcQuitFix.value = vrcQuitFixConfig;
         autoSweepVRChatCache.value = autoSweepVRChatCacheConfig;
         selfInviteOverride.value = selfInviteOverrideConfig;
@@ -249,7 +271,50 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         enablePrimaryPassword.value = value;
     }
     function setRelaunchVRChatAfterCrash() {
-        relaunchVRChatAfterCrash.value = !relaunchVRChatAfterCrash.value;
+        const nextValue = !relaunchVRChatAfterCrash.value;
+        const nextPolicy = nextValue
+            ? CRASH_RECOVERY_POLICY.RESTART
+            : CRASH_RECOVERY_POLICY.IGNORE;
+        relaunchVRChatAfterCrash.value = nextValue;
+        crashRecoveryDesktopMode.value = nextPolicy;
+        crashRecoveryVRMode.value = nextPolicy;
+        configRepository.setBool(
+            'VRCX_relaunchVRChatAfterCrash',
+            nextValue
+        );
+        configRepository.setString(
+            'VRCX_crashRecoveryDesktopMode',
+            nextPolicy
+        );
+        configRepository.setString('VRCX_crashRecoveryVRMode', nextPolicy);
+    }
+
+    /**
+     * @param {'ask' | 'restart' | 'ignore'} value
+     */
+    function setCrashRecoveryDesktopMode(value) {
+        const nextPolicy = resolveCrashRecoveryPolicy(value, false);
+        crashRecoveryDesktopMode.value = nextPolicy;
+        relaunchVRChatAfterCrash.value =
+            nextPolicy === CRASH_RECOVERY_POLICY.RESTART ||
+            crashRecoveryVRMode.value === CRASH_RECOVERY_POLICY.RESTART;
+        configRepository.setString('VRCX_crashRecoveryDesktopMode', nextPolicy);
+        configRepository.setBool(
+            'VRCX_relaunchVRChatAfterCrash',
+            relaunchVRChatAfterCrash.value
+        );
+    }
+
+    /**
+     * @param {'ask' | 'restart' | 'ignore'} value
+     */
+    function setCrashRecoveryVRMode(value) {
+        const nextPolicy = resolveCrashRecoveryPolicy(value, false);
+        crashRecoveryVRMode.value = nextPolicy;
+        relaunchVRChatAfterCrash.value =
+            crashRecoveryDesktopMode.value === CRASH_RECOVERY_POLICY.RESTART ||
+            nextPolicy === CRASH_RECOVERY_POLICY.RESTART;
+        configRepository.setString('VRCX_crashRecoveryVRMode', nextPolicy);
         configRepository.setBool(
             'VRCX_relaunchVRChatAfterCrash',
             relaunchVRChatAfterCrash.value
@@ -1110,6 +1175,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         bioLanguage,
         enablePrimaryPassword,
         relaunchVRChatAfterCrash,
+        crashRecoveryDesktopMode,
+        crashRecoveryVRMode,
         vrcQuitFix,
         autoSweepVRChatCache,
         selfInviteOverride,
@@ -1153,6 +1220,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         setEnablePrimaryPasswordConfigRepository,
         setBioLanguage,
         setRelaunchVRChatAfterCrash,
+        setCrashRecoveryDesktopMode,
+        setCrashRecoveryVRMode,
         setVrcQuitFix,
         setAutoSweepVRChatCache,
         setSelfInviteOverride,
