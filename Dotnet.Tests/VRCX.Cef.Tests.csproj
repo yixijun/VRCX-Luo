@@ -18,5 +18,6 @@
     <Compile Include="..\Dotnet\Cef\CloseToTrayPrompt.cs" Link="CloseToTrayPrompt.cs" />
     <Compile Include="..\Dotnet\Cef\TrayNotificationModels.cs" Link="TrayNotificationModels.cs" />
     <Compile Include="..\Dotnet\Cef\TrayNotificationPreview.cs" Link="TrayNotificationPreview.cs" />
+    <Compile Include="..\Dotnet\Overlay\WristPointerMath.cs" Link="WristPointerMath.cs" />
   </ItemGroup>
 </Project>
