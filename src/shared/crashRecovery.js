@@ -4,9 +4,11 @@ export const CRASH_RECOVERY_POLICY = Object.freeze({
     IGNORE: 'ignore'
 });
 
-const CRASH_RECOVERY_POLICY_VALUES = new Set(
-    Object.values(CRASH_RECOVERY_POLICY)
-);
+const CRASH_RECOVERY_POLICY_VALUES = new Set([
+    CRASH_RECOVERY_POLICY.ASK,
+    CRASH_RECOVERY_POLICY.RESTART,
+    CRASH_RECOVERY_POLICY.IGNORE
+]);
 
 /**
  * Resolves a persisted policy while keeping the legacy boolean setting valid.
@@ -15,8 +17,13 @@ const CRASH_RECOVERY_POLICY_VALUES = new Set(
  * @returns {'ask' | 'restart' | 'ignore'}
  */
 export function resolveCrashRecoveryPolicy(configuredPolicy, legacyEnabled) {
-    if (CRASH_RECOVERY_POLICY_VALUES.has(configuredPolicy)) {
-        return configuredPolicy;
+    if (
+        typeof configuredPolicy === 'string' &&
+        CRASH_RECOVERY_POLICY_VALUES.has(
+            /** @type {'ask' | 'restart' | 'ignore'} */ (configuredPolicy)
+        )
+    ) {
+        return /** @type {'ask' | 'restart' | 'ignore'} */ (configuredPolicy);
     }
     return legacyEnabled
         ? CRASH_RECOVERY_POLICY.RESTART
