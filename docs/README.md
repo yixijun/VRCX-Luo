@@ -14,6 +14,7 @@
 ## 数据与运行机制
 
 - [数据刷新机制](./DATA_REFRESH.md)：日志、WebSocket、轮询和好友同步的数据刷新链路。
+- [VR 手背交互说明](./VR_WRIST_INTERACTION.md)：手背指针、扳机点击、页面切换及 CEF/Electron 数据流契约。
 - [数据库架构预览](./DATABASE_SCHEMA.md)：核心表和关系说明。
 - [数据库模型文件](./vrcx_erd.dbml)、[ER 图 Mermaid](./vrcx_erd.mmd)、[MCD/DDL 文件](./vrcx_mcd_ddl.sql)。
 - MCD/SR 图形文件：`vrcx_mcd.*`、`vrcx_sr.*` 及对应的 `.svg`、`.json`、`.md`、`.gv` 文件。
