@@ -61,6 +61,38 @@ public class WristPointerMathTests
     }
 
     [Fact]
+    public void OverlayPixelsAreNormalizedAcrossTheConfiguredMouseScale()
+    {
+        var success = WristPointerMath.TryConvertOverlayPixels(
+            pixelX: 128f,
+            pixelY: 384f,
+            width: 512f,
+            height: 512f,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(0.25f, x, 5);
+        Assert.Equal(0.25f, y, 5);
+    }
+
+    [Fact]
+    public void OverlayPixelsOutsideTheConfiguredMouseScaleAreRejected()
+    {
+        Assert.False(
+            WristPointerMath.TryConvertOverlayPixels(
+                pixelX: 513f,
+                pixelY: 256f,
+                width: 512f,
+                height: 512f,
+                out _,
+                out _
+            )
+        );
+    }
+
+    [Fact]
     public void InvalidRayAndUvValuesAreRejected()
     {
         Assert.False(

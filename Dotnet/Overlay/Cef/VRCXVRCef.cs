@@ -41,6 +41,7 @@ namespace VRCX
         private bool _hmdOverlayWasActive;
 
         private ulong _wristOverlayHandle;
+        private ulong _wristOverlayMouseScaleHandle;
         private bool _wristOverlayActive;
         private bool _wristOverlayWasActive;
         private string _lastWristPointerMovePayload;
@@ -641,9 +642,11 @@ namespace VRCX
                         var intersectionResults = new VROverlayIntersectionResults_t();
                         if (overlay.ComputeOverlayIntersection(overlayHandle, ref intersectionParams, ref intersectionResults))
                         {
-                            hit = WristPointerMath.TryConvertOverlayUv(
+                            hit = WristPointerMath.TryConvertOverlayPixels(
                                 intersectionResults.vUVs.v0,
                                 intersectionResults.vUVs.v1,
+                                WRIST_SIZE,
+                                WRIST_SIZE,
                                 out x,
                                 out y
                             );
@@ -692,6 +695,7 @@ namespace VRCX
             _lastWristPointerMovePayload = null;
             _wristPointerTriggerWasPressed = false;
             _wristControllerRole = ETrackedControllerRole.Invalid;
+            _wristOverlayMouseScaleHandle = 0;
             _wristPointerPoseResolver.Reset();
         }
 
@@ -811,6 +815,22 @@ namespace VRCX
                         return err;
                     }
                 }
+            }
+
+            if (_wristOverlayMouseScaleHandle != overlayHandle)
+            {
+                var mouseScale = new HmdVector2_t
+                {
+                    v0 = WRIST_SIZE,
+                    v1 = WRIST_SIZE
+                };
+                err = overlay.SetOverlayMouseScale(overlayHandle, ref mouseScale);
+                if (err != EVROverlayError.None)
+                {
+                    return err;
+                }
+
+                _wristOverlayMouseScaleHandle = overlayHandle;
             }
 
             if (overlayIndex != OpenVR.k_unTrackedDeviceIndexInvalid)

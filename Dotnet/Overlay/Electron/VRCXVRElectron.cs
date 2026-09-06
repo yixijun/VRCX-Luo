@@ -37,6 +37,7 @@ namespace VRCX
         private bool _hmdOverlayWasActive;
 
         private ulong _wristOverlayHandle;
+        private ulong _wristOverlayMouseScaleHandle;
         private bool _wristOverlayActive;
         private bool _wristOverlayWasActive;
         private readonly object _wristPointerLock = new();
@@ -644,9 +645,11 @@ namespace VRCX
                         var intersectionResults = new VROverlayIntersectionResults_t();
                         if (overlay.ComputeOverlayIntersection(overlayHandle, ref intersectionParams, ref intersectionResults))
                         {
-                            hit = WristPointerMath.TryConvertOverlayUv(
+                            hit = WristPointerMath.TryConvertOverlayPixels(
                                 intersectionResults.vUVs.v0,
                                 intersectionResults.vUVs.v1,
+                                WRIST_FRAME_WIDTH,
+                                WRIST_FRAME_HEIGHT,
                                 out x,
                                 out y
                             );
@@ -724,6 +727,7 @@ namespace VRCX
 
             _wristPointerTriggerWasPressed = false;
             _wristControllerRole = ETrackedControllerRole.Invalid;
+            _wristOverlayMouseScaleHandle = 0;
             _wristPointerPoseResolver.Reset();
         }
 
@@ -827,6 +831,22 @@ namespace VRCX
                     _overlayMMF = MemoryMappedFile.CreateFromFile(OVERLAY_SHM_PATH, FileMode.Open, null, SHARED_FRAME_SIZE + 1);
                     _overlayAccessor = _overlayMMF.CreateViewAccessor();
                 }
+            }
+
+            if (_wristOverlayMouseScaleHandle != overlayHandle)
+            {
+                var mouseScale = new HmdVector2_t
+                {
+                    v0 = WRIST_FRAME_WIDTH,
+                    v1 = WRIST_FRAME_HEIGHT
+                };
+                err = overlay.SetOverlayMouseScale(overlayHandle, ref mouseScale);
+                if (err != EVROverlayError.None)
+                {
+                    return err;
+                }
+
+                _wristOverlayMouseScaleHandle = overlayHandle;
             }
 
             if (overlayIndex != OpenVR.k_unTrackedDeviceIndexInvalid)

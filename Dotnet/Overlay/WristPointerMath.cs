@@ -77,6 +77,42 @@ public static class WristPointerMath
         return true;
     }
 
+    /// <summary>
+    /// Converts the pixel coordinates returned by OpenVR's overlay
+    /// intersection API into normalized DOM coordinates. The Y axis is
+    /// flipped because OpenVR reports overlay pixels from the lower edge
+    /// while the wrist document is laid out from the upper edge.
+    /// </summary>
+    public static bool TryConvertOverlayPixels(
+        float pixelX,
+        float pixelY,
+        float width,
+        float height,
+        out float x,
+        out float y
+    )
+    {
+        x = 0f;
+        y = 0f;
+        if (!float.IsFinite(pixelX) ||
+            !float.IsFinite(pixelY) ||
+            !float.IsFinite(width) ||
+            !float.IsFinite(height) ||
+            width <= 0f ||
+            height <= 0f ||
+            pixelX < 0f ||
+            pixelX > width ||
+            pixelY < 0f ||
+            pixelY > height)
+        {
+            return false;
+        }
+
+        x = pixelX / width;
+        y = 1f - pixelY / height;
+        return true;
+    }
+
     public static string CreatePayload(float x, float y, bool visible, bool pressed, string hand)
     {
         return JsonSerializer.Serialize(new
