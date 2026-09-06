@@ -1,7 +1,12 @@
 <template>
     <div id="x-app" class="flex w-screen h-screen overflow-hidden cursor-default x-app-type">
         <div class="wrist" :class="{ background: config && config.backgroundEnabled }">
-            <WristOriginMarker />
+            <WristOriginMarker
+                :x="wristPointer.x"
+                :y="wristPointer.y"
+                :visible="wristPointer.visible"
+                :pressed="wristPointer.pressed"
+                :hand="wristPointer.hand" />
             <div class="x-container" style="flex: 1">
                 <div class="x-friend-list" ref="list" style="color: var(--vr-text-secondary)">
                     <template v-if="config && config.minimalFeed">
@@ -1466,6 +1471,7 @@
 
     import VrLocation from './components/VrLocation.vue';
     import WristOriginMarker from './components/WristOriginMarker.vue';
+    import { dispatchWristPointerClick, normalizeWristPointer } from './wristPointer';
 
     import * as workerTimers from 'worker-timers';
 
@@ -1517,7 +1523,14 @@
         hudTimeout: [],
         cleanHudFeedLoopStatus: false,
         isHmdDisabled: false,
-        isWristDisabled: false
+        isWristDisabled: false,
+        wristPointer: {
+            x: 0.5,
+            y: 0.5,
+            visible: false,
+            pressed: false,
+            hand: 'right'
+        }
     });
 
     let isUnmounted = false;
@@ -1547,6 +1560,8 @@
         window.$vr.updateVrElectronLoop = updateVrElectronLoop;
         window.$vr.cleanHudFeedLoop = cleanHudFeedLoop;
         window.$vr.cleanHudFeed = cleanHudFeed;
+        window.$vr.wristPointerMove = wristPointerMove;
+        window.$vr.wristPointerClick = wristPointerClick;
 
         window.$vr.vrState = vrState;
 
@@ -1690,6 +1705,22 @@
     function wristFeedUpdate(json) {
         vrState.wristFeed = JSON.parse(json);
         updateFeedLength();
+    }
+
+    /**
+     * Receives a normalized ray intersection from the VR host.
+     * CEF sends JSON strings while Electron may provide an already-decoded value.
+     */
+    function wristPointerMove(payload) {
+        vrState.wristPointer = normalizeWristPointer(payload);
+    }
+
+    /**
+     * Routes a controller trigger release to the element under the wrist cursor.
+     * Only elements explicitly marked as VR actions are allowed to receive it.
+     */
+    function wristPointerClick(payload) {
+        dispatchWristPointerClick(payload);
     }
 
     /**
@@ -2221,6 +2252,7 @@
         onlineFriendCount,
         customInfo,
         hudFeed,
-        hudTimeout
+        hudTimeout,
+        wristPointer
     } = toRefs(vrState);
 </script>

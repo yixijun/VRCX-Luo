@@ -16,4 +16,22 @@ describe('WristOriginMarker.vue', () => {
         expect(marker.element.tagName).toBe('SPAN');
         expect(marker.element.childElementCount).toBe(0);
     });
+
+    it('positions the marker from normalized pointer coordinates', () => {
+        const wrapper = mount(WristOriginMarker, {
+            props: {
+                x: 0.25,
+                y: 0.75,
+                visible: true,
+                pressed: true,
+                hand: 'right'
+            }
+        });
+        const marker = wrapper.get('[data-wrist-origin="controller"]');
+
+        expect(marker.attributes('style')).toContain('left: 25%;');
+        expect(marker.attributes('style')).toContain('top: 75%;');
+        expect(marker.attributes('data-pointer-hand')).toBe('right');
+        expect(marker.classes()).toContain('pressed');
+    });
 });
