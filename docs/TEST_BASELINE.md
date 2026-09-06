@@ -352,6 +352,20 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 共享好友排序旧测试的既有基线仍有 3 项失败（时间实例、None、空排序数组），本次没有修改该模块，也未增加失败。代码提交：`ba12266d`。未发布、未推送。
 
+## 功能修正：桌面手背模拟空白
+
+2026-09-06，桌面测试页因没有 CEF/OpenVR 宿主推送而只显示空手背外壳。修正仅作用于显式 `wrist-pointer-test=1` 分支：通过正式 `$vr.*Update` 入口注入确定性动态/位置/设备快照，并保持正式 VR 模板、尺寸、宿主绑定和指针接口不变。共享画布右侧及下方未被裁剪的空白仍属于正式 VR 纹理图集中的非 Overlay 区域，不代表手背内容丢失。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 快照模块 RED → GREEN | `npx vitest run src/vr/__tests__/wristPointerDesktopTest.test.js --reporter=dot` | **通过：1 个文件、11 项测试** |
+| VR 指针定向回归 | `npx vitest run src/vr/__tests__/wristPointerDesktopTest.test.js src/vr/__tests__/wristPointer.test.js src/vr/components/__tests__/WristOriginMarker.test.js --reporter=dot` | **通过：3 个文件、18 项测试** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 目标文件 Lint | `npx eslint src/vr/wristPointerDesktopTest.js src/vr/__tests__/wristPointerDesktopTest.test.js src/vr/vr.js src/vr/Vr.vue` | **通过** |
+| 生产构建 | `npm run prod` | **通过：4425 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| 浏览器手动验证 | `http://127.0.0.1:9001/vr.html?wrist-pointer-test=1#/` | **通过**：动态 5 条、设备 4 个、在线好友 4 个；鼠标原点可移动 |
+| Git 回滚点 | `1f6454ea`、`57288b01` | 未发布、未推送 |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

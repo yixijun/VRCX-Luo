@@ -352,6 +352,10 @@ M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAd
 
 `FriendsSidebar.vue` 的单账户离线分组优先按 `friend.ref.$offline_for` 毫秒时间戳实现“最近离线在上”倒序排序；应用启动时已离线而缺少该运行时字段的好友依次使用 `last_activity`、`last_login` 作为排序兜底，完全缺少时间信息的数据保持稳定原顺序。该变更只作用于侧栏显示层，未修改好友状态 transition、Store interface、`dbVars`、多账户合并视图或 VR overlay。初始实现代码提交为 `ba12266d`，启动离线兜底修正另有独立回滚点，验证结果见 `docs/TEST_BASELINE.md`。
 
+### 近期功能修正：桌面手背模拟空白
+
+桌面测试页原先只创建了安全 `AppApiVr` 替身，却没有执行正式 VR 初始化链路依赖的 `config`、feed、位置和设备数据推送，因此页面表现为空壳。当前仅在显式 `wrist-pointer-test=1` 时，通过与正式宿主相同的 `$vr.configUpdate`、`$vr.wristFeedUpdate`、`$vr.lastLocationUpdate` 和 `$vr.updateOnlineFriendCount` 入口注入确定性快照；设备列表由同一调试替身返回。该修正没有扩大生产桥接权限，没有改变 CEF/Electron 行为，也没有改变 `Vr.vue` 的正式布局或 public interface。实现和测试分别落在 `1f6454ea`、`57288b01`，验证记录见 `docs/TEST_BASELINE.md` 和 `docs/VR_WRIST_INTERACTION.md`。
+
 ### 术语说明
 
 本文的“模块（module）”指可独立维护的代码边界；“接口（interface）”是调用方依赖的稳定契约；“adapter”用于隔离不同宿主实现；“接缝（seam）”允许新旧实现并存；“高 leverage”表示一次改动能降低多个调用方的复杂度；“局部性”表示修改影响范围可控。
