@@ -1,5 +1,6 @@
 using System;
 using System.Numerics;
+using System.Text.Json;
 
 namespace VRCX;
 
@@ -45,6 +46,18 @@ public static class WristPointerMath
         x = u;
         y = 1f - v;
         return true;
+    }
+
+    public static string CreatePayload(float x, float y, bool visible, bool pressed, string hand)
+    {
+        return JsonSerializer.Serialize(new
+        {
+            x,
+            y,
+            visible,
+            pressed,
+            hand
+        });
     }
 
     private static bool IsFinite(Vector3 value)

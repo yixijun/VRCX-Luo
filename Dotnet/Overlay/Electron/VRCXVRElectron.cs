@@ -39,6 +39,13 @@ namespace VRCX
         private ulong _wristOverlayHandle;
         private bool _wristOverlayActive;
         private bool _wristOverlayWasActive;
+        private readonly object _wristPointerLock = new();
+        private string _latestWristPointerMovePayload;
+        private string _latestWristPointerClickPayload;
+        private bool _hasWristPointerMove;
+        private bool _hasWristPointerClick;
+        private bool _wristPointerTriggerWasPressed;
+        private ETrackedControllerRole _wristControllerRole = ETrackedControllerRole.Invalid;
 
         private const string OVERLAY_SHM_PATH = "/dev/shm/vrcx_overlay";
         private const int WRIST_FRAME_WIDTH = 512;
@@ -175,6 +182,7 @@ namespace VRCX
             var e = new VREvent_t();
             var nextInit = DateTime.MinValue;
             var nextDeviceUpdate = DateTime.MinValue;
+            var nextWristPointerUpdate = DateTime.MinValue;
             _nextOverlayUpdate = DateTime.MinValue;
             var overlayIndex = OpenVR.k_unTrackedDeviceIndexInvalid;
             var overlayVisible1 = false;
@@ -287,6 +295,12 @@ namespace VRCX
                                     logger.Error(err);
                                 }
                             }
+
+                            if (DateTime.UtcNow.CompareTo(nextWristPointerUpdate) >= 0)
+                            {
+                                UpdateWristPointer(system, overlay, _wristOverlayHandle, overlayVisible1);
+                                nextWristPointerUpdate = DateTime.UtcNow.AddMilliseconds(16);
+                            }
                         }
                     }
                 }
@@ -324,6 +338,11 @@ namespace VRCX
             _wristOverlayActive = wristOverlay;
             _menuButton = menuButton;
             _overlayHand = overlayHand;
+
+            if (!_wristOverlayActive)
+            {
+                ResetWristPointerState();
+            }
 
             if (_hmdOverlayActive != _hmdOverlayWasActive && _hmdOverlayHandle != 0)
             {
@@ -480,6 +499,7 @@ namespace VRCX
                                             Array.Copy(_rotationRight, _rotation, 3);
                                         }
 
+                                        _wristControllerRole = role;
                                         overlayIndex = i;
                                     }
                                 }
@@ -536,6 +556,158 @@ namespace VRCX
                         }
                 }
             }
+        }
+
+        private void UpdateWristPointer(CVRSystem system, CVROverlay overlay, ulong overlayHandle, bool overlayVisible)
+        {
+            var wristRole = _wristControllerRole;
+            if (wristRole != ETrackedControllerRole.LeftHand && wristRole != ETrackedControllerRole.RightHand)
+            {
+                wristRole = _overlayHand == 2
+                    ? ETrackedControllerRole.RightHand
+                    : ETrackedControllerRole.LeftHand;
+            }
+
+            var pointerRole = wristRole == ETrackedControllerRole.LeftHand
+                ? ETrackedControllerRole.RightHand
+                : ETrackedControllerRole.LeftHand;
+            var pointerHand = pointerRole == ETrackedControllerRole.RightHand ? "right" : "left";
+            var poses = new TrackedDevicePose_t[OpenVR.k_unMaxTrackedDeviceCount];
+            system.GetDeviceToAbsoluteTrackingPose(ETrackingUniverseOrigin.TrackingUniverseStanding, 0, poses);
+
+            var triggerPressed = false;
+            var hit = false;
+            var x = 0.5f;
+            var y = 0.5f;
+            var state = new VRControllerState_t();
+            for (var i = 0u; i < OpenVR.k_unMaxTrackedDeviceCount; ++i)
+            {
+                if (system.GetTrackedDeviceClass(i) != ETrackedDeviceClass.Controller ||
+                    system.GetControllerRoleForTrackedDeviceIndex(i) != pointerRole)
+                {
+                    continue;
+                }
+
+                if (system.GetControllerState(i, ref state, (uint)Marshal.SizeOf(state)))
+                {
+                    triggerPressed = (state.ulButtonPressed & (1UL << (int)EVRButtonId.k_EButton_SteamVR_Trigger)) != 0 ||
+                        state.rAxis1.x >= 0.5f;
+                }
+
+                var pose = poses[i];
+                if (overlay != null && overlayHandle != 0 && overlayVisible && pose.bPoseIsValid)
+                {
+                    var direction = WristPointerMath.GetControllerForward(
+                        pose.mDeviceToAbsoluteTracking.m2,
+                        pose.mDeviceToAbsoluteTracking.m6,
+                        pose.mDeviceToAbsoluteTracking.m10
+                    );
+                    var source = new Vector3(
+                        pose.mDeviceToAbsoluteTracking.m3,
+                        pose.mDeviceToAbsoluteTracking.m7,
+                        pose.mDeviceToAbsoluteTracking.m11
+                    );
+                    if (WristPointerMath.TryNormalizeRay(source, direction, out var ray))
+                    {
+                        var intersectionParams = new VROverlayIntersectionParams_t
+                        {
+                            vSource = new HmdVector3_t
+                            {
+                                v0 = ray.Source.X,
+                                v1 = ray.Source.Y,
+                                v2 = ray.Source.Z
+                            },
+                            vDirection = new HmdVector3_t
+                            {
+                                v0 = ray.Direction.X,
+                                v1 = ray.Direction.Y,
+                                v2 = ray.Direction.Z
+                            },
+                            eOrigin = ETrackingUniverseOrigin.TrackingUniverseStanding
+                        };
+                        var intersectionResults = new VROverlayIntersectionResults_t();
+                        if (overlay.ComputeOverlayIntersection(overlayHandle, ref intersectionParams, ref intersectionResults))
+                        {
+                            hit = WristPointerMath.TryConvertOverlayUv(
+                                intersectionResults.vUVs.v0,
+                                intersectionResults.vUVs.v1,
+                                out x,
+                                out y
+                            );
+                        }
+                    }
+                }
+
+                break;
+            }
+
+            var visible = overlayVisible && hit;
+            var pressed = visible && triggerPressed;
+            PublishWristPointerMove(WristPointerMath.CreatePayload(x, y, visible, pressed, pointerHand));
+            if (visible && triggerPressed && !_wristPointerTriggerWasPressed)
+            {
+                PublishWristPointerClick(WristPointerMath.CreatePayload(x, y, true, true, pointerHand));
+            }
+
+            _wristPointerTriggerWasPressed = triggerPressed;
+        }
+
+        private void PublishWristPointerMove(string payload)
+        {
+            lock (_wristPointerLock)
+            {
+                if (_hasWristPointerMove && _latestWristPointerMovePayload == payload)
+                {
+                    return;
+                }
+
+                _latestWristPointerMovePayload = payload;
+                _hasWristPointerMove = true;
+            }
+        }
+
+        private void PublishWristPointerClick(string payload)
+        {
+            lock (_wristPointerLock)
+            {
+                _latestWristPointerClickPayload = payload;
+                _hasWristPointerClick = true;
+            }
+        }
+
+        internal List<KeyValuePair<string, string>> GetWristPointerQueue()
+        {
+            lock (_wristPointerLock)
+            {
+                var result = new List<KeyValuePair<string, string>>();
+                if (_hasWristPointerMove)
+                {
+                    result.Add(new KeyValuePair<string, string>("wristPointerMove", _latestWristPointerMovePayload));
+                    _hasWristPointerMove = false;
+                }
+
+                if (_hasWristPointerClick)
+                {
+                    result.Add(new KeyValuePair<string, string>("wristPointerClick", _latestWristPointerClickPayload));
+                    _hasWristPointerClick = false;
+                }
+
+                return result;
+            }
+        }
+
+        private void ResetWristPointerState()
+        {
+            lock (_wristPointerLock)
+            {
+                _latestWristPointerMovePayload = null;
+                _latestWristPointerClickPayload = null;
+                _hasWristPointerMove = false;
+                _hasWristPointerClick = false;
+            }
+
+            _wristPointerTriggerWasPressed = false;
+            _wristControllerRole = ETrackedControllerRole.Invalid;
         }
 
         internal EVROverlayError ProcessDashboard(CVROverlay overlay, ref ulong dashboardHandle, bool dashboardVisible)

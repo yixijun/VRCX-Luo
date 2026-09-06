@@ -119,6 +119,7 @@ const DOTNET_CAPABILITIES = Object.freeze({
         'CurrentCulture',
         'CustomVrScript',
         'GetExecuteVrOverlayFunctionQueue',
+        'GetWristPointerQueue',
         'GetUptime',
         'GetVRDevices',
         'Init',

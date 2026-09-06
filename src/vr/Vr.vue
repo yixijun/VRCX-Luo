@@ -1536,6 +1536,7 @@
     let isUnmounted = false;
     let updateStatsLoopTimeoutId = null;
     let updateVrElectronLoopTimeoutId = null;
+    let updateVrPointerLoopTimeoutId = null;
     let cleanHudFeedLoopTimeoutId = null;
 
     onMounted(() => {
@@ -1567,6 +1568,7 @@
 
         if (LINUX) {
             updateVrElectronLoop();
+            updateVrPointerLoop();
         }
         refreshCustomScript();
         updateStatsLoop();
@@ -1587,6 +1589,10 @@
         if (updateVrElectronLoopTimeoutId !== null) {
             workerTimers.clearTimeout(updateVrElectronLoopTimeoutId);
             updateVrElectronLoopTimeoutId = null;
+        }
+        if (updateVrPointerLoopTimeoutId !== null) {
+            workerTimers.clearTimeout(updateVrPointerLoopTimeoutId);
+            updateVrPointerLoopTimeoutId = null;
         }
         if (cleanHudFeedLoopTimeoutId !== null) {
             workerTimers.clearTimeout(cleanHudFeedLoopTimeoutId);
@@ -1901,6 +1907,35 @@
             return;
         }
         updateVrElectronLoopTimeoutId = workerTimers.setTimeout(() => updateVrElectronLoop(), 500);
+    }
+
+    /**
+     * Pointer events use a dedicated Electron queue so controller movement is
+     * not delayed by the legacy 500ms overlay command queue.
+     */
+    async function updateVrPointerLoop() {
+        try {
+            if (typeof AppApiVr.GetWristPointerQueue === 'function') {
+                const pointerQueue = await AppApiVr.GetWristPointerQueue();
+                pointerQueue?.forEach((item) => {
+                    const fullFunctionName = item[0];
+                    const jsonArg = item[1];
+                    if (
+                        (fullFunctionName === 'wristPointerMove' || fullFunctionName === 'wristPointerClick') &&
+                        typeof window.$vr === 'object' &&
+                        typeof window.$vr[fullFunctionName] === 'function'
+                    ) {
+                        window.$vr[fullFunctionName](jsonArg);
+                    }
+                });
+            }
+        } catch (err) {
+            console.error(err);
+        }
+        if (isUnmounted) {
+            return;
+        }
+        updateVrPointerLoopTimeoutId = workerTimers.setTimeout(() => updateVrPointerLoop(), 16);
     }
 
     /**

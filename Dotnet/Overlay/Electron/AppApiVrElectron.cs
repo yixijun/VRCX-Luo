@@ -29,6 +29,13 @@ namespace VRCX
             return list;
         }
 
+        public List<KeyValuePair<string, string>> GetWristPointerQueue()
+        {
+            return Program.VRCXVRInstance is VRCXVRElectron electron
+                ? electron.GetWristPointerQueue()
+                : new List<KeyValuePair<string, string>>();
+        }
+
         public override void ToggleSystemMonitor(bool enabled)
         {
             SystemMonitorElectron.Instance.Start(enabled);
