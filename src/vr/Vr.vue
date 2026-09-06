@@ -7,7 +7,8 @@
                 :visible="wristPointer.visible"
                 :pressed="wristPointer.pressed"
                 :hand="wristPointer.hand" />
-            <div class="x-container" style="flex: 1">
+            <WristPageTabs v-model="wristPage" />
+            <div v-show="wristPage === 'feed'" class="x-container" style="flex: 1">
                 <div class="x-friend-list" ref="list" style="color: var(--vr-text-secondary)">
                     <template v-if="config && config.minimalFeed">
                         <template
@@ -1157,7 +1158,7 @@
                     </template>
                 </div>
             </div>
-            <div v-if="devices.length" class="x-containerbottom">
+            <div v-if="devices.length" v-show="wristPage === 'devices'" class="x-containerbottom wrist-page-panel">
                 <div style="display: flex; flex-direction: row; flex-wrap: wrap">
                     <div
                         class="tracker-container"
@@ -1242,7 +1243,7 @@
                     </div>
                 </div>
             </div>
-            <div class="x-containerbottom">
+            <div v-show="wristPage === 'status'" class="x-containerbottom wrist-page-panel">
                 <template v-if="nowPlaying.playing">
                     <span style="float: right; padding-left: 10px">{{ nowPlaying.remainingText }}</span>
                     <MarqueeText>{{ nowPlaying.name }}</MarqueeText>
@@ -1471,6 +1472,7 @@
 
     import VrLocation from './components/VrLocation.vue';
     import WristOriginMarker from './components/WristOriginMarker.vue';
+    import WristPageTabs from './components/WristPageTabs.vue';
     import { dispatchWristPointerClick, normalizeWristPointer } from './wristPointer';
 
     import * as workerTimers from 'worker-timers';
@@ -1524,6 +1526,7 @@
         cleanHudFeedLoopStatus: false,
         isHmdDisabled: false,
         isWristDisabled: false,
+        wristPage: 'feed',
         wristPointer: {
             x: 0.5,
             y: 0.5,
@@ -2288,6 +2291,7 @@
         customInfo,
         hudFeed,
         hudTimeout,
+        wristPage,
         wristPointer
     } = toRefs(vrState);
 </script>
