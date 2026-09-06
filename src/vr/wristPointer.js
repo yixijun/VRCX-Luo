@@ -75,6 +75,7 @@ export function dispatchWristPointerClick(
     const clientX = rect.left + pointer.x * rect.width;
     const clientY = rect.top + pointer.y * rect.height;
     const element = documentRef.elementFromPoint(clientX, clientY);
+    /** @type {HTMLElement | null} */
     const action = element?.closest?.('[data-vr-action]');
     if (
         !action ||
