@@ -79,9 +79,11 @@ vi.mock('../../../../components/ui/toggle-group', () => ({
 }));
 
 vi.mock('lucide-vue-next', () => ({
+    ArrowRightLeft: { template: '<span />' },
     LogIn: { template: '<span />' },
     LogOut: { template: '<span />' },
-    RefreshCw: { template: '<span />' }
+    RefreshCw: { template: '<span />' },
+    UsersRound: { template: '<span />' }
 }));
 
 import InstancePlayerEvents from '../InstancePlayerEvents.vue';
@@ -144,7 +146,19 @@ describe('InstancePlayerEvents.vue', () => {
         expect(wrapper.get('[data-testid="presence-filter-bar"]').classes()).toEqual(
             expect.arrayContaining(['flex-col', 'justify-center', 'gap-0'])
         );
+        expect(wrapper.get('[data-testid="presence-filter-bar"]').classes()).toEqual(
+            expect.arrayContaining(['rounded-md', 'border', 'bg-muted/25', 'p-0.5'])
+        );
+        expect(wrapper.get('[data-testid="presence-identity-row"]').classes()).toEqual(
+            expect.arrayContaining(['grid', 'grid-cols-[0.875rem_minmax(0,1fr)]', 'items-center'])
+        );
+        expect(wrapper.get('[data-testid="presence-direction-row"]').classes()).toEqual(
+            expect.arrayContaining(['grid', 'grid-cols-[0.875rem_minmax(0,1fr)]', 'items-center'])
+        );
         expect(wrapper.findAll('[data-value]').every((item) => item.classes().includes('h-3.5'))).toBe(true);
+        expect(wrapper.findAll('[data-value]').every((item) => item.classes().includes('data-[state=on]:bg-primary/20'))).toBe(
+            true
+        );
 
         await wrapper.get('[data-testid="filter-friends"]').trigger('click');
         expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(1);

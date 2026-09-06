@@ -10,73 +10,83 @@
             </span>
 
             <div
-                class="instance-player-events__filter-bar flex min-w-0 flex-1 flex-col justify-center gap-0 overflow-hidden whitespace-nowrap"
+                class="instance-player-events__filter-bar flex min-w-0 flex-1 flex-col justify-center gap-0 overflow-hidden whitespace-nowrap rounded-md border border-border/60 bg-muted/25 p-0.5"
                 data-testid="presence-filter-bar">
-                <ToggleGroup
-                    type="single"
-                    variant="outline"
-                    size="sm"
-                    :model-value="filter"
-                    class="w-full min-w-0 shrink-0"
-                    data-testid="presence-identity-filter"
-                    @update:model-value="handleFilterChange">
-                    <ToggleGroupItem
-                        value="all"
-                        class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap">
-                        {{ t('view.player_list.presence.all') }}
-                        <span class="text-[0.5625rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                        value="friends"
-                        class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap">
-                        {{ t('view.player_list.presence.friends') }}
-                        <span class="text-[0.5625rem] tabular-nums text-muted-foreground">{{ friendsCount }}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                        value="strangers"
-                        class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap">
-                        {{ t('view.player_list.presence.strangers') }}
-                        <span class="text-[0.5625rem] tabular-nums text-muted-foreground">{{ strangersCount }}</span>
-                    </ToggleGroupItem>
-                </ToggleGroup>
+                <div
+                    class="grid min-w-0 grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-1"
+                    data-testid="presence-identity-row">
+                    <UsersRound class="size-2.5 shrink-0 text-muted-foreground/80" aria-hidden="true" />
+                    <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        size="sm"
+                        :model-value="filter"
+                        class="w-full min-w-0 shrink-0 overflow-hidden rounded-sm bg-background/25"
+                        data-testid="presence-identity-filter"
+                        @update:model-value="handleFilterChange">
+                        <ToggleGroupItem
+                            value="all"
+                            class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap data-[state=on]:bg-primary/20 data-[state=on]:font-semibold data-[state=on]:text-primary">
+                            {{ t('view.player_list.presence.all') }}
+                            <span class="text-[0.5625rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                            value="friends"
+                            class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap data-[state=on]:bg-primary/20 data-[state=on]:font-semibold data-[state=on]:text-primary">
+                            {{ t('view.player_list.presence.friends') }}
+                            <span class="text-[0.5625rem] tabular-nums text-muted-foreground">{{ friendsCount }}</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                            value="strangers"
+                            class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap data-[state=on]:bg-primary/20 data-[state=on]:font-semibold data-[state=on]:text-primary">
+                            {{ t('view.player_list.presence.strangers') }}
+                            <span class="text-[0.5625rem] tabular-nums text-muted-foreground">{{ strangersCount }}</span>
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                </div>
 
-                <span class="mx-1 h-px w-full shrink-0 bg-border/60" aria-hidden="true" />
+                <span class="mx-1 h-px w-full shrink-0 bg-border/50" aria-hidden="true" />
 
-                <ToggleGroup
-                    type="single"
-                    variant="outline"
-                    size="sm"
-                    :model-value="directionFilter"
-                    class="w-full min-w-0 shrink-0"
-                    data-testid="presence-direction-filter"
-                    @update:model-value="handleDirectionFilterChange">
-                    <ToggleGroupItem
-                        value="all"
-                        class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap">
-                        {{ t('view.player_list.presence.all') }}
-                        <span class="instance-player-events__direction-count text-[0.5625rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                        value="joined"
-                        class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap">
-                        <LogIn class="size-2.5" />
-                        {{ t('view.player_list.presence.joined') }}
-                        <span class="instance-player-events__direction-count text-[0.5625rem] tabular-nums text-muted-foreground">{{ joinedCount }}</span>
-                    </ToggleGroupItem>
-                    <ToggleGroupItem
-                        value="left"
-                        class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap">
-                        <LogOut class="size-2.5" />
-                        {{ t('view.player_list.presence.left') }}
-                        <span class="instance-player-events__direction-count text-[0.5625rem] tabular-nums text-muted-foreground">{{ leftCount }}</span>
-                    </ToggleGroupItem>
-                </ToggleGroup>
+                <div
+                    class="grid min-w-0 grid-cols-[0.875rem_minmax(0,1fr)] items-center gap-1"
+                    data-testid="presence-direction-row">
+                    <ArrowRightLeft class="size-2.5 shrink-0 text-muted-foreground/80" aria-hidden="true" />
+                    <ToggleGroup
+                        type="single"
+                        variant="outline"
+                        size="sm"
+                        :model-value="directionFilter"
+                        class="w-full min-w-0 shrink-0 overflow-hidden rounded-sm bg-background/25"
+                        data-testid="presence-direction-filter"
+                        @update:model-value="handleDirectionFilterChange">
+                        <ToggleGroupItem
+                            value="all"
+                            class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap data-[state=on]:bg-primary/20 data-[state=on]:font-semibold data-[state=on]:text-primary">
+                            {{ t('view.player_list.presence.all') }}
+                            <span class="instance-player-events__direction-count text-[0.5625rem] tabular-nums text-muted-foreground">{{ allCount }}</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                            value="joined"
+                            class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap data-[state=on]:bg-primary/20 data-[state=on]:font-semibold data-[state=on]:text-primary">
+                            <LogIn class="size-2.5" aria-hidden="true" />
+                            {{ t('view.player_list.presence.joined') }}
+                            <span class="instance-player-events__direction-count text-[0.5625rem] tabular-nums text-muted-foreground">{{ joinedCount }}</span>
+                        </ToggleGroupItem>
+                        <ToggleGroupItem
+                            value="left"
+                            class="h-3.5 min-w-0 flex-1 gap-0.5 px-1 text-[0.625rem] leading-none whitespace-nowrap data-[state=on]:bg-primary/20 data-[state=on]:font-semibold data-[state=on]:text-primary">
+                            <LogOut class="size-2.5" aria-hidden="true" />
+                            {{ t('view.player_list.presence.left') }}
+                            <span class="instance-player-events__direction-count text-[0.5625rem] tabular-nums text-muted-foreground">{{ leftCount }}</span>
+                        </ToggleGroupItem>
+                    </ToggleGroup>
+                </div>
             </div>
 
             <Button
                 variant="ghost"
                 size="icon"
-                class="size-5 shrink-0"
+                class="size-5 shrink-0 rounded-md text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                 :disabled="loading"
                 :aria-label="t('view.player_list.presence.refresh')"
                 :title="t('view.player_list.presence.refresh')"
@@ -142,7 +152,7 @@
 
 <script setup>
     import { computed, ref, watch } from 'vue';
-    import { LogIn, LogOut, RefreshCw } from 'lucide-vue-next';
+    import { ArrowRightLeft, LogIn, LogOut, RefreshCw, UsersRound } from 'lucide-vue-next';
     import { useI18n } from 'vue-i18n';
 
     import { database } from '../../../services/database';
