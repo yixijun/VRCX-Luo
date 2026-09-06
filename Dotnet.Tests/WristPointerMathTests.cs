@@ -105,4 +105,61 @@ public class WristPointerMathTests
         Assert.False(WristPointerMath.TryConvertOverlayUv(-0.1f, 0.5f, out _, out _));
         Assert.False(WristPointerMath.TryConvertOverlayUv(float.NaN, 0.5f, out _, out _));
     }
+
+    [Fact]
+    public void PreferredOverlayPointWinsWhenBothRaysHit()
+    {
+        var success = WristPointerMath.TrySelectOverlayPoint(
+            preferredHit: true,
+            preferredX: 0.2f,
+            preferredY: 0.3f,
+            fallbackHit: true,
+            fallbackX: 0.8f,
+            fallbackY: 0.9f,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(0.2f, x);
+        Assert.Equal(0.3f, y);
+    }
+
+    [Fact]
+    public void FallbackOverlayPointIsUsedWhenPreferredRayMisses()
+    {
+        var success = WristPointerMath.TrySelectOverlayPoint(
+            preferredHit: false,
+            preferredX: 0.2f,
+            preferredY: 0.3f,
+            fallbackHit: true,
+            fallbackX: 0.8f,
+            fallbackY: 0.9f,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(0.8f, x);
+        Assert.Equal(0.9f, y);
+    }
+
+    [Fact]
+    public void OverlayPointSelectionReportsMissWhenBothRaysMiss()
+    {
+        var success = WristPointerMath.TrySelectOverlayPoint(
+            preferredHit: false,
+            preferredX: 0.2f,
+            preferredY: 0.3f,
+            fallbackHit: false,
+            fallbackX: 0.8f,
+            fallbackY: 0.9f,
+            out var x,
+            out var y
+        );
+
+        Assert.False(success);
+        Assert.Equal(0.5f, x);
+        Assert.Equal(0.5f, y);
+    }
 }

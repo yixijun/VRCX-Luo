@@ -604,12 +604,16 @@ namespace VRCX
                         ref state,
                         out var tipPose
                     );
+                    var deviceOrigin = new Vector3(devicePose.m3, devicePose.m7, devicePose.m11);
+                    var deviceAxisX = new Vector3(devicePose.m0, devicePose.m4, devicePose.m8);
+                    var deviceAxisY = new Vector3(devicePose.m1, devicePose.m5, devicePose.m9);
+                    var deviceAxisZ = new Vector3(devicePose.m2, devicePose.m6, devicePose.m10);
                     var rayValid = hasTipPose
                         ? WristPointerMath.TryCreateTipRay(
-                            new Vector3(devicePose.m3, devicePose.m7, devicePose.m11),
-                            new Vector3(devicePose.m0, devicePose.m4, devicePose.m8),
-                            new Vector3(devicePose.m1, devicePose.m5, devicePose.m9),
-                            new Vector3(devicePose.m2, devicePose.m6, devicePose.m10),
+                            deviceOrigin,
+                            deviceAxisX,
+                            deviceAxisY,
+                            deviceAxisZ,
                             new Vector3(tipPose.m3, tipPose.m7, tipPose.m11),
                             new Vector3(tipPose.m0, tipPose.m4, tipPose.m8),
                             new Vector3(tipPose.m1, tipPose.m5, tipPose.m9),
@@ -617,41 +621,52 @@ namespace VRCX
                             out var ray
                         )
                         : WristPointerMath.TryNormalizeRay(
-                            new Vector3(devicePose.m3, devicePose.m7, devicePose.m11),
-                            WristPointerMath.GetControllerForward(devicePose.m2, devicePose.m6, devicePose.m10),
+                            deviceOrigin,
+                            WristPointerMath.GetControllerForward(deviceAxisZ.X, deviceAxisZ.Y, deviceAxisZ.Z),
                             out ray
                         );
-                    if (rayValid)
+                    var preferredX = 0.5f;
+                    var preferredY = 0.5f;
+                    var preferredHit = rayValid && TryComputeOverlayPoint(
+                        overlay,
+                        overlayHandle,
+                        ray,
+                        WRIST_SIZE,
+                        WRIST_SIZE,
+                        out preferredX,
+                        out preferredY
+                    );
+                    var fallbackX = 0.5f;
+                    var fallbackY = 0.5f;
+                    var fallbackHit = false;
+                    if (!preferredHit && hasTipPose &&
+                        WristPointerMath.TryNormalizeRay(
+                            deviceOrigin,
+                            WristPointerMath.GetControllerForward(deviceAxisZ.X, deviceAxisZ.Y, deviceAxisZ.Z),
+                            out var fallbackRay
+                        ))
                     {
-                        var intersectionParams = new VROverlayIntersectionParams_t
-                        {
-                            vSource = new HmdVector3_t
-                            {
-                                v0 = ray.Source.X,
-                                v1 = ray.Source.Y,
-                                v2 = ray.Source.Z
-                            },
-                            vDirection = new HmdVector3_t
-                            {
-                                v0 = ray.Direction.X,
-                                v1 = ray.Direction.Y,
-                                v2 = ray.Direction.Z
-                            },
-                            eOrigin = ETrackingUniverseOrigin.TrackingUniverseStanding
-                        };
-                        var intersectionResults = new VROverlayIntersectionResults_t();
-                        if (overlay.ComputeOverlayIntersection(overlayHandle, ref intersectionParams, ref intersectionResults))
-                        {
-                            hit = WristPointerMath.TryConvertOverlayPixels(
-                                intersectionResults.vUVs.v0,
-                                intersectionResults.vUVs.v1,
-                                WRIST_SIZE,
-                                WRIST_SIZE,
-                                out x,
-                                out y
-                            );
-                        }
+                        fallbackHit = TryComputeOverlayPoint(
+                            overlay,
+                            overlayHandle,
+                            fallbackRay,
+                            WRIST_SIZE,
+                            WRIST_SIZE,
+                            out fallbackX,
+                            out fallbackY
+                        );
                     }
+
+                    hit = WristPointerMath.TrySelectOverlayPoint(
+                        preferredHit,
+                        preferredX,
+                        preferredY,
+                        fallbackHit,
+                        fallbackX,
+                        fallbackY,
+                        out x,
+                        out y
+                    );
                 }
 
                 break;
@@ -666,6 +681,46 @@ namespace VRCX
             }
 
             _wristPointerTriggerWasPressed = triggerPressed;
+        }
+
+        private static bool TryComputeOverlayPoint(
+            CVROverlay overlay,
+            ulong overlayHandle,
+            WristPointerRay ray,
+            int width,
+            int height,
+            out float x,
+            out float y
+        )
+        {
+            x = 0.5f;
+            y = 0.5f;
+            var intersectionParams = new VROverlayIntersectionParams_t
+            {
+                vSource = new HmdVector3_t
+                {
+                    v0 = ray.Source.X,
+                    v1 = ray.Source.Y,
+                    v2 = ray.Source.Z
+                },
+                vDirection = new HmdVector3_t
+                {
+                    v0 = ray.Direction.X,
+                    v1 = ray.Direction.Y,
+                    v2 = ray.Direction.Z
+                },
+                eOrigin = ETrackingUniverseOrigin.TrackingUniverseStanding
+            };
+            var intersectionResults = new VROverlayIntersectionResults_t();
+            return overlay.ComputeOverlayIntersection(overlayHandle, ref intersectionParams, ref intersectionResults) &&
+                WristPointerMath.TryConvertOverlayPixels(
+                    intersectionResults.vUVs.v0,
+                    intersectionResults.vUVs.v1,
+                    width,
+                    height,
+                    out x,
+                    out y
+                );
         }
 
         private void PublishWristPointerMove(string payload)

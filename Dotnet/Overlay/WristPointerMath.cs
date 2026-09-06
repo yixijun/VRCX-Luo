@@ -113,6 +113,41 @@ public static class WristPointerMath
         return true;
     }
 
+    /// <summary>
+    /// Selects the first usable overlay point from a preferred ray and its
+    /// compatibility fallback. A miss keeps the pointer at the neutral center
+    /// and lets the caller publish it as hidden.
+    /// </summary>
+    public static bool TrySelectOverlayPoint(
+        bool preferredHit,
+        float preferredX,
+        float preferredY,
+        bool fallbackHit,
+        float fallbackX,
+        float fallbackY,
+        out float x,
+        out float y
+    )
+    {
+        if (preferredHit && IsNormalizedPoint(preferredX, preferredY))
+        {
+            x = preferredX;
+            y = preferredY;
+            return true;
+        }
+
+        if (fallbackHit && IsNormalizedPoint(fallbackX, fallbackY))
+        {
+            x = fallbackX;
+            y = fallbackY;
+            return true;
+        }
+
+        x = 0.5f;
+        y = 0.5f;
+        return false;
+    }
+
     public static string CreatePayload(float x, float y, bool visible, bool pressed, string hand)
     {
         return JsonSerializer.Serialize(new
@@ -128,6 +163,12 @@ public static class WristPointerMath
     private static bool IsFinite(Vector3 value)
     {
         return float.IsFinite(value.X) && float.IsFinite(value.Y) && float.IsFinite(value.Z);
+    }
+
+    private static bool IsNormalizedPoint(float x, float y)
+    {
+        return float.IsFinite(x) && float.IsFinite(y) &&
+            x >= 0f && x <= 1f && y >= 0f && y <= 1f;
     }
 }
 
