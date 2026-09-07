@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
     setIsSteamVRRunning: vi.fn(),
     confirm: vi.fn(async () => ({ ok: true })),
     launchGame: vi.fn(),
+    getLaunchUrl: vi.fn(async () => 'vrchat://launch?ref=vrcx.app&id=wrld_1:123&shortName=abc'),
     launchDialogData: {
         value: {
             visible: true,
@@ -44,6 +45,7 @@ vi.mock('../../../stores', () => ({
     useLaunchStore: () => ({
         launchDialogData: mocks.launchDialogData,
         launchGame: (...args) => mocks.launchGame(...args),
+        getLaunchUrl: (...args) => mocks.getLaunchUrl(...args),
         tryOpenInstanceInVrc: vi.fn()
     }),
     useLocationStore: () => ({ lastLocation: ref({ friendList: new Map() }) }),
@@ -103,7 +105,11 @@ vi.mock('@/components/ui/button-group', () => ({
     ButtonGroup: { template: '<div v-bind="$attrs"><slot /></div>' }
 }));
 vi.mock('@/components/ui/input-group', () => ({
-    InputGroupField: { template: '<input />' }
+    InputGroupField: {
+        inheritAttrs: false,
+        props: ['modelValue'],
+        template: '<input :data-testid="$attrs[\'data-testid\']" :value="modelValue" />'
+    }
 }));
 vi.mock('@/components/ui/tooltip', () => ({
     TooltipWrapper: { template: '<div><slot /></div>' }
@@ -145,6 +151,8 @@ describe('LaunchDialog.vue', () => {
         mocks.selfInvite.mockClear();
         mocks.confirm.mockClear();
         mocks.launchGame.mockClear();
+        mocks.getLaunchUrl.mockClear();
+        mocks.writeText.mockClear();
         mocks.setIsSteamVRRunning.mockClear();
         mocks.isGameRunning.value = false;
         mocks.isSteamVRRunning.value = false;
@@ -172,6 +180,23 @@ describe('LaunchDialog.vue', () => {
         expect(launchGroup.classes()).toContain('max-w-full');
         expect(launchGroup.classes()).toContain('overflow-hidden');
         expect(launchGroup.classes()).toContain('h-9');
+    });
+
+    it('shows and copies the VRChat protocol launch link', async () => {
+        const directLink = 'vrchat://launch?ref=vrcx.app&id=wrld_1:123&shortName=abc';
+        mocks.getLaunchUrl.mockResolvedValueOnce(directLink);
+
+        const wrapper = mount(LaunchDialog);
+        await wrapper.vm.initLaunchDialog();
+        await flushPromises();
+
+        const input = wrapper.get('[data-testid="launch-vrchat-url"]');
+        expect(input.element.value).toBe(directLink);
+        expect(mocks.getLaunchUrl).toHaveBeenCalledWith('wrld_1:123', 'abc');
+
+        await wrapper.get('[data-testid="copy-vrchat-url"]').trigger('click');
+        await flushPromises();
+        expect(mocks.writeText).toHaveBeenCalledWith(directLink);
     });
 
     it('keeps launch secondary and places the primary in-game action last when VRChat is running', async () => {

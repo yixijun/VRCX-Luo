@@ -423,6 +423,21 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 | 生产构建 | `npm run prod` | **通过：4425 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
 | Git 回滚点 | 本次独立提交 | 未发布、未推送 |
 
+## 功能修正：启动弹窗显示 VRChat 直达链接
+
+2026-09-07，启动弹窗在现有网页链接下新增只读的“VRChat 直达链接”字段，内容复用 `useLaunchStore().getLaunchUrl()` 生成的 `vrchat://launch?...` 协议地址；右侧提供同款复制按钮，点击输入框沿用自动全选行为。现有网页链接、地点字段、启动按钮和“在 VRChat 中打开”行为均未改变。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前组件基线 | `npx vitest run src/components/dialogs/__tests__/LaunchDialog.test.js --reporter=dot` | **通过：1 个文件、8 项测试** |
+| 直达链接显示/复制 RED → GREEN | 同上定向命令 | **先因缺少直达链接字段得到预期失败；实现后通过：1 个文件、9 项测试** |
+| Dialog 目录回归 | `npx vitest run src/components/dialogs/__tests__ --reporter=dot` | **32/33 项通过**；唯一失败为既有 `CustomNavDialog` mock 未提供 `useNotificationsSettingsStore`，未涉及本次组件 |
+| 目标文件 Lint | `npx eslint src/components/dialogs/LaunchDialog.vue src/components/dialogs/__tests__/LaunchDialog.test.js` | **通过** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| Localization contract | `npm run check:localization` | **通过：14 个语言文件**；保留既有 fallback omissions/extra keys 统计 |
+| 生产构建 | `npm run prod` | **通过：4425 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| Git 回滚点 | 本次独立提交 | 未发布、未推送 |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
