@@ -24,26 +24,6 @@
                         </TooltipWrapper>
                     </FieldContent>
                 </Field>
-                <Field>
-                    <FieldLabel>{{ t('dialog.launch.vrchat_url') }}</FieldLabel>
-                    <FieldContent class="flex-row items-center gap-2">
-                        <InputGroupField
-                            data-testid="launch-vrchat-url"
-                            v-model="launchDialog.vrchatUrl"
-                            size="sm"
-                            @click="$event.target.tagName === 'INPUT' && $event.target.select()" />
-                        <TooltipWrapper side="right" :content="t('dialog.launch.copy_tooltip')">
-                            <Button
-                                data-testid="copy-vrchat-url"
-                                class="rounded-full"
-                                size="icon-sm"
-                                variant="ghost"
-                                @click="copyInstanceMessage(launchDialog.vrchatUrl)"
-                                ><Copy
-                            /></Button>
-                        </TooltipWrapper>
-                    </FieldContent>
-                </Field>
                 <Field v-if="launchDialog.shortUrl">
                     <FieldLabel>
                         <span class="flex items-center gap-1">
@@ -208,7 +188,7 @@
 
     const { friends } = storeToRefs(useFriendStore());
     const { lastLocation } = storeToRefs(useLocationStore());
-    const { getLaunchUrl, launchGame, tryOpenInstanceInVrc } = useLaunchStore();
+    const { launchGame, tryOpenInstanceInVrc } = useLaunchStore();
     const { launchDialogData } = storeToRefs(useLaunchStore());
 
     const { canOpenInstanceInGame } = storeToRefs(useInviteStore());
@@ -235,7 +215,6 @@
         tag: '',
         location: '',
         url: '',
-        vrchatUrl: '',
         shortName: '',
         shortUrl: '',
         secureOrShortName: ''
@@ -472,7 +451,6 @@
         D.tag = tag;
         D.secureOrShortName = shortName;
         D.shortUrl = '';
-        D.vrchatUrl = '';
         D.shortName = shortName;
         const L = parseLocation(tag);
         L.shortName = shortName;
@@ -485,11 +463,6 @@
             D.location = L.worldId;
         }
         D.url = getLaunchURL(L);
-        try {
-            D.vrchatUrl = await getLaunchUrl(D.location, D.shortName);
-        } catch (error) {
-            console.error('Failed to build VRChat launch URL', error);
-        }
         if (!shortName) {
             const res = await instanceRequest.getInstanceShortName({
                 worldId: L.worldId,

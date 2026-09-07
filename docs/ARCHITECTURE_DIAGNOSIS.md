@@ -370,10 +370,6 @@ M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAd
 
 `SendBoopDialog.vue` 的自定义贴纸卡片现在取消额外内边距，使用自适应正方形预览容器承载 `Emoji`，使贴纸随卡片尺寸铺满显示区域。该修正只改变预览布局，不改变贴纸 URL 判定、选中值、发送参数或弹窗 public interface；验证记录见 `docs/TEST_BASELINE.md`。
 
-### 近期功能修正：启动弹窗显示 VRChat 直达链接
-
-`LaunchDialog.vue` 在现有网页链接字段下增加只读的 VRChat 协议链接展示，直接复用 `useLaunchStore().getLaunchUrl()`，保证显示内容与“在 VRChat 中打开”使用同一生成逻辑；复制入口复用现有剪贴板流程。该变更只增加信息展示和复制入口，不改变启动命令、邀请流程、地点值或现有字段的 public interface；验证记录见 `docs/TEST_BASELINE.md`。
-
 ### 术语说明
 
 本文的“模块（module）”指可独立维护的代码边界；“接口（interface）”是调用方依赖的稳定契约；“adapter”用于隔离不同宿主实现；“接缝（seam）”允许新旧实现并存；“高 leverage”表示一次改动能降低多个调用方的复杂度；“局部性”表示修改影响范围可控。

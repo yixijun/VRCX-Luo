@@ -2139,7 +2139,6 @@
         "launch": {
             "header": "启动",
             "url": "链接",
-            "vrchat_url": "VRChat 直达链接",
             "short_url": "短链接",
             "short_url_notice": "短链接会在一段时间后过期",
             "location": "地点",
