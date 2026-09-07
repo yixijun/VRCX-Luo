@@ -366,6 +366,10 @@ M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAd
 
 勾选徽标的位置另在 2026-09-07 的独立修正中固定到选中卡片右上角，并通过 `z-10` 保证不被贴纸内容遮挡；该修正仍只影响视觉层级。
 
+### 近期功能修正：戳一戳自定义贴纸填充
+
+`SendBoopDialog.vue` 的自定义贴纸卡片现在取消额外内边距，使用自适应正方形预览容器承载 `Emoji`，使贴纸随卡片尺寸铺满显示区域。该修正只改变预览布局，不改变贴纸 URL 判定、选中值、发送参数或弹窗 public interface；验证记录见 `docs/TEST_BASELINE.md`。
+
 ### 术语说明
 
 本文的“模块（module）”指可独立维护的代码边界；“接口（interface）”是调用方依赖的稳定契约；“adapter”用于隔离不同宿主实现；“接缝（seam）”允许新旧实现并存；“高 leverage”表示一次改动能降低多个调用方的复杂度；“局部性”表示修改影响范围可控。

@@ -409,6 +409,20 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 | 生产构建 | `npm run prod` | **通过：4425 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
 | Git 回滚点 | 本次独立提交 | 未发布、未推送 |
 
+## 功能修正：戳一戳自定义贴纸填充选择卡片
+
+2026-09-07，修正戳一戳弹窗中 VRC+ 自定义贴纸预览未铺满选择卡片的问题：移除卡片与预览之间的额外内边距，预览区域改为随卡片宽度自适应的正方形，并让 `Emoji` 组件填满预览区域。选中值、发送参数、徽标位置、弹窗接口和贴纸 URL 判定均未改变。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前组件基线 | `npx vitest run src/components/dialogs/__tests__/SendBoopDialog.test.js --reporter=dot` | **通过：1 个文件、5 项测试** |
+| 填充样式断言 RED → GREEN | 同上定向命令 | **先因缺少预览填充结构得到预期失败；实现并修正 ref 测试夹具后通过：1 个文件、5 项测试** |
+| Dialog 目录回归 | `npx vitest run src/components/dialogs/__tests__ --reporter=dot` | **31/32 项通过**；唯一失败为既有 `CustomNavDialog` mock 未提供 `useNotificationsSettingsStore`，未涉及本次组件 |
+| 目标文件 Lint | `npx eslint src/components/dialogs/SendBoopDialog.vue src/components/dialogs/__tests__/SendBoopDialog.test.js` | **通过** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 生产构建 | `npm run prod` | **通过：4425 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| Git 回滚点 | 本次独立提交 | 未发布、未推送 |
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

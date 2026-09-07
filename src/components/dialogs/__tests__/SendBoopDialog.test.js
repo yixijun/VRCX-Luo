@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
+import { ref } from 'vue';
 
 const mocks = vi.hoisted(() => ({
     sendBoop: vi.fn(),
@@ -74,6 +75,8 @@ vi.mock('lucide-vue-next', () => ({
     ChevronDown: { template: '<i />' }
 }));
 
+mocks.emojiTable = ref([]);
+
 import SendBoopDialog from '../SendBoopDialog.vue';
 
 describe('SendBoopDialog.vue', () => {
@@ -128,10 +131,14 @@ describe('SendBoopDialog.vue', () => {
         await option.trigger('click');
 
         expect(option.classes()).toEqual(
-            expect.arrayContaining(['border-primary', 'bg-primary/10', 'ring-2'])
+            expect.arrayContaining(['border-primary', 'bg-primary/10', 'ring-2', 'p-0'])
         );
         const marker = option.get('[data-testid="custom-emoji-selected"]');
         expect(marker.classes()).toEqual(expect.arrayContaining(['top-1.5', 'right-1.5', 'z-10']));
         expect(marker.classes()).not.toContain('bottom-1.5');
+
+        const preview = option.get('[data-testid="custom-emoji-preview"]');
+        expect(preview.classes()).toEqual(expect.arrayContaining(['aspect-square', 'w-full']));
+        expect(preview.attributes('style')).toBeUndefined();
     });
 });

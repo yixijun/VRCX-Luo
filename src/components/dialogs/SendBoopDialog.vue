@@ -80,7 +80,7 @@
                     tabindex="0"
                     :aria-pressed="image.id === fileId"
                     :class="[
-                        'group relative cursor-pointer overflow-hidden rounded-xl border-2 p-1 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70',
+                        'group relative cursor-pointer overflow-hidden rounded-xl border-2 p-0 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70',
                         image.id === fileId
                             ? 'border-primary bg-primary/10 ring-2 ring-primary/50'
                             : 'border-border/50 hover:border-primary/50 hover:bg-muted/30'
@@ -94,9 +94,11 @@
                             image.versions.length > 0 &&
                             image.versions[image.versions.length - 1].file.url
                         "
-                        class="max-w-full max-h-full"
-                        style="padding: 8px">
-                        <Emoji :imageUrl="image.versions[image.versions.length - 1].file.url" :size="100"></Emoji>
+                        data-testid="custom-emoji-preview"
+                        class="aspect-square w-full overflow-hidden rounded-[inherit]">
+                        <Emoji
+                            :imageUrl="image.versions[image.versions.length - 1].file.url"
+                            class="size-full"></Emoji>
                     </div>
                     <span
                         v-if="image.id === fileId"
