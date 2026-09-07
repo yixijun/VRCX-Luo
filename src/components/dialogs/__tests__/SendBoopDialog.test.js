@@ -130,6 +130,8 @@ describe('SendBoopDialog.vue', () => {
         expect(option.classes()).toEqual(
             expect.arrayContaining(['border-primary', 'bg-primary/10', 'ring-2'])
         );
-        expect(option.get('[data-testid="custom-emoji-selected"]').exists()).toBe(true);
+        const marker = option.get('[data-testid="custom-emoji-selected"]');
+        expect(marker.classes()).toEqual(expect.arrayContaining(['top-1.5', 'right-1.5', 'z-10']));
+        expect(marker.classes()).not.toContain('bottom-1.5');
     });
 });

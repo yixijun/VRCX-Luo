@@ -383,12 +383,26 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 ## 功能修正：戳一戳自定义图标选中态
 
-2026-09-07，戳一戳弹窗中的 VRC+ 自定义图标补充明确的选中反馈：选中项显示主色边框、背景、外圈和右下角勾选标记，并保留 `aria-pressed` 与键盘 Enter/Space 操作。发送参数、默认表情选择、图标管理入口和弹窗 public interface 均未改变。
+2026-09-07，戳一戳弹窗中的 VRC+ 自定义图标补充明确的选中反馈：选中项显示主色边框、背景、外圈和右上角勾选标记，并保留 `aria-pressed` 与键盘 Enter/Space 操作。发送参数、默认表情选择、图标管理入口和弹窗 public interface 均未改变。
 
 | 检查项 | 命令 | 结果 |
 |---|---|---|
 | 改动前组件基线 | `npx vitest run src/components/dialogs/__tests__/SendBoopDialog.test.js --reporter=dot` | **通过：1 个文件、4 项测试** |
 | 选中态行为 RED → GREEN | 同上定向命令 | **先因缺少自定义图标选中标记得到预期失败；实现后通过：1 个文件、5 项测试** |
+| Dialog 目录回归 | `npx vitest run src/components/dialogs/__tests__ --reporter=dot` | **31/32 项通过**；唯一失败为既有 `CustomNavDialog` mock 未提供 `useNotificationsSettingsStore`，未涉及本次组件 |
+| 目标文件 Lint | `npx eslint src/components/dialogs/SendBoopDialog.vue src/components/dialogs/__tests__/SendBoopDialog.test.js` | **通过** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 生产构建 | `npm run prod` | **通过：4425 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
+| Git 回滚点 | 本次独立提交 | 未发布、未推送 |
+
+## 功能修正：戳一戳自定义图标选中徽标位置
+
+2026-09-07，修正自定义图标选中徽标的位置：从卡片右下角移到右上角，并通过 `z-10` 保证徽标显示在贴纸内容之上。只调整视觉层级，不改变选中值、发送参数、弹窗接口或键盘操作。
+
+| 检查项 | 命令 | 结果 |
+|---|---|---|
+| 改动前位置基线 | `npx vitest run src/components/dialogs/__tests__/SendBoopDialog.test.js --reporter=dot` | **通过：1 个文件、5 项测试** |
+| 位置断言 RED → GREEN | 同上定向命令 | **先因仍含 `bottom-1.5` 得到预期失败；实现后通过：1 个文件、5 项测试** |
 | Dialog 目录回归 | `npx vitest run src/components/dialogs/__tests__ --reporter=dot` | **31/32 项通过**；唯一失败为既有 `CustomNavDialog` mock 未提供 `useNotificationsSettingsStore`，未涉及本次组件 |
 | 目标文件 Lint | `npx eslint src/components/dialogs/SendBoopDialog.vue src/components/dialogs/__tests__/SendBoopDialog.test.js` | **通过** |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |

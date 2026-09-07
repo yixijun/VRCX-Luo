@@ -101,7 +101,7 @@
                     <span
                         v-if="image.id === fileId"
                         data-testid="custom-emoji-selected"
-                        class="pointer-events-none absolute right-1.5 bottom-1.5 inline-flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+                        class="pointer-events-none absolute top-1.5 right-1.5 z-10 inline-flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
                         <CheckIcon class="size-3.5" aria-hidden="true" />
                     </span>
                 </div>
