@@ -4,7 +4,9 @@ import { mount } from '@vue/test-utils';
 const mocks = vi.hoisted(() => ({
     sendBoop: vi.fn(),
     fetch: vi.fn(async () => ({ ref: { displayName: 'User A' } })),
-    boopDialog: { value: { visible: true, userId: 'usr_1' } }
+    boopDialog: { value: { visible: true, userId: 'usr_1' } },
+    isLocalUserVrcPlusSupporter: { value: false },
+    emojiTable: { value: [] }
 }));
 
 vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
@@ -17,7 +19,7 @@ vi.mock('../../../api', () => ({
 vi.mock('../../../stores', () => ({
     useUserStore: () => ({
         sendBoopDialog: mocks.boopDialog,
-        isLocalUserVrcPlusSupporter: { value: false }
+        isLocalUserVrcPlusSupporter: mocks.isLocalUserVrcPlusSupporter
     }),
     useNotificationStore: () => ({
         notificationTable: { value: { data: [] } },
@@ -27,7 +29,7 @@ vi.mock('../../../stores', () => ({
     useGalleryStore: () => ({
         showGalleryPage: vi.fn(),
         refreshEmojiTable: vi.fn(),
-        emojiTable: { value: [] }
+        emojiTable: mocks.emojiTable
     })
 }));
 vi.mock('../../../shared/constants/photon.js', () => ({
@@ -109,5 +111,25 @@ describe('SendBoopDialog.vue', () => {
 
         expect(wrapper.vm.fileId).toBe('default_jack_o_lantern');
         expect(wrapper.vm.emojiPickerOpen).toBe(false);
+    });
+
+    it('makes the selected custom emoji visually obvious', async () => {
+        mocks.isLocalUserVrcPlusSupporter.value = true;
+        mocks.emojiTable.value = [
+            {
+                id: 'emoji_custom_1',
+                versions: [{ file: { url: 'https://example.com/emoji.png' } }]
+            }
+        ];
+
+        const wrapper = mount(SendBoopDialog);
+        const option = wrapper.get('[data-testid="custom-emoji-option"]');
+
+        await option.trigger('click');
+
+        expect(option.classes()).toEqual(
+            expect.arrayContaining(['border-primary', 'bg-primary/10', 'ring-2'])
+        );
+        expect(option.get('[data-testid="custom-emoji-selected"]').exists()).toBe(true);
     });
 });

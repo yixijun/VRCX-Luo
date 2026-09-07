@@ -75,9 +75,19 @@
                 <div
                     v-for="image in emojiTable"
                     :key="image.id"
-                    :class="image.id === fileId ? 'x-image-selected' : ''"
-                    style="cursor: pointer; border: 1px solid transparent; border-radius: var(--radius-xl)"
-                    @click="fileId = image.id">
+                    data-testid="custom-emoji-option"
+                    role="button"
+                    tabindex="0"
+                    :aria-pressed="image.id === fileId"
+                    :class="[
+                        'group relative cursor-pointer overflow-hidden rounded-xl border-2 p-1 transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70',
+                        image.id === fileId
+                            ? 'border-primary bg-primary/10 ring-2 ring-primary/50'
+                            : 'border-border/50 hover:border-primary/50 hover:bg-muted/30'
+                    ]"
+                    @click="fileId = image.id"
+                    @keydown.enter.prevent="fileId = image.id"
+                    @keydown.space.prevent="fileId = image.id">
                     <div
                         v-if="
                             image.versions &&
@@ -88,6 +98,12 @@
                         style="padding: 8px">
                         <Emoji :imageUrl="image.versions[image.versions.length - 1].file.url" :size="100"></Emoji>
                     </div>
+                    <span
+                        v-if="image.id === fileId"
+                        data-testid="custom-emoji-selected"
+                        class="pointer-events-none absolute right-1.5 bottom-1.5 inline-flex size-5 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-md">
+                        <CheckIcon class="size-3.5" aria-hidden="true" />
+                    </span>
                 </div>
             </div>
 
