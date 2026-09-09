@@ -78,7 +78,7 @@ public class WristPointerMathTests
     }
 
     [Fact]
-    public void OverlayIntersectionSubPixelValuesRemainPixelCoordinates()
+    public void OverlayIntersectionUnitRangeValuesRemainNormalizedCoordinates()
     {
         var success = WristPointerMath.TryConvertOverlayPixels(
             pixelX: 0.75f,
@@ -90,8 +90,8 @@ public class WristPointerMathTests
         );
 
         Assert.True(success);
-        Assert.Equal(0.75f / 512f, x, 5);
-        Assert.Equal(1f - 0.25f / 512f, y, 5);
+        Assert.Equal(0.75f, x, 5);
+        Assert.Equal(0.75f, y, 5);
     }
 
     [Fact]

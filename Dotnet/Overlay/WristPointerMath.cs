@@ -78,12 +78,13 @@ public static class WristPointerMath
     }
 
     /// <summary>
-    /// Converts the pixel coordinates returned by OpenVR's overlay
-    /// intersection API into normalized DOM coordinates. The configured mouse
-    /// scale is the pixel coordinate space used by ComputeOverlayIntersection,
-    /// so values below one pixel must not be treated as normalized UVs. The Y
-    /// axis is flipped because OpenVR reports overlay coordinates from the
-    /// lower edge while the wrist document is laid out from the upper edge.
+    /// Converts the coordinates returned by OpenVR's overlay intersection API
+    /// into normalized DOM coordinates. The documented contract is the
+    /// configured mouse-scale pixel space, but some SteamVR runtimes return
+    /// normalized UVs for the same call. Unit-range pairs are therefore kept
+    /// as UVs, while larger values are normalized as pixels. The Y axis is
+    /// flipped because OpenVR reports overlay coordinates from the lower edge
+    /// while the wrist document is laid out from the upper edge.
     /// </summary>
     public static bool TryConvertOverlayPixels(
         float pixelX,
@@ -108,6 +109,14 @@ public static class WristPointerMath
             pixelY > height)
         {
             return false;
+        }
+
+        // SteamVR 1.x/2.x runtime combinations used by the production overlay
+        // can return normalized UVs even after SetOverlayMouseScale. Dividing
+        // those values by the scale collapses the pointer into the corner.
+        if (width > 1f && height > 1f && pixelX <= 1f && pixelY <= 1f)
+        {
+            return TryConvertOverlayUv(pixelX, pixelY, out x, out y);
         }
 
         x = pixelX / width;
