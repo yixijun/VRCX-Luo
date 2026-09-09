@@ -1,8 +1,8 @@
 # VRCX-Luo 架构诊断报告
 
-> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-10.1～M-10.4 GameLog 深化切片、M-11.1 Appearance DOM class seam、M-11.2 UI Store body drop guard seam、M-11.3 UI Store 对话框面包屑状态 seam、M-11.4 UI Store 托盘通知宿主 Adapter seam、M-07.1～M-07.12 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁、N-02 版本来源与一致性门禁，以及 N-03 Shared/Localization 依赖和语言包门禁已落地，其余内容仍是只读建议。
+> 分析范围：当前工作树中的 Vue 3、Pinia、Electron、CEF/C#、数据库模块、测试和项目文档。本文记录诊断结论和实施状态；updateLoop 第一刀、M-01.1 剪贴板 capability、M-01.2a/2b 文件与目录选择 capability、M-01.3 Dotnet bridge allowlist、B-01 宿主桥安全封口、M-03 编排层适配器及 callable interface 修复、M-06 Notification Store 低风险 seam、M-08 API/Query 缓存 seam、M-09 Group/Favorite/User 纯 module 切片、M-10.1～M-10.4 GameLog 深化切片、M-11.1 Appearance DOM class seam、M-11.2 UI Store body drop guard seam、M-11.3 UI Store 对话框面包屑状态 seam、M-11.4 UI Store 托盘通知宿主 Adapter seam、M-07.1～M-07.12 Electron composition-root seam、M-00.1～M-00.3 测试/CI 门禁、N-02 版本来源与一致性门禁，以及 N-03 Shared/Localization 依赖和语言包门禁已落地；2026-09-09 又补充了 Windows CEF/Electron 手背指针共享纹理裁剪坐标修正，其余内容仍是只读建议。
 
-> 实施状态（2026-09-05）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-10.1～M-10.4 的 GameLog parser、数据库只读 row projection/查询参数、sessions 过滤和 now-playing ticker module、M-11.1 的 Appearance DOM class adapter、M-11.2 的 UI Store body drop guard adapter、M-11.3 的 UI Store 对话框面包屑状态 module、M-11.4 的 UI Store 托盘通知双宿主 Adapter、M-07.1～M-07.12 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract/窗口状态/窗口事件/窗口关闭守卫/托盘菜单/托盘图标工厂/托盘通知 projection/桌面通知 controller/托盘生命周期动作/托盘点击 Bridge、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁、N-02 的共享版本元数据/package-lock 同步/一致性校验，以及 N-03 的 Shared/Localization 依赖方向 guard/语言包 contract/CI 聚合门禁均已落地；Windows CEF 按触发键后 wrist/HUD 不显示问题已由用户在测试版手动确认解决（不归因于 M-11.4）；coordinator/store 公共 interface 保持不变，`main.js` 的通知 action IPC 实现仍未迁移，多账户运行时功能仍按要求暂停。
+> 实施状态（2026-09-05，增补 2026-09-09）：`updateLoop` 调度器、独立任务 module、M-01.1 的 CEF/Electron 剪贴板 capability、M-01.2a/2b 的 CEF/Electron 文件与目录选择 capability、M-01.3 的 Dotnet bridge class/method allowlist 与 args envelope 校验、B-01 的可信渲染来源 guard 与 174 个方法参数 schema、M-03 的 UI adapter 与 callable Toast interface、M-06 的通知 projection/persistence/seen queue module、M-08 的 Query cache/resource registry seam、M-09.1～M-09.8 的 Group/Favorite/User 纯决策与 projection module、M-10.1～M-10.4 的 GameLog parser、数据库只读 row projection/查询参数、sessions 过滤和 now-playing ticker module、M-11.1 的 Appearance DOM class adapter、M-11.2 的 UI Store body drop guard adapter、M-11.3 的 UI Store 对话框面包屑状态 module、M-11.4 的 UI Store 托盘通知双宿主 Adapter、M-07.1～M-07.12 的 Electron .NET bootstrap/IPC 注册/双宿主 capability contract/窗口状态/窗口事件/窗口关闭守卫/托盘菜单/托盘图标工厂/托盘通知 projection/桌面通知 controller/托盘生命周期动作/托盘点击 Bridge、M-00.1～M-00.3 的 JavaScript 类型收敛/重构 smoke/分阶段 CI 门禁、N-02 的共享版本元数据/package-lock 同步/一致性校验，以及 N-03 的 Shared/Localization 依赖方向 guard/语言包 contract/CI 聚合门禁均已落地；Windows CEF 按触发键后 wrist/HUD 不显示问题已由用户在测试版手动确认解决，2026-09-09 另修正了手背指针被锁在共享纹理左上角裁剪区的问题（不归因于 M-11.4）；coordinator/store 公共 interface 保持不变，`main.js` 的通知 action IPC 实现仍未迁移，多账户运行时功能仍按要求暂停。
 
 ## 结论摘要
 
@@ -70,7 +70,7 @@
 | `src/coordinators/authCoordinator.js` | 原先直接创建登出 Noty 并执行 router 跳转 | Major → 已完成 M-03.3/M-03.5 | Router 和登出欢迎通知均经 adapter；保留旧 `runLogoutFlow` interface |
 | `src/coordinators/groupCoordinator.js` | 原先在 Group 更新流程内计算角色/presence/持久化/语言 projection 并发送通知 | Major → 已完成 M-09.1～M-09.4 | 角色、语言、presence 和持久化均已提取为纯 module；保留 `applyGroup`、`applyPresenceGroups` 和通知顺序 |
 | `src/coordinators/favoriteCoordinator.js` | 本地 world/avatar/friend 收藏分组、缓存、API、数据库和 Toast 混合 | Major → 已完成 M-09.5/M-09.6 | 本地实体和好友 id projection 已集中到 `favoriteLocalProjection`；后续再拆事件/持久化 use-case |
-| `src/stores/ui.js` | store 同时管理状态、router、DOM drop 事件、开发者工具和窗口行为 | Major → 已完成 M-11.2～M-11.4 | body `drop` guard、对话框面包屑状态和托盘通知双宿主路由已移出；剩余 router/窗口动作刻意留在 Store，前端本轮达到停止线，wrist/HUD 问题已由用户确认解决，后续进入功能观察 |
+| `src/stores/ui.js` | store 同时管理状态、router、DOM drop 事件、开发者工具和窗口行为 | Major → 已完成 M-11.2～M-11.4 | body `drop` guard、对话框面包屑状态和托盘通知双宿主路由已移出；剩余 router/窗口动作刻意留在 Store，前端本轮达到停止线；手背指针范围修正位于 CEF/Electron 坐标边界，不扩大 UI Store 职责 |
 | `src/stores/search.js` | `directAccessPaste` 同时选择 Electron/CEF 剪贴板桥和解析流程 | Major → 已完成 M-01.1 | 剪贴板读取已移入 `clipboardAdapter`；保留 `directAccessPaste()` 兼容入口，后续再拆 direct-access use-case |
 | `src/stores/settings/notifications.js` | `selectCustomNotificationSound` 同时选择 Electron/CEF 文件桥并持久化设置 | Major → 已完成 M-01.2a | 文件选择已移入 `fileDialogAdapter`；保留取消值和设置 Store 公共接口 |
 | `src/stores/settings/advanced.js` | `folderSelectorDialog` 同时选择 Electron/CEF 目录桥，并维护并发可见状态 | Major → 已完成 M-01.2b | 目录选择已移入 `fileDialogAdapter`；保留旧路径提示、取消值、可见状态守卫和设置 Store 公共 interface |
@@ -346,7 +346,7 @@ M-10.1～M-10.4 均遵守一次一步和测试门禁：没有改变 LogWatcher I
 | M-11.4 格式检查 | **通过**：`git diff --check`；仅提示既有 CRLF 转换警告 |
 | Git 回滚点 | `b00564e2`、`9844d194`、`8556c0ef`、`e2957f69`；未发布、未推送 |
 
-M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAdapter`；M-11.2 将 UI Store 的 body `drop` guard 移到 `dropGuard` adapter；M-11.3 将 UI Store 的对话框面包屑数组状态变换移到 `dialogCrumbState` module；M-11.4 将 CEF/Linux 托盘通知宿主路由移到 `trayIconNotificationAdapter`。四刀均保留原注册/初始化时机、事件名、`preventDefault()`、设置 action、面包屑重复/截断/label/边界行为、托盘通知状态计算/`force` 守卫、Store/页面 public interface 和 VR overlay 行为。本轮前端 UI 已达到停止线，剩余 router、窗口动作和大组件不再为减行数继续拆分。Windows CEF wrist/HUD 触发问题已由用户在测试版手动确认解决（不归因于 M-11.4），后续进入功能观察；只有出现高 leverage seam 时才重启 M-11。
+M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAdapter`；M-11.2 将 UI Store 的 body `drop` guard 移到 `dropGuard` adapter；M-11.3 将 UI Store 的对话框面包屑数组状态变换移到 `dialogCrumbState` module；M-11.4 将 CEF/Linux 托盘通知宿主路由移到 `trayIconNotificationAdapter`。四刀均保留原注册/初始化时机、事件名、`preventDefault()`、设置 action、面包屑重复/截断/label/边界行为、托盘通知状态计算/`force` 守卫、Store/页面 public interface 和 VR overlay 行为。本轮前端 UI 已达到停止线，剩余 router、窗口动作和大组件不再为减行数继续拆分。Windows CEF wrist/HUD 触发问题已由用户在测试版手动确认解决（不归因于 M-11.4）；2026-09-09 的手背指针范围问题属于宿主坐标转换，已在 CEF/Electron 共用数学边界修正，后续进入实际头显验证；只有出现高 leverage seam 时才重启 M-11。
 
 ### 近期功能变更：离线好友排序
 
@@ -355,6 +355,12 @@ M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAd
 ### 近期功能修正：桌面手背模拟空白
 
 桌面测试页原先只创建了安全 `AppApiVr` 替身，却没有执行正式 VR 初始化链路依赖的 `config`、feed、位置和设备数据推送，因此页面表现为空壳。当前仅在显式 `wrist-pointer-test=1` 时，通过与正式宿主相同的 `$vr.configUpdate`、`$vr.wristFeedUpdate`、`$vr.lastLocationUpdate` 和 `$vr.updateOnlineFriendCount` 入口注入确定性快照；设备列表由同一调试替身返回。该修正没有扩大生产桥接权限，没有改变 CEF/Electron 行为，也没有改变 `Vr.vue` 的正式布局或 public interface。实现和测试分别落在 `1f6454ea`、`57288b01`，验证记录见 `docs/TEST_BASELINE.md` 和 `docs/VR_WRIST_INTERACTION.md`。
+
+### 近期功能修正：手背指针左上角范围
+
+2026-09-09，用户反馈手背指针虽然能够移动，但始终被限制在共享纹理左上角的一块区域，移动过程中还会出现跳跃。诊断确认手背 Overlay 使用 `1024×1536` 共享纹理中的 `512×512` 裁剪区，而 `ComputeOverlayIntersection` 在不同 runtime 下可能返回本地像素、Overlay UV、共享纹理 UV 或共享纹理像素；旧边界只处理其中一种格式，导致坐标被重复缩放或直接落在裁剪区坐标上。
+
+修正将格式判断集中到 `WristPointerMath.TryConvertOverlayCoordinates`，由 CEF/Electron 传入相同的手背裁剪边界，统一展开到本地 `0..1`；坐标空间在 Overlay 生命周期内保持，首次左上角样本的像素/UV 歧义在后续出现明确越界证据时只恢复一次。`ResetWristPointerState()` 会在 Overlay 重建时清除判定。该切片未修改扳机射线、点击边沿、payload、更新周期、页面样式或公共接口，验证记录见 `docs/TEST_BASELINE.md` 与 `docs/VR_WRIST_INTERACTION.md`。
 
 ### 近期功能修正：房间进出筛选记忆
 

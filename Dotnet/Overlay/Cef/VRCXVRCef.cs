@@ -51,12 +51,17 @@ namespace VRCX
         private float _lastWristPointerY = 0.5f;
         private DateTime _lastWristPointerHitAt = DateTime.MinValue;
         private ETrackedControllerRole _wristControllerRole = ETrackedControllerRole.Invalid;
+        private WristPointerCoordinateSpace _wristPointerCoordinateSpace = WristPointerCoordinateSpace.Unknown;
         private readonly WristPointerPoseResolver _wristPointerPoseResolver = new();
 
         private const int HMD_HEIGHT = 1024;
         private const int WRIST_SIZE = 512;
         private const int TOTAL_WIDTH = 1024;
         private const int TOTAL_HEIGHT = HMD_HEIGHT + WRIST_SIZE; // 1024 + 512 = 1536
+        private const float WRIST_TEXTURE_U_MIN = 0f;
+        private const float WRIST_TEXTURE_U_MAX = 0.5f;
+        private const float WRIST_TEXTURE_V_MIN = 0f;
+        private const float WRIST_TEXTURE_V_MAX = (float)WRIST_SIZE / TOTAL_HEIGHT;
         private const double WRIST_POINTER_MISS_GRACE_MILLISECONDS = 100d;
 
         private DXGI _dxgi;
@@ -681,6 +686,11 @@ namespace VRCX
                         ray,
                         WRIST_SIZE,
                         WRIST_SIZE,
+                        WRIST_TEXTURE_U_MIN,
+                        WRIST_TEXTURE_U_MAX,
+                        WRIST_TEXTURE_V_MIN,
+                        WRIST_TEXTURE_V_MAX,
+                        ref _wristPointerCoordinateSpace,
                         out preferredX,
                         out preferredY
                     );
@@ -700,6 +710,11 @@ namespace VRCX
                             fallbackRay,
                             WRIST_SIZE,
                             WRIST_SIZE,
+                            WRIST_TEXTURE_U_MIN,
+                            WRIST_TEXTURE_U_MAX,
+                            WRIST_TEXTURE_V_MIN,
+                            WRIST_TEXTURE_V_MAX,
+                            ref _wristPointerCoordinateSpace,
                             out fallbackX,
                             out fallbackY
                         );
@@ -760,6 +775,11 @@ namespace VRCX
             WristPointerRay ray,
             int width,
             int height,
+            float textureUMin,
+            float textureUMax,
+            float textureVMin,
+            float textureVMax,
+            ref WristPointerCoordinateSpace coordinateSpace,
             out float x,
             out float y
         )
@@ -784,11 +804,16 @@ namespace VRCX
             };
             var intersectionResults = new VROverlayIntersectionResults_t();
             return overlay.ComputeOverlayIntersection(overlayHandle, ref intersectionParams, ref intersectionResults) &&
-                WristPointerMath.TryConvertOverlayPixels(
+                WristPointerMath.TryConvertOverlayCoordinates(
                     intersectionResults.vUVs.v0,
                     intersectionResults.vUVs.v1,
                     width,
                     height,
+                    textureUMin,
+                    textureUMax,
+                    textureVMin,
+                    textureVMax,
+                    ref coordinateSpace,
                     out x,
                     out y
                 );
@@ -825,6 +850,7 @@ namespace VRCX
             _lastWristPointerY = 0.5f;
             _lastWristPointerHitAt = DateTime.MinValue;
             _wristControllerRole = ETrackedControllerRole.Invalid;
+            _wristPointerCoordinateSpace = WristPointerCoordinateSpace.Unknown;
             _wristOverlayMouseScaleHandle = 0;
             _wristPointerPoseResolver.Reset();
         }

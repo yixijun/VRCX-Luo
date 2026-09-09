@@ -4,6 +4,14 @@ using System.Text.Json;
 
 namespace VRCX;
 
+internal enum WristPointerCoordinateSpace
+{
+    Unknown,
+    Pixels,
+    OverlayUv,
+    TextureUv
+}
+
 /// <summary>
 /// Small, host-independent pieces of the wrist pointer contract.
 /// OpenVR overlay UVs use a lower-left origin while DOM coordinates use an
@@ -122,6 +130,213 @@ public static class WristPointerMath
         x = pixelX / width;
         y = 1f - pixelY / height;
         return true;
+    }
+
+    internal static bool TryConvertOverlayCoordinates(
+        float coordinateX,
+        float coordinateY,
+        float width,
+        float height,
+        float textureUMin,
+        float textureUMax,
+        float textureVMin,
+        float textureVMax,
+        ref WristPointerCoordinateSpace coordinateSpace,
+        out float x,
+        out float y
+    )
+    {
+        x = 0f;
+        y = 0f;
+        if (!float.IsFinite(coordinateX) ||
+            !float.IsFinite(coordinateY) ||
+            !float.IsFinite(width) ||
+            !float.IsFinite(height) ||
+            !float.IsFinite(textureUMin) ||
+            !float.IsFinite(textureUMax) ||
+            !float.IsFinite(textureVMin) ||
+            !float.IsFinite(textureVMax) ||
+            width <= 0f ||
+            height <= 0f ||
+            coordinateX < 0f ||
+            coordinateY < 0f)
+        {
+            return false;
+        }
+
+        var textureBoundsValid = textureUMin >= 0f &&
+            textureUMax <= 1f &&
+            textureUMin < textureUMax &&
+            textureVMin >= 0f &&
+            textureVMax <= 1f &&
+            textureVMin < textureVMax;
+        var resolvedSpace = coordinateSpace;
+        if (resolvedSpace == WristPointerCoordinateSpace.Unknown)
+        {
+            if (coordinateX > 1f || coordinateY > 1f)
+            {
+                resolvedSpace = WristPointerCoordinateSpace.Pixels;
+            }
+            else if (textureBoundsValid &&
+                coordinateX >= textureUMin &&
+                coordinateX <= textureUMax &&
+                coordinateY >= textureVMin &&
+                coordinateY <= textureVMax)
+            {
+                // SteamVR can return normalized coordinates in the shared
+                // texture space. The wrist page occupies only this crop, so
+                // expand it back to the local 0..1 page before publishing.
+                resolvedSpace = WristPointerCoordinateSpace.TextureUv;
+            }
+            else
+            {
+                resolvedSpace = WristPointerCoordinateSpace.OverlayUv;
+            }
+        }
+
+        var success = resolvedSpace switch
+        {
+            WristPointerCoordinateSpace.Pixels =>
+                TryConvertOverlayPixelCoordinates(
+                    coordinateX,
+                    coordinateY,
+                    width,
+                    height,
+                    textureUMin,
+                    textureUMax,
+                    textureVMin,
+                    textureVMax,
+                    textureBoundsValid,
+                    out x,
+                    out y
+                ),
+            WristPointerCoordinateSpace.TextureUv =>
+                textureBoundsValid && TryConvertOverlayTextureUv(
+                    coordinateX,
+                    coordinateY,
+                    textureUMin,
+                    textureUMax,
+                    textureVMin,
+                    textureVMax,
+                    out x,
+                    out y
+                ),
+            WristPointerCoordinateSpace.OverlayUv =>
+                TryConvertOverlayUv(coordinateX, coordinateY, out x, out y),
+            _ => false
+        };
+
+        // A first sample at the very top-left is ambiguous: a real pixel
+        // coordinate such as (0.25, 0.25) looks exactly like a normalized UV.
+        // If a later sample proves that the stream is outside the normalized
+        // crop, recover once to the matching coordinate space instead of
+        // leaving the pointer hidden or locked to that crop.
+        if (!success && resolvedSpace == WristPointerCoordinateSpace.TextureUv)
+        {
+            resolvedSpace = coordinateX > 1f || coordinateY > 1f
+                ? WristPointerCoordinateSpace.Pixels
+                : WristPointerCoordinateSpace.OverlayUv;
+            success = resolvedSpace switch
+            {
+                WristPointerCoordinateSpace.Pixels =>
+                    TryConvertOverlayPixelCoordinates(
+                        coordinateX,
+                        coordinateY,
+                        width,
+                        height,
+                        textureUMin,
+                        textureUMax,
+                        textureVMin,
+                        textureVMax,
+                        textureBoundsValid,
+                        out x,
+                        out y
+                    ),
+                WristPointerCoordinateSpace.OverlayUv =>
+                    TryConvertOverlayUv(coordinateX, coordinateY, out x, out y),
+                _ => false
+            };
+        }
+
+        if (success && coordinateSpace != resolvedSpace)
+        {
+            coordinateSpace = resolvedSpace;
+        }
+
+        return success;
+    }
+
+    private static bool TryConvertOverlayPixelCoordinates(
+        float coordinateX,
+        float coordinateY,
+        float width,
+        float height,
+        float textureUMin,
+        float textureUMax,
+        float textureVMin,
+        float textureVMax,
+        bool textureBoundsValid,
+        out float x,
+        out float y
+    )
+    {
+        x = 0f;
+        y = 0f;
+        if (coordinateX <= width && coordinateY <= height)
+        {
+            x = coordinateX / width;
+            y = 1f - coordinateY / height;
+            return true;
+        }
+
+        if (!textureBoundsValid)
+        {
+            return false;
+        }
+
+        var textureWidth = width / (textureUMax - textureUMin);
+        var textureHeight = height / (textureVMax - textureVMin);
+        if (coordinateX > textureWidth || coordinateY > textureHeight)
+        {
+            return false;
+        }
+
+        return TryConvertOverlayTextureUv(
+            coordinateX / textureWidth,
+            coordinateY / textureHeight,
+            textureUMin,
+            textureUMax,
+            textureVMin,
+            textureVMax,
+            out x,
+            out y
+        );
+    }
+
+    private static bool TryConvertOverlayTextureUv(
+        float u,
+        float v,
+        float textureUMin,
+        float textureUMax,
+        float textureVMin,
+        float textureVMax,
+        out float x,
+        out float y
+    )
+    {
+        x = 0f;
+        y = 0f;
+        if (u < textureUMin ||
+            u > textureUMax ||
+            v < textureVMin ||
+            v > textureVMax)
+        {
+            return false;
+        }
+
+        x = (u - textureUMin) / (textureUMax - textureUMin);
+        y = 1f - (v - textureVMin) / (textureVMax - textureVMin);
+        return IsNormalizedPoint(x, y);
     }
 
     /// <summary>

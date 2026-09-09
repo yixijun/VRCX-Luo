@@ -423,6 +423,22 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 | 生产构建 | `npm run prod` | **通过：4425 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
 | Git 回滚点 | 本次独立提交 | 未发布、未推送 |
 
+## 功能修正：手背指针左上角范围
+
+2026-09-09，用户补充确认问题不是原点卡在一个点，而是可活动区域被锁在共享纹理左上角的一块范围。手背 Overlay 继续使用 `1024×1536` 共享纹理和 `512×512` 手背裁剪区；CEF/Electron 现在通过同一坐标边界兼容本地像素、Overlay UV、共享纹理 UV 与共享纹理像素，并在首次左上角样本存在歧义时允许后续明确样本完成一次坐标空间恢复。该切片没有修改射线选择、点击边沿、payload 字段、更新周期、页面样式或公共接口。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 改动前 C# 基线 | `dotnet test Dotnet.Tests/VRCX.Cef.Tests.csproj --no-restore --logger "console;verbosity=minimal"` | **通过：22/22** |
+| 坐标空间恢复 RED | 同上定向命令 | **预期失败：2 项**；首次左上角歧义样本无法恢复到像素/本地 UV |
+| 坐标空间恢复 GREEN | 同上定向命令 | **通过：24/24**；覆盖共享纹理 UV 展开、稳定判定和两种恢复路径 |
+| CEF 宿主构建 | `dotnet build Dotnet/VRCX-Cef.csproj --no-restore -c Debug -p:Platform=x64` | **通过：0 警告、0 错误** |
+| Electron 宿主构建 | `dotnet build Dotnet/VRCX-Electron.csproj --no-restore -c Debug -p:Platform=x64` | **通过：0 警告、0 错误** |
+| 文档/代码格式 | `git diff --check` | **通过**；仅保留既有换行转换提示 |
+| 本地测试版 | 启动 `build/Cef/VRCX-Luo.exe --debug` | **已重启**；仅验证本地 CEF 启动，未发布、未推送 |
+
+代码提交：本切片建立独立 Git 回滚点；未发布、未推送。实际头显仍需在 SteamVR/VRChat 中验证手背四角活动范围和点击位置；若硬件仍出现偏移，下一步只增加可关闭的 `vUVs` 采样诊断，不再盲改页面样式。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

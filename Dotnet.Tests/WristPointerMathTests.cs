@@ -95,6 +95,193 @@ public class WristPointerMathTests
     }
 
     [Fact]
+    public void WristTextureUvIsExpandedFromTheSharedTextureCrop()
+    {
+        var coordinateSpace = WristPointerCoordinateSpace.Unknown;
+        var success = WristPointerMath.TryConvertOverlayCoordinates(
+            coordinateX: 0.25f,
+            coordinateY: 1f / 6f,
+            width: 512f,
+            height: 512f,
+            textureUMin: 0f,
+            textureUMax: 0.5f,
+            textureVMin: 0f,
+            textureVMax: 1f / 3f,
+            ref coordinateSpace,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(WristPointerCoordinateSpace.TextureUv, coordinateSpace);
+        Assert.Equal(0.5f, x, 5);
+        Assert.Equal(0.5f, y, 5);
+    }
+
+    [Fact]
+    public void WristCoordinateSpaceDoesNotSwitchAfterTheFirstValidSample()
+    {
+        var coordinateSpace = WristPointerCoordinateSpace.Unknown;
+        Assert.True(
+            WristPointerMath.TryConvertOverlayCoordinates(
+                0.25f,
+                1f / 6f,
+                512f,
+                512f,
+                0f,
+                0.5f,
+                0f,
+                1f / 3f,
+                ref coordinateSpace,
+                out _,
+                out _
+            )
+        );
+
+        var success = WristPointerMath.TryConvertOverlayCoordinates(
+            0.4f,
+            0.25f,
+            512f,
+            512f,
+            0f,
+            0.5f,
+            0f,
+            1f / 3f,
+            ref coordinateSpace,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(WristPointerCoordinateSpace.TextureUv, coordinateSpace);
+        Assert.Equal(0.8f, x, 5);
+        Assert.Equal(0.25f, y, 5);
+    }
+
+    [Fact]
+    public void LocalOverlayUvRemainsLocalAfterTheFirstValidSample()
+    {
+        var coordinateSpace = WristPointerCoordinateSpace.Unknown;
+        Assert.True(
+            WristPointerMath.TryConvertOverlayCoordinates(
+                0.75f,
+                0.75f,
+                512f,
+                512f,
+                0f,
+                0.5f,
+                0f,
+                1f / 3f,
+                ref coordinateSpace,
+                out var firstX,
+                out var firstY
+            )
+        );
+        Assert.Equal(WristPointerCoordinateSpace.OverlayUv, coordinateSpace);
+        Assert.Equal(0.75f, firstX, 5);
+        Assert.Equal(0.25f, firstY, 5);
+
+        var success = WristPointerMath.TryConvertOverlayCoordinates(
+            0.25f,
+            0.25f,
+            512f,
+            512f,
+            0f,
+            0.5f,
+            0f,
+            1f / 3f,
+            ref coordinateSpace,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(WristPointerCoordinateSpace.OverlayUv, coordinateSpace);
+        Assert.Equal(0.25f, x, 5);
+        Assert.Equal(0.75f, y, 5);
+    }
+
+    [Fact]
+    public void AmbiguousWristSampleCanRecoverToSharedTexturePixels()
+    {
+        var coordinateSpace = WristPointerCoordinateSpace.Unknown;
+        Assert.True(
+            WristPointerMath.TryConvertOverlayCoordinates(
+                0.25f,
+                0.25f,
+                512f,
+                512f,
+                0f,
+                0.5f,
+                0f,
+                1f / 3f,
+                ref coordinateSpace,
+                out _,
+                out _
+            )
+        );
+
+        var success = WristPointerMath.TryConvertOverlayCoordinates(
+            400f,
+            300f,
+            512f,
+            512f,
+            0f,
+            0.5f,
+            0f,
+            1f / 3f,
+            ref coordinateSpace,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(WristPointerCoordinateSpace.Pixels, coordinateSpace);
+        Assert.Equal(400f / 512f, x, 5);
+        Assert.Equal(1f - 300f / 512f, y, 5);
+    }
+
+    [Fact]
+    public void AmbiguousWristSampleCanRecoverToLocalOverlayUv()
+    {
+        var coordinateSpace = WristPointerCoordinateSpace.Unknown;
+        Assert.True(
+            WristPointerMath.TryConvertOverlayCoordinates(
+                0.25f,
+                0.25f,
+                512f,
+                512f,
+                0f,
+                0.5f,
+                0f,
+                1f / 3f,
+                ref coordinateSpace,
+                out _,
+                out _
+            )
+        );
+
+        var success = WristPointerMath.TryConvertOverlayCoordinates(
+            0.75f,
+            0.75f,
+            512f,
+            512f,
+            0f,
+            0.5f,
+            0f,
+            1f / 3f,
+            ref coordinateSpace,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(WristPointerCoordinateSpace.OverlayUv, coordinateSpace);
+        Assert.Equal(0.75f, x, 5);
+        Assert.Equal(0.25f, y, 5);
+    }
+
+    [Fact]
     public void OverlayPixelsOutsideTheConfiguredMouseScaleAreRejected()
     {
         Assert.False(
