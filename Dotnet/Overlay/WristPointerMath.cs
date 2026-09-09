@@ -150,6 +150,50 @@ public static class WristPointerMath
         return false;
     }
 
+    /// <summary>
+    /// Keeps the last valid overlay point through a short transient miss.
+    /// SteamVR can briefly report no intersection while a tracked ray moves
+    /// across the overlay edge; retaining the last point avoids a visible
+    /// reset to the center between two valid samples.
+    /// </summary>
+    public static bool TryRetainOverlayPoint(
+        bool currentHit,
+        float currentX,
+        float currentY,
+        bool hasLastPoint,
+        float lastX,
+        float lastY,
+        double elapsedMilliseconds,
+        double graceMilliseconds,
+        out float x,
+        out float y
+    )
+    {
+        if (currentHit && IsNormalizedPoint(currentX, currentY))
+        {
+            x = currentX;
+            y = currentY;
+            return true;
+        }
+
+        if (hasLastPoint &&
+            double.IsFinite(elapsedMilliseconds) &&
+            elapsedMilliseconds >= 0d &&
+            double.IsFinite(graceMilliseconds) &&
+            graceMilliseconds >= 0d &&
+            elapsedMilliseconds <= graceMilliseconds &&
+            IsNormalizedPoint(lastX, lastY))
+        {
+            x = lastX;
+            y = lastY;
+            return true;
+        }
+
+        x = 0.5f;
+        y = 0.5f;
+        return false;
+    }
+
     public static string CreatePayload(float x, float y, bool visible, bool pressed, string hand)
     {
         return JsonSerializer.Serialize(new

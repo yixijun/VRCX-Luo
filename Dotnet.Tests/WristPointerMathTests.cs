@@ -179,4 +179,46 @@ public class WristPointerMathTests
         Assert.Equal(0.5f, x);
         Assert.Equal(0.5f, y);
     }
+
+    [Fact]
+    public void RecentOverlayMissKeepsTheLastPoint()
+    {
+        var success = WristPointerMath.TryRetainOverlayPoint(
+            currentHit: false,
+            currentX: 0.5f,
+            currentY: 0.5f,
+            hasLastPoint: true,
+            lastX: 0.2f,
+            lastY: 0.8f,
+            elapsedMilliseconds: 32d,
+            graceMilliseconds: 100d,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(0.2f, x);
+        Assert.Equal(0.8f, y);
+    }
+
+    [Fact]
+    public void ExpiredOverlayMissHidesTheLastPoint()
+    {
+        var success = WristPointerMath.TryRetainOverlayPoint(
+            currentHit: false,
+            currentX: 0.5f,
+            currentY: 0.5f,
+            hasLastPoint: true,
+            lastX: 0.2f,
+            lastY: 0.8f,
+            elapsedMilliseconds: 101d,
+            graceMilliseconds: 100d,
+            out var x,
+            out var y
+        );
+
+        Assert.False(success);
+        Assert.Equal(0.5f, x);
+        Assert.Equal(0.5f, y);
+    }
 }

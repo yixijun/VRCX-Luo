@@ -46,6 +46,10 @@ namespace VRCX
         private bool _hasWristPointerMove;
         private bool _hasWristPointerClick;
         private bool _wristPointerTriggerWasPressed;
+        private bool _hasLastWristPointerPoint;
+        private float _lastWristPointerX = 0.5f;
+        private float _lastWristPointerY = 0.5f;
+        private DateTime _lastWristPointerHitAt = DateTime.MinValue;
         private ETrackedControllerRole _wristControllerRole = ETrackedControllerRole.Invalid;
         private readonly WristPointerPoseResolver _wristPointerPoseResolver = new();
 
@@ -60,6 +64,7 @@ namespace VRCX
         private const int SHARED_FRAME_SIZE = SHARED_FRAME_WIDTH * SHARED_FRAME_HEIGHT * 4;
         private const int SHARED_FRAME_WIDTH = 1024;
         private const int SHARED_FRAME_HEIGHT = WRIST_FRAME_HEIGHT + HMD_FRAME_HEIGHT;
+        private const double WRIST_POINTER_MISS_GRACE_MILLISECONDS = 100d;
         private byte[] frameBuffer = new byte[SHARED_FRAME_SIZE];
 
         private MemoryMappedFile _overlayMMF;
@@ -562,6 +567,11 @@ namespace VRCX
 
         private void UpdateWristPointer(CVRSystem system, CVROverlay overlay, ulong overlayHandle, bool overlayVisible)
         {
+            if (!overlayVisible)
+            {
+                _hasLastWristPointerPoint = false;
+            }
+
             var wristRole = _wristControllerRole;
             if (wristRole != ETrackedControllerRole.LeftHand && wristRole != ETrackedControllerRole.RightHand)
             {
@@ -660,13 +670,36 @@ namespace VRCX
                         );
                     }
 
-                    hit = WristPointerMath.TrySelectOverlayPoint(
+                    var currentHit = WristPointerMath.TrySelectOverlayPoint(
                         preferredHit,
                         preferredX,
                         preferredY,
                         fallbackHit,
                         fallbackX,
                         fallbackY,
+                        out x,
+                        out y
+                    );
+
+                    if (currentHit)
+                    {
+                        _hasLastWristPointerPoint = true;
+                        _lastWristPointerX = x;
+                        _lastWristPointerY = y;
+                        _lastWristPointerHitAt = DateTime.UtcNow;
+                    }
+
+                    hit = WristPointerMath.TryRetainOverlayPoint(
+                        currentHit,
+                        x,
+                        y,
+                        _hasLastWristPointerPoint,
+                        _lastWristPointerX,
+                        _lastWristPointerY,
+                        _hasLastWristPointerPoint
+                            ? (DateTime.UtcNow - _lastWristPointerHitAt).TotalMilliseconds
+                            : double.PositiveInfinity,
+                        WRIST_POINTER_MISS_GRACE_MILLISECONDS,
                         out x,
                         out y
                     );
@@ -781,6 +814,10 @@ namespace VRCX
             }
 
             _wristPointerTriggerWasPressed = false;
+            _hasLastWristPointerPoint = false;
+            _lastWristPointerX = 0.5f;
+            _lastWristPointerY = 0.5f;
+            _lastWristPointerHitAt = DateTime.MinValue;
             _wristControllerRole = ETrackedControllerRole.Invalid;
             _wristOverlayMouseScaleHandle = 0;
             _wristPointerPoseResolver.Reset();
