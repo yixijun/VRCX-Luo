@@ -78,11 +78,10 @@ public static class WristPointerMath
     }
 
     /// <summary>
-    /// Converts the coordinates returned by OpenVR's overlay intersection
-    /// API into normalized DOM coordinates. Depending on the SteamVR runtime
-    /// and overlay settings, the API can return either normalized UV values or
-    /// values in the configured mouse-scale pixel space. Unit-range values are
-    /// therefore kept as UVs; larger values are normalized as pixels. The Y
+    /// Converts the pixel coordinates returned by OpenVR's overlay
+    /// intersection API into normalized DOM coordinates. The configured mouse
+    /// scale is the pixel coordinate space used by ComputeOverlayIntersection,
+    /// so values below one pixel must not be treated as normalized UVs. The Y
     /// axis is flipped because OpenVR reports overlay coordinates from the
     /// lower edge while the wrist document is laid out from the upper edge.
     /// </summary>
@@ -109,14 +108,6 @@ public static class WristPointerMath
             pixelY > height)
         {
             return false;
-        }
-
-        // Some SteamVR runtimes keep returning normalized UVs even when a
-        // mouse scale is configured. Do not divide those values by the scale
-        // again; that would pin the pointer to the lower-left corner.
-        if (width > 1f && height > 1f && pixelX <= 1f && pixelY <= 1f)
-        {
-            return TryConvertOverlayUv(pixelX, pixelY, out x, out y);
         }
 
         x = pixelX / width;
