@@ -56,10 +56,7 @@
         opacity: 0.9;
         pointer-events: none;
         box-shadow: 0 0 6px rgba(0, 184, 255, 0.65);
-        transition:
-            left 60ms linear,
-            top 60ms linear,
-            transform 60ms ease;
+        transition: none;
     }
 
     .wrist-origin-marker.pressed {

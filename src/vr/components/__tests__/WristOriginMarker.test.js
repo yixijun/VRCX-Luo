@@ -34,4 +34,15 @@ describe('WristOriginMarker.vue', () => {
         expect(marker.attributes('data-pointer-hand')).toBe('right');
         expect(marker.classes()).toContain('pressed');
     });
+
+    it('does not animate between controller samples', () => {
+        const wrapper = mount(WristOriginMarker, {
+            props: { visible: true }
+        });
+        const marker = wrapper.get('[data-wrist-origin="controller"]');
+
+        expect(window.getComputedStyle(marker.element).transitionDuration).toBe(
+            '0s'
+        );
+    });
 });
