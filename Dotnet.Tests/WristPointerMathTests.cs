@@ -78,6 +78,23 @@ public class WristPointerMathTests
     }
 
     [Fact]
+    public void OverlayIntersectionUvValuesAreNotScaledASecondTime()
+    {
+        var success = WristPointerMath.TryConvertOverlayPixels(
+            pixelX: 0.75f,
+            pixelY: 0.25f,
+            width: 512f,
+            height: 512f,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(0.75f, x, 5);
+        Assert.Equal(0.75f, y, 5);
+    }
+
+    [Fact]
     public void OverlayPixelsOutsideTheConfiguredMouseScaleAreRejected()
     {
         Assert.False(
