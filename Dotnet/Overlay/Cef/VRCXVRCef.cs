@@ -623,6 +623,7 @@ namespace VRCX
 
             var triggerPressed = false;
             var hit = false;
+            var currentHit = false;
             var x = 0.5f;
             var y = 0.5f;
             var state = new VRControllerState_t();
@@ -704,7 +705,7 @@ namespace VRCX
                         );
                     }
 
-                    var currentHit = WristPointerMath.TrySelectOverlayPoint(
+                    currentHit = WristPointerMath.TrySelectOverlayPoint(
                         preferredHit,
                         preferredX,
                         preferredY,
@@ -745,7 +746,7 @@ namespace VRCX
             var visible = overlayVisible && hit;
             var pressed = visible && triggerPressed;
             PublishWristPointerMove(WristPointerMath.CreatePayload(x, y, visible, pressed, pointerHand));
-            if (visible && triggerPressed && !_wristPointerTriggerWasPressed)
+            if (overlayVisible && currentHit && triggerPressed && !_wristPointerTriggerWasPressed)
             {
                 PublishWristPointerClick(WristPointerMath.CreatePayload(x, y, true, true, pointerHand));
             }
