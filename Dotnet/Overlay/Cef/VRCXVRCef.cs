@@ -113,22 +113,59 @@ namespace VRCX
                 _device.Dispose();
                 _deviceContext.Dispose();
 
-                SilkMarshal.ThrowHResult
-                (
-                    _d3d11.CreateDevice
+                var debugLayerEnabled = Program.LaunchDebug;
+                var baseDeviceFlags = (uint)CreateDeviceFlag.BgraSupport;
+                var deviceFlags = baseDeviceFlags;
+                if (debugLayerEnabled)
+                    deviceFlags |= (uint)CreateDeviceFlag.Debug;
+
+                try
+                {
+                    SilkMarshal.ThrowHResult
                     (
-                        _adapter,
-                        D3DDriverType.Unknown,
-                        Software: default,
-                        (uint)(CreateDeviceFlag.BgraSupport | (Program.LaunchDebug ? CreateDeviceFlag.Debug : 0)),
-                        null,
-                        0,
-                        D3D11.SdkVersion,
-                        ref _device,
-                        null,
-                        ref _deviceContext
+                        _d3d11.CreateDevice
+                        (
+                            _adapter,
+                            D3DDriverType.Unknown,
+                            Software: default,
+                            deviceFlags,
+                            null,
+                            0,
+                            D3D11.SdkVersion,
+                            ref _device,
+                            null,
+                            ref _deviceContext
+                        )
+                    );
+                }
+                catch (COMException ex) when (
+                    D3D11DeviceCreation.ShouldRetryWithoutDebugLayer(
+                        debugLayerEnabled,
+                        ex.HResult
                     )
-                );
+                )
+                {
+                    logger.Warn(
+                        "D3D11 debug layer is unavailable; retrying overlay device creation without it"
+                    );
+                    SilkMarshal.ThrowHResult
+                    (
+                        _d3d11.CreateDevice
+                        (
+                            _adapter,
+                            D3DDriverType.Unknown,
+                            Software: default,
+                            baseDeviceFlags,
+                            null,
+                            0,
+                            D3D11.SdkVersion,
+                            ref _device,
+                            null,
+                            ref _deviceContext
+                        )
+                    );
+                    debugLayerEnabled = false;
+                }
 
                 if ((IntPtr)_sharedTexture.Handle != IntPtr.Zero)
                 {
@@ -161,7 +198,7 @@ namespace VRCX
                 _multithread = _device.QueryInterface<ID3D11Multithread>();
                 _multithread.SetMultithreadProtected(true);
 
-                if (Program.LaunchDebug)
+                if (debugLayerEnabled)
                     _device.SetInfoQueueCallback(msg => logger.Info(SilkMarshal.PtrToString((nint)msg.PDescription)!));
             }
         }

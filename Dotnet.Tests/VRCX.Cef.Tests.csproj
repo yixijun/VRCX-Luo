@@ -19,5 +19,6 @@
     <Compile Include="..\Dotnet\Cef\TrayNotificationModels.cs" Link="TrayNotificationModels.cs" />
     <Compile Include="..\Dotnet\Cef\TrayNotificationPreview.cs" Link="TrayNotificationPreview.cs" />
     <Compile Include="..\Dotnet\Overlay\WristPointerMath.cs" Link="WristPointerMath.cs" />
+    <Compile Include="..\Dotnet\Overlay\D3D11DeviceCreation.cs" Link="D3D11DeviceCreation.cs" />
   </ItemGroup>
 </Project>

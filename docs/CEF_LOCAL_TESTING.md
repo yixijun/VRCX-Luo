@@ -79,6 +79,19 @@ if ($remaining) {
 
 安装版日志中同时出现 `Overlay IPC connected, count: 1` 和 Overlay 客户端的 `Connection happened`，这才是可以响应触发键的完整链路。相关实现位于 [`OverlayServer.cs`](../Dotnet/OverlayWebSocket/OverlayServer.cs)、[`OverlayClient.cs`](../Dotnet/Overlay/Cef/OverlayClient.cs)、[`VRCXVRCef.cs`](../Dotnet/Overlay/Cef/VRCXVRCef.cs) 和 [`vr.js`](../src/stores/vr.js)。
 
+### 诊断结论（2026-09-09）
+
+本地 Debug 构建在 IPC 已连接后，Overlay 进程可能仍然立即退出。Windows `.NET Runtime` 事件会记录
+`System.Runtime.InteropServices.COMException (0x887A002D)`，堆栈指向
+`VRCXVRCef.SetupTextures()` 的 D3D11 `CreateDevice`。该错误表示当前机器没有安装
+D3D11 SDK Debug Layer；它不是 VRChat、手柄射线或手背页面逻辑错误。
+
+`VRCXVRCef` 现在只在 Debug Layer 请求得到 `0x887A002D` 时重试一次普通的 D3D11 设备创建，
+并跳过仅 Debug Layer 可用的 InfoQueue 回调。Release 构建和可用 Debug Layer 的机器仍沿用原来的
+Debug 设备路径；VR Overlay 的尺寸、输入协议和 `SetVR` 公共接口不变。验证时应看到 Overlay 日志中的
+`D3D11 debug layer is unavailable; retrying overlay device creation without it`，并且 Overlay 进程在
+启动后持续存在，而不是出现 `APPCRASH`。
+
 ### 排查顺序
 
 1. 找到本次启动实例实际使用的日志目录：默认是 `%APPDATA%\VRCX\logs`；传入 `--config=<目录>` 后，日志在该目录下的 `logs` 子目录。
@@ -90,7 +103,10 @@ if ($remaining) {
 
 ### 验证记录
 
-本次未修改 VR 或 CEF 生产代码。VR、`gameCoordinator` 和 update loop 相关回归测试为 4 个文件、9 个测试全部通过；工作区保持干净。后续若在“已登录 + SteamVR 运行 + IPC 已连接”的条件下仍能复现，必须先补充失败回归测试，再按一次只改一个逻辑的规则处理。
+2026-09-05 的首次排查未修改 VR 或 CEF 生产代码；VR、`gameCoordinator` 和 update loop 相关回归测试为 4 个文件、9 个测试全部通过。后续若在“已登录 + SteamVR 运行 + IPC 已连接”的条件下仍能复现，必须先补充失败回归测试，再按一次只改一个逻辑的规则处理。
+
+2026-09-09 的本地 Debug Overlay 崩溃修复已通过 17 个 C# 测试、CEF Debug 构建和实际启动探针：
+Overlay 进程在缺少 SDK Debug Layer 时自动回退并保持运行；VRChat、SteamVR 未被停止。
 
 ## 构建与启动
 
