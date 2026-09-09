@@ -49,7 +49,7 @@ vr.html?wrist-pointer-test=1
 
 Windows CEF/Electron 的手背指针曾出现“能动但只覆盖左上角一块范围”的现象。根因是共享纹理使用了 `1024×1536` 图集，手背实际只占左上角 `512×512` 裁剪区，而不同 SteamVR/runtime 对 `vUVs` 的坐标空间返回不一致；直接按 `512×512` 或直接当作本地 UV 都会造成范围缩小。
 
-`WristPointerMath.TryConvertOverlayCoordinates` 现在在宿主边界统一处理四种输入：本地像素、Overlay UV、共享纹理 UV、共享纹理像素。它先把共享纹理坐标按裁剪区展开到完整手背面板，再输出给 Vue 的本地 `0..1` 坐标；坐标空间在 Overlay 生命周期内保持稳定，只有首次样本无法区分且后续样本提供明确越界证据时才执行一次恢复。CEF 与 Electron 均在重建/重置手背 Overlay 时清除该判定，防止跨 Overlay 复用旧格式。
+`WristPointerMath.TryConvertOverlayCoordinates` 现在在宿主边界统一处理五种输入：本地像素、Overlay UV、共享纹理 UV、共享纹理像素，以及按手背裁剪区缩放后的像素。后者在当前 `u=0..0.5`、`v=0..1/3` 配置下约为 `256×170.67` 像素；边界函数会先把它展开到完整手背面板，再输出给 Vue 的本地 `0..1` 坐标。坐标空间在 Overlay 生命周期内保持稳定，只有首次样本无法区分且后续样本提供明确越界证据时才执行一次恢复，并优先识别裁剪像素而不是把指针再次压回左上角。CEF 与 Electron 均在重建/重置手背 Overlay 时清除该判定，防止跨 Overlay 复用旧格式。
 
 这次修正没有改变扳机射线、点击边沿、payload 字段、更新周期或页面样式；它只修复坐标范围和格式转换。实际头显仍需用 SteamVR/VRChat 验证全屏四角和点击位置，桌面 `wrist-pointer-test=1` 只能验证 Vue 层坐标与交互。
 

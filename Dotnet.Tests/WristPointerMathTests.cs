@@ -119,6 +119,131 @@ public class WristPointerMathTests
     }
 
     [Fact]
+    public void WristCropScaledPixelsAreExpandedToTheFullPanel()
+    {
+        var coordinateSpace = WristPointerCoordinateSpace.Unknown;
+        var success = WristPointerMath.TryConvertOverlayCoordinates(
+            coordinateX: 128f,
+            coordinateY: 256f / 3f,
+            width: 512f,
+            height: 512f,
+            textureUMin: 0f,
+            textureUMax: 0.5f,
+            textureVMin: 0f,
+            textureVMax: 1f / 3f,
+            ref coordinateSpace,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(0.5f, x, 5);
+        Assert.Equal(0.5f, y, 5);
+
+        success = WristPointerMath.TryConvertOverlayCoordinates(
+            coordinateX: 256f,
+            coordinateY: 512f / 3f,
+            width: 512f,
+            height: 512f,
+            textureUMin: 0f,
+            textureUMax: 0.5f,
+            textureVMin: 0f,
+            textureVMax: 1f / 3f,
+            ref coordinateSpace,
+            out x,
+            out y
+        );
+
+        Assert.True(success);
+        Assert.Equal(1f, x, 5);
+        Assert.Equal(0f, y, 5);
+    }
+
+    [Fact]
+    public void WristCropPixelModeRecoversWhenRuntimeReturnsLocalPixels()
+    {
+        var coordinateSpace = WristPointerCoordinateSpace.Unknown;
+        Assert.True(
+            WristPointerMath.TryConvertOverlayCoordinates(
+                coordinateX: 128f,
+                coordinateY: 256f / 3f,
+                width: 512f,
+                height: 512f,
+                textureUMin: 0f,
+                textureUMax: 0.5f,
+                textureVMin: 0f,
+                textureVMax: 1f / 3f,
+                ref coordinateSpace,
+                out var firstX,
+                out var firstY
+            )
+        );
+        Assert.Equal(0.5f, firstX, 5);
+        Assert.Equal(0.5f, firstY, 5);
+
+        var success = WristPointerMath.TryConvertOverlayCoordinates(
+            coordinateX: 384f,
+            coordinateY: 256f,
+            width: 512f,
+            height: 512f,
+            textureUMin: 0f,
+            textureUMax: 0.5f,
+            textureVMin: 0f,
+            textureVMax: 1f / 3f,
+            ref coordinateSpace,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(WristPointerCoordinateSpace.Pixels, coordinateSpace);
+        Assert.Equal(0.75f, x, 5);
+        Assert.Equal(0.5f, y, 5);
+    }
+
+    [Fact]
+    public void WristCropPixelModeRecoversWhenUnitRangeSampleArrivesFirst()
+    {
+        var coordinateSpace = WristPointerCoordinateSpace.Unknown;
+        Assert.True(
+            WristPointerMath.TryConvertOverlayCoordinates(
+                coordinateX: 0.25f,
+                coordinateY: 0.25f,
+                width: 512f,
+                height: 512f,
+                textureUMin: 0f,
+                textureUMax: 0.5f,
+                textureVMin: 0f,
+                textureVMax: 1f / 3f,
+                ref coordinateSpace,
+                out var firstX,
+                out var firstY
+            )
+        );
+        Assert.Equal(0.5f, firstX, 5);
+        Assert.Equal(0.25f, firstY, 5);
+
+        var success = WristPointerMath.TryConvertOverlayCoordinates(
+            coordinateX: 128f,
+            coordinateY: 256f / 3f,
+            width: 512f,
+            height: 512f,
+            textureUMin: 0f,
+            textureUMax: 0.5f,
+            textureVMin: 0f,
+            textureVMax: 1f / 3f,
+            ref coordinateSpace,
+            out var x,
+            out var y
+        );
+
+        Assert.True(success);
+        Assert.Equal(WristPointerCoordinateSpace.TexturePixels, coordinateSpace);
+        Assert.Equal(0.5f, x, 5);
+        Assert.Equal(0.5f, y, 5);
+    }
+
+    [Fact]
     public void WristCoordinateSpaceDoesNotSwitchAfterTheFirstValidSample()
     {
         var coordinateSpace = WristPointerCoordinateSpace.Unknown;

@@ -8,6 +8,7 @@ internal enum WristPointerCoordinateSpace
 {
     Unknown,
     Pixels,
+    TexturePixels,
     OverlayUv,
     TextureUv
 }
@@ -88,11 +89,12 @@ public static class WristPointerMath
     /// <summary>
     /// Converts the coordinates returned by OpenVR's overlay intersection API
     /// into normalized DOM coordinates. The documented contract is the
-    /// configured mouse-scale pixel space, but some SteamVR runtimes return
-    /// normalized UVs for the same call. Unit-range pairs are therefore kept
-    /// as UVs, while larger values are normalized as pixels. The Y axis is
-    /// flipped because OpenVR reports overlay coordinates from the lower edge
-    /// while the wrist document is laid out from the upper edge.
+    /// configured mouse-scale pixel space, but some SteamVR/runtime
+    /// combinations return normalized UVs or pixels scaled to the selected
+    /// texture crop for the same call. Unit-range pairs are therefore kept as
+    /// UVs, while larger values are normalized as local or crop-scaled pixels.
+    /// The Y axis is flipped because OpenVR reports overlay coordinates from
+    /// the lower edge while the wrist document is laid out from the upper edge.
     /// </summary>
     public static bool TryConvertOverlayPixels(
         float pixelX,
@@ -170,12 +172,27 @@ public static class WristPointerMath
             textureVMin >= 0f &&
             textureVMax <= 1f &&
             textureVMin < textureVMax;
+        var cropPixelWidth = textureBoundsValid
+            ? width * (textureUMax - textureUMin)
+            : 0f;
+        var cropPixelHeight = textureBoundsValid
+            ? height * (textureVMax - textureVMin)
+            : 0f;
+        var isTexturePixelCoordinate = textureBoundsValid &&
+            coordinateX <= cropPixelWidth &&
+            coordinateY <= cropPixelHeight;
         var resolvedSpace = coordinateSpace;
         if (resolvedSpace == WristPointerCoordinateSpace.Unknown)
         {
             if (coordinateX > 1f || coordinateY > 1f)
             {
-                resolvedSpace = WristPointerCoordinateSpace.Pixels;
+                // Some runtimes apply the texture bounds before multiplying
+                // by the configured mouse scale. For the wrist crop this is
+                // a 256 x 170.67 pixel space rather than the local 512 x 512
+                // panel; expand it before publishing DOM coordinates.
+                resolvedSpace = isTexturePixelCoordinate
+                    ? WristPointerCoordinateSpace.TexturePixels
+                    : WristPointerCoordinateSpace.Pixels;
             }
             else if (textureBoundsValid &&
                 coordinateX >= textureUMin &&
@@ -210,6 +227,19 @@ public static class WristPointerMath
                     out x,
                     out y
                 ),
+            WristPointerCoordinateSpace.TexturePixels =>
+                textureBoundsValid && TryConvertOverlayTexturePixels(
+                    coordinateX,
+                    coordinateY,
+                    width,
+                    height,
+                    textureUMin,
+                    textureUMax,
+                    textureVMin,
+                    textureVMax,
+                    out x,
+                    out y
+                ),
             WristPointerCoordinateSpace.TextureUv =>
                 textureBoundsValid && TryConvertOverlayTextureUv(
                     coordinateX,
@@ -231,10 +261,14 @@ public static class WristPointerMath
         // If a later sample proves that the stream is outside the normalized
         // crop, recover once to the matching coordinate space instead of
         // leaving the pointer hidden or locked to that crop.
-        if (!success && resolvedSpace == WristPointerCoordinateSpace.TextureUv)
+        if (!success &&
+            (resolvedSpace == WristPointerCoordinateSpace.TextureUv ||
+                resolvedSpace == WristPointerCoordinateSpace.TexturePixels))
         {
             resolvedSpace = coordinateX > 1f || coordinateY > 1f
-                ? WristPointerCoordinateSpace.Pixels
+                ? isTexturePixelCoordinate
+                    ? WristPointerCoordinateSpace.TexturePixels
+                    : WristPointerCoordinateSpace.Pixels
                 : WristPointerCoordinateSpace.OverlayUv;
             success = resolvedSpace switch
             {
@@ -249,6 +283,19 @@ public static class WristPointerMath
                         textureVMin,
                         textureVMax,
                         textureBoundsValid,
+                        out x,
+                        out y
+                    ),
+                WristPointerCoordinateSpace.TexturePixels =>
+                    textureBoundsValid && TryConvertOverlayTexturePixels(
+                        coordinateX,
+                        coordinateY,
+                        width,
+                        height,
+                        textureUMin,
+                        textureUMax,
+                        textureVMin,
+                        textureVMax,
                         out x,
                         out y
                     ),
@@ -336,6 +383,36 @@ public static class WristPointerMath
 
         x = (u - textureUMin) / (textureUMax - textureUMin);
         y = 1f - (v - textureVMin) / (textureVMax - textureVMin);
+        return IsNormalizedPoint(x, y);
+    }
+
+    private static bool TryConvertOverlayTexturePixels(
+        float coordinateX,
+        float coordinateY,
+        float width,
+        float height,
+        float textureUMin,
+        float textureUMax,
+        float textureVMin,
+        float textureVMax,
+        out float x,
+        out float y
+    )
+    {
+        x = 0f;
+        y = 0f;
+        var cropWidth = width * (textureUMax - textureUMin);
+        var cropHeight = height * (textureVMax - textureVMin);
+        if (cropWidth <= 0f ||
+            cropHeight <= 0f ||
+            coordinateX > cropWidth ||
+            coordinateY > cropHeight)
+        {
+            return false;
+        }
+
+        x = coordinateX / cropWidth;
+        y = 1f - coordinateY / cropHeight;
         return IsNormalizedPoint(x, y);
     }
 

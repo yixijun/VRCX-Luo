@@ -439,6 +439,21 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 代码提交：本切片建立独立 Git 回滚点；未发布、未推送。实际头显仍需在 SteamVR/VRChat 中验证手背四角活动范围和点击位置；若硬件仍出现偏移，下一步只增加可关闭的 `vUVs` 采样诊断，不再盲改页面样式。
 
+### 裁剪像素空间补充（2026-09-10）
+
+针对仍然只能在左上角一块区域活动的反馈，补充覆盖“首次样本为单位范围、后续样本为裁剪像素”的恢复路径。该运行时会先按手背裁剪后的约 `256×170.67` 像素解释交点，再展开到完整 `512×512` 手背面板；本地像素流仍保持原有 `512×512` 解释。没有修改射线、点击边沿、payload、更新周期、页面样式或公共接口。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 改动前 C# 基线 | `dotnet test Dotnet.Tests/VRCX.Cef.Tests.csproj --no-restore --verbosity:minimal` | **通过：26/26** |
+| 裁剪像素恢复 RED | 同上定向命令 | **预期失败：1 项**；单位范围首样本后的裁剪像素被误判为本地像素 |
+| 裁剪像素恢复 GREEN | 同上定向命令 | **通过：27/27**；覆盖裁剪像素端点、切回本地像素及单位范围首样本 |
+| CEF 宿主构建 | `dotnet build Dotnet/VRCX-Cef.csproj --no-restore -c Debug -p:Platform=x64 --nologo --verbosity:minimal` | **通过：0 警告、0 错误** |
+| Electron 宿主构建 | `dotnet build Dotnet/VRCX-Electron.csproj --no-restore -c Debug -p:Platform=x64 --nologo --verbosity:minimal` | **通过：0 警告、0 错误** |
+| 本地测试版 | 重启 `build/Cef/VRCX-Luo.exe --debug` | **已重启并确认主进程与 Overlay 子进程运行**；未发布、未推送 |
+
+实际头显仍需在 SteamVR/VRChat 中验证手背四角和点击位置；桌面 `wrist-pointer-test=1` 不能替代硬件坐标验证。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
