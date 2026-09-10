@@ -596,6 +596,22 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 代码回滚点：`b65ef849`；未发布、未推送。
 
+## 性能修正：房间进出记录大数量筛选卡顿
+
+2026-09-10，修正房间进出悬浮窗在记录数量较大时切换筛选会短暂卡顿的问题。旧实现会把全部记录（截图场景约 3093 条）及每行的用户身份组件一次性挂载；现在列表改用项目已有的 `@tanstack/vue-virtual` 虚拟列表，只渲染可视区域及少量 overscan 行，筛选结果、计数、排序、点击查询、数据库参数和筛选记忆均保持不变。虚拟容器保留原滚动区域，筛选变化后仅重新测量，不改变查询并发语义。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 房间进出组件基线 | `npx vitest run src/views/PlayerList/components/__tests__/InstancePlayerEvents.test.js src/views/PlayerList/components/__tests__/InstancePlayerEventsPopover.test.js --reporter=dot` | **通过：2 个文件、5 项既有测试** |
+| 大数据量卡顿回归 RED | 同上定向组件测试（新增 3093 条记录场景） | **预期失败**：旧实现挂载 3093 行，无法满足可视行上限 |
+| 虚拟列表回归 GREEN | 同上定向组件测试 | **通过：2 个文件、6 项测试**；大数据量初始与筛选切换均限制为 40 个测试可视行 |
+| PlayerList 回归 | `npx vitest run src/views/PlayerList --reporter=dot` | **通过：5 个文件、26 项测试**；保留既有组件解析警告 |
+| JavaScript 质量检查 | `npx eslint src/views/PlayerList/components/InstancePlayerEvents.vue src/views/PlayerList/components/__tests__/InstancePlayerEvents.test.js`；`npm run typecheck:js` | **通过：0 diagnostics** |
+| 生产构建 | `npm run prod` | **通过：4427 个模块**；保留既有 Vite 动态导入提示与 Node deprecation 提示 |
+| 本地测试版 | 重启 `build/Cef/VRCX-Luo.exe --debug`，检查 CEF/CDP 页面可访问 | **通过：本地测试版已重启；未发布、未推送** |
+
+代码回滚点：`2bcf5699`；未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
