@@ -53,6 +53,7 @@ import {
 import { createNotificationPreferences } from "./notificationPreferences";
 import { createNotificationSeenQueue } from "./notificationSeenQueue";
 import { appendPendingNotification } from "./notificationPendingEntry";
+import { resolveNotificationPlayback } from "./notificationPlayback";
 import { useAdvancedSettingsStore } from "../settings/advanced";
 import { useAppearanceSettingsStore } from "../settings/appearance";
 import { useFavoriteStore } from "../favorite";
@@ -1002,7 +1003,7 @@ export const useNotificationStore = defineStore("Notification", () => {
      *
      * @param noty
      */
-    function playNoty(noty) {
+    function playNoty(noty, { forceDisplay = false } = {}) {
         if (
             userStore.currentUser.status === "busy" ||
             !watchState.isFriendsLoaded
@@ -1038,38 +1039,18 @@ export const useNotificationStore = defineStore("Notification", () => {
             return;
         }
 
-        const notiConditions = {
-            Always: () => true,
-            "Inside VR": () => gameStore.isSteamVRRunning,
-            "Outside VR": () => !gameStore.isSteamVRRunning,
-            "Game Closed": () => !gameStore.isGameRunning, // Also known as "Outside VRChat"
-            "Game Running": () => gameStore.isGameRunning, // Also known as "Inside VRChat"
-            "Desktop Mode": () =>
-                gameStore.isGameNoVR && gameStore.isGameRunning,
-            AFK: () =>
-                notificationsSettingsStore.afkDesktopToast &&
-                gameStore.isHmdAfk &&
-                gameStore.isGameRunning &&
-                !gameStore.isGameNoVR,
-        };
-
-        const playNotificationTTS =
-            notificationsSettingsStore.traySilentMode !== true &&
-            notiConditions[notificationsSettingsStore.notificationTTS]?.();
-        const playDesktopToast =
-            notiConditions[notificationsSettingsStore.desktopToast]?.() ||
-            notiConditions["AFK"]();
-        const playOverlayToast =
-            notiConditions[notificationsSettingsStore.overlayToast]?.();
-        const playOverlayNotification =
-            notificationsSettingsStore.overlayNotifications && playOverlayToast;
-        const playXSNotification =
-            notificationsSettingsStore.xsNotifications && playOverlayToast;
-        const playOvrtHudNotifications =
-            notificationsSettingsStore.ovrtHudNotifications && playOverlayToast;
-        const playOvrtWristNotifications =
-            notificationsSettingsStore.ovrtWristNotifications &&
-            playOverlayToast;
+        const {
+            playNotificationTTS,
+            playDesktopToast,
+            playOverlayNotification,
+            playXSNotification,
+            playOvrtHudNotifications,
+            playOvrtWristNotifications,
+        } = resolveNotificationPlayback({
+            notificationsSettingsStore,
+            gameStore,
+            forceDisplay,
+        });
 
         let message = "";
         if (noty.title) {
@@ -1384,7 +1365,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             type: "Event",
             created_at: new Date().toJSON(),
             data: t("view.settings.notifications.notifications.test_message"),
-        });
+        }, { forceDisplay: true });
     }
 
     /**
