@@ -499,6 +499,21 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 本切片未改变通知快照已有字段的含义，仅做兼容性追加；未发布、未推送。
 
+## UI 增强：托盘悬浮窗剩余数量提示
+
+2026-09-10，托盘悬浮窗底部增加“还有 N 条”提示，明确前 4 条卡片之外仍有待处理通知，并保留“通知中心”和“全部忽略”两个操作。通知内容、排序、最多展示 4 条的布局上限、自动关闭时序和既有按钮位置均未改变；消息字段继续使用原有 formatter 与原始字段兜底。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| C# 行为 RED | `dotnet test Dotnet.Tests/VRCX.Cef.Tests.csproj --no-restore --verbosity:minimal` | **预期失败：1/27**；缺少剩余数量提示控件 |
+| C# 行为 GREEN | 同上 | **通过：27/27** |
+| JavaScript 托盘回归 | `npx vitest run src/stores/notification/__tests__/trayNotificationBridge.test.js src/services/__tests__/trayNotificationProjection.test.js --reporter=dot` | **通过：2 个文件、34 项测试** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| CEF/Electron 宿主构建 | 两个 `dotnet build ... -c Debug -p:Platform=x64 --nologo --verbosity:minimal` | **通过：0 警告、0 错误** |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有换行转换 |
+
+本切片未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

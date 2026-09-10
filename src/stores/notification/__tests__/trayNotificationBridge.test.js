@@ -115,6 +115,27 @@ describe("tray notification snapshot", () => {
         });
     });
 
+    test("falls back to raw notification fields when a new type has no formatter", () => {
+        const snapshot = buildTrayNotificationSnapshot({
+            notifications: [
+                notification({
+                    type: "newNotificationType",
+                    senderUsername: "Alice",
+                    message: "来自新类型的消息",
+                }),
+            ],
+            unseenIds: ["not_1"],
+            now,
+            formatMessage: () => null,
+        });
+
+        expect(snapshot.items[0]).toMatchObject({
+            title: "Alice",
+            body: "来自新类型的消息",
+            typeLabel: "通知",
+        });
+    });
+
     test.each([
         ["OnPlayerJoined", "玩家上线"],
         ["OnPlayerLeft", "玩家离开"],

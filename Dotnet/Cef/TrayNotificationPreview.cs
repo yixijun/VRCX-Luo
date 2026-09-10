@@ -133,7 +133,7 @@ namespace VRCX
 
             if (visibleItems.Count > 0)
             {
-                _content.Controls.Add(CreateFooter());
+                _content.Controls.Add(CreateFooter(Math.Max(0, snapshot.Total - visibleItems.Count)));
             }
 
             var contentHeight =
@@ -343,7 +343,7 @@ namespace VRCX
             return panel;
         }
 
-        private Control CreateFooter()
+        private Control CreateFooter(int remainingCount)
         {
             var panel = new Panel
             {
@@ -358,6 +358,17 @@ namespace VRCX
                 Margin = new Padding(0),
                 Size = new Size(ContentWidth, 1)
             });
+            var moreLabel = new Label
+            {
+                AutoEllipsis = true,
+                BackColor = Color.Transparent,
+                ForeColor = _palette.MutedForeground,
+                Location = new Point(10, 12),
+                Name = "TrayMoreLabel",
+                Size = new Size(140, 20),
+                Text = remainingCount > 0 ? $"还有 {remainingCount} 条" : string.Empty
+            };
+            panel.Controls.Add(moreLabel);
             var openCenterButton = new TrayTextButton("通知中心", _palette)
             {
                 AccessibleName = "打开通知中心",

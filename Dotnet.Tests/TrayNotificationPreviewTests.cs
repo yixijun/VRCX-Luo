@@ -60,6 +60,14 @@ public class TrayNotificationPreviewTests
             throw new InvalidOperationException("The tray preview must render up to four notification cards.");
         }
 
+        var moreLabel = Descendants(preview)
+            .OfType<Label>()
+            .FirstOrDefault(control => control.Name == "TrayMoreLabel");
+        if (moreLabel == null || moreLabel.Text != "还有 1 条")
+        {
+            throw new InvalidOperationException("The tray preview must show how many notifications remain outside the preview.");
+        }
+
         foreach (var card in cards)
         {
             foreach (Control child in card.Controls)
