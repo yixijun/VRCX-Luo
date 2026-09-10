@@ -136,6 +136,36 @@ describe("tray notification snapshot", () => {
         });
     });
 
+    test("projects additional pending sources such as friend-log events", () => {
+        const snapshot = buildTrayNotificationSnapshot({
+            notifications: [],
+            additionalNotifications: [
+                notification({
+                    id: "friend-log-1",
+                    type: "DisplayName",
+                    displayName: "Alice",
+                    message: "昵称已更新",
+                    traySource: "friend-log",
+                }),
+            ],
+            unseenIds: [],
+            additionalUnseenIds: ["friend-log-1"],
+            now,
+            formatMessage: (item) => ({
+                title: item.displayName,
+                body: item.message,
+            }),
+        });
+
+        expect(snapshot.items[0]).toMatchObject({
+            id: "friend-log-1",
+            type: "DisplayName",
+            category: "other",
+            typeLabel: "昵称变化",
+        });
+        expect(snapshot.total).toBe(1);
+    });
+
     test.each([
         ["OnPlayerJoined", "玩家上线"],
         ["OnPlayerLeft", "玩家离开"],

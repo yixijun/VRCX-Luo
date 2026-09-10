@@ -159,6 +159,10 @@ export function addFriendship(id) {
                 friendLogTable.value.data.push(friendLogHistory);
                 database.addFriendLogHistory(friendLogHistory);
                 notificationStore.queueFriendLogNoty(friendLogHistory);
+                notificationStore.appendTrayNotificationEntry({
+                    ...friendLogHistory,
+                    traySource: 'friend-log'
+                });
                 sharedFeedStore.addEntry(friendLogHistory);
                 const friendLogCurrent = {
                     userId: id,
@@ -222,6 +226,10 @@ export function updateFriendship(ref) {
             friendLogTable.value?.data.push(friendLogHistoryDisplayName);
             database.addFriendLogHistory(friendLogHistoryDisplayName);
             notificationStore.queueFriendLogNoty(friendLogHistoryDisplayName);
+            notificationStore.appendTrayNotificationEntry({
+                ...friendLogHistoryDisplayName,
+                traySource: 'friend-log'
+            });
             sharedFeedStore.addEntry(friendLogHistoryDisplayName);
             const friendLogCurrent = {
                 userId: ref.id,
@@ -268,6 +276,10 @@ export function updateFriendship(ref) {
         friendLogTable.value.data.push(friendLogHistoryTrustLevel);
         database.addFriendLogHistory(friendLogHistoryTrustLevel);
         notificationStore.queueFriendLogNoty(friendLogHistoryTrustLevel);
+        notificationStore.appendTrayNotificationEntry({
+            ...friendLogHistoryTrustLevel,
+            traySource: 'friend-log'
+        });
         sharedFeedStore.addEntry(friendLogHistoryTrustLevel);
         const friendLogCurrent2 = {
             userId: ref.id,
@@ -398,6 +410,10 @@ export function runDeleteFriendshipFlow(
                 friendLogTable.value.data.push(friendLogHistory);
                 database.addFriendLogHistory(friendLogHistory);
                 notificationStore.queueFriendLogNoty(friendLogHistory);
+                notificationStore.appendTrayNotificationEntry({
+                    ...friendLogHistory,
+                    traySource: 'friend-log'
+                });
                 sharedFeedStore.addEntry(friendLogHistory);
                 friendLog.delete(id);
                 database.deleteFriendLogCurrent(id);

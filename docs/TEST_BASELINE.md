@@ -514,6 +514,22 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 本切片未发布、未推送。
 
+## 功能增强：好友日志红点进入托盘
+
+2026-09-10，补齐好友日志对托盘悬浮通知的投影。好友建立、昵称变化、信任等级变化和解除好友这四类事件继续写入好友日志数据库并触发 App 内 `friend-log` 红点，同时额外进入仅供托盘使用的临时未读队列；不会重复写入通知中心，也不会改变好友日志表结构。点击托盘条目进入好友日志页并清理临时队列，忽略单条或全部时同步移除 `friend-log` 红点；切换账户或进入好友日志页也会清理临时条目，避免跨账户或已查看后残留。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 托盘桥接行为 RED → GREEN | `npx vitest run src/stores/notification/__tests__/trayNotificationBridge.test.js --reporter=dot` | **先因未合并额外来源得到预期 RED；实现后通过：1 个文件、33 项测试** |
+| 通知目录回归 | `npx vitest run src/stores/notification/__tests__ --reporter=dot` | **通过：6 个文件、51 项测试** |
+| 重构回归集 | `npm run test:refactor` | **通过：75 个文件、371 项测试**；保留既有预期错误日志 |
+| 目标文件 Lint | `npx eslint src/stores/notification/index.js src/stores/notification/trayNotificationBridge.js src/coordinators/friendRelationshipCoordinator.js src/stores/notification/__tests__/trayNotificationBridge.test.js` | **通过** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| CEF/Electron 宿主构建 | 两个 `dotnet build ... -c Debug -p:Platform=x64 --nologo --verbosity:minimal` | **通过：0 警告、0 错误** |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有换行转换 |
+
+本切片构建通过，待建立独立 Git 回滚点；未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

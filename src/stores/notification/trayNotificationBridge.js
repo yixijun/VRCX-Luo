@@ -239,11 +239,13 @@ function isExpired(notification, now) {
 }
 
 /**
- * @param {{notifications?: any[], unseenIds?: any[], hiddenIds?: any[], now?: number, limit?: number, formatMessage?: Function, getAvatarUrl?: Function, theme?: Record<string, string>}} [options]
+ * @param {{notifications?: any[], additionalNotifications?: any[], unseenIds?: any[], additionalUnseenIds?: any[], hiddenIds?: any[], now?: number, limit?: number, formatMessage?: Function, getAvatarUrl?: Function, theme?: Record<string, string>}} [options]
  */
 function buildTrayNotificationSnapshot({
     notifications = [],
+    additionalNotifications = [],
     unseenIds = [],
+    additionalUnseenIds = [],
     hiddenIds = [],
     now = Date.now(),
     limit = DEFAULT_LIMIT,
@@ -251,9 +253,10 @@ function buildTrayNotificationSnapshot({
     getAvatarUrl,
     theme = TRAY_THEME_FALLBACK,
 } = {}) {
-    const unseen = new Set(unseenIds);
+    const allNotifications = [...notifications, ...additionalNotifications];
+    const unseen = new Set([...unseenIds, ...additionalUnseenIds]);
     const hidden = new Set(hiddenIds);
-    const pending = notifications
+    const pending = allNotifications
         .filter(
             (notification) =>
                 notification?.id &&

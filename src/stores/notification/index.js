@@ -140,6 +140,8 @@ export const useNotificationStore = defineStore("Notification", () => {
         () => new Set(notificationCenterHiddenIds.value),
     );
     const trayNotificationSnapshot = ref({ total: 0, items: [] });
+    const trayAdditionalNotifications = ref([]);
+    const trayAdditionalUnseenIds = ref([]);
     const unseenFriendNotifications = computed(() =>
         filterUnseenNotifications(
             friendNotifications.value,
@@ -208,11 +210,21 @@ export const useNotificationStore = defineStore("Notification", () => {
         (isLoggedIn) => {
             isNotificationsLoading.value = false;
             notificationTable.value.data = [];
+            clearTrayAdditionalNotifications();
             if (isLoggedIn) {
                 initNotifications();
             }
         },
         { flush: "sync" },
+    );
+
+    watch(
+        () => router.currentRoute.value?.name,
+        (routeName) => {
+            if (routeName === "friend-log") {
+                clearTrayAdditionalNotifications();
+            }
+        },
     );
 
     /**
@@ -278,6 +290,20 @@ export const useNotificationStore = defineStore("Notification", () => {
         }
     }
 
+    function appendTrayNotificationEntry(entry) {
+        if (router.currentRoute.value?.name === "friend-log") return null;
+        return appendPendingNotification({
+            collection: trayAdditionalNotifications.value,
+            unseenIds: trayAdditionalUnseenIds.value,
+            entry,
+        });
+    }
+
+    function clearTrayAdditionalNotifications() {
+        trayAdditionalNotifications.value = [];
+        trayAdditionalUnseenIds.value = [];
+    }
+
     async function resolveTrayAvatarPath(notification, avatarUrl) {
         let resolvedUrl = avatarUrl;
         const senderId = getUserIdFromNotyBase(notification);
@@ -303,7 +329,9 @@ export const useNotificationStore = defineStore("Notification", () => {
         const syncToken = ++trayNotificationSyncToken;
         const snapshot = buildTrayNotificationSnapshot({
             notifications: notificationTable.value.data,
+            additionalNotifications: trayAdditionalNotifications.value,
             unseenIds: unseenNotifications.value,
+            additionalUnseenIds: trayAdditionalUnseenIds.value,
             hiddenIds: notificationCenterHiddenIds.value,
             formatMessage: getNotificationMessageText,
             getAvatarUrl: getTrayNotificationAvatarUrl,
@@ -313,7 +341,10 @@ export const useNotificationStore = defineStore("Notification", () => {
         if (!WINDOWS || snapshot.items.length === 0) return;
 
         const notificationsById = new Map(
-            notificationTable.value.data.map((notification) => [notification.id, notification]),
+            [
+                ...notificationTable.value.data,
+                ...trayAdditionalNotifications.value,
+            ].map((notification) => [notification.id, notification]),
         );
         Promise.all(
             snapshot.items.map((item) =>
@@ -338,7 +369,9 @@ export const useNotificationStore = defineStore("Notification", () => {
     watch(
         [
             () => notificationTable.value.data,
+            trayAdditionalNotifications,
             unseenNotifications,
+            trayAdditionalUnseenIds,
             notificationCenterHiddenIds,
             () => appearanceSettingsStore.$state,
         ],
@@ -1642,6 +1675,11 @@ export const useNotificationStore = defineStore("Notification", () => {
     }
 
     function openTrayNotification(row) {
+        if (row?.traySource === "friend-log") {
+            router.push({ name: "friend-log" });
+            return;
+        }
+
         const senderId = typeof row.senderUserId === "string" ? row.senderUserId : "";
         const groupId = senderId.startsWith("grp_")
             ? senderId
@@ -1706,14 +1744,34 @@ export const useNotificationStore = defineStore("Notification", () => {
     function ignoreTrayNotifications(ids) {
         if (!Array.isArray(ids) || ids.length === 0) return;
         const hiddenIds = new Set(notificationCenterHiddenIds.value);
+        const additionalIds = new Set(trayAdditionalUnseenIds.value);
+        let hiddenIdsChanged = false;
         for (const id of ids) {
-            hiddenIds.add(id);
+            if (additionalIds.has(id)) {
+                removeFromArray(trayAdditionalUnseenIds.value, id);
+                const entry = trayAdditionalNotifications.value.find(
+                    (item) => item.id === id,
+                );
+                if (entry) {
+                    removeFromArray(trayAdditionalNotifications.value, entry);
+                }
+                continue;
+            }
+            if (!hiddenIds.has(id)) {
+                hiddenIds.add(id);
+                hiddenIdsChanged = true;
+            }
             removeFromArray(unseenNotifications.value, id);
         }
-        notificationCenterHiddenIds.value = [...hiddenIds];
-        saveNotificationCenterHiddenIds();
+        if (hiddenIdsChanged) {
+            notificationCenterHiddenIds.value = [...hiddenIds];
+            saveNotificationCenterHiddenIds();
+        }
         if (unseenNotifications.value.length === 0) {
             uiStore.removeNotify("notification");
+        }
+        if (trayAdditionalUnseenIds.value.length === 0) {
+            uiStore.removeNotify("friend-log");
         }
         toast.success(
             ids.length === 1 ? "已忽略通知" : `已忽略 ${ids.length} 条通知`,
@@ -1722,7 +1780,8 @@ export const useNotificationStore = defineStore("Notification", () => {
 
     const handleTrayNotificationAction = createTrayNotificationActionHandler({
         findNotification: (id) =>
-            notificationTable.value.data.find((item) => item.id === id),
+            notificationTable.value.data.find((item) => item.id === id) ||
+            trayAdditionalNotifications.value.find((item) => item.id === id),
         isExpired: isNotificationExpired,
         openNotification: openTrayNotification,
         openNotificationCenter: () => {
@@ -1955,6 +2014,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         markAllAsSeen,
         clearNotificationCenter,
         appendNotificationTableEntry,
+        appendTrayNotificationEntry,
         setNotificationInitStatus,
         clearUnseenNotifications,
     };
