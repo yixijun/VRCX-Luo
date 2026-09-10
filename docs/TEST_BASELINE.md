@@ -469,6 +469,20 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 当前切片代码已通过测试并准备建立独立 Git 回滚点；下一切片将处理“App 通知中心/红点来源与托盘快照不一致”的类型覆盖，不与本切片混改。
 
+## 功能修正：本地通知进入托盘未读队列
+
+2026-09-10，修正实例关闭、群组队列就绪两类由本地事件生成的 App 通知：统一通过 `appendNotificationTableEntry()` 写入通知表，自动补齐不会与已有记录冲突的本地 ID，并加入未读队列。这样它们可以同时触发既有通知红点并进入 Windows CEF 托盘悬浮快照；已有带 ID 的 API 通知、已读通知和通知中心隐藏记录保持原语义。没有修改通知内容、数据库序列化格式、事件时序或公共页面接口。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 改动前托盘/通知基线 | `npx vitest run src/stores/notification/__tests__/trayNotificationBridge.test.js src/services/__tests__/trayNotificationProjection.test.js --reporter=dot` | **通过：2 个文件、18 项测试（含上一切片）** |
+| 本地通知行为 RED → GREEN | `npx vitest run src/stores/notification/__tests__/notificationPendingEntry.test.js --reporter=dot` | **先因模块不存在得到预期 RED；实现后通过：3 项** |
+| 托盘/通知定向回归 | 同上托盘/通知基线命令 + pending entry | **通过：3 个文件、21 项测试** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有换行转换 |
+
+本切片在提交前继续运行 CEF/Electron 构建；未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

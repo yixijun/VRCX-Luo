@@ -1200,7 +1200,7 @@ export const useInstanceStore = defineStore('Instance', () => {
         }
         notificationStore.queueNotificationNoty(noty);
         sharedFeedStore.addEntry(noty);
-        notificationStore.notificationTable.data.push(noty);
+        notificationStore.appendNotificationTableEntry(noty);
     }
 
     /**

@@ -52,6 +52,7 @@ import {
 } from "./notificationEntityProjection";
 import { createNotificationPreferences } from "./notificationPreferences";
 import { createNotificationSeenQueue } from "./notificationSeenQueue";
+import { appendPendingNotification } from "./notificationPendingEntry";
 import { useAdvancedSettingsStore } from "../settings/advanced";
 import { useAppearanceSettingsStore } from "../settings/appearance";
 import { useFavoriteStore } from "../favorite";
@@ -563,7 +564,12 @@ export const useNotificationStore = defineStore("Notification", () => {
      * @param {object} entry
      */
     function appendNotificationTableEntry(entry) {
-        notificationTable.value.data.push(entry);
+        return appendPendingNotification({
+            collection: notificationTable.value.data,
+            unseenIds: unseenNotifications.value,
+            hiddenIds: notificationCenterHiddenIds.value,
+            entry,
+        });
     }
 
     /**
