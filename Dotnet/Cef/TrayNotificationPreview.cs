@@ -18,6 +18,8 @@ namespace VRCX
         private const int SurfaceFrame = 2;
         private const int ActionButtonSize = 30;
         private const int ActionButtonGap = 4;
+        private const int FooterButtonWidth = 100;
+        private const int FooterButtonGap = 8;
 
         private readonly FlowLayoutPanel _content;
         private readonly Panel _surface;
@@ -354,13 +356,25 @@ namespace VRCX
                 Margin = new Padding(0),
                 Size = new Size(ContentWidth, 1)
             });
-            var button = new TrayTextButton("全部忽略", _palette)
+            var openCenterButton = new TrayTextButton("通知中心", _palette)
             {
-                Location = new Point(ContentWidth - 100, 5),
-                Size = new Size(100, 32)
+                AccessibleName = "打开通知中心",
+                Location = new Point(ContentWidth - FooterButtonWidth * 2 - FooterButtonGap, 5),
+                Name = "TrayOpenCenterButton",
+                Size = new Size(FooterButtonWidth, 32)
             };
-            button.Click += (_, _) => ActionRequested?.Invoke("ignore-all", string.Empty);
-            panel.Controls.Add(button);
+            openCenterButton.Click += (_, _) => ActionRequested?.Invoke("open-center", string.Empty);
+            panel.Controls.Add(openCenterButton);
+
+            var ignoreButton = new TrayTextButton("全部忽略", _palette)
+            {
+                AccessibleName = "忽略全部通知",
+                Location = new Point(ContentWidth - FooterButtonWidth, 5),
+                Name = "TrayIgnoreAllButton",
+                Size = new Size(FooterButtonWidth, 32)
+            };
+            ignoreButton.Click += (_, _) => ActionRequested?.Invoke("ignore-all", string.Empty);
+            panel.Controls.Add(ignoreButton);
             return panel;
         }
 

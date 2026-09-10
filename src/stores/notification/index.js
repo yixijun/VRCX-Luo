@@ -1719,6 +1719,9 @@ export const useNotificationStore = defineStore("Notification", () => {
             notificationTable.value.data.find((item) => item.id === id),
         isExpired: isNotificationExpired,
         openNotification: openTrayNotification,
+        openNotificationCenter: () => {
+            isNotificationCenterOpen.value = true;
+        },
         respondToNotification: respondToTrayNotification,
         acceptInvite: acceptInviteAndLaunch,
         declineInvite: declineTrayInvite,

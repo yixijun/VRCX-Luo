@@ -89,6 +89,22 @@ public class TrayNotificationPreviewTests
             throw new InvalidOperationException("Clicking a tray notification card must request its matching page.");
         }
 
+        var openCenterButton = Descendants(preview)
+            .OfType<TrayTextButton>()
+            .FirstOrDefault(control => control.Name == "TrayOpenCenterButton");
+        if (openCenterButton == null)
+        {
+            throw new InvalidOperationException("The tray preview must expose a notification-center action.");
+        }
+
+        typeof(Control)
+            .GetMethod("OnClick", BindingFlags.Instance | BindingFlags.NonPublic)
+            ?.Invoke(openCenterButton, new object[] { EventArgs.Empty });
+        if (requestedAction != "open-center" || !string.IsNullOrWhiteSpace(requestedNotificationId))
+        {
+            throw new InvalidOperationException("The tray preview notification-center action must route without an item id.");
+        }
+
         preview.StartPosition = FormStartPosition.Manual;
         preview.Location = new Point(-10000, -10000);
         preview.Show();

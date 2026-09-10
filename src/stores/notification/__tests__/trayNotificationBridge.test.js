@@ -232,6 +232,19 @@ describe("tray notification actions", () => {
         expect(openNotification).toHaveBeenCalledWith(current);
     });
 
+    test("opens the notification center without requiring a notification id", async () => {
+        const openNotificationCenter = vi.fn();
+        const handle = createTrayNotificationActionHandler({
+            findNotification: () => null,
+            isExpired: () => false,
+            openNotificationCenter,
+            ignoreNotifications: vi.fn(),
+        });
+
+        await expect(handle("open-center", "")).resolves.toBe(true);
+        expect(openNotificationCenter).toHaveBeenCalledOnce();
+    });
+
     test("routes a server-provided response by its stable array index", async () => {
         const current = notification({
             id: "special_1",

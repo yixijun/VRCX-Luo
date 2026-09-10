@@ -454,6 +454,21 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 实际头显仍需在 SteamVR/VRChat 中验证手背四角和点击位置；桌面 `wrist-pointer-test=1` 不能替代硬件坐标验证。
 
+## 功能增强：托盘悬浮通知入口与实时同步
+
+2026-09-10，Windows CEF 托盘悬浮通知增加“通知中心”入口。点击后通过既有通知事件打开 App 内通知中心，不要求通知条目 ID；悬浮窗显示期间收到新通知、通知被处理或全部忽略时，Native CEF 预览会立即刷新或关闭，避免继续显示过期内容。原有卡片点击、邀请/好友申请操作、全部忽略和悬浮关闭时序保持不变。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 改动前定向基线 | `npx vitest run src/stores/notification/__tests__/trayNotificationBridge.test.js src/services/__tests__/trayNotificationProjection.test.js --reporter=dot`；`dotnet test Dotnet.Tests/VRCX.Cef.Tests.csproj --no-restore --verbosity:minimal` | **通过：JavaScript 17 项、C# 27 项** |
+| 入口行为 RED | 同上定向测试 | **预期失败：JavaScript 1 项、C# 1 项**；分别缺少 `open-center` handler 和 Native 入口按钮 |
+| GREEN/回归 | 同上定向测试 | **通过：JavaScript 18 项、C# 27 项** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| CEF/Electron 宿主构建 | `dotnet build Dotnet/VRCX-Cef.csproj --no-restore -c Debug -p:Platform=x64 --nologo --verbosity:minimal`；`dotnet build Dotnet/VRCX-Electron.csproj --no-restore -c Debug -p:Platform=x64 --nologo --verbosity:minimal` | **通过：0 警告、0 错误** |
+| 本地测试版 | 重启 `build/Cef/VRCX-Luo.exe --debug` | **已重启；仅本地验证，未发布、未推送** |
+
+当前切片代码已通过测试并准备建立独立 Git 回滚点；下一切片将处理“App 通知中心/红点来源与托盘快照不一致”的类型覆盖，不与本切片混改。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

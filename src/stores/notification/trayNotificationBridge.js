@@ -193,6 +193,7 @@ function createTrayNotificationActionHandler({
     findNotification,
     isExpired,
     openNotification,
+    openNotificationCenter,
     respondToNotification,
     acceptInvite,
     declineInvite,
@@ -207,6 +208,12 @@ function createTrayNotificationActionHandler({
             const ids = getPreviewIds().filter(Boolean);
             if (ids.length === 0) return false;
             await ignoreNotifications(ids);
+            return true;
+        }
+
+        if (action === "open-center") {
+            if (!openNotificationCenter) return false;
+            await openNotificationCenter();
             return true;
         }
 

@@ -396,7 +396,7 @@ namespace VRCX
 
         private void DispatchTrayNotificationAction(string action, string notificationId)
         {
-            if (action == "open" || action == "invite-accept" || action == "boop-reply")
+            if (action == "open" || action == "open-center" || action == "invite-accept" || action == "boop-reply")
             {
                 Focus_Window();
             }
@@ -541,6 +541,14 @@ namespace VRCX
                 if (_trayNotificationSnapshot.Items.Count == 0)
                 {
                     DismissTrayNotificationPreview();
+                    return;
+                }
+
+                if (_trayNotificationPreview != null &&
+                    !_trayNotificationPreview.IsDisposed &&
+                    _trayNotificationPreview.Visible)
+                {
+                    _trayNotificationPreview.UpdateSnapshot(_trayNotificationSnapshot);
                 }
             }
             catch (Exception ex)
