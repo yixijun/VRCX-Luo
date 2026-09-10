@@ -548,6 +548,22 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 代码回滚点：`da997ef0`；未发布、未推送。
 
+### 托盘桌面通知文案与设置状态一致
+
+2026-09-10，修正托盘右键菜单桌面通知项的状态描述。此前启用时显示“关闭桌面通知”，这句话表示下一步动作，容易与 App 设置页的“已开启”状态相反。现在 Electron 与 Windows CEF 两端统一显示当前状态：启用为“桌面通知：已开启”，关闭为“桌面通知：已关闭”；复选框勾选状态、点击后的持久化、宿主事件同步和通知渠道边界均保持不变。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 托盘文案改动前基线 | `npx vitest run src/services/__tests__/trayContextMenu.test.js --reporter=dot` | **通过：3 项** |
+| 状态文案回归 RED | 同上定向测试 | **预期失败：2 项**；旧实现仍返回“关闭桌面通知” |
+| 状态文案回归 GREEN | 同上定向测试 | **通过：4 项**；同时覆盖启用/关闭两种状态 |
+| 托盘/设置/Overlay 回归 | `npx vitest run src/services/__tests__/trayContextMenu.test.js src/stores/settings/__tests__/notifications.test.js src/stores/__tests__/overlayDispatch.test.js --reporter=dot` | **通过：3 个文件、27 项测试**；保留既有预期 Network 错误日志 |
+| JavaScript 质量检查 | `npx eslint src/services/__tests__/trayContextMenu.test.js`；`npm run typecheck:js`；`node --check src-electron/trayContextMenu.cjs` | **通过** |
+| CEF Release 构建 | `dotnet build Dotnet/VRCX-Cef.csproj -c Release --no-restore --self-contained --nologo --verbosity:minimal` | **通过：0 警告、0 错误** |
+| 本地测试版 | 重启 `build/Cef/VRCX-Luo.exe --debug`，检查 CDP 页面可访问 | **通过：本地测试版已启动；未发布、未推送** |
+
+代码回滚点：`e0de7f9b`；未发布、未推送。
+
 ## 功能增强：好友日志红点进入托盘
 
 2026-09-10，补齐好友日志对托盘悬浮通知的投影。好友建立、昵称变化、信任等级变化和未被“隐藏解除好友”设置过滤的解除好友事件继续写入好友日志数据库并触发 App 内 `friend-log` 红点，同时额外进入仅供托盘使用的临时未读队列；不会重复写入通知中心，也不会改变好友日志表结构。点击托盘条目进入好友日志页并清理临时队列，忽略单条或全部时同步移除 `friend-log` 红点；切换账户或进入好友日志页也会清理临时条目，避免跨账户或已查看后残留。
