@@ -25,6 +25,12 @@ namespace VRCX
     {
         public string Id { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;
+        public string Category { get; set; } = string.Empty;
+        public string CategoryLabel { get; set; } = string.Empty;
+        public string TypeLabel { get; set; } = string.Empty;
+        public string Icon { get; set; } = string.Empty;
+        public string Accent { get; set; } = string.Empty;
+        public int Priority { get; set; }
         public string Title { get; set; } = string.Empty;
         public string Body { get; set; } = string.Empty;
         public string CreatedAt { get; set; } = string.Empty;

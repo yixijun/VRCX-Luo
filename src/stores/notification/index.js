@@ -1731,6 +1731,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         respondToNotification: respondToTrayNotification,
         acceptInvite: acceptInviteAndLaunch,
         declineInvite: declineTrayInvite,
+        acceptRequestInvite,
         acceptFriendRequest: acceptTrayFriendRequest,
         declineFriendRequest: declineTrayFriendRequest,
         replyBoop: replyTrayBoop,

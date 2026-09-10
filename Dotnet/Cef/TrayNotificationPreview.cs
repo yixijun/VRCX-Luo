@@ -304,10 +304,12 @@ namespace VRCX
                 AutoEllipsis = true,
                 BackColor = Color.Transparent,
                 Font = new Font(Font.FontFamily, 8F, FontStyle.Regular),
-                ForeColor = _palette.MutedForeground,
+                ForeColor = ResolveTypeAccent(item.Accent),
                 Location = new Point(60, 31),
                 Size = new Size(200, 18),
-                Text = GetTypeLabel(item.Type)
+                Text = string.IsNullOrWhiteSpace(item.TypeLabel)
+                    ? GetTypeLabel(item.Type)
+                    : item.TypeLabel
             };
             panel.Controls.Add(typeLabel);
 
@@ -477,11 +479,59 @@ namespace VRCX
             return type switch
             {
                 "invite" => "邀请",
+                "requestInvite" => "邀请请求",
+                "inviteResponse" => "邀请回复",
+                "requestInviteResponse" => "邀请请求回复",
                 "boop" => "戳一戳",
                 "friendRequest" => "好友请求",
-                "requestInvite" => "邀请请求",
+                "ignoredFriendRequest" => "已忽略好友请求",
+                "message" => "消息",
+                "groupChange" => "群组变更",
+                "group.announcement" => "群组公告",
+                "group.informative" => "群组信息",
+                "group.invite" => "群组邀请",
+                "group.joinRequest" => "入群申请",
+                "group.transfer" => "群组转移",
                 "group.queueReady" => "群组队列",
+                "instance.closed" => "房间关闭",
+                "Friend" => "成为好友",
+                "Unfriend" => "解除好友",
+                "TrustLevel" => "信任等级",
+                "DisplayName" => "昵称变化",
+                "OnPlayerJoined" => "玩家上线",
+                "OnPlayerLeft" => "玩家离开",
+                "OnPlayerJoining" => "玩家加入中",
+                "GPS" => "位置变化",
+                "Online" => "上线",
+                "Offline" => "离线",
+                "Status" => "状态变化",
+                "PortalSpawn" => "传送门",
+                "AvatarChange" => "头像变化",
+                "ChatBoxMessage" => "ChatBox 消息",
+                "Event" => "事件",
+                "External" => "外部通知",
+                "VideoPlay" => "视频播放",
+                "BlockedOnPlayerJoined" => "屏蔽玩家上线",
+                "BlockedOnPlayerLeft" => "屏蔽玩家离开",
+                "MutedOnPlayerJoined" => "静音玩家上线",
+                "MutedOnPlayerLeft" => "静音玩家离开",
+                "Blocked" => "已屏蔽",
+                "Unblocked" => "已解除屏蔽",
+                "Muted" => "已静音",
+                "Unmuted" => "已解除静音",
                 _ => "通知"
+            };
+        }
+
+        private Color ResolveTypeAccent(string accent)
+        {
+            return accent switch
+            {
+                "primary" => _palette.Primary,
+                "success" => Color.FromArgb(52, 211, 153),
+                "group" => TrayDrawing.Blend(_palette.Primary, Color.FromArgb(168, 85, 247), 0.45F),
+                "warning" => Color.FromArgb(251, 191, 36),
+                _ => _palette.MutedForeground
             };
         }
 

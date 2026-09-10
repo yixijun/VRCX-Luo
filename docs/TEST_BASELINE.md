@@ -483,6 +483,22 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 本切片在提交前继续运行 CEF/Electron 构建；未发布、未推送。
 
+## 功能增强：托盘通知类型与请求操作覆盖
+
+2026-09-10，托盘通知快照新增统一的类型元数据（分类、类型标签、图标语义、强调色和优先级），覆盖通知中心当前支持的好友、群组、房间、状态、社交、管理及外部通知类型；未知的 `group.*`/`moderation.*` 类型也会保留可读分类，不再统一显示为无类型通知。Native CEF 根据元数据显示类型标签和颜色，Electron 托盘提示保留元数据并在文本前显示类型标签。对 `requestInvite` 增加“邀请”快捷操作，并复用现有 `acceptRequestInvite` 流程；已有服务端 response、邀请、好友申请、戳一戳操作保持兼容。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 行为 RED | `npx vitest run src/stores/notification/__tests__/trayNotificationBridge.test.js --reporter=dot` | **预期失败：15 项**；缺少类型元数据和邀请请求操作 |
+| JavaScript 托盘桥接 | 同上 | **通过：1 个文件、31 项测试** |
+| Electron 投影 | `npx vitest run src/services/__tests__/trayNotificationProjection.test.js --reporter=dot` | **通过：2 项**；新增字段经过归一化，动作图标保留 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| C# 托盘回归 | `dotnet test Dotnet.Tests/VRCX.Cef.Tests.csproj --no-restore --verbosity:minimal` | **通过：27/27** |
+| CEF/Electron 宿主构建 | 两个 `dotnet build ... -c Debug -p:Platform=x64 --nologo --verbosity:minimal` | **通过：0 警告、0 错误** |
+| 格式检查 | `git diff --check` | **通过**；仅提示既有换行转换 |
+
+本切片未改变通知快照已有字段的含义，仅做兼容性追加；未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

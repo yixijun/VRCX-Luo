@@ -4,6 +4,7 @@ import {
     buildTrayNotificationSnapshot,
     createTrayNotificationActionHandler,
     getTrayNotificationActions,
+    getTrayNotificationMeta,
 } from "../trayNotificationBridge";
 
 const now = Date.parse("2026-08-13T12:00:00Z");
@@ -98,6 +99,39 @@ describe("tray notification snapshot", () => {
         );
     });
 
+    test("includes type metadata so every app notification has a tray identity", () => {
+        const snapshot = buildTrayNotificationSnapshot({
+            notifications: [notification()],
+            unseenIds: ["not_1"],
+            now,
+            formatMessage: () => ({ title: "Alice", body: "Come join" }),
+        });
+
+        expect(snapshot.items[0]).toMatchObject({
+            category: "friend",
+            categoryLabel: "好友",
+            icon: "send",
+            accent: "primary",
+        });
+    });
+
+    test.each([
+        ["OnPlayerJoined", "玩家上线"],
+        ["OnPlayerLeft", "玩家离开"],
+        ["Online", "上线"],
+        ["Offline", "离线"],
+        ["Status", "状态变化"],
+        ["group.announcement", "群组公告"],
+        ["group.joinRequest", "入群申请"],
+        ["instance.closed", "房间关闭"],
+        ["AvatarChange", "头像变化"],
+        ["ChatBoxMessage", "ChatBox 消息"],
+        ["External", "外部通知"],
+        ["MutedOnPlayerLeft", "静音玩家离开"],
+    ])("provides a label for %s", (type, label) => {
+        expect(getTrayNotificationMeta(type).label).toBe(label);
+    });
+
     test("offers accept, decline and ignore for invitations", () => {
         expect(getTrayNotificationActions(notification())).toEqual([
             { id: "invite-accept", label: "接受" },
@@ -121,6 +155,15 @@ describe("tray notification snapshot", () => {
             getTrayNotificationActions(notification({ type: "boop" })),
         ).toEqual([
             { id: "boop-reply", label: "回戳" },
+            { id: "ignore", label: "忽略" },
+        ]);
+    });
+
+    test("offers an accept action for invite requests", () => {
+        expect(
+            getTrayNotificationActions(notification({ type: "requestInvite" })),
+        ).toEqual([
+            { id: "request-invite-accept", label: "邀请" },
             { id: "ignore", label: "忽略" },
         ]);
     });
@@ -191,6 +234,25 @@ describe("tray notification actions", () => {
         await expect(handle("boop-reply", current.id)).resolves.toBe(true);
 
         expect(replyBoop).toHaveBeenCalledWith(current);
+    });
+
+    test("routes invite-request acceptance to the existing store action", async () => {
+        const current = notification({
+            id: "request_1",
+            type: "requestInvite",
+        });
+        const acceptRequestInvite = vi.fn();
+        const handle = createTrayNotificationActionHandler({
+            findNotification: (id) => (id === current.id ? current : null),
+            isExpired: () => false,
+            acceptRequestInvite,
+            ignoreNotifications: vi.fn(),
+        });
+
+        await expect(
+            handle("request-invite-accept", current.id),
+        ).resolves.toBe(true);
+        expect(acceptRequestInvite).toHaveBeenCalledWith(current);
     });
 
     test("routes friend request actions only for friend requests", async () => {

@@ -539,7 +539,11 @@ function destroyTray() {
 
 function sendTrayNotificationAction(action, notificationId = '') {
     if (!mainWindow || mainWindow.isDestroyed()) return;
-    if (action === 'open' || action === 'invite-accept') {
+    if (
+        action === 'open' ||
+        action === 'open-center' ||
+        action === 'invite-accept'
+    ) {
         mainWindow.show();
         mainWindow.focus();
     }

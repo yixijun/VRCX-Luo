@@ -1,7 +1,93 @@
-import { getNotificationTs } from "../../shared/utils/notificationCategory";
+import {
+    getNotificationCategory,
+    getNotificationTs,
+} from "../../shared/utils/notificationCategory";
 
 const DEFAULT_LIMIT = 4;
 const MAX_TEXT_LENGTH = 180;
+
+const TRAY_CATEGORY_LABELS = Object.freeze({
+    friend: "好友",
+    group: "群组",
+    other: "其他",
+});
+
+const TRAY_NOTIFICATION_META = Object.freeze({
+    requestInvite: { label: "邀请请求", icon: "send", accent: "primary", priority: 80 },
+    invite: { label: "邀请", icon: "send", accent: "primary", priority: 90 },
+    inviteResponse: { label: "邀请回复", icon: "send", accent: "primary", priority: 55 },
+    requestInviteResponse: { label: "邀请请求回复", icon: "send", accent: "primary", priority: 55 },
+    friendRequest: { label: "好友申请", icon: "user-plus", accent: "primary", priority: 100 },
+    ignoredFriendRequest: { label: "已忽略好友申请", icon: "user-plus", accent: "muted", priority: 20 },
+    boop: { label: "戳一戳", icon: "message-circle", accent: "primary", priority: 70 },
+    message: { label: "消息", icon: "mail", accent: "primary", priority: 65 },
+    groupChange: { label: "群组变更", icon: "users", accent: "group", priority: 60 },
+    "group.announcement": { label: "群组公告", icon: "megaphone", accent: "group", priority: 65 },
+    "group.informative": { label: "群组信息", icon: "info", accent: "group", priority: 50 },
+    "group.invite": { label: "群组邀请", icon: "users", accent: "group", priority: 85 },
+    "group.joinRequest": { label: "入群申请", icon: "user-plus", accent: "group", priority: 95 },
+    "group.transfer": { label: "群组转移", icon: "users", accent: "group", priority: 75 },
+    "group.queueReady": { label: "群组队列", icon: "clock", accent: "group", priority: 60 },
+    "instance.closed": { label: "房间关闭", icon: "door-open", accent: "warning", priority: 55 },
+    Friend: { label: "成为好友", icon: "user-plus", accent: "primary", priority: 80 },
+    Unfriend: { label: "解除好友", icon: "user-minus", accent: "muted", priority: 30 },
+    TrustLevel: { label: "信任等级", icon: "shield", accent: "primary", priority: 40 },
+    DisplayName: { label: "昵称变化", icon: "pencil", accent: "primary", priority: 40 },
+    OnPlayerJoined: { label: "玩家上线", icon: "log-in", accent: "success", priority: 35 },
+    OnPlayerLeft: { label: "玩家离开", icon: "log-out", accent: "muted", priority: 25 },
+    OnPlayerJoining: { label: "玩家加入中", icon: "log-in", accent: "primary", priority: 30 },
+    GPS: { label: "位置变化", icon: "map-pin", accent: "primary", priority: 30 },
+    Online: { label: "上线", icon: "circle", accent: "success", priority: 35 },
+    Offline: { label: "离线", icon: "circle", accent: "muted", priority: 25 },
+    Status: { label: "状态变化", icon: "activity", accent: "primary", priority: 30 },
+    PortalSpawn: { label: "传送门", icon: "door-open", accent: "primary", priority: 45 },
+    AvatarChange: { label: "头像变化", icon: "image", accent: "primary", priority: 35 },
+    ChatBoxMessage: { label: "ChatBox 消息", icon: "message-circle", accent: "primary", priority: 65 },
+    Event: { label: "事件", icon: "calendar", accent: "primary", priority: 45 },
+    External: { label: "外部通知", icon: "external-link", accent: "primary", priority: 45 },
+    VideoPlay: { label: "视频播放", icon: "play", accent: "primary", priority: 35 },
+    BlockedOnPlayerJoined: { label: "屏蔽玩家上线", icon: "shield-off", accent: "muted", priority: 20 },
+    BlockedOnPlayerLeft: { label: "屏蔽玩家离开", icon: "shield-off", accent: "muted", priority: 20 },
+    MutedOnPlayerJoined: { label: "静音玩家上线", icon: "volume-x", accent: "muted", priority: 20 },
+    MutedOnPlayerLeft: { label: "静音玩家离开", icon: "volume-x", accent: "muted", priority: 20 },
+    Blocked: { label: "已屏蔽", icon: "shield-off", accent: "muted", priority: 20 },
+    Unblocked: { label: "已解除屏蔽", icon: "shield", accent: "primary", priority: 25 },
+    Muted: { label: "已静音", icon: "volume-x", accent: "muted", priority: 20 },
+    Unmuted: { label: "已解除静音", icon: "volume-2", accent: "primary", priority: 25 },
+});
+
+const TRAY_NOTIFICATION_FALLBACK = Object.freeze({
+    label: "通知",
+    icon: "bell",
+    accent: "muted",
+    priority: 10,
+});
+
+/**
+ * Returns stable presentation metadata for every notification type known by
+ * the App notification center. Unknown group/moderation types still receive
+ * a useful category instead of disappearing into an unlabelled card.
+ *
+ * @param {string} type
+ * @returns {{type: string, category: string, categoryLabel: string, label: string, icon: string, accent: string, priority: number}}
+ */
+function getTrayNotificationMeta(type) {
+    const normalizedType = String(type || "");
+    const category = getNotificationCategory(normalizedType);
+    const exact = TRAY_NOTIFICATION_META[normalizedType];
+    const fallback = exact ||
+        (normalizedType.startsWith("group.")
+            ? { label: "群组通知", icon: "users", accent: "group", priority: 45 }
+            : normalizedType.startsWith("moderation.")
+                ? { label: "管理通知", icon: "shield", accent: "warning", priority: 45 }
+                : TRAY_NOTIFICATION_FALLBACK);
+    return {
+        type: normalizedType,
+        category,
+        categoryLabel: TRAY_CATEGORY_LABELS[category] || TRAY_CATEGORY_LABELS.other,
+        ...fallback,
+    };
+}
 
 const TRAY_THEME_FALLBACK = Object.freeze({
     background: "#242426",
@@ -82,6 +168,25 @@ function getTrayNotificationTheme() {
     return theme;
 }
 
+function getServerResponseActions(notification) {
+    return Array.isArray(notification?.responses)
+        ? notification.responses
+              .map((response, index) => ({ response, index }))
+              .filter(
+                  ({ response }) =>
+                      response &&
+                      typeof response.type === "string" &&
+                      response.type.length > 0,
+              )
+              .slice(0, 2)
+              .map(({ response, index }) => ({
+                  id: `response:${index}`,
+                  label: truncate(response.text || response.type || "操作"),
+                  icon: response.icon || response.type,
+              }))
+        : [];
+}
+
 function getTrayNotificationActions(notification) {
     if (notification?.type === "invite") {
         return [
@@ -103,22 +208,16 @@ function getTrayNotificationActions(notification) {
             { id: "ignore", label: "忽略" },
         ];
     }
-    const responseActions = Array.isArray(notification?.responses)
-        ? notification.responses
-              .map((response, index) => ({ response, index }))
-              .filter(
-                  ({ response }) =>
-                      response &&
-                      typeof response.type === "string" &&
-                      response.type.length > 0,
-              )
-              .slice(0, 2)
-              .map(({ response, index }) => ({
-                  id: `response:${index}`,
-                  label: truncate(response.text || response.type || "操作"),
-                  icon: response.icon || response.type,
-              }))
-        : [];
+    if (notification?.type === "requestInvite") {
+        const responseActions = getServerResponseActions(notification);
+        return responseActions.length > 0
+            ? [...responseActions, { id: "ignore", label: "忽略" }]
+            : [
+                  { id: "request-invite-accept", label: "邀请" },
+                  { id: "ignore", label: "忽略" },
+              ];
+    }
+    const responseActions = getServerResponseActions(notification);
     if (responseActions.length > 0) {
         return [...responseActions, { id: "ignore", label: "忽略" }];
     }
@@ -169,9 +268,16 @@ function buildTrayNotificationSnapshot({
 
     const items = pending.slice(0, Math.max(0, limit)).map((notification) => {
         const message = formatMessage?.(notification) || {};
+        const meta = getTrayNotificationMeta(notification.type);
         return {
             id: notification.id,
             type: notification.type || "",
+            category: meta.category,
+            categoryLabel: meta.categoryLabel,
+            typeLabel: meta.label,
+            icon: meta.icon,
+            accent: meta.accent,
+            priority: meta.priority,
             title: truncate(
                 message.title || notification.senderUsername || "VRCX-Luo",
             ),
@@ -197,6 +303,7 @@ function createTrayNotificationActionHandler({
     respondToNotification,
     acceptInvite,
     declineInvite,
+    acceptRequestInvite,
     acceptFriendRequest,
     declineFriendRequest,
     replyBoop,
@@ -224,6 +331,18 @@ function createTrayNotificationActionHandler({
         if (action === "open") {
             if (!openNotification) return false;
             await openNotification(notification);
+            return true;
+        }
+
+        if (action === "request-invite-accept") {
+            if (
+                notification.type !== "requestInvite" ||
+                !acceptRequestInvite ||
+                isExpired(notification)
+            ) {
+                return false;
+            }
+            await acceptRequestInvite(notification);
             return true;
         }
 
@@ -276,4 +395,5 @@ export {
     createTrayNotificationActionHandler,
     getTrayNotificationTheme,
     getTrayNotificationActions,
+    getTrayNotificationMeta,
 };
