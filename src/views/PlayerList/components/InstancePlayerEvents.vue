@@ -96,7 +96,10 @@
             </Button>
         </div>
 
-        <div class="instance-player-events__list min-h-0 flex-1 overflow-y-auto" role="list">
+        <div
+            ref="scrollViewportRef"
+            class="instance-player-events__list min-h-0 flex-1 overflow-y-auto"
+            role="list">
             <div v-if="loading" class="px-3 py-2 text-xs text-muted-foreground">
                 {{ t('view.player_list.presence.loading') }}
             </div>
@@ -107,54 +110,64 @@
                 {{ t('view.player_list.presence.empty') }}
             </div>
 
-            <button
-                v-for="event in filteredEvents"
-                :key="eventKey(event)"
-                type="button"
-                class="instance-player-events__row group flex w-full items-center gap-2 border-b border-border/60 px-2 py-1 text-left text-xs transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
-                role="listitem"
-                @click="lookupUser(event)">
-                <time
-                    class="w-23 shrink-0 tabular-nums text-[0.6875rem] text-muted-foreground"
-                    :datetime="event.created_at"
-                    :title="formatDateFilter(event.created_at, 'long')">
-                    {{ formatDateFilter(event.created_at, 'short') }}
-                </time>
+            <div
+                v-else
+                class="relative w-full"
+                :style="virtualContainerStyle"
+                data-testid="presence-virtual-list">
+                <button
+                    v-for="item in virtualItems"
+                    :key="item.virtualItem.key"
+                    :ref="virtualizer.measureElement"
+                    type="button"
+                    class="instance-player-events__row group absolute left-0 top-0 flex w-full items-center gap-2 border-b border-border/60 px-2 py-1 text-left text-xs transition-colors hover:bg-muted/50 focus-visible:bg-muted/50 focus-visible:outline-none"
+                    :data-index="item.virtualItem.index"
+                    :style="{ transform: `translateY(${item.virtualItem.start}px)` }"
+                    role="listitem"
+                    @click="lookupUser(item.event)">
+                    <time
+                        class="w-23 shrink-0 tabular-nums text-[0.6875rem] text-muted-foreground"
+                        :datetime="item.event.created_at"
+                        :title="formatDateFilter(item.event.created_at, 'long')">
+                        {{ formatDateFilter(item.event.created_at, 'short') }}
+                    </time>
 
-                <Badge
-                    variant="outline"
-                    class="h-5 w-13 shrink-0 justify-center gap-1 px-1 text-[0.6875rem]"
-                    :class="event.type === 'OnPlayerJoined' ? 'text-emerald-400' : 'text-muted-foreground'">
-                    <LogIn v-if="event.type === 'OnPlayerJoined'" class="size-3" />
-                    <LogOut v-else class="size-3" />
-                    {{ eventLabel(event) }}
-                </Badge>
+                    <Badge
+                        variant="outline"
+                        class="h-5 w-13 shrink-0 justify-center gap-1 px-1 text-[0.6875rem]"
+                        :class="item.event.type === 'OnPlayerJoined' ? 'text-emerald-400' : 'text-muted-foreground'">
+                        <LogIn v-if="item.event.type === 'OnPlayerJoined'" class="size-3" />
+                        <LogOut v-else class="size-3" />
+                        {{ eventLabel(item.event) }}
+                    </Badge>
 
-                <span class="flex min-w-0 flex-1 items-center gap-1.5 truncate">
-                    <UserIdentityInline
-                        :user-id="event.userId"
-                        :display-name="event.displayName || t('view.player_list.presence.unknown_player')"
-                        avatar-class="size-5"
-                        :hydrate-missing="false"
-                        name-class="truncate" />
-                    <span
-                        v-if="isFriend(event)"
-                        class="shrink-0 text-[0.6875rem] text-emerald-400"
-                        :title="t('view.player_list.presence.friends')"
-                        aria-hidden="true">
-                        ●
+                    <span class="flex min-w-0 flex-1 items-center gap-1.5 truncate">
+                        <UserIdentityInline
+                            :user-id="item.event.userId"
+                            :display-name="item.event.displayName || t('view.player_list.presence.unknown_player')"
+                            avatar-class="size-5"
+                            :hydrate-missing="false"
+                            name-class="truncate" />
+                        <span
+                            v-if="item.event.isFriend"
+                            class="shrink-0 text-[0.6875rem] text-emerald-400"
+                            :title="t('view.player_list.presence.friends')"
+                            aria-hidden="true">
+                            ●
+                        </span>
                     </span>
-                </span>
-            </button>
+                </button>
+            </div>
         </div>
     </section>
 </template>
 
 <script setup>
     import { useLocalStorage } from '@vueuse/core';
-    import { computed, ref, watch } from 'vue';
+    import { computed, nextTick, ref, watch } from 'vue';
     import { ArrowRightLeft, LogIn, LogOut, RefreshCw, UsersRound } from 'lucide-vue-next';
     import { useI18n } from 'vue-i18n';
+    import { useVirtualizer } from '@tanstack/vue-virtual';
 
     import { database } from '../../../services/database';
     import { lookupUser } from '../../../coordinators/userCoordinator';
@@ -212,6 +225,7 @@
     const events = ref([]);
     const loading = ref(false);
     const loadError = ref(false);
+    const scrollViewportRef = ref(null);
     let requestId = 0;
 
     const eventRows = computed(() =>
@@ -242,6 +256,28 @@
         }
         return rows;
     });
+
+    const virtualizer = useVirtualizer(
+        computed(() => ({
+            count: filteredEvents.value.length,
+            getScrollElement: () => scrollViewportRef.value,
+            estimateSize: () => 32,
+            getItemKey: (index) => `${eventKey(filteredEvents.value[index])}:${index}`,
+            overscan: 8
+        }))
+    );
+
+    const virtualItems = computed(() => {
+        const items = virtualizer.value?.getVirtualItems?.() ?? [];
+        return items.map((virtualItem) => ({
+            virtualItem,
+            event: filteredEvents.value[virtualItem.index]
+        }));
+    });
+
+    const virtualContainerStyle = computed(() => ({
+        height: `${virtualizer.value?.getTotalSize?.() ?? 0}px`
+    }));
 
     function isFriend(event) {
         return Boolean(event?.userId && friendStore.friends?.has?.(event.userId));
@@ -305,6 +341,12 @@
     }
 
     watch(() => props.location, loadEvents, { immediate: true });
+
+    watch(filteredEvents, () => {
+        nextTick(() => {
+            virtualizer.value?.measure?.();
+        });
+    });
 
     defineExpose({ loadEvents });
 </script>

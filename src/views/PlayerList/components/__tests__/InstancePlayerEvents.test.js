@@ -1,6 +1,25 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { flushPromises, mount } from '@vue/test-utils';
 
+vi.mock('@tanstack/vue-virtual', () => ({
+    useVirtualizer: (optionsRef) => ({
+        value: {
+            getVirtualItems: () => {
+                const options = optionsRef.value;
+                const visibleCount = Math.min(options.count, 40);
+                return Array.from({ length: visibleCount }, (_, index) => ({
+                    index,
+                    key: options.getItemKey?.(index) ?? index,
+                    start: index * 32
+                }));
+            },
+            getTotalSize: () => optionsRef.value.count * 32,
+            measure: vi.fn(),
+            measureElement: vi.fn()
+        }
+    })
+}));
+
 const mocks = vi.hoisted(() => ({
     getGameLogByLocation: vi.fn(),
     lookupUser: vi.fn(),
@@ -268,5 +287,29 @@ describe('InstancePlayerEvents.vue', () => {
 
         expect(mocks.getGameLogByLocation).not.toHaveBeenCalled();
         expect(wrapper.text()).toContain('view.player_list.presence.empty');
+    });
+
+    test('keeps large event lists bounded when switching filters', async () => {
+        mocks.getGameLogByLocation.mockResolvedValue(
+            Array.from({ length: 3093 }, (_, index) => ({
+                rowId: index,
+                created_at: `2026-09-05T10:${String(index % 60).padStart(2, '0')}:00.000Z`,
+                type: index % 2 ? 'OnPlayerJoined' : 'OnPlayerLeft',
+                displayName: `Player ${index}`,
+                userId: `usr_${index}`
+            }))
+        );
+
+        const wrapper = mount(InstancePlayerEvents, {
+            props: { location: 'wrld_123:instance_1' }
+        });
+        await flushPromises();
+
+        expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(40);
+
+        await wrapper.get('[data-testid="filter-strangers"]').trigger('click');
+        await flushPromises();
+
+        expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(40);
     });
 });
