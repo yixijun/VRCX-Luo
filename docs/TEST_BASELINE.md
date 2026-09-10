@@ -580,6 +580,22 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 代码提交：`dd55f4dd`（好友日志托盘投影）、`30d49ad6`（遵守隐藏解除好友设置）、`4d5eb7db` 与 `4ecaa341`（文档修正）。以上提交均未发布、未推送。
 
+## 功能增强：左上角 Quick Search 模糊与拼音搜索
+
+2026-09-10，左上角侧栏 Quick Search 增加非连续模糊匹配和中文拼音匹配。输入字符按顺序即可命中，中间允许跳过字符（例如 `smr` 可命中 `Summer World`）；中文名称支持拼音首字母及全拼（例如 `xcs` 可命中 `曦晨六时`）。原有连续子串、大小写不敏感、特殊字符归一化、搜索分类、结果上限和 Worker 异步协议保持不变。匹配在 Web Worker 内执行，避免阻塞主界面；新增 `pinyin-pro` 依赖用于拼音字典与匹配。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| Quick Search 相关基线 | `npx vitest run src/stores/__tests__/quickSearchWorker.test.js src/shared/utils/__tests__/quickSearchUtils.test.js --reporter=dot` | **通过：2 个文件、32 项既有测试** |
+| 模糊/拼音行为 RED | `npx vitest run src/stores/__tests__/quickSearchWorker.test.js --reporter=dot` | **预期失败：1 项**；旧实现只支持连续子串 |
+| 模糊/拼音行为 GREEN | 同上定向测试 | **通过：3 项**；覆盖非连续英文名与中文拼音首字母 |
+| Quick Search 回归 | 同上基线命令 | **通过：2 个文件、33 项测试** |
+| JavaScript 质量检查 | `npx eslint src/stores/quickSearchWorker.js src/stores/__tests__/quickSearchWorker.test.js`；`npm run typecheck:js` | **通过** |
+| 生产构建 | `npm run prod` | **通过：4427 个模块**；保留既有 Vite 动态导入提示与 Node deprecation 提示 |
+| 本地测试版 | 重启 `build/Cef/VRCX-Luo.exe --debug`，确认 CEF/CDP 页面可访问 | **已启动本地测试版；未发布、未推送** |
+
+代码回滚点：`b65ef849`；未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
