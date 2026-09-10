@@ -40,6 +40,23 @@ namespace VRCX
         {
             Instance = this;
             InitializeComponent();
+
+            // Set the form icon before any explicit handle access.  Creating the
+            // handle first can leave the taskbar using the default WinForms icon
+            // until the shell refreshes the window entry.
+            try
+            {
+                var path = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
+                _appIcon = new Icon(Path.Combine(path, "VRCX.ico"));
+                _appIconNoty = new Icon(Path.Combine(path, "VRCX_notify.ico"));
+                Icon = _appIcon;
+                TrayIcon.Icon = _appIcon;
+            }
+            catch (Exception ex)
+            {
+                logger.Error(ex);
+            }
+
             nativeWindow = NativeWindow.FromHandle(this.Handle);
             ConfigureTrayMenuAppearance();
             UpdateTraySettingsMenu();
@@ -73,19 +90,6 @@ namespace VRCX
             _saveTimer = new Timer();
             _saveTimer.Interval = 5000;
             _saveTimer.Tick += SaveTimer_Tick;
-            try
-            {
-                var path = Path.GetDirectoryName(Environment.ProcessPath) ?? string.Empty;
-                _appIcon = new Icon(Path.Combine(path, "VRCX.ico"));
-                _appIconNoty = new Icon(Path.Combine(path, "VRCX_notify.ico"));
-                Icon = _appIcon;
-                TrayIcon.Icon = _appIcon;
-            }
-            catch (Exception ex)
-            {
-                logger.Error(ex);
-            }
-
             Browser = new ChromiumWebBrowser(Program.LaunchDebug ? "http://localhost:9000/index.html" : "file://vrcx/index.html")
             {
                 DragHandler = new CustomDragHandler(),
