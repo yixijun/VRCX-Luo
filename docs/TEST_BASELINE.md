@@ -534,6 +534,20 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 代码回滚点：`03be3cfc`（任务栏图标初始化）、`16c8f53b`（测试通知独立于运行模式）；均未发布、未推送。当前仍保留用户已有的 `src/services/websocket.js` 修改及 `_codex_hika_*` 临时目录。
 
+### 右键关闭桌面通知后的状态同步修正
+
+2026-09-10，补齐 CEF 右键菜单“关闭桌面通知”在设置 store 初始化竞态下的同步。此前设置 store 要等异步配置 `Promise.all` 完成后才注册 `vrcx-desktop-notifications-updated` 监听器，菜单事件可能被丢弃；即使事件先到，后续配置赋值也可能把状态覆盖回旧值。现在桌面通知监听器在初始化开始时注册，并保留初始化期间最后一次宿主切换，配置加载完成后优先应用该切换。菜单存储键、事件名、事件 payload 和通知渠道边界不变。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 状态竞态 RED | `npx vitest run src/stores/settings/__tests__/notifications.test.js -t "keeps a desktop notification toggle received during initialization" --reporter=dot` | **预期失败**：事件在异步配置完成前丢失/被旧值覆盖 |
+| 状态竞态 GREEN | 同上 | **通过：1 项** |
+| 设置/托盘/通知回归 | `npx vitest run src/services/__tests__/trayContextMenu.test.js src/stores/settings/__tests__/notifications.test.js src/stores/__tests__/overlayDispatch.test.js --reporter=dot` | **通过：3 个文件、26 项测试**；保留既有 Network 错误日志 |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+| 实际本地 CEF | 重启 Debug 测试版，按同一事件顺序切换关闭并恢复 | **通过**：store、存储值分别为 `false/"false"` 与 `true/"true"` |
+
+代码回滚点：`da997ef0`；未发布、未推送。
+
 ## 功能增强：好友日志红点进入托盘
 
 2026-09-10，补齐好友日志对托盘悬浮通知的投影。好友建立、昵称变化、信任等级变化和未被“隐藏解除好友”设置过滤的解除好友事件继续写入好友日志数据库并触发 App 内 `friend-log` 红点，同时额外进入仅供托盘使用的临时未读队列；不会重复写入通知中心，也不会改变好友日志表结构。点击托盘条目进入好友日志页并清理临时队列，忽略单条或全部时同步移除 `friend-log` 红点；切换账户或进入好友日志页也会清理临时条目，避免跨账户或已查看后残留。
