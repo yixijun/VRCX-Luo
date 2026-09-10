@@ -510,6 +510,7 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 | JavaScript 托盘回归 | `npx vitest run src/stores/notification/__tests__/trayNotificationBridge.test.js src/services/__tests__/trayNotificationProjection.test.js --reporter=dot` | **通过：2 个文件、34 项测试** |
 | JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
 | CEF/Electron 宿主构建 | 两个 `dotnet build ... -c Debug -p:Platform=x64 --nologo --verbosity:minimal` | **通过：0 警告、0 错误** |
+| 生产构建 | `npm run prod` | **通过：4426 个模块**；保留既有 router 动态 import 与 Node deprecation 警告 |
 | 格式检查 | `git diff --check` | **通过**；仅提示既有换行转换 |
 
 本切片未发布、未推送。
