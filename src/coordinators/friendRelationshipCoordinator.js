@@ -410,15 +410,15 @@ export function runDeleteFriendshipFlow(
                 friendLogTable.value.data.push(friendLogHistory);
                 database.addFriendLogHistory(friendLogHistory);
                 notificationStore.queueFriendLogNoty(friendLogHistory);
-                notificationStore.appendTrayNotificationEntry({
-                    ...friendLogHistory,
-                    traySource: 'friend-log'
-                });
                 sharedFeedStore.addEntry(friendLogHistory);
                 friendLog.delete(id);
                 database.deleteFriendLogCurrent(id);
                 handleFavoriteDelete(id);
                 if (!appearanceSettingsStore.hideUnfriends) {
+                    notificationStore.appendTrayNotificationEntry({
+                        ...friendLogHistory,
+                        traySource: 'friend-log'
+                    });
                     uiStore.notifyMenu('friend-log');
                 }
                 friendStore.deleteFriend(id);
