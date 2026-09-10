@@ -515,6 +515,25 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 本切片未发布、未推送。
 
+## Windows CEF 任务栏图标与测试通知验证
+
+2026-09-10，确认“图标没了”指的是主窗口在 Windows 任务栏中的图标，不是右下角系统托盘图标。CEF `MainForm` 现在在首次访问窗体句柄前加载并设置 `VRCX.ico`，再创建 `NativeWindow`；这样任务栏不会先缓存 WinForms 默认图标。系统托盘仍由同一图标字段独立管理，未改变托盘菜单、通知红点或托盘悬浮窗行为。
+
+同日修正通知设置页的“发送测试通知”：测试事件显式走强制展示路径，不再要求当前正在运行 VRChat/SteamVR 才有反馈；仍尊重各通知渠道开关。右键菜单关闭“桌面通知”只关闭 Windows 系统桌面通知，通知中心、VR Overlay 和 XSOverlay/OVRToolkit 渠道继续按各自开关工作，这是有意保持的渠道隔离。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| CEF 任务栏图标 | 重启 `build/Cef/VRCX-Luo.exe --debug` 后读取主窗口 `WM_GETICON` | **通过**：主窗口可见且响应；大/小图标句柄均有效，图标文件存在 |
+| 图标视觉探针 | 将 `WM_GETICON` 大图标转换为临时 PNG | **通过**：显示 VRCX 图标；未修改仓库文件 |
+| 测试通知单元测试 | `npx vitest run src/stores/notification/__tests__/notificationPlayback.test.js src/stores/__tests__/overlayDispatch.test.js --reporter=dot` | **通过：2 个文件、23 项测试** |
+| 通知/托盘定向回归 | `npx vitest run src/services/__tests__/trayContextMenu.test.js src/services/__tests__/trayIconFactory.test.js src/services/__tests__/trayLifecycle.test.js src/services/__tests__/desktopNotificationController.test.js src/stores/__tests__/overlayDispatch.test.js src/stores/notification/__tests__/trayNotificationBridge.test.js src/stores/settings/__tests__/notifications.test.js src/stores/notification/__tests__/notificationPlayback.test.js --reporter=dot` | **通过：8 个文件、71 项测试**；保留既有预期 Network 错误日志 |
+| 实际本地 UI 点击 | CEF CDP 点击设置页“发送测试通知” | **通过**：触发 XSOverlay、OVRToolkit、桌面通知和 VR Overlay 调用 |
+| 桌面通知开关 | 临时关闭 `VRCX_desktopNotificationsEnabled` 后再次触发测试通知，再恢复原值 | **通过**：`DesktopNotification` 不再调用；其他已启用 Overlay 渠道保持独立 |
+| JavaScript 质量检查 | `npx eslint src/stores/notification/index.js src/stores/notification/notificationPlayback.js src/stores/notification/__tests__/notificationPlayback.test.js` | **通过** |
+| CEF Release 构建 | `dotnet build Dotnet/VRCX-Cef.csproj -c Release --no-restore` | **通过：0 警告、0 错误** |
+
+代码回滚点：`03be3cfc`（任务栏图标初始化）、`16c8f53b`（测试通知独立于运行模式）；均未发布、未推送。当前仍保留用户已有的 `src/services/websocket.js` 修改及 `_codex_hika_*` 临时目录。
+
 ## 功能增强：好友日志红点进入托盘
 
 2026-09-10，补齐好友日志对托盘悬浮通知的投影。好友建立、昵称变化、信任等级变化和未被“隐藏解除好友”设置过滤的解除好友事件继续写入好友日志数据库并触发 App 内 `friend-log` 红点，同时额外进入仅供托盘使用的临时未读队列；不会重复写入通知中心，也不会改变好友日志表结构。点击托盘条目进入好友日志页并清理临时队列，忽略单条或全部时同步移除 `friend-log` 红点；切换账户或进入好友日志页也会清理临时条目，避免跨账户或已查看后残留。
