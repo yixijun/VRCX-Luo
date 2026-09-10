@@ -47,7 +47,8 @@
     },
     "dependencies": {
         "hazardous": "^0.3.0",
-        "node-api-dotnet": "^0.9.19"
+        "node-api-dotnet": "^0.9.19",
+        "pinyin-pro": "^3.29.3"
     },
     "devDependencies": {
         "@dnd-kit/vue": "^0.4.0",

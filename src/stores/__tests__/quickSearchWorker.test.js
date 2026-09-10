@@ -113,4 +113,50 @@ describe('quickSearchWorker message protocol', () => {
         expect(result.payload.ownGroups).toHaveLength(1);
         expect(result.payload.joinedGroups).toHaveLength(0);
     });
+
+    test('matches fuzzy names and Chinese pinyin initials', async () => {
+        const harness = setupWorkerHarness();
+        await import('../quickSearchWorker.js');
+
+        harness.dispatch({
+            type: 'updateIndex',
+            payload: {
+                friends: [
+                    { id: 'u_fuzzy', name: 'Summer World', imageUrl: '' },
+                    { id: 'u_pinyin', name: '曦晨六时', imageUrl: '' }
+                ],
+                avatars: [],
+                worlds: [],
+                groups: [],
+                favAvatars: [],
+                favWorlds: []
+            }
+        });
+
+        harness.dispatch({
+            type: 'search',
+            payload: {
+                seq: 9,
+                query: 'smr',
+                currentUserId: null,
+                language: 'en-US'
+            }
+        });
+        expect(harness.sent.at(-1).payload.friends.map((item) => item.id)).toContain(
+            'u_fuzzy'
+        );
+
+        harness.dispatch({
+            type: 'search',
+            payload: {
+                seq: 10,
+                query: 'xcs',
+                currentUserId: null,
+                language: 'zh-CN'
+            }
+        });
+        expect(harness.sent.at(-1).payload.friends.map((item) => item.id)).toContain(
+            'u_pinyin'
+        );
+    });
 });

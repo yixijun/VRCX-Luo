@@ -1,3 +1,5 @@
+import { match as pinyinMatch } from 'pinyin-pro';
+
 /**
  * Web Worker for search operations.
  *
@@ -106,7 +108,19 @@ function matchName(name, cleanQuery, comparer, normalizedName) {
     if (!name || !cleanQuery) return false;
     const cleanName = normalizedName || removeConfusables(name);
     if (localeIncludes(cleanName, cleanQuery, comparer)) return true;
-    return localeIncludes(name, cleanQuery, comparer);
+    if (localeIncludes(name, cleanQuery, comparer)) return true;
+
+    // pinyin-pro supports non-contiguous fuzzy matching and Chinese
+    // pinyin initial matching (for example, `xcs` -> `曦晨六时`).
+    return (
+        typeof name === 'string' &&
+        pinyinMatch(name, cleanQuery, {
+            continuous: false,
+            precision: 'first',
+            lastPrecision: 'start',
+            v: true
+        }) !== null
+    );
 }
 
 function isPrefixMatch(name, cleanQuery, comparer) {
