@@ -2,14 +2,14 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { createTrayContextMenu } from '../../../src-electron/trayContextMenu.cjs';
 
-function createHarness({ debug = false } = {}) {
+function createHarness({ debug = false, desktopNotificationsEnabled = true } = {}) {
     const mainWindow = {
         show: vi.fn(),
         webContents: { openDevTools: vi.fn() }
     };
     const app = { quit: vi.fn() };
     const state = {
-        desktopNotificationsEnabled: true,
+        desktopNotificationsEnabled,
         traySilentMode: false,
         vSleepMode: false,
         appIsQuitting: false
@@ -76,7 +76,7 @@ describe('tray context menu', () => {
         expect(template.map((item) => item.label || item.type)).toEqual([
             '打开 VRCX-Luo',
             'separator',
-            '关闭桌面通知',
+            '桌面通知：已开启',
             '静音模式',
             'V睡模式',
             'separator',
@@ -92,7 +92,7 @@ describe('tray context menu', () => {
         expect(debugTemplate.map((item) => item.label || item.type)).toEqual([
             '打开 VRCX-Luo',
             'separator',
-            '关闭桌面通知',
+            '桌面通知：已开启',
             '静音模式',
             'V睡模式',
             '开发者工具',
@@ -101,6 +101,14 @@ describe('tray context menu', () => {
         ]);
         debugTemplate[5].click();
         expect(debug.mainWindow.webContents.openDevTools).toHaveBeenCalledOnce();
+    });
+
+    it('describes the current desktop notification state', () => {
+        const enabled = createHarness();
+        expect(enabled.build()[2].label).toBe('桌面通知：已开启');
+
+        const disabled = createHarness({ desktopNotificationsEnabled: false });
+        expect(disabled.build()[2].label).toBe('桌面通知：已关闭');
     });
 
     it('preserves toggle persistence, notifications and menu refresh', () => {

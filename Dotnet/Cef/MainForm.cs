@@ -438,7 +438,7 @@ namespace VRCX
         {
             var desktopNotificationsEnabled = AreDesktopNotificationsEnabled();
             TrayMenu_DesktopNotifications.Checked = desktopNotificationsEnabled;
-            TrayMenu_DesktopNotifications.Text = desktopNotificationsEnabled ? "关闭桌面通知" : "启用桌面通知";
+            TrayMenu_DesktopNotifications.Text = desktopNotificationsEnabled ? "桌面通知：已开启" : "桌面通知：已关闭";
 
 
             TrayMenu_SilentMode.Checked = IsTraySilentModeEnabled();

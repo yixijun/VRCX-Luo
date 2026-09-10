@@ -18,8 +18,8 @@ function createTrayContextMenu({
         { type: 'separator' },
         {
             label: areDesktopNotificationsEnabled()
-                ? '关闭桌面通知'
-                : '启用桌面通知',
+                ? '桌面通知：已开启'
+                : '桌面通知：已关闭',
             type: 'checkbox',
             checked: areDesktopNotificationsEnabled(),
             click: () => {
