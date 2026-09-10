@@ -99,4 +99,37 @@ describe('useNotificationsSettingsStore file selection', () => {
         expect(mocks.config.setString).not.toHaveBeenCalled();
         expect(mocks.config.setBool).not.toHaveBeenCalled();
     });
+
+    it('keeps a desktop notification toggle received during initialization', async () => {
+        let releaseDesktopConfig;
+        const desktopConfig = new Promise((resolve) => {
+            releaseDesktopConfig = resolve;
+        });
+        vi.stubGlobal('VRCXStorage', {
+            Get: vi.fn((key) =>
+                key === 'VRCX_desktopNotificationsEnabled'
+                    ? desktopConfig
+                    : Promise.resolve('')
+            ),
+            Set: vi.fn()
+        });
+
+        setActivePinia(createPinia());
+        store = useNotificationsSettingsStore();
+        expect(store.desktopNotificationsEnabled).toBe(true);
+        window.dispatchEvent(
+            new CustomEvent('vrcx-desktop-notifications-updated', {
+                detail: { enabled: false }
+            })
+        );
+
+        expect(store.desktopNotificationsEnabled).toBe(false);
+
+        releaseDesktopConfig('true');
+        await Promise.resolve();
+        await Promise.resolve();
+
+        expect(store.desktopNotificationsEnabled).toBe(false);
+        vi.unstubAllGlobals();
+    });
 });

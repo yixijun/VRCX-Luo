@@ -127,9 +127,35 @@ export const useNotificationsSettingsStore = defineStore(
         const notificationTimeout = ref(3000);
         const notificationLayout = ref('notification-center');
         let desktopNotificationsListenerInitialized = false;
+        let notificationListenersInitialized = false;
+        let desktopNotificationsInitialized = false;
+        let pendingDesktopNotificationsEnabled = null;
         let customNotificationAudio = null;
 
+        function applyDesktopNotificationsUpdate(enabled) {
+            const next = enabled !== false;
+            desktopNotificationsEnabled.value = next;
+            if (!desktopNotificationsInitialized) {
+                pendingDesktopNotificationsEnabled = next;
+            }
+        }
+
+        function initializeDesktopNotificationsListener() {
+            if (desktopNotificationsListenerInitialized) {
+                return;
+            }
+            desktopNotificationsListenerInitialized = true;
+            window.addEventListener(
+                'vrcx-desktop-notifications-updated',
+                handleDesktopNotificationsUpdated
+            );
+            window.electron?.onDesktopNotificationsUpdated?.(
+                applyDesktopNotificationsUpdate
+            );
+        }
+
         async function initNotificationsSettings() {
+            initializeDesktopNotificationsListener();
             const [
                 overlayToastConfig,
                 overlayNotificationsConfig,
@@ -200,6 +226,12 @@ export const useNotificationsSettingsStore = defineStore(
             imageNotifications.value = imageNotificationsConfig;
             desktopNotificationsEnabled.value =
                 desktopNotificationsEnabledConfig !== 'false';
+            if (pendingDesktopNotificationsEnabled !== null) {
+                desktopNotificationsEnabled.value =
+                    pendingDesktopNotificationsEnabled;
+                pendingDesktopNotificationsEnabled = null;
+            }
+            desktopNotificationsInitialized = true;
             traySilentMode.value = traySilentModeConfig === 'true';
             vSleepMode.value = vSleepModeConfig === 'true';
             desktopToast.value = desktopToastConfig;
@@ -224,15 +256,8 @@ export const useNotificationsSettingsStore = defineStore(
                 updateTTSVoices();
             }, 5000);
 
-            if (!desktopNotificationsListenerInitialized) {
-                desktopNotificationsListenerInitialized = true;
-                window.addEventListener(
-                    'vrcx-desktop-notifications-updated',
-                    handleDesktopNotificationsUpdated
-                );
-                window.electron?.onDesktopNotificationsUpdated?.((enabled) => {
-                    desktopNotificationsEnabled.value = enabled !== false;
-                });
+            if (!notificationListenersInitialized) {
+                notificationListenersInitialized = true;
                 window.addEventListener(
                     'vrcx-tray-silent-mode-updated',
                     handleTraySilentModeUpdated
@@ -300,6 +325,10 @@ export const useNotificationsSettingsStore = defineStore(
         function setDesktopNotificationsEnabled(value = null) {
             desktopNotificationsEnabled.value =
                 value === null ? !desktopNotificationsEnabled.value : !!value;
+            if (!desktopNotificationsInitialized) {
+                pendingDesktopNotificationsEnabled =
+                    desktopNotificationsEnabled.value;
+            }
             VRCXStorage.Set(
                 'VRCX_desktopNotificationsEnabled',
                 desktopNotificationsEnabled.value.toString()
@@ -310,7 +339,7 @@ export const useNotificationsSettingsStore = defineStore(
         }
 
         function handleDesktopNotificationsUpdated(event) {
-            desktopNotificationsEnabled.value = event.detail?.enabled !== false;
+            applyDesktopNotificationsUpdate(event.detail?.enabled);
         }
 
         function setTraySilentMode(value = null) {
