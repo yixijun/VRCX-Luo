@@ -16,7 +16,7 @@
         "type": "git",
         "url": "git+https://github.com/yixijun/VRCX-Luo.git"
     },
-    "main": "src-electron/main.js",
+    "main": "src-electron/entry.cjs",
     "scripts": {
         "dev": "cross-env PLATFORM=windows vite serve src",
         "dev-linux": "cross-env PLATFORM=linux vite serve src",
