@@ -612,6 +612,21 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 代码回滚点：`2bcf5699`；未发布、未推送。
 
+## 启动优化：好友栏先恢复本地缓存
+
+2026-09-11，修正首次打开时右侧好友栏必须等完整同步结束才显示的问题。`getFriendLog` 现在先从 SQLite 读取已持久化的好友快照并投影到侧栏，随后继续原有计数读取和 API 全量刷新；刷新期间 `FriendItem` 显示缓存的昵称/ID，但暂时隐藏删除操作。最终好友数据、`isFriendsLoaded` 门控、WebSocket 启动时序、接口和序列化格式均保持不变。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 修改前基线 | `npm test -- src/views/Sidebar/components/__tests__/FriendsSidebar.test.js src/views/Sidebar/components/__tests__/FriendItem.test.js src/stores/updateLoopTasks/__tests__/friendSyncTask.test.js --maxWorkers=2` | **通过：3 个文件、13 项测试** |
+| 缓存优先回归 | 同上定向命令 | **通过：3 个文件、14 项测试**；新增缓存好友加载态覆盖 |
+| JavaScript 质量检查 | `npm exec --yes eslint -- src/stores/friend.js src/views/Sidebar/components/FriendItem.vue src/views/Sidebar/components/__tests__/FriendItem.test.js`；`git diff --check` | **通过**；仅保留既有换行转换提示 |
+| 生产构建 | `npm run prod` | **通过：4430 个模块**；保留既有 Vite 动态导入和 Node deprecation 提示 |
+| 全量测试 | `npm test -- --maxWorkers=2` | **报告项**：复现既有组件 mock/i18n/canvas 环境失败并在长时间无收尾后停止，未见与本切片相关的新失败 |
+| 本地测试版 | 重启 `build/Cef/VRCX-Luo.exe`，检查窗口响应 | **通过：PID 58976，窗口标题 `VRCX-Luo 2026.08.23`，Responding=True** |
+
+代码回滚点：`7bdb9131`；文档随后单独提交，均未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：
