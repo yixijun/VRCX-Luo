@@ -33,7 +33,7 @@ function countSharedRoomVisits(instances) {
  *     coexistenceTime?: number,
  *     friendALeave?: number
  * }>} instances
- * @param {number} limit
+ * @param {number} [limit] Optional positive cap. Omit it to return every world.
  * @returns {Array<{
  *     worldId: string,
  *     latestLocation: string,
@@ -41,7 +41,7 @@ function countSharedRoomVisits(instances) {
  *     totalCoexistenceTime: number
  * }>}
  */
-function buildSharedWorldRanking(instances, limit = 5) {
+function buildSharedWorldRanking(instances, limit = null) {
     if (!Array.isArray(instances)) return [];
 
     const grouped = new Map();
@@ -80,16 +80,17 @@ function buildSharedWorldRanking(instances, limit = 5) {
     const maxItems =
         Number.isFinite(Number(limit)) && Number(limit) > 0
             ? Math.floor(Number(limit))
-            : 5;
-    return Array.from(grouped.values())
+            : null;
+    const ranking = Array.from(grouped.values())
         .sort(
             (a, b) =>
                 b.visitCount - a.visitCount ||
                 b.totalCoexistenceTime - a.totalCoexistenceTime ||
                 b.latestVisitedAt - a.latestVisitedAt
         )
-        .slice(0, maxItems)
-        .map(({ latestVisitedAt, ...item }) => item);
+        .slice(0, maxItems ?? undefined);
+
+    return ranking.map(({ latestVisitedAt, ...item }) => item);
 }
 
 export { buildSharedWorldRanking, countSharedRoomVisits };

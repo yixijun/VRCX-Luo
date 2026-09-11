@@ -90,4 +90,15 @@ describe('buildSharedWorldRanking', () => {
         expect(ranking).toHaveLength(1);
         expect(ranking[0].worldId).toBe('wrld_a');
     });
+
+    test('includes all ranked worlds when no limit is provided', () => {
+        const ranking = buildSharedWorldRanking(
+            Array.from({ length: 6 }, (_, index) => ({
+                location: `wrld_${index}:1`,
+                joinLeavesCount: 1
+            }))
+        );
+
+        expect(ranking).toHaveLength(6);
+    });
 });
