@@ -147,7 +147,7 @@
 
             <template v-else>
                 <div
-                    class="mx-auto mt-3 flex max-w-[900px] flex-wrap items-center gap-2 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2!">
+                    class="mx-auto mt-3 flex max-w-[1200px] flex-wrap items-center gap-2 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2!">
                     <div
                         class="flex items-center gap-2 rounded-lg border-0 px-3 py-2 in-[.is-compact-table]:py-1! in-[.is-comfortable-table]:py-1.5!">
                         <Clock class="size-3.5 text-muted-foreground" />
@@ -178,22 +178,22 @@
                             {{ t('view.charts.two_person_relationship.shared_room_visit_count') }}
                         </span>
                     </div>
-                </div>
 
-                <TooltipWrapper
-                    v-if="sharedWorldRanking.length"
-                    :content="t('view.charts.two_person_relationship.shared_world_ranking')"
-                    side="top">
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        class="shrink-0 gap-1.5 rounded-lg"
-                        @click="isSharedWorldRankingOpen = true">
-                        <MapPin class="size-3.5" />
-                        <span>{{ t('view.charts.two_person_relationship.shared_world_ranking') }}</span>
-                        <span class="text-xs text-muted-foreground tabular-nums">{{ sharedWorldRanking.length }}</span>
-                    </Button>
-                </TooltipWrapper>
+                    <TooltipWrapper
+                        v-if="sharedWorldRanking.length"
+                        :content="t('view.charts.two_person_relationship.shared_world_ranking')"
+                        side="top">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            class="ml-auto shrink-0 gap-1.5 rounded-lg"
+                            @click="isSharedWorldRankingOpen = true">
+                            <MapPin class="size-3.5" />
+                            <span>{{ t('view.charts.two_person_relationship.shared_world_ranking') }}</span>
+                            <span class="text-xs text-muted-foreground tabular-nums">{{ sharedWorldRanking.length }}</span>
+                        </Button>
+                    </TooltipWrapper>
+                </div>
 
                 <SharedWorldRankingDialog
                     v-model:open="isSharedWorldRankingOpen"
