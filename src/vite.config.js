@@ -154,7 +154,7 @@ export default defineConfig(({ mode }) => {
             }
         },
         optimizeDeps: {
-            exclude: ['vue-i18n'],
+            exclude: ['vue-i18n', 'vue-json-pretty', 'vue-input-otp'],
             include: [
                 'vue',
                 'vue/jsx-runtime',
