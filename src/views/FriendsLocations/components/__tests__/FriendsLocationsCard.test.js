@@ -96,6 +96,7 @@ const {
     mockSelfInvite,
     mockQueryFetch,
     mockShowUserDialog,
+    mockSetDialogMotionOrigin,
     mockCheckCanInvite,
     mockCheckCanInviteSelf,
     mockUserStatusClass,
@@ -109,6 +110,7 @@ const {
     mockSelfInvite: vi.fn().mockResolvedValue({}),
     mockQueryFetch: vi.fn().mockResolvedValue({ ref: { name: 'Test World' } }),
     mockShowUserDialog: vi.fn(),
+    mockSetDialogMotionOrigin: vi.fn(),
     mockCheckCanInvite: vi.fn().mockReturnValue(true),
     mockCheckCanInviteSelf: vi.fn().mockReturnValue(true),
     mockUserStatusClass: vi
@@ -129,7 +131,12 @@ vi.mock('vue-sonner', () => ({
 }));
 
 vi.mock('../../../../coordinators/userCoordinator', () => ({
-    showUserDialog: (...args) => mockShowUserDialog(...args)
+    showUserDialog: (...args) => mockShowUserDialog(...args),
+    getCurrentUser: vi.fn(),
+    updateAutoStateChange: vi.fn()
+}));
+vi.mock('../../../../services/dialogMotionOrigin', () => ({
+    setDialogMotionOrigin: (...args) => mockSetDialogMotionOrigin(...args)
 }));
 
 vi.mock('../../../../composables/useInviteChecks', () => ({
@@ -197,6 +204,12 @@ const i18n = createI18n({
 });
 
 vi.mock('lucide-vue-next', () => ({
+    Clock: { template: '<i />' },
+    ExternalLink: { template: '<i />' },
+    LogIn: { template: '<i />' },
+    Mail: { template: '<i />' },
+    MessageSquare: { template: '<i />' },
+    MousePointer: { template: '<i />' },
     Pencil: { template: '<span class="pencil-icon" />' },
     User: { template: '<span class="user-icon" />' }
 }));
@@ -222,7 +235,7 @@ const stubs = {
     },
     Card: {
         template:
-            '<div data-testid="card" v-bind="$attrs" @click="$emit(\'click\')"><slot /></div>',
+            '<div data-testid="card" v-bind="$attrs" @click="$emit(\'click\', $event)"><slot /></div>',
         props: ['class', 'style'],
         emits: ['click']
     },
@@ -591,6 +604,10 @@ describe('FriendsLocationsCard.vue', () => {
         test('clicking card opens user dialog', async () => {
             const wrapper = mountCard();
             await wrapper.find('[data-testid="card"]').trigger('click');
+            expect(mockSetDialogMotionOrigin).toHaveBeenCalledTimes(1);
+            expect(mockSetDialogMotionOrigin).toHaveBeenCalledWith(
+                wrapper.find('[data-testid="card"]').element
+            );
             expect(mockShowUserDialog).toHaveBeenCalledWith('usr_test123');
         });
     });

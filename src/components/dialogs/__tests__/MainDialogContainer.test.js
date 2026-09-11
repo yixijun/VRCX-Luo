@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
         ]
     },
     userVisible: { value: true },
+    dialogMotionOrigin: { value: null },
     previousInstancesInfoVisible: { value: false },
     previousInstancesVisible: { value: false },
     previousInstancesVariant: { value: 'user' }
@@ -43,7 +44,7 @@ vi.mock('@/components/ui/dialog', () => ({
     DialogContent: {
         inheritAttrs: false,
         template:
-            '<div data-testid="dialog-content" :class="$attrs.class"><slot /></div>'
+            '<div data-testid="dialog-content" :class="$attrs.class" :style="$attrs.style"><slot /></div>'
     }
 }));
 vi.mock('@/components/ui/breadcrumb', () => ({
@@ -76,6 +77,12 @@ vi.mock('@/components/ui/tooltip', () => ({
     TooltipWrapper: { template: '<div><slot /></div>' }
 }));
 vi.mock('lucide-vue-next', () => ({ ArrowLeft: { template: '<i />' } }));
+vi.mock('@/services/dialogMotionOrigin', () => ({
+    dialogMotionOrigin: mocks.dialogMotionOrigin,
+    clearDialogMotionOrigin: vi.fn(() => {
+        mocks.dialogMotionOrigin.value = null;
+    })
+}));
 vi.mock('../AvatarDialog/AvatarDialog.vue', () => ({
     default: { template: '<div />' }
 }));
@@ -104,6 +111,7 @@ describe('MainDialogContainer.vue', () => {
         mocks.previousInstancesInfoVisible.value = false;
         mocks.previousInstancesVisible.value = false;
         mocks.previousInstancesVariant.value = 'user';
+        mocks.dialogMotionOrigin.value = null;
     });
 
     it('renders active dialog and handles breadcrumb back click', async () => {
@@ -176,5 +184,23 @@ describe('MainDialogContainer.vue', () => {
 
         expect(transition.attributes('name')).toBe('dialog-panel');
         expect(transition.attributes('mode')).toBe('out-in');
+    });
+
+    it('adds source coordinates for origin-aware dialog openings', () => {
+        mocks.dialogMotionOrigin.value = {
+            left: 20,
+            top: 40,
+            width: 200,
+            height: 100
+        };
+
+        const wrapper = mount(MainDialogContainer);
+        const dialog = wrapper.get('[data-testid="dialog-content"]');
+
+        expect(dialog.classes()).toContain('dialog-origin-aware');
+        expect(dialog.attributes('style')).toContain(
+            '--dialog-origin-x: 120px'
+        );
+        expect(dialog.attributes('style')).toContain('--dialog-origin-y: 90px');
     });
 });

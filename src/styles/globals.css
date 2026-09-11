@@ -621,6 +621,45 @@ html.motion-disabled [data-slot='tabs-trigger']:active {
     transform: none;
 }
 
+/* Origin-aware dialogs can be opened from a card while preserving the
+   centered layout. The transform origin points at the source card, so the
+   panel grows out of that card and converges back to it when dismissed. */
+.dialog-origin-aware {
+    transform-origin: calc(var(--dialog-origin-x, 50vw) - 50vw + 50%)
+        calc(var(--dialog-origin-y, 50vh) - 50vh + 50%);
+    will-change: transform, opacity;
+}
+
+.dialog-origin-aware[data-state='open'] {
+    animation: vrcx-dialog-origin-open 260ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dialog-origin-aware[data-state='closed'] {
+    animation: vrcx-dialog-origin-close 180ms cubic-bezier(0.4, 0, 1, 1);
+}
+
+@keyframes vrcx-dialog-origin-open {
+    from {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+@keyframes vrcx-dialog-origin-close {
+    from {
+        opacity: 1;
+        transform: scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: scale(0.92);
+    }
+}
+
 @media (prefers-reduced-transparency: reduce) {
     [data-slot='popover-content'],
     [data-slot='dropdown-menu-content'],

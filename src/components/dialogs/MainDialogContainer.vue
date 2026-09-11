@@ -19,7 +19,7 @@
     import { ArrowLeft } from 'lucide-vue-next';
     import { Button } from '@/components/ui/button';
     import { TooltipWrapper } from '@/components/ui/tooltip';
-    import { computed } from 'vue';
+    import { computed, onBeforeUnmount, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
 
     import AvatarDialog from './AvatarDialog/AvatarDialog.vue';
@@ -28,6 +28,7 @@
     import PreviousInstancesListDialog from './PreviousInstancesDialog/PreviousInstancesListDialog.vue';
     import UserDialog from './UserDialog/UserDialog.vue';
     import WorldDialog from './WorldDialog/WorldDialog.vue';
+    import { clearDialogMotionOrigin, dialogMotionOrigin } from '@/services/dialogMotionOrigin';
 
     const avatarStore = useAvatarStore();
     const groupStore = useGroupStore();
@@ -63,8 +64,54 @@
         })();
         return type;
     });
+    const renderedType = ref(null);
+    let closeTimer;
+    const CLOSE_ANIMATION_DURATION = 220;
+
+    watch(
+        activeType,
+        (type) => {
+            if (type) {
+                if (closeTimer) {
+                    clearTimeout(closeTimer);
+                    closeTimer = undefined;
+                }
+                renderedType.value = type;
+                return;
+            }
+
+            if (!renderedType.value) {
+                return;
+            }
+
+            // Dialogs opened through the existing coordinator path keep their
+            // original immediate-unmount behaviour. Only a source-aware
+            // opening needs the short retention window for its close motion.
+            if (!dialogMotionOrigin.value) {
+                renderedType.value = null;
+                return;
+            }
+
+            closeTimer = setTimeout(() => {
+                if (!activeType.value) {
+                    renderedType.value = null;
+                }
+                closeTimer = undefined;
+            }, CLOSE_ANIMATION_DURATION);
+        },
+        { immediate: true }
+    );
+
+    onBeforeUnmount(() => {
+        if (closeTimer) {
+            clearTimeout(closeTimer);
+        }
+        clearDialogMotionOrigin();
+    });
+
+    const effectiveType = computed(() => renderedType.value || activeType.value);
     const activeComponent = computed(() => {
-        switch (activeType.value) {
+        switch (effectiveType.value) {
             case 'user':
                 return UserDialog;
             case 'world':
@@ -88,7 +135,7 @@
         }
     });
     const activeComponentProps = computed(() => {
-        switch (activeType.value) {
+        switch (effectiveType.value) {
             case 'previous-instances-user':
                 return { variant: 'user' };
             case 'previous-instances-user-created':
@@ -102,7 +149,7 @@
         }
     });
     const isOpen = computed({
-        get: () => activeComponent.value !== null,
+        get: () => activeType.value !== null,
         set: (value) => {
             if (!value) {
                 uiStore.closeMainDialog();
@@ -110,8 +157,27 @@
         }
     });
 
+    const dialogMotionClass = computed(() => (dialogMotionOrigin.value ? 'dialog-origin-aware' : ''));
+    const dialogMotionStyle = computed(() => {
+        const origin = dialogMotionOrigin.value;
+        if (!origin) {
+            return undefined;
+        }
+
+        return {
+            '--dialog-origin-x': `${origin.left + origin.width / 2}px`,
+            '--dialog-origin-y': `${origin.top + origin.height / 2}px`
+        };
+    });
+
+    watch(renderedType, (type) => {
+        if (!type) {
+            clearDialogMotionOrigin();
+        }
+    });
+
     const dialogClass = computed(() => {
-        switch (activeType.value) {
+        switch (effectiveType.value) {
             case 'world':
                 return 'x-dialog main-entity-dialog sm:max-w-235 overflow-hidden flex flex-col';
             case 'avatar':
@@ -159,8 +225,12 @@
 </script>
 
 <template>
-    <Dialog v-if="isOpen" v-model:open="isOpen">
-        <DialogContent :class="dialogClass" :show-close-button="false" @pointerDownOutside="handlePointerDownOutside">
+    <Dialog v-if="renderedType" v-model:open="isOpen">
+        <DialogContent
+            :class="[dialogClass, dialogMotionClass]"
+            :style="dialogMotionStyle"
+            :show-close-button="false"
+            @pointerDownOutside="handlePointerDownOutside">
             <Breadcrumb v-if="shouldShowBreadcrumbs" class="mb-2 flex-shrink-0">
                 <BreadcrumbList>
                     <TooltipWrapper :content="backCrumbLabel" :disabled="!backCrumbLabel" :delayDuration="500">
@@ -268,7 +338,7 @@
                     :is="activeComponent"
                     v-if="activeComponent"
                     v-bind="activeComponentProps"
-                    :key="activeType" />
+                    :key="effectiveType" />
             </Transition>
         </DialogContent>
     </Dialog>

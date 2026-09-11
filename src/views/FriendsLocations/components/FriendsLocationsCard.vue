@@ -1,9 +1,6 @@
 <template>
     <UserContextMenu :user-id="friend.id" :state="friend.state" :location="friend.ref?.location">
-        <Card
-            class="friend-card x-hover-card hover:bg-muted relative"
-            :style="cardStyle"
-            @click="showUserDialog(friend.id)">
+        <Card class="friend-card x-hover-card hover:bg-muted relative" :style="cardStyle" @click="handleCardClick">
             <div class="friend-card__header grid items-center mb-1.75">
                 <div class="relative inline-block flex-none size-9 mr-2.5">
                     <Avatar class="size-full rounded-full">
@@ -57,6 +54,7 @@
     import Location from '../../../components/Location.vue';
     import UserContextMenu from '../../../components/UserContextMenu.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
+    import { setDialogMotionOrigin } from '../../../services/dialogMotionOrigin';
 
     const { userImage, userStatusClass } = useUserDisplay();
 
@@ -120,6 +118,11 @@
 
         return 'friend-card__status-dot--hidden';
     });
+
+    function handleCardClick(event) {
+        setDialogMotionOrigin(event?.currentTarget);
+        showUserDialog(props.friend.id);
+    }
 </script>
 
 <style scoped>
