@@ -147,7 +147,7 @@
 
             <template v-else>
                 <div
-                    class="mx-auto mt-3 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2! flex max-w-[900px] items-center gap-3">
+                    class="mx-auto mt-3 flex max-w-[900px] flex-wrap items-center gap-2 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2!">
                     <div
                         class="flex items-center gap-2 rounded-lg border-0 px-3 py-2 in-[.is-compact-table]:py-1! in-[.is-comfortable-table]:py-1.5!">
                         <Clock class="size-3.5 text-muted-foreground" />
@@ -180,46 +180,25 @@
                     </div>
                 </div>
 
-                <div
+                <TooltipWrapper
                     v-if="sharedWorldRanking.length"
-                    class="mx-auto mt-3 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2! max-w-[900px] overflow-hidden rounded-lg border border-border/60 bg-muted/10">
-                    <div class="flex items-center gap-2 border-b border-border/50 px-3 py-2">
-                        <MapPin class="size-3.5 text-muted-foreground" />
-                        <span class="text-sm font-medium">
-                            {{ t('view.charts.two_person_relationship.shared_world_ranking') }}
-                        </span>
-                    </div>
-                    <div class="divide-y divide-border/40">
-                        <button
-                            v-for="(item, index) in sharedWorldRanking"
-                            :key="item.worldId"
-                            type="button"
-                            class="group flex w-full min-w-0 items-center gap-2 px-3 py-2 text-left transition-colors hover:bg-accent/60 in-[.is-compact-table]:py-1.5!"
-                            @click="openInstanceDialog(item.latestLocation)">
-                            <span
-                                :class="[
-                                    'flex size-6 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
-                                    index === 0
-                                        ? 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400'
-                                        : index === 1
-                                          ? 'bg-zinc-400/20 text-zinc-600 dark:text-zinc-300'
-                                          : index === 2
-                                            ? 'bg-orange-500/15 text-orange-600 dark:text-orange-400'
-                                            : 'bg-muted text-muted-foreground'
-                                ]">
-                                {{ index + 1 }}
-                            </span>
-                            <Location :location="item.worldId" :link="false" class="min-w-0 flex-1 text-sm" />
-                            <span class="shrink-0 text-xs text-muted-foreground tabular-nums">
-                                {{
-                                    t('view.charts.two_person_relationship.shared_world_ranking_visits', {
-                                        count: item.visitCount
-                                    })
-                                }}
-                            </span>
-                        </button>
-                    </div>
-                </div>
+                    :content="t('view.charts.two_person_relationship.shared_world_ranking')"
+                    side="top">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        class="shrink-0 gap-1.5 rounded-lg"
+                        @click="isSharedWorldRankingOpen = true">
+                        <MapPin class="size-3.5" />
+                        <span>{{ t('view.charts.two_person_relationship.shared_world_ranking') }}</span>
+                        <span class="text-xs text-muted-foreground tabular-nums">{{ sharedWorldRanking.length }}</span>
+                    </Button>
+                </TooltipWrapper>
+
+                <SharedWorldRankingDialog
+                    v-model:open="isSharedWorldRankingOpen"
+                    :items="sharedWorldRanking"
+                    @select="openInstanceDialog" />
 
                 <div
                     class="mx-auto mt-3 in-[.is-compact-table]:mt-1.5! in-[.is-comfortable-table]:mt-2! max-w-[900px] flex flex-col gap-3 pb-8">
@@ -335,6 +314,7 @@
     import { VirtualCombobox } from '@/components/ui/virtual-combobox';
     import TooltipWrapper from '@/components/ui/tooltip/TooltipWrapper.vue';
     import Location from '@/components/Location.vue';
+    import SharedWorldRankingDialog from './SharedWorldRankingDialog.vue';
 
     import { showWorldDialog } from '@/coordinators/worldCoordinator';
     import { database } from '@/services/database';
@@ -354,6 +334,7 @@
     const selfPresenceMap = ref(new Map());
     const maxPlayerCountMap = ref(new Map());
     const showSelfPresence = ref(false);
+    const isSharedWorldRankingOpen = ref(false);
 
     const appearanceStore = useAppearanceSettingsStore();
     const { dtHour12 } = storeToRefs(appearanceStore);
