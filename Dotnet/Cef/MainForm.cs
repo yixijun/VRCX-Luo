@@ -2,7 +2,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Drawing;
 using System.IO;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using CefSharp;
 using CefSharp.WinForms;
@@ -17,13 +16,6 @@ namespace VRCX
         public static MainForm Instance;
         public static NativeWindow nativeWindow;
         private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-        private const uint WmSetIcon = 0x0080;
-        private const int IconSmall = 0;
-        private const int IconBig = 1;
-
-        [DllImport("user32.dll", ExactSpelling = true)]
-        private static extern IntPtr SendMessage(IntPtr hWnd, uint message, IntPtr wParam, IntPtr lParam);
-
         public ChromiumWebBrowser Browser;
         private readonly Icon _appIcon;
         private readonly Icon _appIconNoty;
@@ -48,7 +40,6 @@ namespace VRCX
         {
             Instance = this;
             InitializeComponent();
-            Shown += (_, _) => RefreshTaskbarIcon();
 
             // Set the form icon before any explicit handle access.  Creating the
             // handle first can leave the taskbar using the default WinForms icon
@@ -67,7 +58,6 @@ namespace VRCX
             }
 
             nativeWindow = NativeWindow.FromHandle(this.Handle);
-            RefreshTaskbarIcon();
             ConfigureTrayMenuAppearance();
             UpdateTraySettingsMenu();
             TrayMenu.Opening += (_, _) =>
@@ -365,19 +355,6 @@ namespace VRCX
         private void MainForm_FormClosed(object sender, FormClosedEventArgs e)
         {
             SaveWindowState();
-        }
-
-        private void RefreshTaskbarIcon()
-        {
-            if (_appIcon == null || IsDisposed || !IsHandleCreated)
-                return;
-
-            var handle = Handle;
-            if (handle == IntPtr.Zero)
-                return;
-
-            SendMessage(handle, WmSetIcon, (IntPtr)IconSmall, _appIcon.Handle);
-            SendMessage(handle, WmSetIcon, (IntPtr)IconBig, _appIcon.Handle);
         }
 
         private void TrayIcon_MouseClick(object sender, MouseEventArgs e)
