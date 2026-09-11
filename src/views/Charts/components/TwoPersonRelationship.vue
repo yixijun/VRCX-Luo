@@ -168,6 +168,16 @@
                             {{ t('view.charts.two_person_relationship.instance_count') }}
                         </span>
                     </div>
+                    <div
+                        class="flex items-center gap-2 rounded-lg border-0 px-3 py-2 in-[.is-compact-table]:py-1! in-[.is-comfortable-table]:py-1.5!">
+                        <MapPin class="size-3.5 text-muted-foreground" />
+                        <span class="text-sm in-[.is-compact-table]:text-xs! font-medium">{{
+                            sharedRoomVisitCount
+                        }}</span>
+                        <span class="text-xs text-muted-foreground">
+                            {{ t('view.charts.two_person_relationship.shared_room_visit_count') }}
+                        </span>
+                    </div>
                 </div>
 
                 <div
@@ -271,7 +281,7 @@
     defineOptions({ name: 'ChartsTwoPersonRelationship' });
 
     import { computed, onMounted, ref } from 'vue';
-    import { ArrowLeftRight, Check, Clock, Crown, Hash, Info, RefreshCcw, Users } from 'lucide-vue-next';
+    import { ArrowLeftRight, Check, Clock, Crown, Hash, Info, MapPin, RefreshCcw, Users } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
     import dayjs from 'dayjs';
@@ -291,6 +301,7 @@
     import { timeToText } from '@/shared/utils';
     import { useAppearanceSettingsStore, useFriendStore, useTrackedNonFriendsStore, useUserStore } from '@/stores';
     import { useUserDisplay } from '@/composables/useUserDisplay';
+    import { countSharedRoomVisits } from './twoPersonRelationshipStats';
 
     const { t } = useI18n();
 
@@ -483,6 +494,8 @@
     const totalCoexistenceTime = computed(() => {
         return sharedInstances.value.reduce((acc, item) => acc + item.coexistenceTime, 0);
     });
+
+    const sharedRoomVisitCount = computed(() => countSharedRoomVisits(sharedInstances.value));
 
     async function loadData() {
         if (!selectedFriendAId.value || !selectedFriendBId.value) return;

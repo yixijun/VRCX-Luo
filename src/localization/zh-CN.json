@@ -752,6 +752,7 @@
                 "no_friend_selected": "请选择两位好友以查看共同在场记录",
                 "coexistence_time": "共存时长",
                 "instance_count": "共同在场次数",
+                "shared_room_visit_count": "共同房间访问次数",
                 "meet_count": "{count} 次共存",
                 "settings": "设置",
                 "show_self_presence": "显示自己是否在场",
