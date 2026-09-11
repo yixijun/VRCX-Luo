@@ -1,3 +1,10 @@
+import { parseLocation } from '@/shared/utils/locationParser';
+
+function getVisitCount(instance) {
+    const count = Number(instance?.joinLeavesCount);
+    return Number.isFinite(count) && count > 0 ? count : 1;
+}
+
 /**
  * Count the shared room visits represented by the grouped relationship rows.
  * A row can represent multiple entries into the same room, so the grouped
@@ -9,10 +16,80 @@
 function countSharedRoomVisits(instances) {
     if (!Array.isArray(instances)) return 0;
 
-    return instances.reduce((total, instance) => {
-        const count = Number(instance?.joinLeavesCount);
-        return total + (Number.isFinite(count) && count > 0 ? count : 1);
-    }, 0);
+    return instances.reduce(
+        (total, instance) => total + getVisitCount(instance),
+        0
+    );
 }
 
-export { countSharedRoomVisits };
+/**
+ * Build a compact ranking of worlds visited together by two players.
+ * Different room instances of the same world are merged and their visit
+ * counts are accumulated.
+ *
+ * @param {Array<{
+ *     location?: string,
+ *     joinLeavesCount?: number,
+ *     coexistenceTime?: number,
+ *     friendALeave?: number
+ * }>} instances
+ * @param {number} limit
+ * @returns {Array<{
+ *     worldId: string,
+ *     latestLocation: string,
+ *     visitCount: number,
+ *     totalCoexistenceTime: number
+ * }>}
+ */
+function buildSharedWorldRanking(instances, limit = 5) {
+    if (!Array.isArray(instances)) return [];
+
+    const grouped = new Map();
+    for (const instance of instances) {
+        const location = String(instance?.location || '');
+        const worldId = parseLocation(location).worldId;
+        if (!worldId) continue;
+
+        const leaveAt = Number(instance?.friendALeave);
+        const current = grouped.get(worldId);
+        if (!current) {
+            grouped.set(worldId, {
+                worldId,
+                latestLocation: location,
+                latestVisitedAt: Number.isFinite(leaveAt) ? leaveAt : 0,
+                visitCount: getVisitCount(instance),
+                totalCoexistenceTime: Math.max(
+                    0,
+                    Number(instance?.coexistenceTime) || 0
+                )
+            });
+            continue;
+        }
+
+        current.visitCount += getVisitCount(instance);
+        current.totalCoexistenceTime += Math.max(
+            0,
+            Number(instance?.coexistenceTime) || 0
+        );
+        if (Number.isFinite(leaveAt) && leaveAt > current.latestVisitedAt) {
+            current.latestVisitedAt = leaveAt;
+            current.latestLocation = location;
+        }
+    }
+
+    const maxItems =
+        Number.isFinite(Number(limit)) && Number(limit) > 0
+            ? Math.floor(Number(limit))
+            : 5;
+    return Array.from(grouped.values())
+        .sort(
+            (a, b) =>
+                b.visitCount - a.visitCount ||
+                b.totalCoexistenceTime - a.totalCoexistenceTime ||
+                b.latestVisitedAt - a.latestVisitedAt
+        )
+        .slice(0, maxItems)
+        .map(({ latestVisitedAt, ...item }) => item);
+}
+
+export { buildSharedWorldRanking, countSharedRoomVisits };

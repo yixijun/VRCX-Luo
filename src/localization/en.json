@@ -747,6 +747,8 @@
                 "coexistence_time": "Co-presence time",
                 "instance_count": "Shared instance count",
                 "shared_room_visit_count": "Shared room visits",
+                "shared_world_ranking": "Shared world ranking",
+                "shared_world_ranking_visits": "{count} visits",
                 "meet_count": "{count} encounters",
                 "settings": "Settings",
                 "show_self_presence": "Show my presence indicator",
