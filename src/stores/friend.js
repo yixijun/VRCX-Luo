@@ -1049,6 +1049,15 @@ export const useFriendStore = defineStore('Friend', () => {
      */
     async function getFriendLog(currentUser) {
         let friend;
+        // Restore the persisted friend snapshot before loading auxiliary
+        // counters.  The snapshot is enough to populate the sidebar while
+        // the full API refresh continues below.
+        const friendLogCurrentArray = await database.getFriendLogCurrent();
+        for (friend of friendLogCurrentArray) {
+            friendLog.set(friend.userId, friend);
+        }
+        refreshFriendsStatus(currentUser);
+
         state.friendNumber = await configRepository.getInt(
             `VRCX_friendNumber_${currentUser.id}`,
             0
@@ -1057,12 +1066,6 @@ export const useFriendStore = defineStore('Friend', () => {
         if (state.friendNumber < maxFriendLogNumber) {
             state.friendNumber = maxFriendLogNumber;
         }
-
-        const friendLogCurrentArray = await database.getFriendLogCurrent();
-        for (friend of friendLogCurrentArray) {
-            friendLog.set(friend.userId, friend);
-        }
-        refreshFriendsStatus(currentUser);
 
         await refreshFriends();
         watchState.isFriendsLoaded = true;

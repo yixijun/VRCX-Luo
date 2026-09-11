@@ -177,4 +177,21 @@ describe('FriendItem.vue', () => {
         expect(mocks.confirmDeleteFriend).toHaveBeenCalledWith('usr_orphan');
         expect(mocks.showUserDialog).not.toHaveBeenCalled();
     });
+
+    test('renders cached friend name while the friend refresh is loading', () => {
+        mocks.friendStore.isRefreshFriendsLoading = true;
+
+        const wrapper = mountItem({
+            friend: makeFriend({
+                id: 'usr_cached',
+                name: 'Cached Alice',
+                ref: null
+            })
+        });
+
+        expect(wrapper.text()).toContain('Cached Alice');
+        expect(wrapper.find('[data-testid="delete-button"]').exists()).toBe(
+            false
+        );
+    });
 });

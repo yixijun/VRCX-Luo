@@ -63,9 +63,14 @@
                 </template>
             </div>
         </template>
-        <template v-else-if="!friend.ref && !isRefreshFriendsLoading">
+        <template v-else-if="!friend.ref">
             <span>{{ friend.name || friend.id }}</span>
-            <Button size="sm" variant="ghost" class="mr-1 w-6 h-6 text-xs" @click.stop="confirmDeleteFriend(friend.id)"
+            <Button
+                v-if="!isRefreshFriendsLoading"
+                size="sm"
+                variant="ghost"
+                class="mr-1 w-6 h-6 text-xs"
+                @click.stop="confirmDeleteFriend(friend.id)"
                 ><Trash2 class="h-4 w-4" />
             </Button>
         </template>
