@@ -154,12 +154,12 @@ export default defineConfig(({ mode }) => {
             }
         },
         optimizeDeps: {
+            exclude: ['vue-i18n'],
             include: [
                 'vue',
                 'vue/jsx-runtime',
                 'reka-ui',
                 'pinia',
-                'vue-i18n',
                 'tailwindcss',
                 'lucide-vue-next',
                 '@vueuse/core',
