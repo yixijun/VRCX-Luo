@@ -70,4 +70,17 @@ describe('appearance DOM adapter', () => {
         expect(stub.classes.has('is-comfortable-table')).toBe(false);
         expect(stub.classes.has('unrelated-class')).toBe(true);
     });
+
+    it('toggles the global motion-disabled class without touching other classes', () => {
+        const stub = createDocumentStub(['motion-disabled', 'unrelated-class']);
+        const adapter = createAppearanceDomAdapter(stub.document);
+
+        adapter.applyMotionPreference(true);
+        expect(stub.classes.has('motion-disabled')).toBe(false);
+        expect(stub.classes.has('unrelated-class')).toBe(true);
+
+        adapter.applyMotionPreference(false);
+        expect(stub.classes.has('motion-disabled')).toBe(true);
+        expect(stub.classes.has('unrelated-class')).toBe(true);
+    });
 });

@@ -1095,6 +1095,8 @@
                     "theme_mode_pink": "粉色",
                     "theme_mode_material3": "Material 3",
                     "zoom": "界面缩放",
+                    "animations": "界面动画",
+                    "animations_description": "控制页面切换、卡片展开等界面动画。",
                     "vrcplus_profile_icons": "VRC+ 个人资料图标",
                     "vrcplus_profile_icons_description": "当可用时显示 VRChat+ 专属个人资料图标。",
                     "show_instance_id": "显示房间 ID（及其自定义名称）",

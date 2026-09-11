@@ -126,6 +126,8 @@ export const useAppearanceSettingsStore = defineStore(
         const accessibleStatusIndicators = ref(false);
         const useOfficialStatusColors = ref(true);
         const showNewDashboardButton = ref(true);
+        // Kept enabled by default to preserve the existing UI behaviour.
+        const animationsEnabled = ref(true);
         const tableLimitsDialog = ref({
             visible: false,
             maxTableSize: 500,
@@ -192,7 +194,8 @@ export const useAppearanceSettingsStore = defineStore(
                 appFontFamilyConfig,
                 customFontFamilyConfig,
                 appCjkFontPackConfig,
-                lastDarkThemeConfig
+                lastDarkThemeConfig,
+                animationsEnabledConfig
             ] = await Promise.all([
                 configRepository.getString('VRCX_appLanguage'),
                 configRepository.getBool('displayVRCPlusIconsAsAvatar', true),
@@ -277,7 +280,8 @@ export const useAppearanceSettingsStore = defineStore(
                 configRepository.getString(
                     'VRCX_lastDarkTheme',
                     fallbackDarkTheme
-                )
+                ),
+                configRepository.getBool('VRCX_animationsEnabled', true)
             ]);
 
             if (appLanguageConfig) {
@@ -390,9 +394,11 @@ export const useAppearanceSettingsStore = defineStore(
             accessibleStatusIndicators.value = accessibleStatusIndicatorsConfig;
             useOfficialStatusColors.value = useOfficialStatusColorsConfig;
             showNewDashboardButton.value = showNewDashboardButtonConfig;
+            animationsEnabled.value = animationsEnabledConfig !== false;
 
             applyAccessibleStatusClass();
             applyOfficialStatusColorsClass();
+            applyMotionPreference();
 
             await configRepository.remove('VRCX_navWidth');
 
@@ -1001,6 +1007,23 @@ export const useAppearanceSettingsStore = defineStore(
         }
 
         /**
+         * Toggle the global interface animation preference.
+         *
+         * @param {boolean} [value]
+         */
+        function setAnimationsEnabled(value) {
+            const nextValue =
+                typeof value === 'boolean' ? value : !animationsEnabled.value;
+            animationsEnabled.value = nextValue;
+            configRepository.setBool('VRCX_animationsEnabled', nextValue);
+            applyMotionPreference();
+        }
+
+        function applyMotionPreference() {
+            appearanceDomAdapter.applyMotionPreference(animationsEnabled.value);
+        }
+
+        /**
          *
          */
         function setShowNewDashboardButton() {
@@ -1242,6 +1265,7 @@ export const useAppearanceSettingsStore = defineStore(
             accessibleStatusIndicators,
             useOfficialStatusColors,
             showNewDashboardButton,
+            animationsEnabled,
             tableLimitsDialog,
             TABLE_MAX_SIZE_MIN,
             TABLE_MAX_SIZE_MAX,
@@ -1279,6 +1303,7 @@ export const useAppearanceSettingsStore = defineStore(
             toggleStripedDataTable,
             toggleAccessibleStatusIndicators,
             toggleOfficialStatusColors,
+            setAnimationsEnabled,
             setShowNewDashboardButton,
             setTableDensity,
             setTrustColor,

@@ -1086,6 +1086,8 @@
                     "theme_mode_pink": "Pink",
                     "theme_mode_material3": "Material 3",
                     "zoom": "Zoom",
+                    "animations": "Interface animations",
+                    "animations_description": "Control page transitions, card expansions, and other interface animations.",
                     "vrcplus_profile_icons": "VRChat+ Profile Icons",
                     "vrcplus_profile_icons_description": "Use VRChat+ exclusive profile icons when available.",
                     "show_instance_id": "Show Instance ID",

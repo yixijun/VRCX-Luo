@@ -86,6 +86,12 @@
                 </NumberField>
             </SettingsItem>
 
+            <SettingsItem
+                :label="t('view.settings.appearance.appearance.animations')"
+                :description="t('view.settings.appearance.appearance.animations_description')">
+                <Switch :model-value="animationsEnabled" @update:modelValue="setAnimationsEnabled" />
+            </SettingsItem>
+
             <SettingsItem :label="t('view.settings.appearance.appearance.show_notification_icon_dot')">
                 <Switch
                     :model-value="notificationIconDot"
@@ -472,6 +478,7 @@
         randomUserColours,
         trustColor,
         notificationIconDot,
+        animationsEnabled,
         tablePageSizes,
         isDataTableStriped,
         accessibleStatusIndicators,
@@ -499,6 +506,7 @@
         changeAppLanguage,
         showTableLimitsDialog,
         setNotificationIconDot,
+        setAnimationsEnabled,
         setTablePageSizes,
         toggleStripedDataTable,
         toggleAccessibleStatusIndicators,

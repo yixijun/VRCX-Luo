@@ -8,7 +8,8 @@
  * @returns {{
  *     applyAccessibleStatusIndicators: (enabled: boolean) => void,
  *     applyOfficialStatusColors: (useOfficial: boolean) => void,
- *     applyTableDensity: (density: string) => void
+ *     applyTableDensity: (density: string) => void,
+ *     applyMotionPreference: (enabled: boolean) => void
  * }}
  */
 export function createAppearanceDomAdapter(documentRef = document) {
@@ -41,9 +42,18 @@ export function createAppearanceDomAdapter(documentRef = document) {
         }
     }
 
+    function applyMotionPreference(enabled) {
+        const classList = getClassList();
+        classList.remove('motion-disabled');
+        if (!enabled) {
+            classList.add('motion-disabled');
+        }
+    }
+
     return {
         applyAccessibleStatusIndicators,
         applyOfficialStatusColors,
-        applyTableDensity
+        applyTableDensity,
+        applyMotionPreference
     };
 }

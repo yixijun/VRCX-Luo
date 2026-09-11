@@ -603,6 +603,24 @@ select {
     }
 }
 
+/* The appearance setting provides an app-wide opt-out for all UI motion. */
+html.motion-disabled *,
+html.motion-disabled *::before,
+html.motion-disabled *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+}
+
+html.motion-disabled .x-hover-card:hover,
+html.motion-disabled .x-hover-card:active,
+html.motion-disabled [data-slot='button']:active,
+html.motion-disabled [data-slot='sidebar-menu-button']:active,
+html.motion-disabled [data-slot='tabs-trigger']:active {
+    transform: none;
+}
+
 @media (prefers-reduced-transparency: reduce) {
     [data-slot='popover-content'],
     [data-slot='dropdown-menu-content'],
