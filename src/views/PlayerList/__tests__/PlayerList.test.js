@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
     currentInstanceLocation: null,
     currentInstanceWorld: null,
     currentInstanceUsersData: null,
+    instanceJoinHistory: null,
     currentUser: null,
     saveChatboxUserBlacklist: vi.fn(),
     showUserDialog: vi.fn(),
@@ -60,12 +61,15 @@ vi.mock('../../../stores', () => ({
         showWorldDialog: (...args) => mocks.showWorldDialog(...args)
     }),
     useLocationStore: () => ({
-        lastLocation: mocks.lastLocation
+        lastLocation: mocks.lastLocation,
+        lastLocationDestination: ref(''),
+        lastLocationDestinationTime: ref(0)
     }),
     useInstanceStore: () => ({
         currentInstanceLocation: mocks.currentInstanceLocation,
         currentInstanceWorld: mocks.currentInstanceWorld,
         currentInstanceUsersData: mocks.currentInstanceUsersData,
+        instanceJoinHistory: mocks.instanceJoinHistory,
         getCurrentInstanceUserList: (...args) =>
             mocks.getCurrentInstanceUserList(...args)
     }),
@@ -181,9 +185,9 @@ vi.mock('../dialogs/ChatboxBlacklistDialog.vue', () => ({
 
 vi.mock('../components/InstancePlayerEventsPopover.vue', () => ({
     default: {
-        props: ['location'],
+        props: ['location', 'instanceStartTime'],
         template:
-            '<div data-testid="instance-player-events-popover" :data-location="location"><button data-testid="toggle-player-events"><span /></button></div>'
+            '<div data-testid="instance-player-events-popover" :data-location="location" :data-instance-start-time="instanceStartTime"><button data-testid="toggle-player-events"><span /></button></div>'
     }
 }));
 
@@ -209,6 +213,7 @@ describe('PlayerList.vue', () => {
         mocks.lastLocation = ref({
             playerList: new Set(),
             friendList: new Set(),
+            location: '',
             date: null
         });
         mocks.currentInstanceLocation = ref({});
@@ -229,6 +234,7 @@ describe('PlayerList.vue', () => {
             isIos: false
         });
         mocks.currentInstanceUsersData = ref([]);
+        mocks.instanceJoinHistory = ref(new Map());
         mocks.currentUser = ref({
             id: 'usr_me',
             $homeLocation: null
@@ -321,6 +327,33 @@ describe('PlayerList.vue', () => {
         expect(wrapper.find('[data-testid="row-click-with-id"]').exists()).toBe(
             true
         );
+    });
+
+    test('passes the current instance session start time to the activity popover', () => {
+        mocks.currentInstanceLocation.value = { tag: 'wrld_123:instance_1' };
+        mocks.lastLocation.value.location = 'wrld_123:instance_1';
+        mocks.lastLocation.value.date = 1_757_058_120_000;
+
+        const wrapper = mount(PlayerList);
+
+        expect(
+            wrapper
+                .get('[data-testid="instance-player-events-popover"]')
+                .attributes('data-instance-start-time')
+        ).toBe('1757058120000');
+    });
+
+    test('falls back to the cached instance join time when the live location time is unavailable', () => {
+        mocks.currentInstanceLocation.value = { tag: 'wrld_123:instance_1' };
+        mocks.instanceJoinHistory.value.set('wrld_123:instance_1', 1_757_058_120_000);
+
+        const wrapper = mount(PlayerList);
+
+        expect(
+            wrapper
+                .get('[data-testid="instance-player-events-popover"]')
+                .attributes('data-instance-start-time')
+        ).toBe('1757058120000');
     });
 
     test('clears the manual layout when the room instance changes', async () => {

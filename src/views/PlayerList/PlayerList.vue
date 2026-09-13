@@ -137,7 +137,9 @@
                         </div>
                         <div
                             class="player-list__summary-action ml-5 flex w-28 shrink-0 items-start justify-end pr-1 pt-1">
-                            <InstancePlayerEventsPopover :location="currentInstanceTag" />
+                            <InstancePlayerEventsPopover
+                                :location="currentInstanceTag"
+                                :instance-start-time="currentInstanceStartTime" />
                         </div>
                         <div class="ml-5" style="display: flex; flex-direction: column">
                             <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
@@ -179,7 +181,9 @@
                     </div>
 
                     <div v-if="!currentInstanceWorld.ref.id" class="mb-2 flex justify-end">
-                        <InstancePlayerEventsPopover :location="currentInstanceTag" />
+                        <InstancePlayerEventsPopover
+                            :location="currentInstanceTag"
+                            :instance-start-time="currentInstanceStartTime" />
                     </div>
                     <div class="mb-2" v-if="photonLoggingEnabled" ref="playerListPhotonRef">
                         <PhotonEventTable @show-chatbox-blacklist="showChatboxBlacklistDialog" />
@@ -209,7 +213,9 @@
         <div v-else class="current-instance-table flex h-full min-h-0 min-w-0 flex-col">
             <div class="player-list__table-toolbar flex shrink-0 items-center border-b border-border px-1 py-1">
                 <div class="ml-auto flex shrink-0">
-                    <InstancePlayerEventsPopover :location="currentInstanceTag" />
+                    <InstancePlayerEventsPopover
+                        :location="currentInstanceTag"
+                        :instance-start-time="currentInstanceStartTime" />
                 </div>
             </div>
             <DataTableLayout
@@ -263,8 +269,13 @@
     const { photonLoggingEnabled, chatboxUserBlacklist } = storeToRefs(photonStore);
     const { saveChatboxUserBlacklist } = photonStore;
 
-    const { lastLocation } = storeToRefs(useLocationStore());
-    const { currentInstanceLocation, currentInstanceWorld, currentInstanceUsersData } = storeToRefs(useInstanceStore());
+    const { lastLocation, lastLocationDestination, lastLocationDestinationTime } = storeToRefs(useLocationStore());
+    const {
+        currentInstanceLocation,
+        currentInstanceWorld,
+        currentInstanceUsersData,
+        instanceJoinHistory
+    } = storeToRefs(useInstanceStore());
 
     const worldImageError = ref(false);
 
@@ -299,6 +310,35 @@
         () => Boolean(currentInstanceWorld.value?.ref?.id) || Boolean(photonLoggingEnabled.value)
     );
     const currentInstanceTag = computed(() => currentInstanceLocation.value?.tag || '');
+    const currentInstanceStartTime = computed(() => {
+        const instanceTag = currentInstanceTag.value;
+        if (!instanceTag) {
+            return null;
+        }
+
+        const currentLocation = lastLocation.value;
+        if (currentLocation?.location === instanceTag && currentLocation.date) {
+            return currentLocation.date;
+        }
+        if (
+            currentLocation?.location === 'traveling' &&
+            lastLocationDestination.value === instanceTag &&
+            lastLocationDestinationTime.value
+        ) {
+            return lastLocationDestinationTime.value;
+        }
+
+        const currentUserLocation = currentUser.value;
+        if (currentUserLocation?.$locationTag === instanceTag && currentUserLocation.$location_at) {
+            return currentUserLocation.$location_at;
+        }
+
+        const cachedStartTime = instanceJoinHistory.value?.get?.(instanceTag);
+        if (cachedStartTime) {
+            return cachedStartTime;
+        }
+        return null;
+    });
 
     function getElement(componentRef) {
         return componentRef?.$el ?? componentRef ?? null;

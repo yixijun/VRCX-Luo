@@ -35,8 +35,9 @@ vi.mock('lucide-vue-next', () => ({
 
 vi.mock('../InstancePlayerEvents.vue', () => ({
     default: {
-        props: ['location'],
-        template: '<div data-testid="event-panel" :data-location="location" />'
+        props: ['location', 'instanceStartTime'],
+        template:
+            '<div data-testid="event-panel" :data-location="location" :data-instance-start-time="instanceStartTime" />'
     }
 }));
 
@@ -45,7 +46,10 @@ import InstancePlayerEventsPopover from '../InstancePlayerEventsPopover.vue';
 describe('InstancePlayerEventsPopover.vue', () => {
     test('opens a right-aligned floating panel from the icon trigger', async () => {
         const wrapper = mount(InstancePlayerEventsPopover, {
-            props: { location: 'wrld_123:instance_1' }
+            props: {
+                location: 'wrld_123:instance_1',
+                instanceStartTime: 1_757_058_120_000
+            }
         });
 
         expect(wrapper.find('[data-testid="event-panel"]').exists()).toBe(
@@ -59,7 +63,9 @@ describe('InstancePlayerEventsPopover.vue', () => {
         const content = wrapper.get('[data-testid="player-events-popover"]');
         expect(content.attributes('side')).toBe('bottom');
         expect(content.attributes('align')).toBe('end');
-        expect(content.classes()).toContain('max-h-[var(--reka-popover-content-available-height)]');
+        expect(content.classes()).toContain(
+            'max-h-[var(--reka-popover-content-available-height)]'
+        );
         expect(content.classes()).toContain('overflow-hidden');
         expect(content.attributes('style')).toMatch(
             /height:\s*min\(24rem,\s*var\(--reka-popover-content-available-height,\s*24rem\)\)/
@@ -69,6 +75,11 @@ describe('InstancePlayerEventsPopover.vue', () => {
                 .get('[data-testid="event-panel"]')
                 .attributes('data-location')
         ).toBe('wrld_123:instance_1');
+        expect(
+            wrapper
+                .get('[data-testid="event-panel"]')
+                .attributes('data-instance-start-time')
+        ).toBe('1757058120000');
         expect(
             wrapper
                 .get('[data-testid="toggle-player-events"]')

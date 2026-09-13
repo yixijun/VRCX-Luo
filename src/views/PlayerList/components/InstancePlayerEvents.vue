@@ -182,6 +182,10 @@
         location: {
             type: String,
             default: ''
+        },
+        instanceStartTime: {
+            type: [Number, String],
+            default: null
         }
     });
 
@@ -228,12 +232,32 @@
     const scrollViewportRef = ref(null);
     let requestId = 0;
 
-    const eventRows = computed(() =>
-        events.value.map((event) => ({
+    function parseTimestamp(value) {
+        if (typeof value === 'number') {
+            return Number.isFinite(value) ? value : null;
+        }
+        if (typeof value !== 'string' || !value.trim()) {
+            return null;
+        }
+        const timestamp = Date.parse(value);
+        return Number.isFinite(timestamp) ? timestamp : null;
+    }
+
+    const eventRows = computed(() => {
+        const sessionStartTime = parseTimestamp(props.instanceStartTime);
+        const rows =
+            sessionStartTime === null
+                ? events.value
+                : events.value.filter((event) => {
+                      const eventTime = parseTimestamp(event?.created_at);
+                      return eventTime !== null && eventTime >= sessionStartTime;
+                  });
+
+        return rows.map((event) => ({
             ...event,
             isFriend: isFriend(event)
-        }))
-    );
+        }));
+    });
 
     const allCount = computed(() => eventRows.value.length);
     const joinedCount = computed(() => eventRows.value.filter((event) => event.type === 'OnPlayerJoined').length);

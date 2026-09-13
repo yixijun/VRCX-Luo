@@ -21,7 +21,11 @@
             class="w-96 max-w-[calc(100vw-2rem)] max-h-[var(--reka-popover-content-available-height)] overflow-hidden p-0"
             style="height: min(24rem, var(--reka-popover-content-available-height, 24rem))"
             data-testid="player-events-popover">
-            <InstancePlayerEvents v-if="open" :location="props.location" class="h-full min-h-0" />
+            <InstancePlayerEvents
+                v-if="open"
+                :location="props.location"
+                :instance-start-time="props.instanceStartTime"
+                class="h-full min-h-0" />
         </PopoverContent>
     </Popover>
 </template>
@@ -39,6 +43,10 @@
         location: {
             type: String,
             default: ''
+        },
+        instanceStartTime: {
+            type: [Number, String],
+            default: null
         }
     });
 

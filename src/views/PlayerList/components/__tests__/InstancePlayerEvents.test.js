@@ -231,6 +231,45 @@ describe('InstancePlayerEvents.vue', () => {
         expect(mocks.getGameLogByLocation).toHaveBeenCalledTimes(2);
     });
 
+    test('shows only activity from the current instance session', async () => {
+        mocks.getGameLogByLocation.mockResolvedValue([
+            {
+                rowId: 3,
+                created_at: '2026-09-05T10:03:00.000Z',
+                type: 'OnPlayerJoined',
+                displayName: 'Current player',
+                userId: 'usr_current'
+            },
+            {
+                rowId: 2,
+                created_at: '2026-09-05T10:02:00.000Z',
+                type: 'OnPlayerLeft',
+                displayName: 'Current leaver',
+                userId: 'usr_current_leaver'
+            },
+            {
+                rowId: 1,
+                created_at: '2026-09-05T10:01:00.000Z',
+                type: 'OnPlayerJoined',
+                displayName: 'Previous session',
+                userId: 'usr_previous'
+            }
+        ]);
+
+        const wrapper = mount(InstancePlayerEvents, {
+            props: {
+                location: 'wrld_123:instance_1',
+                instanceStartTime: Date.parse('2026-09-05T10:02:00.000Z')
+            }
+        });
+        await flushPromises();
+
+        expect(wrapper.findAll('.instance-player-events__row')).toHaveLength(2);
+        expect(wrapper.text()).toContain('Current player');
+        expect(wrapper.text()).toContain('Current leaver');
+        expect(wrapper.text()).not.toContain('Previous session');
+    });
+
     test('remembers both filters after the room activity panel is closed', async () => {
         mocks.getGameLogByLocation.mockResolvedValue([
             {
