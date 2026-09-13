@@ -2,6 +2,7 @@
     <div id="x-app" class="flex w-screen h-screen overflow-hidden cursor-default x-app-type">
         <div class="wrist" :class="{ background: config && config.backgroundEnabled }">
             <WristOriginMarker
+                v-if="showWristOriginMarker"
                 :x="wristPointer.x"
                 :y="wristPointer.y"
                 :visible="wristPointer.visible"
@@ -1477,6 +1478,11 @@
         installWristPointerDesktopTest,
         isWristPointerDesktopTestEnabled
     } from './wristPointerDesktopTest';
+
+    // Keep the controller origin marker available only for the explicit
+    // desktop simulator.  Production VR still receives pointer movement and
+    // click events, but the debugging marker is not part of the shipped UI.
+    const showWristOriginMarker = isWristPointerDesktopTestEnabled();
 
     import * as workerTimers from 'worker-timers';
 
