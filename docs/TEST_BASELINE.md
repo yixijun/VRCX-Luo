@@ -627,6 +627,20 @@ M-11.1～M-11.4 均建立了独立本地回滚点。本轮前端 UI 重构停止
 
 代码回滚点：`7bdb9131`；文档随后单独提交，均未发布、未推送。
 
+## 功能修正：房间进出只显示当前实例会话
+
+2026-09-13，修正房间进出悬浮窗把同一实例 ID 的历史会话全部混在一起的问题。房间页现在将当前用户本次进入实例的时间传入悬浮窗；事件显示层只保留 `created_at` 不早于该时间的进入/离开记录，因此重新进入同一实例时不会再显示上一次会话。时间优先取实时位置会话时间，旅行中取目的地时间，必要时回退到当前用户位置时间和实例加入历史缓存。数据库查询接口、好友/陌生人筛选、进入/离开筛选、排序、虚拟列表和筛选记忆均未改变。
+
+| 检查项 | 命令/方式 | 结果 |
+|---|---|---|
+| 当前会话边界回归 RED | `npx vitest run src/views/PlayerList/components/__tests__/InstancePlayerEvents.test.js --reporter=dot` | **预期失败**：旧实现仍渲染会话开始前的记录（3 条而非 2 条） |
+| 房间进出组件 GREEN | `npx vitest run src/views/PlayerList/components/__tests__/InstancePlayerEvents.test.js src/views/PlayerList/components/__tests__/InstancePlayerEventsPopover.test.js --reporter=dot --maxWorkers=2` | **通过：2 个文件、7 项测试** |
+| PlayerList 传参回归 | `npx vitest run src/views/PlayerList/components/__tests__/InstancePlayerEvents.test.js src/views/PlayerList/components/__tests__/InstancePlayerEventsPopover.test.js src/views/PlayerList/__tests__/PlayerList.test.js --reporter=dot --maxWorkers=2` | **通过：3 个文件、20 项测试**；保留既有组件解析和 mock 警告 |
+| 目标文件 Lint | `npx eslint src/views/PlayerList/PlayerList.vue src/views/PlayerList/components/InstancePlayerEvents.vue src/views/PlayerList/components/InstancePlayerEventsPopover.vue src/views/PlayerList/__tests__/PlayerList.test.js src/views/PlayerList/components/__tests__/InstancePlayerEvents.test.js src/views/PlayerList/components/__tests__/InstancePlayerEventsPopover.test.js` | **通过** |
+| JavaScript 类型检查 | `npm run typecheck:js` | **通过：0 diagnostics** |
+
+代码提交：`34fd5fe2`；未发布、未推送。
+
 ## 后续门禁规则
 
 每个重构切片必须满足：

@@ -366,6 +366,10 @@ M-11.1 将 Appearance Store 的 DOM class implementation 移到 `appearanceDomAd
 
 `InstancePlayerEvents.vue` 的身份与方向筛选状态现在由 `useLocalStorage` 保存，键为 `VRCX_instancePlayerEventsFilters`。悬浮窗关闭会卸载事件列表组件，但再次打开（包括应用重启后）会恢复上次选择；读取值经过白名单校验，非法值回退到 `all`。该变更只增加显示偏好持久化，没有改变 `location` 查询、好友判定、事件排序、组件 props、数据库接口、并发行为或多账户会话。
 
+### 近期功能修正：房间进出会话边界
+
+房间进出悬浮窗现在按当前用户本次进入实例的时间过滤记录，避免把同一实例 ID 的历史会话混入当前列表。边界时间由 PlayerList 从实时位置会话、旅行目的地时间、当前用户位置时间或实例加入历史缓存中按优先级投影给 `InstancePlayerEvents`；组件只在显示层过滤 `created_at`，不修改 `getGameLogByLocation` 的公共查询契约，也不影响好友/陌生人、进入/离开筛选、虚拟化和筛选记忆。缺少可靠时间时保留兼容回退，供独立复用/旧调用方继续工作。
+
 ### 近期功能修正：戳一戳自定义图标选中态
 
 `SendBoopDialog.vue` 的 VRC+ 自定义图标选择项现在提供明确的视觉选中态，包括主色边框、背景、外圈和勾选标记；同时补充 `aria-pressed` 及 Enter/Space 键盘操作。该变更只改显示与交互反馈，不改变默认表情、发送参数、图标管理入口、弹窗状态结构或通知流程。
