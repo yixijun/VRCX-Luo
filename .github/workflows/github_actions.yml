@@ -446,6 +446,7 @@ jobs:
                       ## VRCX-Luo ${{ needs.set_version.outputs.version }}
 
                       本次更新整合本地相对云端 master 的全部功能改动，重点完善群组管理、通知处理、启动体验、好友资料和整体界面。
+                      完整更新日志：[CHANGELOG.md](https://github.com/yixijun/VRCX-Luo/blob/${{ needs.set_version.outputs.version }}/CHANGELOG.md)
 
                       ### 本版本重点
 
