@@ -205,6 +205,44 @@ export async function runHandleUserUpdateFlowWithDependencies(
         ref.$previousLocation = props.location[1];
         ref.$travelingToTime = now();
     }
+    // Newer VRChat user events expose profile icons through iconUrl rather
+    // than currentAvatarImageUrl. Prefer the new field while retaining the
+    // legacy path for older websocket payloads.
+    if (props.iconUrl && props.iconUrl[0]) {
+        const currentIconUrl = props.iconUrl[0];
+        const previousIconUrl = props.iconUrl[1] || '';
+        let avatarInfo = { ownerId: '', avatarName: '' };
+        let previousAvatarInfo = { ownerId: '', avatarName: '' };
+        try {
+            avatarInfo = await getAvatarName(currentIconUrl);
+            if (previousIconUrl) {
+                previousAvatarInfo = await getAvatarName(previousIconUrl);
+            }
+        } catch (err) {
+            console.log(err);
+        }
+        if (avatarInfo.ownerId || previousAvatarInfo.ownerId) {
+            feed = {
+                created_at: nowIso(),
+                type: 'Avatar',
+                userId: ref.id,
+                displayName: ref.displayName,
+                ownerId: avatarInfo.ownerId,
+                previousOwnerId: previousAvatarInfo.ownerId,
+                avatarName: avatarInfo.avatarName,
+                previousAvatarName: previousAvatarInfo.avatarName,
+                currentAvatarImageUrl: avatarInfo.ownerId ? currentIconUrl : '',
+                currentAvatarThumbnailImageUrl: avatarInfo.ownerId ? currentIconUrl : '',
+                previousCurrentAvatarImageUrl: previousAvatarInfo.ownerId ? previousIconUrl : '',
+                previousCurrentAvatarThumbnailImageUrl: previousAvatarInfo.ownerId ? previousIconUrl : ''
+            };
+            notificationStore.queueFeedNoty(feed);
+            sharedFeedStore.addEntry(feed);
+            feedStore.addFeedEntry(feed);
+            databaseApi.addAvatarToDatabase(feed);
+        }
+    }
+
     let imageMatches = false;
     if (
         props.currentAvatarThumbnailImageUrl &&
@@ -216,6 +254,7 @@ export async function runHandleUserUpdateFlowWithDependencies(
         imageMatches = true;
     }
     if (
+        !props.iconUrl &&
         (((props.currentAvatarImageUrl ||
             props.currentAvatarThumbnailImageUrl) &&
             !ref.profilePicOverride) ||

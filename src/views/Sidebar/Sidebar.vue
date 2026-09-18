@@ -96,6 +96,13 @@
                                     :model-value="isSidebarDivideByFriendGroup"
                                     @update:modelValue="setIsSidebarDivideByFriendGroup" />
                             </Field>
+                            <Field orientation="horizontal">
+                                <FieldLabel>{{ t('view.settings.appearance.appearance.show_cosmetics') }}</FieldLabel>
+                                <Switch
+                                    :model-value="sidebarCosmetics"
+                                    :ariaLabel="t('view.settings.appearance.appearance.show_cosmetics')"
+                                    @update:modelValue="setSidebarCosmetics" />
+                            </Field>
 
                             <Separator />
 
@@ -420,7 +427,8 @@
         isHideFriendsInSameInstance,
         isSameInstanceAboveFavorites,
         isSidebarDivideByFriendGroup,
-        sidebarFavoriteGroups
+        sidebarFavoriteGroups,
+        sidebarCosmetics
     } = storeToRefs(appearanceSettingsStore);
     const {
         setSidebarSortMethod1,
@@ -430,7 +438,8 @@
         setIsHideFriendsInSameInstance,
         setIsSameInstanceAboveFavorites,
         setIsSidebarDivideByFriendGroup,
-        setSidebarFavoriteGroups
+        setSidebarFavoriteGroups,
+        setSidebarCosmetics
     } = appearanceSettingsStore;
 
     const favoriteStore = useFavoriteStore();

@@ -1,81 +1,93 @@
 <template>
-    <div class="w-full max-w-223 flex-1 min-h-0 min-w-0 flex flex-col">
+    <div class="user-dialog-scrollbars user-dialog__workspace flex-1 min-h-0 min-w-0">
         <DialogHeader class="sr-only">
             <DialogTitle>{{
                 userDialog.ref?.displayName || userDialog.id || t('dialog.user.info.header')
             }}</DialogTitle>
             <DialogDescription>{{ getUserStateText(userDialog.ref || {}) }}</DialogDescription>
         </DialogHeader>
-        <UserSummaryHeader
-            class="flex-shrink-0"
-            :get-user-state-text="getUserStateText"
-            :copy-user-display-name="copyUserDisplayName"
-            :toggle-badge-visibility="toggleBadgeVisibility"
-            :toggle-badge-showcased="toggleBadgeShowcased"
-            :user-dialog-command="userDialogCommand" />
+        <div class="user-dialog__summary">
+            <UserSummaryHeader
+                :get-user-state-text="getUserStateText"
+                :copy-user-display-name="copyUserDisplayName"
+                :toggle-badge-visibility="toggleBadgeVisibility"
+                :toggle-badge-showcased="toggleBadgeShowcased"
+                :user-dialog-command="userDialogCommand" />
+        </div>
 
-        <TabsUnderline
-            v-model="userDialog.activeTab"
-            :items="userDialogTabs"
-            :unmount-on-hide="false"
-            fill
-            @update:modelValue="userDialogTabClick">
-            <template #Info>
-                <UserDialogInfoTab ref="infoTabRef" @show-bio-dialog="showBioDialog" />
-            </template>
+        <div class="user-dialog__splitter" aria-hidden="true">
+            <div class="user-dialog__splitter-grip"></div>
+        </div>
 
-            <template v-if="userDialog.id !== currentUser.id && !currentUser.hasSharedConnectionsOptOut" #mutual>
-                <UserDialogMutualFriendsTab ref="mutualFriendsTabRef" />
-            </template>
+        <div class="user-dialog__main">
+            <TabsUnderline
+                class="user-dialog__tabs"
+                v-model="userDialog.activeTab"
+                :items="userDialogTabs"
+                :activeColor="userDialogTabColor"
+                :unmount-on-hide="false"
+                fill
+                :background="true"
+                @update:modelValue="userDialogTabClick">
+                <template #Info>
+                    <UserDialogInfoTab ref="infoTabRef" @show-bio-dialog="showBioDialog" />
+                </template>
 
-            <template #Groups>
-                <UserDialogGroupsTab ref="groupsTabRef" />
-            </template>
+                <template v-if="userDialog.id !== currentUser.id && !currentUser.hasSharedConnectionsOptOut" #mutual>
+                    <UserDialogMutualFriendsTab ref="mutualFriendsTabRef" />
+                </template>
 
-            <template #Worlds>
-                <UserDialogWorldsTab ref="worldsTabRef" />
-            </template>
+                <template #Groups>
+                    <UserDialogGroupsTab ref="groupsTabRef" />
+                </template>
 
-            <template #favorite-worlds>
-                <UserDialogFavoriteWorldsTab ref="favoriteWorldsTabRef" />
-            </template>
+                <template #Worlds>
+                    <UserDialogWorldsTab ref="worldsTabRef" />
+                </template>
 
-            <template #Avatars>
-                <UserDialogAvatarsTab ref="avatarsTabRef" />
-            </template>
+                <template #favorite-worlds>
+                    <UserDialogFavoriteWorldsTab ref="favoriteWorldsTabRef" />
+                </template>
 
-            <template #Activity>
-                <UserDialogActivityTab ref="activityTabRef" />
-            </template>
+                <template #Avatars>
+                    <UserDialogAvatarsTab ref="avatarsTabRef" />
+                </template>
 
-            <template #status-distribution>
-                <UserDialogStatusDistributionTab ref="statusDistributionTabRef" />
-            </template>
+                <template #Activity>
+                    <UserDialogActivityTab ref="activityTabRef" />
+                </template>
 
-            <template #JSON>
-                <DialogJsonTab
-                    :tree-data="treeData"
-                    :tree-data-key="treeData?.id"
-                    :dialog-id="userDialog.id"
-                    :dialog-ref="userDialog.ref"
-                    @refresh="refreshUserDialogTreeData()" />
-            </template>
-        </TabsUnderline>
-        <SendInviteDialog
-            v-model:sendInviteDialogVisible="sendInviteDialogVisible"
-            v-model:sendInviteDialog="sendInviteDialog"
-            @closeInviteDialog="closeInviteDialog" />
-        <SendInviteRequestDialog
-            v-model:sendInviteRequestDialogVisible="sendInviteRequestDialogVisible"
-            v-model:sendInviteDialog="sendInviteDialog"
-            @closeInviteDialog="closeInviteDialog" />
-        <SocialStatusDialog
-            :social-status-dialog="socialStatusDialog"
-            :social-status-history-table="socialStatusHistoryTable" />
-        <LanguageDialog />
-        <BioDialog :bio-dialog="bioDialog" />
-        <PronounsDialog :pronouns-dialog="pronounsDialog" />
-        <ModerateGroupDialog />
+                <template #status-distribution>
+                    <UserDialogStatusDistributionTab ref="statusDistributionTabRef" />
+                </template>
+
+                <template #JSON>
+                    <DialogJsonTab
+                        class="rounded-lg bg-(--profile-card) p-2"
+                        :tree-data="treeData"
+                        :tree-data-key="treeData?.user?.id"
+                        :dialog-id="userDialog.id"
+                        :dialog-ref="userDialog.ref"
+                        @refresh="refreshUserDialogTreeData()" />
+                </template>
+            </TabsUnderline>
+            <SendInviteDialog
+                v-model:sendInviteDialogVisible="sendInviteDialogVisible"
+                v-model:sendInviteDialog="sendInviteDialog"
+                @closeInviteDialog="closeInviteDialog" />
+            <SendInviteRequestDialog
+                v-model:sendInviteRequestDialogVisible="sendInviteRequestDialogVisible"
+                v-model:sendInviteDialog="sendInviteDialog"
+                @closeInviteDialog="closeInviteDialog" />
+            <SocialStatusDialog
+                :social-status-dialog="socialStatusDialog"
+                :social-status-history-table="socialStatusHistoryTable" />
+            <LanguageDialog />
+            <BioDialog :bio-dialog="bioDialog" />
+            <PronounsDialog :pronouns-dialog="pronounsDialog" />
+            <ModerateGroupDialog />
+            <EditProfileDialog :edit-profile-dialog="editProfileDialog" />
+        </div>
     </div>
 </template>
 
@@ -111,7 +123,7 @@
     import UserDialogAvatarsTab from './UserDialogAvatarsTab.vue';
     import UserDialogFavoriteWorldsTab from './UserDialogFavoriteWorldsTab.vue';
     import UserDialogGroupsTab from './UserDialogGroupsTab.vue';
-    import UserDialogInfoTab from './UserDialogInfoTabJirai.vue';
+    import UserDialogInfoTab from './UserDialogInfoTab.vue';
     import UserDialogMutualFriendsTab from './UserDialogMutualFriendsTab.vue';
     import UserDialogStatusDistributionTab from './UserDialogStatusDistributionTab.vue';
     import UserDialogWorldsTab from './UserDialogWorldsTab.vue';
@@ -123,6 +135,7 @@
     import PronounsDialog from './PronounsDialog.vue';
     import SendInviteRequestDialog from './SendInviteRequestDialog.vue';
     import SocialStatusDialog from './SocialStatusDialog.vue';
+    import EditProfileDialog from './EditProfileDialog.vue';
 
     const { t } = useI18n();
     const userDialogTabs = computed(() => {
@@ -162,7 +175,17 @@
     const modalStore = useModalStore();
     const instanceStore = useInstanceStore();
 
-    const { userDialog, languageDialog, currentUser } = storeToRefs(useUserStore());
+    const { userDialog, editProfileDialog, languageDialog, currentUser } = storeToRefs(useUserStore());
+    const userDialogTabColor = computed(() => {
+        const color = userDialog.value.theme?.buttonColor;
+        return color || 'var(--primary)';
+    });
+    const scrollbarThumbColor = computed(() => {
+        const color = userDialog.value.theme?.buttonColor;
+        return color && color !== 'var(--primary)'
+            ? `color-mix(in oklab, ${color} 50%, transparent)`
+            : 'color-mix(in oklab, var(--foreground) 30%, transparent)';
+    });
     const { cachedUsers, showSendBoopDialog } = useUserStore();
     const { showFavoriteDialog } = useFavoriteStore();
     import { showAvatarDialog, showAvatarAuthorDialog } from '../../../coordinators/avatarCoordinator';
@@ -321,13 +344,17 @@
     function refreshUserDialogTreeData() {
         const D = userDialog.value;
         if (D.id === currentUser.value.id) {
-            treeData.value = formatJsonVars({
-                ...currentUser.value,
-                ...D.ref
-            });
+            treeData.value = {
+                currentUser: formatJsonVars(currentUser.value),
+                user: formatJsonVars(D.ref),
+                profile: formatJsonVars(D.publicProfileRef)
+            };
             return;
         }
-        treeData.value = formatJsonVars(D.ref);
+        treeData.value = {
+            user: formatJsonVars(D.ref),
+            profile: formatJsonVars(D.publicProfileRef)
+        };
     }
 
     /**
@@ -521,3 +548,124 @@
         clearInviteImageUpload();
     }
 </script>
+
+<style scoped>
+    .user-dialog-scrollbars {
+        --profile-card: var(--card);
+        --user-dialog-scrollbar-thumb: v-bind(scrollbarThumbColor);
+        --user-dialog-scrollbar-track: transparent;
+    }
+
+    .user-dialog-scrollbars :deep(*) {
+        scrollbar-color: var(--user-dialog-scrollbar-thumb) var(--user-dialog-scrollbar-track);
+    }
+
+    .user-dialog__workspace {
+        display: grid;
+        grid-template-areas: 'summary splitter main';
+        grid-template-columns: minmax(17rem, 19.25rem) 0.625rem minmax(0, 1fr);
+        gap: 0;
+    }
+
+    .user-dialog__summary {
+        grid-area: summary;
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+        overflow-y: auto;
+        padding-right: 0.75rem;
+        scrollbar-width: thin;
+    }
+
+    .user-dialog__splitter {
+        grid-area: splitter;
+        position: relative;
+        display: flex;
+        width: 0.625rem;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .user-dialog__splitter::before {
+        position: absolute;
+        inset-block: 0;
+        left: 50%;
+        width: 1px;
+        content: '';
+        background: color-mix(in srgb, var(--border) 72%, transparent);
+        transform: translateX(-50%);
+    }
+
+    .user-dialog__splitter-grip {
+        position: relative;
+        z-index: 1;
+        width: 0.25rem;
+        height: 2.25rem;
+        border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+        border-radius: var(--radius-lg);
+        background: color-mix(in srgb, var(--muted) 74%, transparent);
+        opacity: 0.8;
+    }
+
+    .user-dialog__main {
+        grid-area: main;
+        display: flex;
+        min-width: 0;
+        min-height: 0;
+        flex-direction: column;
+        padding-left: 0.75rem;
+    }
+
+    .user-dialog__tabs {
+        min-width: 0;
+        min-height: 0;
+    }
+
+    .user-dialog__tabs :deep([role='tablist']) {
+        padding-inline: 0.125rem;
+        border-radius: var(--radius-md) var(--radius-md) 0 0;
+        background: color-mix(in srgb, var(--background) 92%, transparent);
+    }
+
+    .user-dialog__tabs :deep([role='tab']) {
+        height: 2.375rem;
+        padding-inline: 0.75rem;
+    }
+
+    .user-dialog__tabs :deep([role='tabpanel']) {
+        padding-top: 0.75rem;
+    }
+
+    @media (max-width: 60rem) {
+        .user-dialog__workspace {
+            grid-template-areas:
+                'summary'
+                'main';
+            grid-template-columns: minmax(0, 1fr);
+            grid-template-rows: auto minmax(0, 1fr);
+        }
+
+        .user-dialog__summary {
+            max-height: min(15rem, 32vh);
+            border-bottom: 1px solid color-mix(in srgb, var(--border) 68%, transparent);
+            padding-right: 0;
+            padding-bottom: 0.75rem;
+        }
+
+        .user-dialog__main {
+            padding-left: 0;
+        }
+
+        .user-dialog__splitter {
+            display: none;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .user-dialog__splitter-grip {
+            transition: none;
+        }
+    }
+</style>

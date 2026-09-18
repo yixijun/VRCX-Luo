@@ -63,6 +63,13 @@ export const useAppearanceSettingsStore = defineStore(
         const customFontFamily = ref('');
         const appCjkFontPack = ref(APP_CJK_FONT_PACK_DEFAULT_KEY);
         const displayVRCPlusIconsAsAvatar = ref(false);
+        // Upstream profile cards use these flags to gate profile theme and
+        // cosmetic layers. Keep them enabled/disabled independently of the
+        // existing appearance settings until the full settings UI is ported.
+        const displayVRCProfileThemes = ref(true);
+        const displayVRCProfileBackgrounds = ref(false);
+        const profileBackgroundOpacity = ref(0.5);
+        const displayVRCProfileCosmetics = ref(false);
         const hideNicknames = ref(false);
         const showInstanceIdInLocation = ref(false);
         const isAgeGatedInstancesVisible = ref(false);
@@ -88,6 +95,7 @@ export const useAppearanceSettingsStore = defineStore(
         const isSidebarDivideByFriendGroup = ref(false);
         const sidebarFavoriteGroups = ref([]);
         const sidebarFavoriteGroupOrder = ref([]);
+        const sidebarCosmetics = ref(false);
         const inactiveFriendDays = ref(30);
         const hideUserNotes = ref(false);
         const hideUserMemos = ref(false);
@@ -159,6 +167,10 @@ export const useAppearanceSettingsStore = defineStore(
             const [
                 appLanguageConfig,
                 displayVRCPlusIconsAsAvatarConfig,
+                displayVRCProfileThemesConfig,
+                displayVRCProfileBackgroundsConfig,
+                profileBackgroundOpacityConfig,
+                displayVRCProfileCosmeticsConfig,
                 hideNicknamesConfig,
                 showInstanceIdInLocationConfig,
                 isAgeGatedInstancesVisibleConfig,
@@ -177,6 +189,7 @@ export const useAppearanceSettingsStore = defineStore(
                 isSidebarDivideByFriendGroupConfig,
                 sidebarFavoriteGroupsConfig,
                 sidebarFavoriteGroupOrderConfig,
+                sidebarCosmeticsConfig,
                 inactiveFriendDaysConfig,
                 hideUserNotesConfig,
                 hideUserMemosConfig,
@@ -199,6 +212,10 @@ export const useAppearanceSettingsStore = defineStore(
             ] = await Promise.all([
                 configRepository.getString('VRCX_appLanguage'),
                 configRepository.getBool('displayVRCPlusIconsAsAvatar', true),
+                configRepository.getBool('VRCX_displayVRCProfileThemes', true),
+                configRepository.getBool('VRCX_displayVRCProfileBackgrounds', false),
+                configRepository.getFloat('VRCX_profileBackgroundOpacity', 0.5),
+                configRepository.getBool('VRCX_displayVRCProfileCosmetics', false),
                 configRepository.getBool('VRCX_hideNicknames', false),
                 configRepository.getBool(
                     'VRCX_showInstanceIdInLocation',
@@ -248,6 +265,7 @@ export const useAppearanceSettingsStore = defineStore(
                     'VRCX_sidebarFavoriteGroupOrder',
                     '[]'
                 ),
+                configRepository.getBool('VRCX_sidebarCosmetics', false),
                 configRepository.getInt('VRCX_inactiveFriendDays', 30),
                 configRepository.getBool('VRCX_hideUserNotes', false),
                 configRepository.getBool('VRCX_hideUserMemos', false),
@@ -318,6 +336,13 @@ export const useAppearanceSettingsStore = defineStore(
 
             displayVRCPlusIconsAsAvatar.value =
                 displayVRCPlusIconsAsAvatarConfig;
+            displayVRCProfileThemes.value = displayVRCProfileThemesConfig;
+            displayVRCProfileBackgrounds.value = displayVRCProfileBackgroundsConfig;
+            const configuredProfileBackgroundOpacity = Number(profileBackgroundOpacityConfig);
+            profileBackgroundOpacity.value = Number.isFinite(configuredProfileBackgroundOpacity)
+                ? Math.min(1, Math.max(0, configuredProfileBackgroundOpacity))
+                : 0.5;
+            displayVRCProfileCosmetics.value = displayVRCProfileCosmeticsConfig;
             hideNicknames.value = hideNicknamesConfig;
             showInstanceIdInLocation.value = showInstanceIdInLocationConfig;
             isAgeGatedInstancesVisible.value = isAgeGatedInstancesVisibleConfig;
@@ -367,6 +392,7 @@ export const useAppearanceSettingsStore = defineStore(
             sidebarFavoriteGroupOrder.value = JSON.parse(
                 sidebarFavoriteGroupOrderConfig
             );
+            sidebarCosmetics.value = sidebarCosmeticsConfig;
             inactiveFriendDays.value = clampInt(
                 inactiveFriendDaysConfig,
                 7,
@@ -632,6 +658,36 @@ export const useAppearanceSettingsStore = defineStore(
                 displayVRCPlusIconsAsAvatar.value
             );
         }
+
+        function setDisplayVRCProfileThemes() {
+            displayVRCProfileThemes.value = !displayVRCProfileThemes.value;
+            configRepository.setBool(
+                'VRCX_displayVRCProfileThemes',
+                displayVRCProfileThemes.value
+            );
+        }
+
+        function setDisplayVRCProfileBackgrounds() {
+            displayVRCProfileBackgrounds.value = !displayVRCProfileBackgrounds.value;
+            configRepository.setBool(
+                'VRCX_displayVRCProfileBackgrounds',
+                displayVRCProfileBackgrounds.value
+            );
+        }
+
+        function setProfileBackgroundOpacity(value) {
+            const nextValue = Math.min(1, Math.max(0, Number(value) || 0.5));
+            profileBackgroundOpacity.value = nextValue;
+            configRepository.setFloat('VRCX_profileBackgroundOpacity', nextValue);
+        }
+
+        function setDisplayVRCProfileCosmetics() {
+            displayVRCProfileCosmetics.value = !displayVRCProfileCosmetics.value;
+            configRepository.setBool(
+                'VRCX_displayVRCProfileCosmetics',
+                displayVRCProfileCosmetics.value
+            );
+        }
         /**
          *
          */
@@ -884,6 +940,13 @@ export const useAppearanceSettingsStore = defineStore(
                 'VRCX_sidebarFavoriteGroupOrder',
                 JSON.stringify(value)
             );
+        }
+        /**
+         * Toggle cosmetic overlays in compact sidebar friend entries.
+         */
+        function setSidebarCosmetics() {
+            sidebarCosmetics.value = !sidebarCosmetics.value;
+            configRepository.setBool('VRCX_sidebarCosmetics', sidebarCosmetics.value);
         }
         /**
          * @param {number} value
@@ -1229,6 +1292,10 @@ export const useAppearanceSettingsStore = defineStore(
             appFontFamily,
             appCjkFontPack,
             displayVRCPlusIconsAsAvatar,
+            displayVRCProfileThemes,
+            displayVRCProfileBackgrounds,
+            profileBackgroundOpacity,
+            displayVRCProfileCosmetics,
             hideNicknames,
             showInstanceIdInLocation,
             isAgeGatedInstancesVisible,
@@ -1250,6 +1317,7 @@ export const useAppearanceSettingsStore = defineStore(
             isSidebarDivideByFriendGroup,
             sidebarFavoriteGroups,
             sidebarFavoriteGroupOrder,
+            sidebarCosmetics,
             inactiveFriendDays,
             hideUserNotes,
             hideUserMemos,
@@ -1274,6 +1342,10 @@ export const useAppearanceSettingsStore = defineStore(
 
             setAppLanguage,
             setDisplayVRCPlusIconsAsAvatar,
+            setDisplayVRCProfileThemes,
+            setDisplayVRCProfileBackgrounds,
+            setProfileBackgroundOpacity,
+            setDisplayVRCProfileCosmetics,
             setHideNicknames,
             setShowInstanceIdInLocation,
             setIsAgeGatedInstancesVisible,
@@ -1295,6 +1367,7 @@ export const useAppearanceSettingsStore = defineStore(
             setIsSidebarDivideByFriendGroup,
             setSidebarFavoriteGroups,
             setSidebarFavoriteGroupOrder,
+            setSidebarCosmetics,
             setInactiveFriendDays,
             setHideUserNotes,
             setHideUserMemos,

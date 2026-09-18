@@ -26,6 +26,7 @@ import { database } from '../../services/database';
 import { tryLoadPlayerList } from '../../coordinators/gameLogCoordinator';
 import { useAdvancedSettingsStore } from '../settings/advanced';
 import { useFriendStore } from '../friend';
+import { useGameStore } from '../game';
 import { useNotificationStore } from '../notification';
 import { useUiStore } from '../ui';
 import { useUserStore } from '../user';
@@ -51,6 +52,7 @@ const SESSIONS_SEARCH_BATCH_ATTEMPTS = 3;
 export const useGameLogStore = defineStore('GameLog', () => {
     const notificationStore = useNotificationStore();
     const vrStore = useVrStore();
+    const gameStore = useGameStore();
     const friendStore = useFriendStore();
     const userStore = useUserStore();
     const uiStore = useUiStore();
@@ -190,6 +192,21 @@ export const useGameLogStore = defineStore('GameLog', () => {
         () => watchState.isFriendsLoaded,
         (isFriendsLoaded) => {
             if (isFriendsLoaded) {
+                tryLoadPlayerList();
+            }
+        },
+        { flush: 'sync' }
+    );
+
+    // Friends can finish loading before the native game-state callback. In
+    // that order the existing friends watcher runs while the game is still
+    // marked offline, so tryLoadPlayerList() returns early and the player
+    // table remains empty until the next join/leave event. Rehydrate the
+    // current room as soon as the game transitions to running as well.
+    watch(
+        () => gameStore.isGameRunning,
+        (isGameRunning) => {
+            if (isGameRunning) {
                 tryLoadPlayerList();
             }
         },

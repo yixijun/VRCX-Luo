@@ -37,6 +37,17 @@
             </SettingsItem>
         </SettingsGroup>
 
+        <SettingsGroup :title="t('view.settings.social.friend_requests.header')">
+            <SettingsItem
+                :label="t('view.settings.general.friend_requests.header')"
+                :description="t('view.settings.general.friend_requests.header_tooltip')">
+                <Switch
+                    :model-value="autoDeclineFriendRequests"
+                    :ariaLabel="t('view.settings.general.friend_requests.header')"
+                    @update:modelValue="setAutoDeclineFriendRequests" />
+            </SettingsItem>
+        </SettingsGroup>
+
         <SettingsGroup :title="t('view.settings.social.favorites.header')">
             <SettingsItem
                 :label="t('view.settings.general.favorites.header')"
@@ -108,14 +119,16 @@
         recentActionCooldownEnabled,
         recentActionCooldownMinutes,
         relationshipSuggestionPromptsEnabled,
-        localFavoriteFriendsGroups
+        localFavoriteFriendsGroups,
+        autoDeclineFriendRequests
     } = storeToRefs(generalSettingsStore);
 
     const {
         setRecentActionCooldownEnabled,
         setRecentActionCooldownMinutes,
         setRelationshipSuggestionPromptsEnabled,
-        setLocalFavoriteFriendsGroups
+        setLocalFavoriteFriendsGroups,
+        setAutoDeclineFriendRequests
     } = generalSettingsStore;
 
     const { favoriteFriendGroups, localFriendFavoriteGroups } = storeToRefs(favoriteStore);

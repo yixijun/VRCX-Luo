@@ -1,8 +1,9 @@
-import { ref } from 'vue';
+import { ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { useFavoriteStore } from './favorite';
 
 export const useSearchIndexStore = defineStore('SearchIndex', () => {
+    const favoriteStore = useFavoriteStore();
     const friends = new Map();
     const avatars = new Map();
     const worlds = new Map();
@@ -179,8 +180,6 @@ export const useSearchIndexStore = defineStore('SearchIndex', () => {
     }
 
     function rebuildFavoritesFromStore() {
-        const favoriteStore = useFavoriteStore();
-
         const newFavAvatars = new Map();
         for (const ctx of favoriteStore.favoriteAvatars) {
             if (!ctx?.ref?.name) continue;
@@ -191,6 +190,17 @@ export const useSearchIndexStore = defineStore('SearchIndex', () => {
             });
         }
 
+        for (const group of Object.values(favoriteStore.localAvatarFavorites)) {
+            for (const ref of group) {
+                if (!ref?.name || newFavAvatars.has(ref.id)) continue;
+                newFavAvatars.set(ref.id, {
+                    id: ref.id,
+                    name: ref.name,
+                    imageUrl: ref.thumbnailImageUrl || ref.imageUrl || ''
+                });
+            }
+        }
+
         const newFavWorlds = new Map();
         for (const ctx of favoriteStore.favoriteWorlds) {
             if (!ctx?.ref?.name) continue;
@@ -199,6 +209,17 @@ export const useSearchIndexStore = defineStore('SearchIndex', () => {
                 name: ctx.ref.name,
                 imageUrl: ctx.ref.thumbnailImageUrl || ctx.ref.imageUrl || ''
             });
+        }
+
+        for (const group of Object.values(favoriteStore.localWorldFavorites)) {
+            for (const ref of group) {
+                if (!ref?.name || newFavWorlds.has(ref.id)) continue;
+                newFavWorlds.set(ref.id, {
+                    id: ref.id,
+                    name: ref.name,
+                    imageUrl: ref.thumbnailImageUrl || ref.imageUrl || ''
+                });
+            }
         }
 
         let changed = false;
@@ -245,6 +266,12 @@ export const useSearchIndexStore = defineStore('SearchIndex', () => {
             version.value++;
         }
     }
+
+    watch(
+        [() => favoriteStore.localAvatarFavorites, () => favoriteStore.localWorldFavorites],
+        rebuildFavoritesFromStore,
+        { deep: true, immediate: true }
+    );
 
     function clearFavorites() {
         if (favAvatars.size > 0 || favWorlds.size > 0) {

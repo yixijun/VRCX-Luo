@@ -15,7 +15,8 @@
                     :style="{ left: 'var(--sidebar-width)' }"
                     @pointerdown.prevent="startNavResize" />
 
-                <SidebarInset class="min-w-0 bg-[var(--surface-canvas)]">
+                <SidebarInset
+                    class="min-w-0 bg-[var(--surface-canvas)] !m-0 !rounded-none !shadow-none">
                     <ResizablePanelGroup
                         direction="horizontal"
                         auto-save-id="vrcx-main-layout-right-sidebar"
@@ -62,6 +63,10 @@
         <MainDialogContainer></MainDialogContainer>
 
         <GroupMemberModerationDialog></GroupMemberModerationDialog>
+
+        <GroupEditDialog></GroupEditDialog>
+
+        <GroupEventEditDialog></GroupEventEditDialog>
 
         <InviteGroupDialog></InviteGroupDialog>
 
@@ -116,6 +121,8 @@
     import FullscreenImagePreview from '../../components/FullscreenImagePreview.vue';
     import GlobalToolsDialogs from '../Tools/components/GlobalToolsDialogs.vue';
     import GroupMemberModerationDialog from '../../components/dialogs/GroupDialog/GroupMemberModerationDialog.vue';
+    import GroupEditDialog from '../../components/dialogs/GroupDialog/GroupEditDialog.vue';
+    import GroupEventEditDialog from '../../components/dialogs/GroupDialog/GroupEventEditDialog.vue';
     import InviteGroupDialog from '../../components/dialogs/InviteGroupDialog.vue';
     import LaunchDialog from '../../components/dialogs/LaunchDialog.vue';
     import LaunchOptionsDialog from '../Settings/dialogs/LaunchOptionsDialog.vue';
@@ -203,7 +210,7 @@
         } else {
             asidePanelRef.value?.collapse();
         }
-    });
+    }, { immediate: true });
 
     watch(
         () => watchState.isLoggedIn,

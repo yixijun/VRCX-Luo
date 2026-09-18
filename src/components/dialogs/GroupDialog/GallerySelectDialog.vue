@@ -41,13 +41,17 @@
                     <template v-if="image.versions && image.versions.length > 0">
                         <div
                             v-if="image.versions[image.versions.length - 1].file.url"
-                            class="h-[200px] w-[200px] rounded-[20px] cursor-pointer overflow-hidden"
+                            class="h-[200px] w-[200px] cursor-pointer overflow-hidden rounded-lg border border-border/60 bg-card shadow-sm transition-[box-shadow,transform] hover:-translate-y-0.5 hover:shadow-md"
                             @click="
-                                selectImageGallerySelect(image.versions[image.versions.length - 1].file.url, image.id)
+                                selectImageGallerySelect(
+                                    image.versions[image.versions.length - 1].file.url,
+                                    image.id,
+                                    image.versions[image.versions.length - 1].version
+                                )
                             ">
                             <img
                                 :src="image.versions[image.versions.length - 1].file.url"
-                                class="h-full w-full rounded-[15px] object-cover"
+                                class="h-full w-full rounded-[inherit] object-cover"
                                 loading="lazy" />
                         </div>
                     </template>
@@ -81,16 +85,19 @@
             required: true
         }
     });
+    const emit = defineEmits(['select-image']);
 
     /**
      *
      * @param imageUrl
      * @param fileId
      */
-    function selectImageGallerySelect(imageUrl, fileId) {
+    function selectImageGallerySelect(imageUrl, fileId, fileVersion) {
         const D = props.gallerySelectDialog;
         D.selectedFileId = fileId;
         D.selectedImageUrl = imageUrl;
+        D.selectedFileVersion = fileVersion;
+        emit('select-image', { imageUrl, fileId, fileVersion });
         D.visible = false;
     }
 

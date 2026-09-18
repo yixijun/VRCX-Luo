@@ -9,10 +9,12 @@
                     :event="event"
                     :is-following="event.userInterest?.isFollowing"
                     :can-delete="canManageCalendar"
+                    :can-edit="canManageCalendar"
                     mode="grid"
                     card-class="group-dialog-grid-card"
                     @update-following-calendar-data="updateFollowingCalendarData"
-                    @delete="confirmDeleteGroupEvent" />
+                    @delete="confirmDeleteGroupEvent"
+                    @edit="showEditGroupEventDialog(event, groupDialog.ref)" />
             </div>
             <p v-else class="group-events-empty">{{ t('dialog.group_calendar.no_events') }}</p>
         </section>
@@ -26,10 +28,12 @@
                     :event="event"
                     :is-following="event.userInterest?.isFollowing"
                     :can-delete="canManageCalendar"
+                    :can-edit="canManageCalendar"
                     mode="grid"
                     card-class="group-dialog-grid-card"
                     @update-following-calendar-data="updateFollowingCalendarData"
-                    @delete="confirmDeleteGroupEvent" />
+                    @delete="confirmDeleteGroupEvent"
+                    @edit="showEditGroupEventDialog(event, groupDialog.ref)" />
             </div>
             <p v-else class="group-events-empty">{{ t('dialog.group_calendar.no_events') }}</p>
         </section>
@@ -55,6 +59,7 @@
 
     const { t } = useI18n();
     const { groupDialog } = storeToRefs(useGroupStore());
+    const { showEditGroupEventDialog } = useGroupStore();
     const canManageCalendar = computed(() => hasGroupPermission(groupDialog.value.ref, 'group-calendar-manage'));
     const { pastCalenderEvents, upcomingCalenderEvents, updateFollowingCalendarData } =
         useGroupCalendarEvents(groupDialog);

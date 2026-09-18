@@ -553,6 +553,9 @@ export const useInstanceStore = defineStore('Instance', () => {
         if (ref.displayName) {
             ref.displayName = replaceBioSymbols(ref.displayName);
         }
+        if (ref?.world?.name) {
+            ref.world.name = replaceBioSymbols(ref.world.name);
+        }
         if (
             userStore.userDialog.visible &&
             userStore.userDialog.ref?.$location?.tag === ref.id
@@ -1255,9 +1258,11 @@ export const useInstanceStore = defineStore('Instance', () => {
      *
      */
     function getCurrentInstanceUserList() {
-        if (!watchState.isFriendsLoaded) {
-            return;
-        }
+        // The player list is sourced from the local game log and can be
+        // rendered before the friends sync finishes. Cached friend records
+        // enrich rows later, but they must not gate the initial list: when a
+        // sync is slow or temporarily unavailable, the page otherwise stays
+        // empty even though the game log already contains the room players.
         if (state.updatePlayerListTimer) {
             state.updatePlayerListPending = true;
         } else {

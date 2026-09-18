@@ -46,6 +46,18 @@ const playerModerationReq = {
             };
             return args;
         });
+    },
+
+    /**
+     * Remove every moderation of one type for the current user.
+     * @param {{ type: string }} params
+     * @returns {Promise<{json: any, params: {type: string}}>}
+     */
+    deletePlayerModerations(params) {
+        return request('auth/user/unplayermoderate', {
+            method: 'PUT',
+            params
+        }).then((json) => ({ json, params }));
     }
 };
 

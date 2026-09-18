@@ -169,7 +169,7 @@
                             <Button
                                 variant="outline"
                                 size="sm"
-                                :disabled="!currentUser.userIcon"
+                                :disabled="!currentUser.iconUrl || currentUser.iconUrl === currentUser.currentAvatarImageUrl"
                                 @click="setVRCPlusIcon('')">
                                 <X />
                                 {{ t('dialog.gallery_icons.clear') }}
@@ -526,6 +526,23 @@
                                         @click="deletePrint(image.id)">
                                         <Trash2 />
                                     </Button>
+                                    <Button
+                                        size="icon-sm"
+                                        variant="ghost"
+                                        class="rounded-full ml-auto"
+                                        :aria-label="
+                                            t(
+                                                favoritePrintIds.has(image.id)
+                                                    ? 'dialog.gallery_icons.unfavorite_print'
+                                                    : 'dialog.gallery_icons.favorite_print'
+                                            )
+                                        "
+                                        @click="toggleFavoritePrint(image.id)">
+                                        <Star
+                                            :class="favoritePrintIds.has(image.id)
+                                                ? 'text-yellow-500 fill-yellow-500'
+                                                : 'hover:text-yellow-500'" />
+                                    </Button>
                                 </ItemFooter>
                             </div>
                         </Item>
@@ -535,7 +552,7 @@
 
             <template #inventory>
                 <div>
-                    <div class="flex items-center">
+                    <div class="flex items-center gap-2 flex-wrap">
                         <ButtonGroup>
                             <Button variant="outline" size="sm" @click="getInventory">
                                 <RefreshCw />
@@ -546,12 +563,25 @@
                                 {{ t('dialog.gallery_icons.redeem') }}
                             </Button>
                         </ButtonGroup>
+                        <Select v-model="inventoryTypeFilter">
+                            <SelectTrigger size="sm" class="w-44">
+                                <SelectValue :placeholder="t('dialog.gallery_icons.all_types')" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem value="all">{{ t('dialog.gallery_icons.all_types') }}</SelectItem>
+                                    <SelectItem v-for="type in inventoryTypeOptions" :key="type" :value="type">
+                                        {{ type }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
                     </div>
                     <ItemGroup
                         class="grid gap-3 mt-3"
                         style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr))">
                         <Item
-                            v-for="item in inventoryTable"
+                            v-for="item in filteredInventoryTable"
                             :key="item.id"
                             variant="outline"
                             size="sm"
@@ -575,19 +605,7 @@
                                         {{ formatDateFilter(item.created_at, 'long') }}
                                     </ItemDescription>
                                     <ItemDescription class="text-xs">
-                                        <span v-if="item.itemType === 'prop'">{{
-                                            t('dialog.gallery_icons.item')
-                                        }}</span>
-                                        <span v-else-if="item.itemType === 'sticker'">{{
-                                            t('dialog.gallery_icons.sticker')
-                                        }}</span>
-                                        <span v-else-if="item.itemType === 'droneskin'">{{
-                                            t('dialog.gallery_icons.drone_skin')
-                                        }}</span>
-                                        <span v-else-if="item.itemType === 'emoji'">{{
-                                            t('dialog.gallery_icons.emoji')
-                                        }}</span>
-                                        <span v-else v-text="item.itemTypeLabel"></span>
+                                        {{ item.itemTypeLabel || item.itemType }}
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemFooter v-if="item.itemType === 'bundle'" class="p-2">
@@ -613,7 +631,7 @@
 </template>
 
 <script setup>
-    import { ArrowLeft, Check, Gift, RefreshCw, Trash2, Upload, X } from 'lucide-vue-next';
+    import { ArrowLeft, Check, Gift, RefreshCw, Star, Trash2, Upload, X } from 'lucide-vue-next';
     import {
         NumberField,
         NumberFieldContent,
@@ -626,6 +644,7 @@
     import { ButtonGroup } from '@/components/ui/button-group';
     import { Checkbox } from '@/components/ui/checkbox';
     import { InputGroupTextareaField } from '@/components/ui/input-group';
+    import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { TabsUnderline } from '@/components/ui/tabs';
     import { VirtualCombobox } from '@/components/ui/virtual-combobox';
     import {
@@ -650,6 +669,7 @@
         openExternalLink
     } from '../../shared/utils';
     import { inventoryRequest, miscRequest, userRequest, vrcPlusIconRequest, vrcPlusImageRequest } from '../../api';
+    import { database } from '../../services/database';
     import { useAdvancedSettingsStore, useAuthStore, useGalleryStore, useModalStore, useUserStore } from '../../stores';
     import { readFileAsBase64, withUploadTimeout } from '../../shared/utils/imageUpload';
     import { handleImageUploadInput } from '../../coordinators/imageUploadCoordinator';
@@ -671,6 +691,7 @@
         printCropBorder,
         stickerTable,
         printTable,
+        favoritePrintIds,
         emojiTable,
         inventoryTable,
         pendingDrop
@@ -681,6 +702,7 @@
         refreshVRCPlusIconsTable,
         refreshStickerTable,
         refreshPrintTable,
+        refreshPrintFavorites,
         refreshEmojiTable,
         getInventory,
         handleStickerAdd,
@@ -708,6 +730,7 @@
     const emojiAnimType = ref(false);
     const emojiAnimationStyle = ref('Stop');
     const emojiAnimLoopPingPong = ref(false);
+    const inventoryTypeFilter = ref('all');
 
     const emojiStylePickerGroups = computed(() => [
         {
@@ -724,6 +747,26 @@
 
     const pendingUploads = ref(0);
     const isUploading = computed(() => pendingUploads.value > 0);
+
+    const inventoryTypeOptions = computed(() => {
+        const options = new Set();
+        for (const item of inventoryTable.value) {
+            const type = item.itemTypeLabel || item.itemType;
+            if (type) {
+                options.add(type);
+            }
+        }
+        return Array.from(options).sort((a, b) => a.localeCompare(b));
+    });
+
+    const filteredInventoryTable = computed(() => {
+        if (inventoryTypeFilter.value === 'all') {
+            return inventoryTable.value;
+        }
+        return inventoryTable.value.filter(
+            (item) => (item.itemTypeLabel || item.itemType) === inventoryTypeFilter.value
+        );
+    });
 
     const currentTab = ref('gallery');
     const isDraggingOver = ref(false);
@@ -1019,14 +1062,15 @@
         if (fileId) {
             userIcon = `${AppDebug.endpointDomain}/file/${fileId}/1`;
         }
-        if (userIcon === currentUser.value.userIcon) {
+        if (userIcon === currentUser.value.iconUrl) {
             return;
         }
         userRequest
-            .saveCurrentUser({
+            .saveProfile({
                 userIcon
             })
             .then((args) => {
+                currentUser.value.iconUrl = args?.json?.iconUrl || userIcon;
                 toast.success(t('message.gallery.profile_icon_changed'));
                 return args;
             });
@@ -1037,7 +1081,7 @@
      * @param userIcon
      */
     function compareCurrentVRCPlusIcon(userIcon) {
-        return isCurrentFile(currentUser.value.userIcon, userIcon);
+        return isCurrentFile(currentUser.value.iconUrl, userIcon);
     }
 
     /**
@@ -1208,9 +1252,28 @@
      * @param printId
      */
     function deletePrint(printId) {
+        if (favoritePrintIds.value.has(printId)) {
+            toast.warning(t('dialog.gallery_icons.favorite_print_in_use'), {
+                description: t('dialog.gallery_icons.remove_favorite_before_delete')
+            });
+            return;
+        }
         vrcPlusImageRequest.deletePrint(printId).then((args) => {
             removeItemById(printTable.value, args.printId);
         });
+    }
+
+    async function toggleFavoritePrint(printId) {
+        if (favoritePrintIds.value.has(printId)) {
+            await database.removePrintFromFavorites(printId);
+            favoritePrintIds.value.delete(printId);
+        } else {
+            await database.addPrintToFavorites(printId);
+            favoritePrintIds.value.add(printId);
+        }
+        // Reassign so the ref publishes the Set mutation in all Vue versions.
+        favoritePrintIds.value = new Set(favoritePrintIds.value);
+        await refreshPrintFavorites();
     }
 
     async function handleDropGallery(event) {

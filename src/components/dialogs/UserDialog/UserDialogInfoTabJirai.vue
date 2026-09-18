@@ -50,7 +50,7 @@
                 <div
                     v-for="user in userDialog.users || []"
                     :key="user.id"
-                    class="user-instance-member box-border flex w-[167px] cursor-pointer items-center p-1.5 text-[13px] hover:rounded-[25px_5px_5px_25px]"
+                    class="user-instance-member box-border flex w-[167px] cursor-pointer items-center rounded-md p-1.5 text-[13px]"
                     @click="showUserDialog(user.id)">
                     <div class="relative inline-block flex-none size-9 mr-2.5" :class="userStatusClass(user)">
                         <Avatar class="size-9">
@@ -115,11 +115,11 @@
                     v-else
                     class="text-xs truncate font-[inherit]"
                     style="white-space: pre-wrap; margin: 0 0.5em 0 0; max-height: 210px; overflow-y: auto"
-                    >{{ bioCache.translated || userDialog.ref.bio || '-' }}</pre
+                    >{{ bioCache.translated || dialogBio || '-' }}</pre
                 >
                 <div style="float: right">
                     <Button
-                        v-if="translationApi && userDialog.ref.bio"
+                        v-if="translationApi && dialogBio"
                         class="w-3 h-6 text-xs mr-0.5"
                         size="icon-sm"
                         variant="ghost"
@@ -156,7 +156,7 @@
                     </Button>
                 </div>
                 <div style="margin-top: 6px" class="flex items-center">
-                    <TooltipWrapper v-for="(link, index) in userDialog.ref.bioLinks || []" :key="index">
+                    <TooltipWrapper v-for="(link, index) in dialogBioLinks" :key="index">
                         <template #content>
                             <span v-text="link"></span>
                         </template>
@@ -469,7 +469,7 @@
     } from '@/components/ui/dropdown-menu';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import { Switch } from '@/components/ui/switch';
-    import { ref, watch } from 'vue';
+    import { computed, ref, watch } from 'vue';
     import { Button } from '@/components/ui/button';
     import { Spinner } from '@/components/ui/spinner';
     import { storeToRefs } from 'pinia';
@@ -527,6 +527,14 @@
         userId: null,
         translated: null
     });
+    // Public profile data is fetched separately from the legacy user payload.
+    // Keep the old fields as a compatibility fallback for cached responses.
+    const dialogBio = computed(
+        () => userDialog.value.publicProfileRef?.bio ?? userDialog.value.ref?.bio ?? ''
+    );
+    const dialogBioLinks = computed(
+        () => userDialog.value.publicProfileRef?.bioLinks ?? userDialog.value.ref?.bioLinks ?? []
+    );
 
     const isEditNoteAndMemoDialogVisible = ref(false);
     const vrchatCredit = ref(null);
@@ -553,7 +561,7 @@
 
         bioDiffHtml.value = formatLatestBioDiff(
             records[0],
-            userDialog.value.ref?.bio,
+            dialogBio.value,
             formatDifference
         );
     }
@@ -583,7 +591,11 @@
     }
 
     watch(
-        () => userDialog.value.loading,
+        () => ({
+            loading: userDialog.value.loading,
+            id: userDialog.value.id,
+            bio: dialogBio.value
+        }),
         () => {
             if (userDialog.value.visible) {
                 if (userDialog.value.id !== bioCache.value.userId) {
@@ -623,7 +635,7 @@
         if (translateLoading.value) {
             return;
         }
-        const bio = userDialog.value.ref.bio;
+        const bio = dialogBio.value;
         if (!bio) {
             return;
         }

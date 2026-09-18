@@ -129,6 +129,10 @@
             type: String,
             default: ''
         },
+        excludeGroupName: {
+            type: Boolean,
+            default: false
+        },
         link: {
             type: Boolean,
             default: true
@@ -176,7 +180,9 @@
         isDisposed = true;
     });
 
-    watch(() => [props.location, props.traveling, props.hint, props.grouphint], parse, { immediate: true });
+    watch(() => [props.location, props.traveling, props.hint, props.grouphint, props.excludeGroupName], parse, {
+        immediate: true
+    });
 
     watch(
         () => lastInstanceApplied.value,
@@ -265,6 +271,9 @@
      * @param instanceId
      */
     function updateGroupName(L, instanceId) {
+        if (props.excludeGroupName) {
+            return;
+        }
         if (props.grouphint) {
             groupName.value = props.grouphint;
             return;

@@ -36,6 +36,88 @@ const userReq = {
     },
 
     /**
+     * Fetch the public profile for a user.
+     *
+     * VRChat moved public-facing profile data such as the bio and profile
+     * icon out of the user resource. Keep this request separate from
+     * getUser so callers can use the new endpoint without losing the old
+     * user/presence payload used throughout VRCX.
+     * @param {{ userId: string }} params
+     * @type {import('../types/api/profile').GetPublicProfile}
+     */
+    getPublicProfile(params) {
+        return request(`profile/${params.userId}`, {
+            method: 'GET'
+        }).then((json) => ({
+            json,
+            params
+        }));
+    },
+
+    /**
+     * Fetch the private profile used by the profile editor.
+     * @param {{ userId: string }} params
+     */
+    getPrivateProfile(params) {
+        return request(`profile/${params.userId}/private`, {
+            method: 'GET'
+        }).then((json) => ({ json, params }));
+    },
+
+    /**
+     * Fetch the current user's complete profile editor payload.
+     */
+    getSelfProfile() {
+        return request(`profile/${getCurrentUserId()}`, {
+            method: 'GET',
+            params: { asSelf: true }
+        }).then((json) => ({ json, params: {} }));
+    },
+
+    /**
+     * Save the current user's profile fields.
+     * @param {object} params
+     */
+    saveProfile(params) {
+        return request(`profile/${getCurrentUserId()}`, {
+            method: 'PUT',
+            params
+        }).then((json) => ({ json, params }));
+    },
+
+    /**
+     * Update one of the current user's profile themes.
+     * @param {object} params
+     */
+    saveProfileTheme(params) {
+        return request(`profile/theme/${params.themeId}`, {
+            method: 'PUT',
+            params
+        }).then((json) => ({ json, params }));
+    },
+
+    /**
+     * Create a profile theme for the current user.
+     * @param {object} params
+     */
+    createProfileTheme(params) {
+        return request('profile/theme', {
+            method: 'POST',
+            params
+        }).then((json) => ({ json, params }));
+    },
+
+    /**
+     * Delete a profile theme.
+     * @param {{ id: string }} params
+     */
+    deleteProfileTheme(params) {
+        return request(`profile/theme/${params.id}`, {
+            method: 'DELETE'
+        }).then((json) => ({ json, params }));
+    },
+
+    /**
      * @type {import('../types/api/user').GetUsers}
      */
     getUsers(params) {

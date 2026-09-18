@@ -310,7 +310,7 @@ export function request(endpoint, options) {
  */
 export function shouldIgnoreError(code, endpoint) {
     if (
-        (code === 404 || code === -1) &&
+        (code === 404 || code === 429 || code === -1) &&
         typeof endpoint === 'string' &&
         /^(auth\/user\/notifications|notifications)\/[^/]+\/see$/.test(
             endpoint

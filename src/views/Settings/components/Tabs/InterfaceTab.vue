@@ -105,6 +105,48 @@
                         saveOpenVROption();
                     " />
             </SettingsItem>
+
+            <SettingsItem
+                :label="t('view.settings.appearance.appearance.vrc_profile_themes')"
+                :description="t('view.settings.appearance.appearance.vrc_profile_themes_description')">
+                <Switch :model-value="displayVRCProfileThemes" @update:modelValue="setDisplayVRCProfileThemes" />
+            </SettingsItem>
+
+            <SettingsItem
+                :label="t('view.settings.appearance.appearance.vrc_profile_backgrounds')"
+                :description="t('view.settings.appearance.appearance.vrc_profile_backgrounds_description')">
+                <Switch
+                    :model-value="displayVRCProfileBackgrounds"
+                    @update:modelValue="setDisplayVRCProfileBackgrounds" />
+            </SettingsItem>
+
+            <SettingsItem
+                v-if="displayVRCProfileBackgrounds"
+                :label="t('view.settings.appearance.appearance.vrc_profile_background_opacity')"
+                :description="t('view.settings.appearance.appearance.vrc_profile_background_opacity_description')">
+                <NumberField
+                    :model-value="profileBackgroundOpacity"
+                    :min="0"
+                    :max="1"
+                    :step="0.05"
+                    :format-options="{ minimumFractionDigits: 2, maximumFractionDigits: 2 }"
+                    class="w-32"
+                    @update:modelValue="setProfileBackgroundOpacity">
+                    <NumberFieldContent>
+                        <NumberFieldDecrement />
+                        <NumberFieldInput />
+                        <NumberFieldIncrement />
+                    </NumberFieldContent>
+                </NumberField>
+            </SettingsItem>
+
+            <SettingsItem
+                :label="t('view.settings.appearance.appearance.vrc_profile_cosmetics')"
+                :description="t('view.settings.appearance.appearance.vrc_profile_cosmetics_description')">
+                <Switch
+                    :model-value="displayVRCProfileCosmetics"
+                    @update:modelValue="setDisplayVRCProfileCosmetics" />
+            </SettingsItem>
         </SettingsGroup>
 
         <SettingsGroup v-if="!isMacOS" :title="t('view.settings.interface.window_behavior.header')">
@@ -454,6 +496,10 @@
     const {
         appLanguage,
         displayVRCPlusIconsAsAvatar,
+        displayVRCProfileThemes,
+        displayVRCProfileBackgrounds,
+        profileBackgroundOpacity,
+        displayVRCProfileCosmetics,
         appFontFamily,
         customFontFamily,
         appCjkFontPack,
@@ -484,6 +530,10 @@
 
     const {
         setDisplayVRCPlusIconsAsAvatar,
+        setDisplayVRCProfileThemes,
+        setDisplayVRCProfileBackgrounds,
+        setProfileBackgroundOpacity,
+        setDisplayVRCProfileCosmetics,
         setHideNicknames,
         setShowInstanceIdInLocation,
         setIsAgeGatedInstancesVisible,

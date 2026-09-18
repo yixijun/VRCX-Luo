@@ -35,7 +35,7 @@ const feed = {
     },
 
     addBioToDatabase(entry) {
-        sqliteService.executeNonQuery(
+        return sqliteService.executeNonQuery(
             `INSERT OR IGNORE INTO ${dbVars.userPrefix}_feed_bio (created_at, user_id, display_name, bio, previous_bio) VALUES (@created_at, @user_id, @display_name, @bio, @previous_bio)`,
             {
                 '@created_at': entry.created_at,

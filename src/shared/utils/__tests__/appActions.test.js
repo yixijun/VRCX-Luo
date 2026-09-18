@@ -8,12 +8,19 @@ const mocks = vi.hoisted(() => ({
     searchStore: {
         directAccessParse: vi.fn()
     },
-    modalStore: {
-        confirm: vi.fn()
+    externalLinkStore: {
+        showExternalLinkDialog: vi.fn()
     },
     i18n: {
         global: {
-            t: vi.fn(() => 'copy failed')
+            t: vi.fn((key) => {
+                const messages = {
+                    'message.copy_failed': 'copy failed',
+                    'message.discord_profile.no_id': 'No Discord ID provided!',
+                    'message.discord_profile.open_failed': 'Failed to open Discord profile!'
+                };
+                return messages[key] || key;
+            })
         }
     }
 }));
@@ -24,7 +31,7 @@ vi.mock('vue-sonner', () => ({
 
 vi.mock('../../../stores', () => ({
     useSearchStore: () => mocks.searchStore,
-    useModalStore: () => mocks.modalStore
+    useExternalLinkStore: () => mocks.externalLinkStore
 }));
 
 vi.mock('../../../plugins/i18n', () => ({
@@ -52,7 +59,6 @@ describe('appActions utils', () => {
             .mockImplementation(() => {});
         vi.clearAllMocks();
         mocks.searchStore.directAccessParse.mockReturnValue(false);
-        mocks.modalStore.confirm.mockResolvedValue({ ok: false });
         Object.defineProperty(navigator, 'clipboard', {
             configurable: true,
             value: {
@@ -107,28 +113,14 @@ describe('appActions utils', () => {
         mocks.searchStore.directAccessParse.mockReturnValue(true);
         openExternalLink('vrcx://user/usr_1');
         await flushPromises();
-        expect(mocks.modalStore.confirm).not.toHaveBeenCalled();
+        expect(mocks.externalLinkStore.showExternalLinkDialog).not.toHaveBeenCalled();
         expect(AppApi.OpenLink).not.toHaveBeenCalled();
     });
 
-    test('openExternalLink copies link when confirm is canceled', async () => {
-        mocks.modalStore.confirm.mockResolvedValue({
-            ok: false,
-            reason: 'cancel'
-        });
+    test('openExternalLink shows the external link dialog', () => {
         openExternalLink('https://example.com');
-        await flushPromises();
-        await flushPromises();
-        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
-            'https://example.com'
-        );
-    });
-
-    test('openExternalLink opens link when confirmed', async () => {
-        mocks.modalStore.confirm.mockResolvedValue({ ok: true });
-        openExternalLink('https://example.com');
-        await flushPromises();
-        expect(AppApi.OpenLink).toHaveBeenCalledWith('https://example.com');
+        expect(mocks.externalLinkStore.showExternalLinkDialog).toHaveBeenCalledWith('https://example.com');
+        expect(AppApi.OpenLink).not.toHaveBeenCalled();
     });
 
     test('openDiscordProfile validates empty discord id', () => {

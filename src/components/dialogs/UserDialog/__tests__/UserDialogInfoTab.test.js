@@ -90,7 +90,7 @@ vi.mock('../../../../services/request', () => ({
     failedGetRequests: new Map()
 }));
 
-import UserDialogInfoTab from '../UserDialogInfoTabJirai.vue';
+import UserDialogInfoTab from '../UserDialogInfoTab.vue';
 import { miscRequest } from '../../../../api';
 import {
     useAdvancedSettingsStore,
@@ -263,19 +263,8 @@ describe('UserDialogInfoTab.vue', () => {
                 }
             });
 
-            expect(wrapper.find('.user-info-card-grid').exists()).toBe(true);
-            expect(
-                wrapper.findAll('.user-info-card--wide').length
-            ).toBeGreaterThanOrEqual(2);
-            expect(wrapper.find('.user-info-card--theme-border').exists()).toBe(
-                false
-            );
-            expect(
-                wrapper.find('[data-testid="avatar-info-card"]').exists()
-            ).toBe(false);
-            expect(
-                wrapper.find('[data-testid="represented-group-card"]').exists()
-            ).toBe(false);
+            expect(wrapper.find('[class*="@container"]').exists()).toBe(true);
+            expect(wrapper.findAll('[class*="bg-(--profile-card)"]').length).toBeGreaterThanOrEqual(3);
         });
 
         test('highlights only the instance creator in the room member list', () => {
@@ -294,12 +283,8 @@ describe('UserDialogInfoTab.vue', () => {
                 }
             });
 
-            expect(wrapper.findAll('.user-instance-creator')).toHaveLength(1);
-            expect(
-                wrapper
-                    .find('.user-instance-member.user-instance-creator')
-                    .exists()
-            ).toBe(false);
+            expect(wrapper.text()).toContain('Room Owner');
+            expect(wrapper.findAll('.user-instance-member')).toHaveLength(1);
         });
 
         test('renders info body when instance details are still missing', () => {
@@ -313,7 +298,15 @@ describe('UserDialogInfoTab.vue', () => {
             });
 
             expect(wrapper.text()).toContain('dialog.user.info.bio');
-            expect(wrapper.text()).toContain('dialog.user.info.date_joined');
+            expect(wrapper.text()).toContain('dialog.user.info.vrcx_info');
         });
+
+        test('keeps bio archive and diff actions in the active info tab', () => {
+            const wrapper = mountComponent();
+
+            expect(wrapper.find('[aria-label="dialog.user.info.bio_archive"]').exists()).toBe(true);
+            expect(wrapper.find('[aria-label="dialog.user.info.bio_diff_toggle"]').exists()).toBe(true);
+        });
+
     });
 });

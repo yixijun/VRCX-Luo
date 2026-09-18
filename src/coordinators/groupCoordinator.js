@@ -803,6 +803,25 @@ export function setGroupSubscription(groupId, subscribe) {
         });
 }
 
+/**
+ * Toggle notifications for group calendar events.
+ * @param {string} groupId
+ * @param {boolean} subscribe
+ */
+export function setGroupEventAnnouncements(groupId, subscribe) {
+    const t = i18n.global.t;
+    const userStore = useUserStore();
+    return groupRequest
+        .setGroupMemberProps(userStore.currentUser.id, groupId, {
+            isSubscribedToEventAnnouncements: subscribe
+        })
+        .then((args) => {
+            handleGroupMemberProps(args);
+            toast.success(t('message.group.subscription_updated'));
+            return args;
+        });
+}
+
 // ─── Event handlers ──────────────────────────────────────────────────────────
 
 /**
@@ -861,6 +880,10 @@ export function handleGroupMemberProps(args) {
             groupStore.groupDialog.ref.myMember.visibility = json.visibility;
             groupStore.groupDialog.ref.myMember.isSubscribedToAnnouncements =
                 json.isSubscribedToAnnouncements;
+            if (typeof json.isSubscribedToEventAnnouncements !== 'undefined') {
+                groupStore.groupDialog.ref.myMember.isSubscribedToEventAnnouncements =
+                    json.isSubscribedToEventAnnouncements;
+            }
         }
         if (
             userStore.userDialog.visible &&

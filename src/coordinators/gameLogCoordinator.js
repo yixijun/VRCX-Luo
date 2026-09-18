@@ -66,7 +66,7 @@ export async function tryLoadPlayerList() {
     if (data.length === 0) {
         return;
     }
-    let length = 0;
+    let locationIndex = -1;
     for (i = data.length - 1; i > -1; i--) {
         ctx = data[i];
         if (ctx.type === 'Location') {
@@ -77,12 +77,12 @@ export async function tryLoadPlayerList() {
                 playerList: new Map(),
                 friendList: new Map()
             });
-            length = i;
+            locationIndex = i;
             break;
         }
     }
-    if (length > 0) {
-        for (i = length + 1; i < data.length; i++) {
+    if (locationIndex >= 0) {
+        for (i = locationIndex + 1; i < data.length; i++) {
             ctx = data[i];
             if (ctx.type === 'OnPlayerJoined') {
                 if (!ctx.userId) {

@@ -34,6 +34,16 @@
                     </div>
                 </div>
                 <div class="badges">
+                    <TooltipWrapper v-if="canEdit" :content="t('dialog.group_calendar.event_card.edit')" side="top">
+                        <Button
+                            class="event-edit rounded-full badge"
+                            size="icon"
+                            variant="secondary"
+                            :aria-label="t('dialog.group_calendar.event_card.edit')"
+                            @click.stop="emit('edit', event)">
+                            <Pencil />
+                        </Button>
+                    </TooltipWrapper>
                     <TooltipWrapper v-if="canDelete" :content="t('dialog.group_calendar.event_card.delete')" side="top">
                         <Button
                             class="event-delete rounded-full badge"
@@ -162,13 +172,17 @@
             type: [String, Object, Array],
             default: ''
         },
+        canEdit: {
+            type: Boolean,
+            default: false
+        },
         canDelete: {
             type: Boolean,
             default: false
         }
     });
 
-    const emit = defineEmits(['update-following-calendar-data', 'click-action', 'delete']);
+    const emit = defineEmits(['update-following-calendar-data', 'click-action', 'delete', 'edit']);
 
     const showGroupName = computed(() => props.mode === 'timeline');
 

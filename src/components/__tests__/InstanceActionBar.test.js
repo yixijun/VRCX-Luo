@@ -364,4 +364,14 @@ describe('InstanceActionBar.vue', () => {
 
         expect(wrapper.findAll('[data-testid="btn"]')).toHaveLength(0);
     });
+
+    it('hides the action cluster when showButtons is disabled', () => {
+        const wrapper = mountBar({
+            showButtons: false,
+            showInstanceInfo: false
+        });
+
+        expect(wrapper.find('#standart-actions').exists()).toBe(false);
+        expect(wrapper.findAll('[data-testid="btn"]')).toHaveLength(0);
+    });
 });

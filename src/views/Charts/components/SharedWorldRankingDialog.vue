@@ -1,6 +1,6 @@
 <template>
     <Dialog v-model:open="isOpen">
-        <DialogContent class="flex max-h-[80vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
+        <DialogContent class="x-dialog flex max-h-[80vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl">
             <DialogHeader class="shrink-0 border-b border-border/60 px-5 py-4">
                 <DialogTitle class="flex items-center gap-2">
                     <MapPin class="size-4 text-muted-foreground" />

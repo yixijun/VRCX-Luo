@@ -21,6 +21,7 @@ import { router } from '../plugins/router';
 import { useAdvancedSettingsStore } from './settings/advanced';
 import { useModalStore } from './modal';
 import { watchState } from '../services/watchState';
+import { database } from '../services/database';
 
 import * as workerTimers from 'worker-timers';
 
@@ -70,6 +71,8 @@ export const useGalleryStore = defineStore('Gallery', () => {
 
     const printTable = ref([]);
 
+    const favoritePrintIds = ref(new Set());
+
     const emojiTable = ref([]);
 
     const inventoryTable = ref([]);
@@ -91,6 +94,7 @@ export const useGalleryStore = defineStore('Gallery', () => {
             VRCPlusIconsTable.value = [];
             stickerTable.value = [];
             printTable.value = [];
+            favoritePrintIds.value = new Set();
             emojiTable.value = [];
             galleryDialogVisible.value = false;
             fullscreenImageDialog.value.visible = false;
@@ -153,6 +157,7 @@ export const useGalleryStore = defineStore('Gallery', () => {
         refreshEmojiTable();
         refreshStickerTable();
         refreshPrintTable();
+        refreshPrintFavorites();
         getInventory();
     }
 
@@ -331,6 +336,16 @@ export const useGalleryStore = defineStore('Gallery', () => {
         }
     }
 
+    async function refreshPrintFavorites() {
+        try {
+            const favorites = await database.getPrintFavorites();
+            favoritePrintIds.value = new Set(favorites.map((favorite) => favorite.printId));
+        } catch (error) {
+            console.error('Error fetching favorite prints:', error);
+            favoritePrintIds.value = new Set();
+        }
+    }
+
     /**
      *
      * @param printId
@@ -472,6 +487,7 @@ export const useGalleryStore = defineStore('Gallery', () => {
             return;
         }
         await refreshPrintTable();
+        await refreshPrintFavorites();
         const printLimit = 64 - 2; // 2 reserved for new prints
         const printCount = printTable.value.length;
         if (printCount <= printLimit) {
@@ -482,11 +498,14 @@ export const useGalleryStore = defineStore('Gallery', () => {
             return;
         }
         const idList = [];
-        for (let i = 0; i < deleteCount; i++) {
-            const print = printTable.value[printCount - 1 - i];
+        for (let i = printCount - 1; i >= 0 && idList.length < deleteCount; i--) {
+            const print = printTable.value[i];
+            if (favoritePrintIds.value.has(print.id)) {
+                continue;
+            }
             idList.push(print.id);
         }
-        console.log(`Deleting ${deleteCount} old prints`, idList);
+        console.log(`Deleting ${idList.length} old prints`, idList);
         try {
             for (const printId of idList) {
                 await vrcPlusImageRequest.deletePrint(printId);
@@ -597,10 +616,9 @@ export const useGalleryStore = defineStore('Gallery', () => {
             if (e.message.includes('Could not find file')) {
                 modalStore
                     .confirm({
-                        description:
-                            'Windows has blocked VRCX from creating files on your system. Please allow VRCX to create files to save emojis, would you like to see instructions on how to fix this?',
-                        title: 'Failed to create emoji folder',
-                        cancelText: 'Ignore'
+                        description: t('dialog.gallery_icons.emoji_save_blocked_description'),
+                        title: t('dialog.gallery_icons.emoji_save_blocked_title'),
+                        cancelText: t('dialog.gallery_icons.ignore')
                     })
                     .then(({ ok }) => {
                         if (!ok) return;
@@ -658,6 +676,7 @@ export const useGalleryStore = defineStore('Gallery', () => {
         stickerTable,
         instanceStickersCache,
         printTable,
+        favoritePrintIds,
         emojiTable,
         inventoryTable,
         fullscreenImageDialog,
@@ -673,6 +692,7 @@ export const useGalleryStore = defineStore('Gallery', () => {
         refreshStickerTable,
         trySaveStickerToFile,
         refreshPrintTable,
+        refreshPrintFavorites,
         queueSavePrintToFile,
         refreshEmojiTable,
         getInventory,

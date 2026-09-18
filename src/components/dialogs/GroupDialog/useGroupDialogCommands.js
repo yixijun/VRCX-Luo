@@ -12,8 +12,11 @@ import { copyToClipboard } from '../../../shared/utils';
  * @param deps.leaveGroupPrompt
  * @param deps.setGroupVisibility
  * @param deps.setGroupSubscription
+ * @param deps.setGroupEventAnnouncements
  * @param deps.showGroupMemberModerationDialog
  * @param deps.showInviteGroupDialog
+ * @param deps.showGroupTransferDialog
+ * @param deps.showEditGroupDialog
  * @param deps.showGroupPostEditDialog
  * @param deps.groupRequest
  * @returns {object} command composable API
@@ -28,8 +31,11 @@ export function useGroupDialogCommands(
         leaveGroupPrompt,
         setGroupVisibility,
         setGroupSubscription,
+        setGroupEventAnnouncements,
         showGroupMemberModerationDialog,
         showInviteGroupDialog,
+        showGroupTransferDialog,
+        showEditGroupDialog,
         showGroupPostEditDialog,
         groupRequest
     }
@@ -52,11 +58,17 @@ export function useGroupDialogCommands(
             'Create Post': () => {
                 showGroupPostEditDialog(D().id, null);
             },
+            'Edit Group': () => {
+                showEditGroupDialog(D().ref);
+            },
             'Moderation Tools': () => {
                 showGroupMemberModerationDialog(D().id);
             },
             'Invite To Group': () => {
                 showInviteGroupDialog(D().id, '');
+            },
+            'Transfer Group': () => {
+                showGroupTransferDialog(D().id, D().ref.name, D().ref.ownerId);
             },
             Refresh: () => {
                 showGroupDialog(D().id, { forceRefresh: true });
@@ -78,6 +90,12 @@ export function useGroupDialogCommands(
             },
             'Unsubscribe To Announcements': () => {
                 setGroupSubscription(D().id, false);
+            },
+            'Subscribe To Event Announcements': () => {
+                setGroupEventAnnouncements(D().id, true);
+            },
+            'Unsubscribe To Event Announcements': () => {
+                setGroupEventAnnouncements(D().id, false);
             },
 
             // --- Confirmed commands ---

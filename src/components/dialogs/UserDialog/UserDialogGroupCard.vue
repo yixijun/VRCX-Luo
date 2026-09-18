@@ -1,6 +1,6 @@
 <template>
     <div
-        class="box-border flex items-center p-1.5 text-[13px] cursor-pointer w-41.75 hover:rounded-[25px_5px_5px_25px]"
+        class="box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer w-41.75"
         @click="handleViewDetails">
         <div class="relative inline-block flex-none size-9 mr-2.5">
             <Avatar class="size-9">

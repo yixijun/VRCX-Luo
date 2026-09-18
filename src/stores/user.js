@@ -12,7 +12,7 @@ import {
     replaceBioSymbols
 } from '../shared/utils';
 import { getAllUserMemos } from '../coordinators/memoCoordinator';
-import { instanceRequest, userRequest } from '../api';
+import { cosmeticsRequest, instanceRequest, userRequest } from '../api';
 import { AppDebug } from '../services/appConfig';
 import { database } from '../services/database';
 import { runUpdateCurrentUserLocationFlow } from '../coordinators/locationCoordinator';
@@ -44,6 +44,9 @@ export const useUserStore = defineStore('User', () => {
         ageVerified: false,
         allowAvatarCopying: false,
         badges: [],
+        bannerColor: '',
+        bannerType: 'color',
+        bannerUrl: '',
         bio: '',
         bioLinks: [],
         currentAvatar: '',
@@ -72,6 +75,7 @@ export const useUserStore = defineStore('User', () => {
         hasSharedConnectionsOptOut: false,
         hideContentFilterSettings: false,
         homeLocation: '',
+        iconUrl: '',
         id: '',
         isAdult: true,
         isBoopingEnabled: false,
@@ -152,6 +156,15 @@ export const useUserStore = defineStore('User', () => {
         lastActiveTab: 'Info',
         id: '',
         ref: {},
+        publicProfileRef: {},
+        // Incremented after a profile bio snapshot is persisted so the
+        // profile tab can refresh its diff after the asynchronous write.
+        bioSnapshotVersion: 0,
+        theme: {
+            iconColor: 'var(--muted-foreground)',
+            buttonColor: 'var(--primary)',
+            subtextColor: 'var(--muted-foreground)'
+        },
         friend: {},
         isFriend: false,
         note: '',
@@ -255,6 +268,35 @@ export const useUserStore = defineStore('User', () => {
         languageChoice: false,
         languages: []
     });
+    const editProfileDialog = ref({
+        visible: false,
+        loading: false,
+        selfProfileRef: {},
+        status: '',
+        statusDescription: '',
+        pronouns: '',
+        bio: '',
+        bioLinks: [],
+        socialStatusHistoryTable: [],
+        bannerColor: '',
+        bannerUrl: '',
+        bannerType: '',
+        userIcon: '',
+        iconUrl: '',
+        themes: [],
+        themeId: '',
+        themeName: '',
+        themeButtonColor: '',
+        themeIconColor: '',
+        themeSubtextColor: '',
+        backgroundType: 'default',
+        backgroundTextureId: '',
+        backgroundGradientBottom: '',
+        backgroundGradientTop: '',
+        nameplateEffect: '',
+        profileEffect: '',
+        iconFrame: ''
+    });
     const sendBoopDialog = ref({
         visible: false,
         userId: ''
@@ -271,6 +313,12 @@ export const useUserStore = defineStore('User', () => {
 
     const cachedUsers = shallowReactive(new Map());
     const cachedUserIdsByDisplayName = shallowReactive(new Map());
+    // Public profile cosmetics are optional on older/local API responses. Keep
+    // the caches available so the upstream profile header can render safely
+    // even before cosmetic metadata has been synchronized.
+    const cachedProfileEffects = shallowReactive(new Map());
+    const cachedNameplateEffects = shallowReactive(new Map());
+    const cachedIconFrames = shallowReactive(new Map());
 
     function addCachedUserDisplayNameEntry(displayName, userId) {
         if (!displayName || !userId) {
@@ -372,6 +420,16 @@ export const useUserStore = defineStore('User', () => {
                 initUserNotes();
             }
         }
+    );
+
+    watch(
+        () => watchState.isLoggedIn,
+        (isLoggedIn) => {
+            if (isLoggedIn) {
+                getCosmetics();
+            }
+        },
+        { flush: 'sync' }
     );
 
     watch(
@@ -760,6 +818,104 @@ export const useUserStore = defineStore('User', () => {
         subsetOfLanguages.value = value;
     }
 
+    /** Open and hydrate the local VRChat profile editor. */
+    function showEditProfileDialog() {
+        const D = editProfileDialog.value;
+        const statusHistory = currentUser.value?.statusHistory || [];
+        D.socialStatusHistoryTable = statusHistory.map((status, index) => ({
+            no: index + 1,
+            status
+        }));
+        D.status = currentUser.value.status || '';
+        D.statusDescription = currentUser.value.statusDescription || '';
+        D.pronouns = currentUser.value.pronouns || '';
+        D.bannerColor = currentUser.value.bannerColor || '';
+        D.bannerUrl = currentUser.value.bannerUrl || '';
+        D.bannerType = currentUser.value.bannerType || 'color';
+        D.iconUrl = currentUser.value.iconUrl || '';
+        D.selfProfileRef = {};
+        D.bio = '';
+        D.bioLinks = [];
+        D.themeId = '';
+        D.themes = [];
+        D.themeName = '';
+        D.themeButtonColor = '';
+        D.themeIconColor = '';
+        D.themeSubtextColor = '';
+        D.backgroundType = 'default';
+        D.backgroundTextureId = '';
+        D.backgroundGradientBottom = '';
+        D.backgroundGradientTop = '';
+        D.nameplateEffect = '';
+        D.profileEffect = '';
+        D.iconFrame = '';
+        D.loading = true;
+        D.visible = true;
+
+        userRequest
+            .getSelfProfile()
+            .then(({ json }) => {
+                const profile = json || {};
+                D.selfProfileRef = profile;
+                D.status = profile.status ?? D.status;
+                D.statusDescription = profile.statusDescription ?? D.statusDescription;
+                D.pronouns = profile.pronouns ?? D.pronouns;
+                D.bio = profile.bio || '';
+                D.bioLinks = Array.isArray(profile.bioLinks) ? profile.bioLinks.slice() : [];
+                D.bannerColor = profile.bannerColor || '';
+                D.bannerUrl = profile.bannerUrl || '';
+                D.bannerType = profile.bannerType || 'color';
+                D.iconUrl = profile.userIcon || profile.iconUrl || '';
+                D.themes = Array.isArray(profile.themes) ? profile.themes : [];
+                D.themeId = profile.themeId || '';
+                const selectedTheme = D.themes.find((theme) => theme.id === D.themeId);
+                D.themeName = selectedTheme?.name || '';
+                D.themeButtonColor = profile.themeButtonColor || selectedTheme?.buttonColor || '';
+                D.themeIconColor = profile.themeIconColor || selectedTheme?.iconColor || '';
+                D.themeSubtextColor = profile.themeSubtextColor || selectedTheme?.subtextColor || '';
+                D.backgroundType = profile.backgroundType || 'default';
+                D.backgroundTextureId = profile.backgroundTextureId || '';
+                D.backgroundGradientBottom = profile.backgroundGradientBottom || '';
+                D.backgroundGradientTop = profile.backgroundGradientTop || '';
+                D.nameplateEffect = profile.nameplateEffect || '';
+                D.profileEffect = profile.profileEffect || '';
+                D.iconFrame = profile.iconFrame || '';
+            })
+            .catch((error) => {
+                console.warn('Failed to load profile editor data:', error);
+            })
+            .finally(() => {
+                D.loading = false;
+            });
+    }
+
+    function getCosmetics() {
+        cosmeticsRequest
+            .getProfileEffects()
+            .then(({ json }) => {
+                for (const effect of Array.isArray(json) ? json : []) {
+                    cachedProfileEffects.set(effect.id, effect);
+                }
+            })
+            .catch(() => {});
+        cosmeticsRequest
+            .getIconFrames()
+            .then(({ json }) => {
+                for (const frame of Array.isArray(json) ? json : []) {
+                    cachedIconFrames.set(frame.id, frame);
+                }
+            })
+            .catch(() => {});
+        cosmeticsRequest
+            .getNameplateEffects()
+            .then(({ json }) => {
+                for (const effect of Array.isArray(json) ? json : []) {
+                    cachedNameplateEffects.set(effect.id, effect);
+                }
+            })
+            .catch(() => {});
+    }
+
     /**
      * @param {Array} value
      */
@@ -800,6 +956,18 @@ export const useUserStore = defineStore('User', () => {
         });
     }
 
+    function toggleAvatarCopying() {
+        return userRequest.saveCurrentUser({
+            allowAvatarCopying: !currentUser.value.allowAvatarCopying
+        });
+    }
+
+    function toggleAllowBooping() {
+        return userRequest.saveCurrentUser({
+            isBoopingEnabled: !currentUser.value.isBoopingEnabled
+        });
+    }
+
     function changePassword(currentPassword, password) {
         return userRequest.saveCurrentUser({
             currentPassword,
@@ -820,6 +988,7 @@ export const useUserStore = defineStore('User', () => {
         currentUser,
         currentTravelers,
         userDialog,
+        editProfileDialog,
         subsetOfLanguages,
         languageDialog,
         sendBoopDialog,
@@ -827,6 +996,9 @@ export const useUserStore = defineStore('User', () => {
         customUserTags,
         cachedUsers,
         cachedUserIdsByDisplayName,
+        cachedProfileEffects,
+        cachedNameplateEffects,
+        cachedIconFrames,
         isLocalUserVrcPlusSupporter,
         applyUserLanguage,
         applyPresenceLocation,
@@ -839,6 +1011,7 @@ export const useUserStore = defineStore('User', () => {
         sortUserDialogAvatars,
         initUserNotes,
         showSendBoopDialog,
+        showEditProfileDialog,
         setUserDialogMemo,
         setUserDialogVisible,
         setUserDialogIsFavorite,
@@ -853,7 +1026,10 @@ export const useUserStore = defineStore('User', () => {
         checkNote,
         toggleSharedConnectionsOptOut,
         toggleDiscordFriendsOptOut,
+        toggleAvatarCopying,
+        toggleAllowBooping,
         changePassword,
-        changeContentFilterSettings
+        changeContentFilterSettings,
+        getCosmetics
     };
 });

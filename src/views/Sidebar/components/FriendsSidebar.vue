@@ -42,6 +42,9 @@
                                                         <User class="size-5 text-muted-foreground" />
                                                     </AvatarFallback>
                                                 </Avatar>
+                                                <IconFrame
+                                                    :enabled="sidebarCosmetics"
+                                                    :icon-frame="currentUser.iconFrame" />
                                             </div>
                                             <div class="flex-1 overflow-hidden h-9 flex flex-col justify-between">
                                                 <span
@@ -239,6 +242,7 @@
         ContextMenuTrigger
     } from '../../../components/ui/context-menu';
     import { Avatar, AvatarFallback, AvatarImage } from '../../../components/ui/avatar';
+    import IconFrame from '../../../components/IconFrame.vue';
     import {
         useAdvancedSettingsStore,
         useAppearanceSettingsStore,
@@ -306,7 +310,8 @@
         isSidebarDivideByFriendGroup,
         sidebarFavoriteGroups,
         sidebarFavoriteGroupOrder,
-        sidebarSortMethods
+        sidebarSortMethods,
+        sidebarCosmetics
     } = storeToRefs(appearanceSettingsStore);
     const { gameLogDisabled } = storeToRefs(useAdvancedSettingsStore());
     const { showSendBoopDialog } = useUserStore();
@@ -808,7 +813,7 @@
         isFriendsGroupMe.value = await configRepository.getBool('VRCX_isFriendsGroupMe', true);
         isVIPFriends.value = await configRepository.getBool('VRCX_isFriendsGroupFavorites', true);
         isOnlineFriends.value = await configRepository.getBool('VRCX_isFriendsGroupOnline', true);
-        isActiveFriends.value = await configRepository.getBool('VRCX_isFriendsGroupActive', false);
+        isActiveFriends.value = await configRepository.getBool('VRCX_isFriendsGroupActive', true);
         isOfflineFriends.value = await configRepository.getBool('VRCX_isFriendsGroupOffline', true);
         isSidebarGroupByInstanceCollapsed.value = await configRepository.getBool(
             'VRCX_sidebarGroupByInstanceCollapsed',

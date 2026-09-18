@@ -10,6 +10,7 @@
                         <User class="size-5 text-muted-foreground" />
                     </AvatarFallback>
                 </Avatar>
+                <IconFrame :enabled="sidebarCosmetics" :icon-frame="friend.ref.iconFrame" />
                 <!-- Account badges: shown in multi-account merged view -->
                 <div
                     v-if="hasAccountBadge"
@@ -79,6 +80,7 @@
 
 <script setup>
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+    import IconFrame from '@/components/IconFrame.vue';
     import { Trash2, User } from 'lucide-vue-next';
     import { Button } from '@/components/ui/button';
     import { Spinner } from '@/components/ui/spinner';
@@ -102,7 +104,7 @@
         isGroupByInstance: Boolean
     });
 
-    const { hideNicknames } = storeToRefs(useAppearanceSettingsStore());
+    const { hideNicknames, sidebarCosmetics } = storeToRefs(useAppearanceSettingsStore());
     const { isRefreshFriendsLoading, allFavoriteFriendIds } = storeToRefs(useFriendStore());
     const { userImage, userStatusClass } = useUserDisplay();
 

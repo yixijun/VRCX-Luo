@@ -274,6 +274,18 @@
                                     <Share2 class="size-4" />
                                     {{ t('dialog.group.actions.share') }}
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    v-if="hasGroupPermission(groupDialog.ref, 'group-data-manage')"
+                                    @click="groupDialogCommand('Edit Group')">
+                                    <Pencil class="size-4" />
+                                    {{ t('dialog.group_edit.edit_header') }}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                    v-if="groupDialog.ref.ownerId === currentUser.id"
+                                    @click="groupDialogCommand('Transfer Group')">
+                                    <ArrowRightLeft class="size-4" />
+                                    {{ t('dialog.group.actions.transfer') }}
+                                </DropdownMenuItem>
                                 <template v-if="groupDialog.inGroup">
                                     <template v-if="groupDialog.ref.myMember">
                                         <DropdownMenuSeparator />
@@ -288,6 +300,22 @@
                                             @click="groupDialogCommand('Subscribe To Announcements')">
                                             <Bell class="size-4" />
                                             {{ t('dialog.group.actions.subscribe') }}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            v-if="
+                                                groupDialog.ref.myMember.isSubscribedToEventAnnouncements ||
+                                                typeof groupDialog.ref.myMember.isSubscribedToEventAnnouncements ===
+                                                    'undefined'
+                                            "
+                                            @click="groupDialogCommand('Unsubscribe To Event Announcements')">
+                                            <BellOff class="size-4" />
+                                            {{ t('dialog.group.actions.unsubscribe_event') }}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem
+                                            v-else
+                                            @click="groupDialogCommand('Subscribe To Event Announcements')">
+                                            <Bell class="size-4" />
+                                            {{ t('dialog.group.actions.subscribe_event') }}
                                         </DropdownMenuItem>
                                         <DropdownMenuItem
                                             v-if="hasGroupPermission(groupDialog.ref, 'group-invites-manage')"
@@ -442,6 +470,7 @@
             :dialog-data="groupGalleryCreateDialog"
             :group-name="groupDialog.ref.name"
             @created="handleGroupGalleryCreated" />
+        <GroupTransferDialog :dialog-data="groupTransferDialog" @close="groupTransferDialog.visible = false" />
     </div>
 </template>
 
@@ -449,6 +478,7 @@
     import {
         Bell,
         BellOff,
+        ArrowRightLeft,
         Bookmark,
         BookmarkCheck,
         CalendarPlus,
@@ -460,6 +490,7 @@
         Megaphone,
         MessageSquare,
         MoreHorizontal,
+        Pencil,
         Plus,
         RefreshCw,
         Settings,
@@ -498,7 +529,8 @@
         showGroupDialog,
         leaveGroupPrompt,
         setGroupVisibility,
-        setGroupSubscription
+        setGroupSubscription,
+        setGroupEventAnnouncements
     } from '../../../coordinators/groupCoordinator';
     import { groupRequest, queryRequest } from '../../../api';
     import { queryKeys, refetchActiveEntityQuery } from '../../../queries';
@@ -516,6 +548,7 @@
     import GroupDialogPhotosTab from './GroupDialogPhotosTab.vue';
     import GroupDialogPostsTab from './GroupDialogPostsTab.vue';
     import GroupPostEditDialog from './GroupPostEditDialog.vue';
+    import GroupTransferDialog from './GroupTransferDialog.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
     import configRepository from '../../../services/config';
 
@@ -533,8 +566,8 @@
     const modalStore = useModalStore();
 
     const { currentUser } = storeToRefs(useUserStore());
-    const { groupDialog, inviteGroupDialog } = storeToRefs(useGroupStore());
-    const { updateGroupPostSearch, showGroupMemberModerationDialog } = useGroupStore();
+    const { groupDialog, inviteGroupDialog, groupEventRevision } = storeToRefs(useGroupStore());
+    const { updateGroupPostSearch, showGroupMemberModerationDialog, showEditGroupDialog } = useGroupStore();
 
     const { showFullscreenImageDialog } = useGalleryStore();
     const sidebarWidth = ref(288);
@@ -552,6 +585,22 @@
         () => canManageCalendar.value || canManageAnnouncements.value || canManageGalleries.value
     );
 
+    const groupTransferDialog = reactive({
+        visible: false,
+        groupId: '',
+        groupName: '',
+        ownerId: ''
+    });
+
+    function showGroupTransferDialog(groupId, groupName, ownerId) {
+        Object.assign(groupTransferDialog, {
+            visible: true,
+            groupId,
+            groupName,
+            ownerId
+        });
+    }
+
     const { groupDialogCommand } = useGroupDialogCommands(groupDialog, {
         t,
         modalStore,
@@ -560,6 +609,7 @@
         leaveGroupPrompt,
         setGroupVisibility,
         setGroupSubscription,
+        setGroupEventAnnouncements,
         showGroupMemberModerationDialog,
         showInviteGroupDialog: (groupId, userId) => {
             if (groupId) {
@@ -570,6 +620,8 @@
             }
             inviteGroupDialog.value.visible = true;
         },
+        showGroupTransferDialog,
+        showEditGroupDialog,
         showGroupPostEditDialog,
         groupRequest
     });
@@ -586,6 +638,12 @@
             bannerError.value = false;
         }
     );
+
+    watch(groupEventRevision, () => {
+        if (groupDialog.value.visible && groupDialog.value.id) {
+            void getGroupDialogGroup(groupDialog.value.id);
+        }
+    });
     const membersTabRef = ref(null);
     const photosTabRef = ref(null);
 

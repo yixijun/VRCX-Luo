@@ -181,6 +181,7 @@ export function createDefaultUserRef(json) {
         badges: [],
         bio: '',
         bioLinks: [],
+        iconUrl: '',
         currentAvatarImageUrl: '',
         currentAvatarTags: [],
         currentAvatarThumbnailImageUrl: '',

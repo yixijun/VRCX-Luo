@@ -59,6 +59,25 @@ function timeToText(sec, isNeedSeconds = false) {
 }
 
 /**
+ * Format an ISO date or millisecond timestamp as a compact elapsed duration.
+ * The upstream profile card uses this helper for activity and relationship
+ * timestamps; keep it small and compatible with the existing formatter.
+ * @param {string|number} datetime
+ * @returns {string}
+ */
+function timeAgo(datetime) {
+    if (!datetime) {
+        return '—';
+    }
+    const timestamp = typeof datetime === 'number' ? datetime : Date.parse(datetime);
+    if (!Number.isFinite(timestamp)) {
+        return String(datetime);
+    }
+    const elapsed = Math.max(0, Date.now() - timestamp);
+    return timeToText(elapsed, true) || '—';
+}
+
+/**
  *
  * @param {number} duration
  * @returns {string}
@@ -118,4 +137,4 @@ function convertYoutubeTime(duration) {
     return length;
 }
 
-export { timeToText, formatSeconds, convertYoutubeTime };
+export { timeToText, timeAgo, formatSeconds, convertYoutubeTime };

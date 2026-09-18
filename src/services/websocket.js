@@ -37,6 +37,7 @@ import * as workerTimers from 'worker-timers';
 
 let webSocket = null;
 let lastWebSocketMessage = '';
+let webSocketClosedGracefully = true;
 
 /**
  * Reactive WebSocket state for status bar telemetry.
@@ -78,19 +79,27 @@ export function initWebsocket() {
  */
 function connectWebSocket(token) {
     const userStore = useUserStore();
+    const notificationStore = useNotificationStore();
+    const friendStore = useFriendStore();
     if (webSocket !== null) {
         return;
     }
     const socket = new WebSocket(`${AppDebug.websocketDomain}/?auth=${token}`);
     socket.onopen = () => {
         wsState.connected = true;
+        if (!webSocketClosedGracefully && watchState.isLoggedIn && watchState.isFriendsLoaded) {
+            webSocketClosedGracefully = true;
+            notificationStore.refreshNotifications();
+            friendStore.refreshFriends();
+        }
         if (AppDebug.debugWebSocket) {
             console.log('WebSocket connected');
         }
     };
-    socket.onclose = () => {
+    socket.onclose = ({ code, reason }) => {
         wsState.connected = false;
-        if (webSocket === socket) {
+        const isCurrentSocket = webSocket === socket;
+        if (isCurrentSocket) {
             webSocket = null;
         }
         try {
@@ -98,8 +107,9 @@ function connectWebSocket(token) {
         } catch (err) {
             console.error('Error closing WebSocket:', err);
         }
-        if (AppDebug.debugWebSocket) {
-            console.log('WebSocket closed');
+        webSocketClosedGracefully = code === 1000 || code === 1001;
+        if (!webSocketClosedGracefully || AppDebug.debugWebSocket) {
+            console.log('WebSocket closed', { code, reason });
         }
         scheduleWebSocketReconnect({
             setTimeout: workerTimers.setTimeout,
@@ -163,7 +173,10 @@ export function closeWebSocket() {
     if (socket === null) {
         return;
     }
+    socket.onclose = null;
     webSocket = null;
+    wsState.connected = false;
+    webSocketClosedGracefully = true;
     try {
         socket.close();
     } catch (err) {

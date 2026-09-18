@@ -197,7 +197,7 @@
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
     import { Switch } from '@/components/ui/switch';
-    import { computed, ref } from 'vue';
+    import { computed, onMounted, ref } from 'vue';
     import { Button } from '@/components/ui/button';
     import { InputGroupTextareaField } from '@/components/ui/input-group';
     import { Play } from 'lucide-vue-next';
@@ -244,7 +244,11 @@
         setNotificationLayout
     } = notificationsSettingsStore;
 
-    const { testNotification } = useNotificationStore();
+    const { testNotification, markAllAsSeen } = useNotificationStore();
+
+    onMounted(() => {
+        markAllAsSeen();
+    });
 
     const feedFiltersDialogMode = ref('');
 

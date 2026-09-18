@@ -401,14 +401,20 @@ export const useNotificationStore = defineStore("Notification", () => {
             }
         }
         if (ref.senderUserId !== userStore.currentUser.id) {
-            if (
-                ref.type !== "friendRequest" &&
-                ref.type !== "ignoredFriendRequest" &&
-                !ref.type.includes(".")
-            ) {
+            const isExcludedType =
+                ref.type === "friendRequest" ||
+                ref.type === "ignoredFriendRequest" ||
+                ref.type.includes(".");
+            const isNotificationInitReady =
+                !notificationInitStatus.value || !isNotificationsLoading.value;
+            const matchesNotificationTypeFilter =
+                notificationTable.value.filters[0].value.length === 0 ||
+                notificationTable.value.filters[0].value.includes(ref.type);
+
+            if (!isExcludedType) {
                 database.addNotificationToDatabase(ref);
             }
-            if (watchState.isFriendsLoaded && notificationInitStatus.value) {
+            if (isNotificationInitReady && watchState.isFriendsLoaded) {
                 if (
                     ref.details?.worldId &&
                     !instanceStore.cachedInstances.has(ref.details.worldId)
@@ -422,14 +428,11 @@ export const useNotificationStore = defineStore("Notification", () => {
                         });
                     }
                 }
-                if (
-                    notificationTable.value.filters[0].value.length === 0 ||
-                    notificationTable.value.filters[0].value.includes(ref.type)
-                ) {
-                    uiStore.notifyMenu("notification");
-                }
                 queueNotificationNoty(ref);
                 sharedFeedStore.addEntry(ref);
+            }
+            if (isNotificationInitReady && matchesNotificationTypeFilter && !isExcludedType) {
+                uiStore.notifyMenu("notification");
             }
         }
         notificationTable.value.data.push(ref);
@@ -479,6 +482,12 @@ export const useNotificationStore = defineStore("Notification", () => {
      */
     function handlePipelineNotification(args) {
         const ref = args.json;
+        if (
+            ref.type === "friendRequest" &&
+            generalSettingsStore.autoDeclineFriendRequests
+        ) {
+            handleAutoDeclineFriendRequest(ref);
+        }
         if (
             ref.type !== "requestInvite" ||
             generalSettingsStore.autoAcceptInviteRequests === "Off"
@@ -699,6 +708,24 @@ export const useNotificationStore = defineStore("Notification", () => {
         }
     }
 
+    async function handleAutoDeclineFriendRequest(ref) {
+        try {
+            const joinInfo = await database.getJoinCount({
+                id: ref.senderUserId,
+                displayName: ref.senderUsername,
+            });
+            if (Number(joinInfo.joinCount) !== 0) {
+                return;
+            }
+            await notificationRequest.hideNotification({
+                notificationId: ref.id,
+            });
+            handleNotificationHide(ref.id);
+        } catch (error) {
+            console.warn("Failed to auto-decline friend request:", error);
+        }
+    }
+
     /**
      *
      * @param args
@@ -804,10 +831,12 @@ export const useNotificationStore = defineStore("Notification", () => {
             return;
         }
 
-        if (
+        const isNotificationInitReady =
+            !notificationInitStatus.value || !isNotificationsLoading.value;
+        const matchesNotificationTypeFilter =
             notificationTable.value.filters[0].value.length === 0 ||
-            notificationTable.value.filters[0].value.includes(ref.type)
-        ) {
+            notificationTable.value.filters[0].value.includes(ref.type);
+        if (isNotificationInitReady && matchesNotificationTypeFilter) {
             uiStore.notifyMenu("notification");
         }
         database.addNotificationV2ToDatabase(ref);

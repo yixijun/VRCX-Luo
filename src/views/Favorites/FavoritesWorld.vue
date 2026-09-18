@@ -252,7 +252,7 @@
                                     {{ activeLocalGroupName }}
                                     <small>{{ activeLocalGroupCount }}</small>
                                 </span>
-                                <span v-else>No Group Selected</span>
+                                <span v-else>{{ t('view.favorite.no_group_selected') }}</span>
                             </template>
                         </FavoritesContentHeader>
                         <div ref="worldFavoritesContainerRef" class="flex-1 min-h-0">

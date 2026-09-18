@@ -8,7 +8,15 @@
         BreadcrumbPage,
         BreadcrumbSeparator
     } from '@/components/ui/breadcrumb';
-    import { useAvatarStore, useGroupStore, useInstanceStore, useUiStore, useUserStore, useWorldStore } from '@/stores';
+    import {
+        useAppearanceSettingsStore,
+        useAvatarStore,
+        useGroupStore,
+        useInstanceStore,
+        useUiStore,
+        useUserStore,
+        useWorldStore
+    } from '@/stores';
     import {
         DropdownMenu,
         DropdownMenuContent,
@@ -29,6 +37,7 @@
     import UserDialog from './UserDialog/UserDialog.vue';
     import WorldDialog from './WorldDialog/WorldDialog.vue';
     import { clearDialogMotionOrigin, dialogMotionOrigin } from '@/services/dialogMotionOrigin';
+    import { profileBackgrounds } from '@/shared/constants/backgrounds';
 
     const avatarStore = useAvatarStore();
     const groupStore = useGroupStore();
@@ -36,6 +45,7 @@
     const uiStore = useUiStore();
     const userStore = useUserStore();
     const worldStore = useWorldStore();
+    const appearanceSettingsStore = useAppearanceSettingsStore();
 
     const { previousInstancesInfoDialog, previousInstancesListDialog } = storeToRefs(instanceStore);
 
@@ -170,6 +180,45 @@
         };
     });
 
+    const dialogProfileStyle = computed(() => {
+        if (effectiveType.value !== 'user' || !appearanceSettingsStore.displayVRCProfileBackgrounds) {
+            return {};
+        }
+        const profile = userStore.userDialog.publicProfileRef || {};
+        const configuredOpacity = Number(appearanceSettingsStore.profileBackgroundOpacity);
+        const opacity = Number.isFinite(configuredOpacity)
+            ? Math.min(1, Math.max(0, configuredOpacity))
+            : 0.5;
+        const overlay = appearanceSettingsStore.isDarkMode
+            ? `rgba(0, 0, 0, ${1 - opacity})`
+            : `rgba(255, 255, 255, ${1 - opacity})`;
+        const normalizeColor = (value) => {
+            const normalized = String(value || '').replace(/^#/, '');
+            return /^[0-9a-f]{6}$/i.test(normalized) ? `#${normalized}` : 'var(--background)';
+        };
+        if (profile.backgroundType === 'gradient') {
+            return {
+                overflow: 'hidden',
+                backgroundClip: 'padding-box',
+                backgroundImage: `linear-gradient(${overlay}, ${overlay}), linear-gradient(180deg, ${normalizeColor(profile.backgroundGradientTop)}, ${normalizeColor(profile.backgroundGradientBottom)})`
+            };
+        }
+        if (profile.backgroundType === 'texture') {
+            const background = profileBackgrounds.find((item) => item.id === profile.backgroundTextureId);
+            if (background) {
+                return {
+                    overflow: 'hidden',
+                    backgroundClip: 'padding-box',
+                    backgroundImage: `linear-gradient(${overlay}, ${overlay}), url(${background.url})`,
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'top center',
+                    backgroundRepeat: 'no-repeat'
+                };
+            }
+        }
+        return { overflow: 'hidden', backgroundClip: 'padding-box' };
+    });
+
     watch(renderedType, (type) => {
         if (!type) {
             clearDialogMotionOrigin();
@@ -228,7 +277,7 @@
     <Dialog v-if="renderedType" v-model:open="isOpen">
         <DialogContent
             :class="[dialogClass, dialogMotionClass]"
-            :style="dialogMotionStyle"
+            :style="[dialogMotionStyle, dialogProfileStyle]"
             :show-close-button="false"
             @pointerDownOutside="handlePointerDownOutside">
             <Breadcrumb v-if="shouldShowBreadcrumbs" class="mb-2 flex-shrink-0">

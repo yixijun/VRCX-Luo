@@ -63,6 +63,7 @@ import { findRelationSuggestionForUser } from './relationSuggestionPopup';
 import { showRelationSuggestionNotification } from '../services/relationSuggestionNotification';
 import { createUserLanguageEntries } from './userLanguageProjection';
 import { deriveAutoStateChangeParams } from './userAutoStateDecision';
+import { recordBioSnapshotForUser } from './bioSnapshotCoordinator';
 
 const getRobotUrl = () =>
     `${AppDebug.endpointDomain}/file/file_0e8c4e32-7444-44ea-ade4-313c010d4bae/1/file`;
@@ -373,6 +374,11 @@ export function showUserDialog(userId) {
         return;
     }
     D.id = userId;
+    // Do not let a previous profile/avatar remain visible while the new
+    // user's presence and public profile requests are in flight.
+    D.ref = {};
+    D.publicProfileRef = {};
+    D.bioSnapshotVersion = 0;
     D.memo = '';
     D.note = '';
     getUserMemo(userId).then((memo) => {
@@ -392,6 +398,16 @@ export function showUserDialog(userId) {
     });
 
     D.loading = true;
+    // The public profile is now served by a separate VRChat endpoint. Reset
+    // both resources when switching users so a previous user's avatar/bio
+    // cannot flash while the new profile request is in flight.
+    D.ref = {};
+    D.publicProfileRef = {};
+    D.theme = {
+        iconColor: 'var(--muted-foreground)',
+        buttonColor: 'var(--primary)',
+        subtextColor: 'var(--muted-foreground)'
+    };
     D.avatars = [];
     D.worlds = [];
     D.instance = {
@@ -440,11 +456,117 @@ export function showUserDialog(userId) {
         });
     }
     AppApi.SendIpc('ShowUserDialog', userId);
+
+    const mergePublicProfileIntoDialogRef = (profile) => {
+        if (!profile || userId !== D.id || !D.ref) {
+            return;
+        }
+        const profileFields = [
+            'ageVerificationStatus',
+            'ageVerified',
+            'backgroundGradientBottom',
+            'backgroundGradientTop',
+            'backgroundTextureId',
+            'backgroundType',
+            'bannerColor',
+            'bannerType',
+            'bannerUrl',
+            'displayName',
+            'hasVrcPlus',
+            'iconFrame',
+            'iconUrl',
+            'isEconomyCreator',
+            'languages',
+            'nameplateEffect',
+            'profileEffect',
+            'pronouns',
+            'representedGroup',
+            'trustTags'
+        ];
+        for (const key of profileFields) {
+            if (profile[key] !== undefined && profile[key] !== null) {
+                D.ref[key] = profile[key];
+            }
+        }
+        if (typeof profile.bio === 'string') {
+            D.ref.bio = profile.bio;
+        }
+        if (Array.isArray(profile.bioLinks)) {
+            D.ref.bioLinks = profile.bioLinks;
+        }
+        if (Array.isArray(profile.badges)) {
+            D.ref.badges = profile.badges;
+        }
+
+        if (appearanceSettingsStore.displayVRCProfileThemes) {
+            const toThemeColor = (value, fallback) => {
+                const normalized = String(value || '').trim().replace(/^#/, '');
+                return /^[0-9a-f]{3,8}$/i.test(normalized) ? `#${normalized}` : fallback;
+            };
+            D.theme = {
+                iconColor: toThemeColor(profile.themeIconColor, 'var(--muted-foreground)'),
+                buttonColor: toThemeColor(profile.themeButtonColor, 'var(--primary)'),
+                subtextColor: toThemeColor(profile.themeSubtextColor, 'var(--muted-foreground)')
+            };
+        }
+    };
+
     // Capture cached bio and status before the API fetch so we can detect whether
     // applyUser (called inside the fetch) already triggered
     // runHandleUserUpdateFlow to record the same change.
     const bioBefore = userStore.cachedUsers.get(userId)?.bio;
     const statusBefore = userStore.cachedUsers.get(userId)?.status;
+    let bioSnapshotAttempted = false;
+    let publicProfileSettled = false;
+    let legacyBioCandidate = null;
+    const queueBioSnapshot = (bio, displayName, source = 'legacy') => {
+        if (source === 'profile') {
+            publicProfileSettled = true;
+        }
+        if (source === 'legacy' && !publicProfileSettled) {
+            if (typeof bio === 'string') {
+                legacyBioCandidate = { bio, displayName };
+            }
+            return;
+        }
+        if (bioSnapshotAttempted || typeof bio !== 'string') {
+            return;
+        }
+        bioSnapshotAttempted = true;
+        recordBioSnapshotForUser({
+            database,
+            userId,
+            currentUserId: currentUser.id,
+            currentBio: bio || '',
+            previousBio: bioBefore,
+            isFriend: friendStore.friends.has(userId),
+            displayName: displayName || userId
+        })
+            .then(() => {
+                // The Info tab may have already queried the archive while
+                // this async database write was in flight. Bump a reactive
+                // version after the write so it retries the diff query.
+                if (userId === D.id) {
+                    D.bioSnapshotVersion += 1;
+                }
+            })
+            .catch((err) => {
+                console.error('Failed to record bio snapshot:', err);
+            });
+    };
+    updateUserDialogProfile({
+        onProfileLoaded: (profile) => {
+            queueBioSnapshot(profile.bio, D.ref?.displayName || profile.displayName, 'profile');
+        },
+        onProfileSettled: () => {
+            publicProfileSettled = true;
+            if (legacyBioCandidate) {
+                const candidate = legacyBioCandidate;
+                legacyBioCandidate = null;
+                queueBioSnapshot(candidate.bio, candidate.displayName);
+            }
+        }
+    });
     queryRequest
         .fetch('user', {
             userId
@@ -462,49 +584,17 @@ export function showUserDialog(userId) {
                 D.loading = false;
 
                 D.ref = args.ref;
+                mergePublicProfileIntoDialogRef(D.publicProfileRef);
                 uiStore.setDialogCrumbLabel(
                     'user',
                     D.id,
                     D.ref?.displayName || D.id
                 );
 
-                // Record bio snapshot for any user (friend or stranger) when
-                // their profile is viewed, skipping if bio hasn't changed.
-                // Also skip when runHandleUserUpdateFlow already recorded this
-                // exact bio change: that path fires for friends whenever bio
-                // transitions from one non-empty value to another non-empty
-                // value. Racing with it would insert a duplicate record.
-                if (userId !== currentUser.id && D.ref.bio !== undefined) {
-                    const currentBio = D.ref.bio || '';
-                    const isFriend = friendStore.friends.has(userId);
-                    const eventFlowWillRecord =
-                        isFriend &&
-                        bioBefore !== undefined &&
-                        Boolean(bioBefore) &&
-                        Boolean(currentBio) &&
-                        bioBefore !== currentBio;
-                    if (!eventFlowWillRecord) {
-                        database
-                            .getLastBioChangeForUser(userId)
-                            .then((last) => {
-                                if (!last || last.bio !== currentBio) {
-                                    database.addBioToDatabase({
-                                        created_at: new Date().toJSON(),
-                                        userId,
-                                        displayName: D.ref.displayName,
-                                        bio: currentBio,
-                                        previousBio: last ? last.bio : ''
-                                    });
-                                }
-                            })
-                            .catch((err) => {
-                                console.error(
-                                    'Failed to record bio snapshot:',
-                                    err
-                                );
-                            });
-                    }
-                }
+                // The public profile request can resolve before or after this
+                // legacy user request. The request-local guard makes either
+                // path record one snapshot without racing into duplicates.
+                queueBioSnapshot(D.ref.bio, D.ref.displayName, 'legacy');
 
                 // Record status snapshot for any user (friend or stranger) when
                 // their profile is viewed, skipping if status hasn't changed.
@@ -743,6 +833,102 @@ export function showUserDialog(userId) {
 }
 
 /**
+ * Refresh the profile-only fields after the self profile editor saves.
+ * Keeping this separate from showUserDialog avoids resetting the active tab
+ * and preserves the local dialog's selection while the request completes.
+ *
+ * @param {{
+ *     onProfileLoaded?: (profile: object) => void,
+ *     onProfileSettled?: () => void
+ * }} [options]
+ */
+export function updateUserDialogProfile(options = {}) {
+    const userStore = useUserStore();
+    const appearanceSettingsStore = useAppearanceSettingsStore();
+    const { onProfileLoaded, onProfileSettled } = options;
+    const D = userStore.userDialog;
+    const userId = D.id;
+    if (!userId) {
+        return Promise.resolve();
+    }
+
+    return userRequest
+        .getPublicProfile({ userId })
+        .then(({ json }) => {
+            if (D.id !== userId) {
+                return;
+            }
+            const profile = json || {};
+            D.publicProfileRef = profile;
+            if (!D.ref) {
+                D.ref = {};
+            }
+            const profileFields = [
+                'ageVerificationStatus',
+                'ageVerified',
+                'backgroundGradientBottom',
+                'backgroundGradientTop',
+                'backgroundTextureId',
+                'backgroundType',
+                'bannerColor',
+                'bannerType',
+                'bannerUrl',
+                'displayName',
+                'hasVrcPlus',
+                'iconFrame',
+                'iconUrl',
+                'isEconomyCreator',
+                'languages',
+                'nameplateEffect',
+                'profileEffect',
+                'pronouns',
+                'representedGroup',
+                'trustTags'
+            ];
+            for (const key of profileFields) {
+                if (profile[key] !== undefined && profile[key] !== null) {
+                    D.ref[key] = profile[key];
+                }
+            }
+            if (typeof profile.bio === 'string') {
+                D.ref.bio = profile.bio;
+            }
+            if (Array.isArray(profile.bioLinks)) {
+                D.ref.bioLinks = profile.bioLinks;
+            }
+            if (Array.isArray(profile.badges)) {
+                D.ref.badges = profile.badges;
+            }
+            if (appearanceSettingsStore.displayVRCProfileThemes) {
+                const toThemeColor = (value, fallback) => {
+                    const normalized = String(value || '').trim().replace(/^#/, '');
+                    return /^[0-9a-f]{3,8}$/i.test(normalized)
+                        ? `#${normalized}`
+                        : fallback;
+                };
+                D.theme = {
+                    iconColor: toThemeColor(profile.themeIconColor, 'var(--muted-foreground)'),
+                    buttonColor: toThemeColor(profile.themeButtonColor, 'var(--primary)'),
+                    subtextColor: toThemeColor(profile.themeSubtextColor, 'var(--muted-foreground)')
+                };
+            }
+            if (typeof onProfileLoaded === 'function') {
+                onProfileLoaded(profile);
+            }
+        })
+        .catch((error) => {
+            if (AppDebug.debugWebRequests) {
+                console.warn('Failed to refresh public profile:', error);
+            }
+        })
+        .finally(() => {
+            if (typeof onProfileSettled === 'function') {
+                onProfileSettled();
+            }
+        });
+}
+
+/**
  * @param {object} ref
  */
 function onPlayerTraveling(ref) {
@@ -935,6 +1121,9 @@ export function applyCurrentUser(json) {
             ageVerified: false,
             allowAvatarCopying: false,
             badges: [],
+            bannerColor: '',
+            bannerType: 'color',
+            bannerUrl: '',
             bio: '',
             bioLinks: [],
             currentAvatar: '',
@@ -963,6 +1152,7 @@ export function applyCurrentUser(json) {
             hasSharedConnectionsOptOut: false,
             hideContentFilterSettings: false,
             homeLocation: '',
+            iconUrl: '',
             id: '',
             isAdult: true,
             isBoopingEnabled: false,

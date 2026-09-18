@@ -16,6 +16,7 @@ import { tableFixes } from './tableFixes.js';
 import { tableSize } from './tableSize.js';
 import { trackedNonFriends } from './trackedNonFriends.js';
 import { worldFavorites } from './worldFavorites.js';
+import { printFavorites } from './printFavorites.js';
 
 import sqliteService from '../sqlite.js';
 
@@ -39,6 +40,7 @@ const database = {
     ...avatarTags,
     ...friendFavorites,
     ...worldFavorites,
+    ...printFavorites,
     ...tableAlter,
     ...tableFixes,
     ...tableSize,
@@ -213,6 +215,9 @@ const database = {
         );
         await sqliteService.executeNonQuery(
             `CREATE TABLE IF NOT EXISTS favorite_world (id INTEGER PRIMARY KEY, created_at TEXT, world_id TEXT, group_name TEXT)`
+        );
+        await sqliteService.executeNonQuery(
+            `CREATE TABLE IF NOT EXISTS favorite_print (id INTEGER PRIMARY KEY, print_id TEXT UNIQUE, created_at TEXT)`
         );
         await sqliteService.executeNonQuery(
             `CREATE TABLE IF NOT EXISTS favorite_avatar (id INTEGER PRIMARY KEY, created_at TEXT, avatar_id TEXT, group_name TEXT)`

@@ -52,6 +52,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
     const recentActionCooldownEnabled = ref(false);
     const recentActionCooldownMinutes = ref(60);
     const relationshipSuggestionPromptsEnabled = ref(true);
+    const autoDeclineFriendRequests = ref(false);
 
     async function initGeneralSettings() {
         const [
@@ -82,7 +83,8 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
             autoAcceptInviteGroupsStrConfig,
             recentActionCooldownEnabledConfig,
             recentActionCooldownMinutesConfig,
-            relationshipSuggestionPromptsEnabledConfig
+            relationshipSuggestionPromptsEnabledConfig,
+            autoDeclineFriendRequestsConfig
         ] = await Promise.all([
             configRepository.getBool('VRCX_StartAtWindowsStartup', false),
             VRCXStorage.Get('VRCX_StartAsMinimizedState'),
@@ -129,7 +131,8 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
             configRepository.getBool(
                 'VRCX_relationshipSuggestionPromptsEnabled',
                 true
-            )
+            ),
+            configRepository.getBool('VRCX_autoDeclineFriendRequests', false)
         ]);
 
         isStartAtWindowsStartup.value = isStartAtWindowsStartupConfig;
@@ -184,6 +187,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         recentActionCooldownMinutes.value = recentActionCooldownMinutesConfig;
         relationshipSuggestionPromptsEnabled.value =
             relationshipSuggestionPromptsEnabledConfig;
+        autoDeclineFriendRequests.value = autoDeclineFriendRequestsConfig;
     }
 
     initGeneralSettings();
@@ -486,6 +490,14 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         );
     }
 
+    function setAutoDeclineFriendRequests(value = !autoDeclineFriendRequests.value) {
+        autoDeclineFriendRequests.value = Boolean(value);
+        configRepository.setBool(
+            'VRCX_autoDeclineFriendRequests',
+            autoDeclineFriendRequests.value
+        );
+    }
+
     return {
         isStartAtWindowsStartup,
         isStartAsMinimizedState,
@@ -513,6 +525,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         recentActionCooldownEnabled,
         recentActionCooldownMinutes,
         relationshipSuggestionPromptsEnabled,
+        autoDeclineFriendRequests,
 
         setIsStartAtWindowsStartup,
         setIsStartAsMinimizedState,
@@ -541,6 +554,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         promptProxySettings,
         setRecentActionCooldownEnabled,
         setRecentActionCooldownMinutes,
-        setRelationshipSuggestionPromptsEnabled
+        setRelationshipSuggestionPromptsEnabled,
+        setAutoDeclineFriendRequests
     };
 });

@@ -117,6 +117,18 @@ const instanceReq = {
                 toast.error(i18n.global.t('message.instance.not_allowed'));
                 throw err;
             });
+    },
+
+    /**
+     * Send an announcement to all players in an instance.
+     * @param {{ location: string, title?: string, message: string, imageId?: string, imageVersion?: number }} params
+     * @returns {Promise<{json: any, params: any}>}
+     */
+    instanceAnnouncement(params) {
+        return request(`instances/${params.location}/announce`, {
+            method: 'POST',
+            params
+        }).then((json) => ({ json, params }));
     }
 };
 

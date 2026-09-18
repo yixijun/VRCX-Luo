@@ -94,7 +94,7 @@
                 <div
                     v-for="group in userDialogGroupEditGroups"
                     :key="group.id"
-                    class="box-border flex items-center p-1.5 text-[13px] cursor-pointer w-full hover:rounded-[25px_5px_5px_25px]"
+                    class="box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer w-full"
                     @click="showGroupDialog(group.id)">
                     <!-- Manual checkbox -->
                     <div

@@ -474,6 +474,16 @@ describe('User Utils', () => {
             );
         });
 
+        test('prefers the public profile icon URL when available', () => {
+            const user = {
+                iconUrl: 'https://img.com/profile-icon',
+                currentAvatarThumbnailImageUrl: 'https://img.com/avatar/256/thumb'
+            };
+            expect(userImage(user, false, '128', false, false)).toBe(
+                'https://img.com/profile-icon'
+            );
+        });
+
         test('replaces resolution for icon mode with profilePicOverrideThumbnail', () => {
             const user = {
                 profilePicOverrideThumbnail: 'https://img.com/pic/256/thumb'

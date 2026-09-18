@@ -196,6 +196,18 @@ function userImage(
     if (!user) {
         return '';
     }
+    // Public profile data now exposes the canonical profile icon separately
+    // from the user/presence response. Prefer it when available, while
+    // retaining the legacy fields below for older API responses and caches.
+    if (user.iconUrl) {
+        if (isIcon) {
+            return convertFileUrlToImageUrl(user.iconUrl);
+        }
+        return user.iconUrl;
+    }
+
+    // Older responses called the same field `userIcon`. Keep this fallback
+    // for cached data and the explicit user-dialog icon path.
     if (
         (isUserDialogIcon && user.userIcon) ||
         (displayVRCPlusIconsAsAvatar && user.userIcon)
@@ -248,6 +260,9 @@ function userImage(
 function userImageFull(user, displayVRCPlusIconsAsAvatar = false) {
     if (!user) {
         return '';
+    }
+    if (user.iconUrl) {
+        return user.iconUrl;
     }
     if (displayVRCPlusIconsAsAvatar && user.userIcon) {
         return user.userIcon;

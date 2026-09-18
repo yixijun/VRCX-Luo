@@ -408,7 +408,11 @@ function createWindow() {
         autoHideMenuBar: true,
         titleBarStyle: 'hiddenInset',
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(__dirname, 'preload.js'),
+            // The preload uses the local capability manifest and IPC bridge.
+            // Electron's default sandboxed preload cannot resolve sibling CJS
+            // modules, leaving the renderer without its host bindings.
+            sandbox: false
         }
     });
     applyWindowState();
@@ -492,7 +496,8 @@ function createOverlayWindowOffscreen() {
         webPreferences: {
             partition: 'vrcx-vr-overlay',
             offscreen: true,
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(__dirname, 'preload.js'),
+            sandbox: false
         }
     });
     overlayWindow.webContents.setFrameRate(48);

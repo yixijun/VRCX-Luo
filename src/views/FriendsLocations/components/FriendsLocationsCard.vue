@@ -1,6 +1,10 @@
 <template>
     <UserContextMenu :user-id="friend.id" :state="friend.state" :location="friend.ref?.location">
         <Card class="friend-card x-hover-card hover:bg-muted relative" :style="cardStyle" @click="handleCardClick">
+            <ProfileEffect
+                v-if="showCosmetics"
+                :profile-effect="friend.ref?.profileEffect"
+                class="object-cover rounded-lg" />
             <div class="friend-card__header grid items-center mb-1.75">
                 <div class="relative inline-block flex-none size-9 mr-2.5">
                     <Avatar class="size-full rounded-full">
@@ -9,6 +13,7 @@
                             <User class="text-muted-foreground" :size="Math.max(16, 20 * cardScale)" />
                         </AvatarFallback>
                     </Avatar>
+                    <IconFrame v-if="showCosmetics" :icon-frame="friend.ref?.iconFrame" />
                 </div>
                 <span
                     class="friend-card__status-dot absolute rounded-full pointer-events-none"
@@ -46,6 +51,8 @@
 <script setup>
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import { Card } from '@/components/ui/card';
+    import IconFrame from '@/components/IconFrame.vue';
+    import ProfileEffect from '@/components/ProfileEffect.vue';
     import { Pencil, User } from 'lucide-vue-next';
     import { computed } from 'vue';
 
@@ -74,6 +81,10 @@
         cardSpacing: {
             type: Number,
             default: 1
+        },
+        showCosmetics: {
+            type: Boolean,
+            default: true
         }
     });
 

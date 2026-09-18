@@ -14,6 +14,7 @@
             <OtpDialogModal></OtpDialogModal>
             <DatabaseUpgradeDialog></DatabaseUpgradeDialog>
             <CloseBehaviorDialog></CloseBehaviorDialog>
+            <OpenExternalLinkDialog></OpenExternalLinkDialog>
 
             <VRCXUpdateDialog></VRCXUpdateDialog>
         </div>
@@ -42,6 +43,7 @@
     import OtpDialogModal from './components/ui/dialog/OtpDialogModal.vue';
     import PromptDialogModal from './components/ui/dialog/PromptDialogModal.vue';
     import VRCXUpdateDialog from './components/dialogs/VRCXUpdateDialog.vue';
+    import OpenExternalLinkDialog from './components/dialogs/OpenExternalLinkDialog.vue';
 
     import '@/styles/globals.css';
 

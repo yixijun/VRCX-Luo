@@ -117,9 +117,10 @@
                                 </Badge>
                             </div>
                             <div class="mt-1.5">
-                                <LocationWorld
-                                    :locationobject="currentInstanceLocation"
-                                    :currentuserid="currentUser.id" />
+                        <LocationWorld
+                            :locationobject="currentInstanceLocation"
+                            :currentuserid="currentUser.id"
+                            class="w-fit" />
                                 <span class="ml-1.5" v-if="lastLocation.playerList.size > 0">
                                     {{ lastLocation.playerList.size }}
                                     <template v-if="lastLocation.friendList.size > 0"
@@ -170,7 +171,7 @@
                             <div class="box-border flex items-center p-1.5 text-[13px] cursor-default">
                                 <div class="flex-1 overflow-hidden">
                                     <span class="block truncate font-medium leading-[18px]">{{
-                                        t('dialog.world.info.created_at')
+                                        t('dialog.world.info.created')
                                     }}</span>
                                     <span class="block truncate text-xs">{{
                                         formatDateFilter(currentInstanceWorld.ref.created_at, 'long')

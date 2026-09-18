@@ -21,6 +21,7 @@ import { useQuickSearchStore } from './quickSearch';
 import { useGroupStore } from './group';
 import { useInstanceStore } from './instance';
 import { useInviteStore } from './invite';
+import { useExternalLinkStore } from './externalLink';
 import { useLaunchStore } from './launch';
 import { useLocationStore } from './location';
 import { useModalStore } from './modal';
@@ -147,6 +148,7 @@ export function createGlobalStores() {
         instance: useInstanceStore(),
         moderation: useModerationStore(),
         invite: useInviteStore(),
+        externalLink: useExternalLinkStore(),
         gallery: useGalleryStore(),
         notification: useNotificationStore(),
         feed: useFeedStore(),
@@ -185,6 +187,7 @@ export {
     useGroupStore,
     useInstanceStore,
     useInviteStore,
+    useExternalLinkStore,
     useLaunchStore,
     useLocationStore,
     useModerationStore,

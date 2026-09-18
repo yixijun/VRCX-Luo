@@ -111,7 +111,7 @@ export function useGroupMembers(
             },
             {
                 key: 'roles',
-                label: 'Roles',
+                label: t('dialog.group.members.roles'),
                 items: roleItems
             }
         ].filter((group) => group.items.length);

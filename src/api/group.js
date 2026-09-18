@@ -125,6 +125,45 @@ const groupReq = {
             return args;
         });
     },
+
+    /**
+     * Check whether a user can receive ownership of a group.
+     * @param {{ groupId: string, transferTargetId: string }} params
+     * @returns {Promise<{json: any, params: any}>}
+     */
+    checkTransferGroup(params) {
+        return request(`groups/${params.groupId}/transfer`, {
+            method: 'GET',
+            params: { transferTargetId: params.transferTargetId }
+        }).then((json) => ({ json, params }));
+    },
+
+    /**
+     * Transfer group ownership to a member.
+     * @param {{ groupId: string, transferTargetId: string }} params
+     * @returns {Promise<{json: any, params: any}>}
+     */
+    transferGroup(params) {
+        return request(`groups/${params.groupId}/transfer`, {
+            method: 'POST',
+            params: { transferTargetId: params.transferTargetId }
+        }).then((json) => {
+            refetchActiveGroupScope(params.groupId);
+            return { json, params };
+        });
+    },
+
+    /**
+     * Delete a group.
+     * @param {{ groupId: string, hardDelete?: boolean }} params
+     * @returns {Promise<{json: any, params: any}>}
+     */
+    deleteGroup(params) {
+        return request(`groups/${params.groupId}`, {
+            method: 'DELETE',
+            params: { hardDelete: params.hardDelete ?? false }
+        }).then((json) => ({ json, params }));
+    },
     /**
      * @param {{ groupId: string }} params
      * @returns { Promise<{json: any, params}> }
@@ -986,7 +1025,7 @@ const groupReq = {
      * @returns { Promise<{json: any, params}> }
      */
     editGroupEvent(params) {
-        return request(`calendar/${params.groupId}/${params.eventId}`, {
+        return request(`calendar/${params.groupId}/${params.eventId}/event`, {
             method: 'PUT',
             params
         }).then((json) => {
