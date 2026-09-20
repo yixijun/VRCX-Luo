@@ -805,6 +805,13 @@ export const useUserStore = defineStore('User', () => {
     }
 
     /**
+     * @param {number} value
+     */
+    function setCurrentUserLocationAt(value) {
+        currentUser.value.$location_at = value;
+    }
+
+    /**
      * @param {object} value
      */
     function setCurrentUser(value) {
@@ -925,8 +932,8 @@ export const useUserStore = defineStore('User', () => {
 
     /**
      */
-    function markCurrentUserGameStarted() {
-        currentUser.value.$online_for = Date.now();
+    function markCurrentUserGameStarted(timestamp = Date.now()) {
+        currentUser.value.$online_for = timestamp;
         currentUser.value.$offline_for = '';
         currentUser.value.$previousAvatarSwapTime = Date.now();
     }
@@ -1017,6 +1024,7 @@ export const useUserStore = defineStore('User', () => {
         setUserDialogIsFavorite,
         setCurrentUserColour,
         setCurrentUserLocationState,
+        setCurrentUserLocationAt,
         setCurrentUserTravelingToTime,
         setCurrentUser,
         setSubsetOfLanguages,

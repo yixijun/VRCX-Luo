@@ -54,6 +54,7 @@ namespace VRCX
         public abstract void OnProcessStateChanged(MonitoredProcess monitoredProcess);
         public abstract void CheckGameRunning();
         public abstract bool IsGameRunning();
+        public abstract long GetGameProcessStartTime();
         public abstract bool IsSteamVRRunning();
         public abstract bool StartSteamVR();
         public abstract int QuitGame();

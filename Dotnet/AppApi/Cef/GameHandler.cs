@@ -41,6 +41,27 @@ namespace VRCX
             return ProcessMonitor.Instance.IsProcessRunning("VRChat");
         }
 
+        public override long GetGameProcessStartTime()
+        {
+            var processes = Process.GetProcessesByName("VRChat");
+            try
+            {
+                if (processes.Length == 0)
+                    return 0;
+
+                return new DateTimeOffset(processes[0].StartTime.ToUniversalTime()).ToUnixTimeMilliseconds();
+            }
+            catch
+            {
+                return 0;
+            }
+            finally
+            {
+                foreach (var process in processes)
+                    process.Dispose();
+            }
+        }
+
         public override bool IsSteamVRRunning()
         {
             // unused

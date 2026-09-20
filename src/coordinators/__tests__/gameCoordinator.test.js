@@ -188,8 +188,19 @@ describe('runGameRunningChangedFlow', () => {
         mocks.workerTimers.setTimeout.mockReset();
         globalThis.AppApi = {
             VrcClosedGracefully: vi.fn().mockResolvedValue(false),
+            GetGameProcessStartTime: vi.fn().mockResolvedValue(0),
             FocusWindow: vi.fn()
         };
+    });
+
+    test('restores the current session start from the running VRChat process', async () => {
+        globalThis.AppApi.GetGameProcessStartTime.mockResolvedValue(2000);
+
+        await runGameRunningChangedFlow(true);
+
+        expect(mocks.userStore.markCurrentUserGameStarted).toHaveBeenCalledWith(
+            2000
+        );
     });
 
     test('persists and stores last game session when game stops', async () => {

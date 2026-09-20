@@ -43,7 +43,12 @@ export async function runGameRunningChangedFlow(isGameRunning) {
     const gameStore = useGameStore();
 
     if (isGameRunning) {
-        userStore.markCurrentUserGameStarted();
+        const now = Date.now();
+        let sessionStart = Number(await AppApi.GetGameProcessStartTime());
+        if (!Number.isFinite(sessionStart) || sessionStart <= 0 || sessionStart > now) {
+            sessionStart = now;
+        }
+        userStore.markCurrentUserGameStarted(sessionStart);
     } else {
         await configRepository.setBool('isGameNoVR', gameStore.isGameNoVR);
         // persist last session data before markCurrentUserGameStopped resets $online_for

@@ -62,6 +62,9 @@ export function runUpdateCurrentUserLocationFlow() {
     } else {
         ref.$location_at = locationStore.lastLocation.date;
         ref.$travelingToTime = locationStore.lastLocationDestinationTime;
+        if (Number.isFinite(locationStore.lastLocation.date) && locationStore.lastLocation.date > 0) {
+            userStore.setCurrentUserLocationAt(locationStore.lastLocation.date);
+        }
         userStore.setCurrentUserTravelingToTime(
             locationStore.lastLocationDestinationTime
         );
