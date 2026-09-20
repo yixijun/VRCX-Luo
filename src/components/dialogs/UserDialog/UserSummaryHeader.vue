@@ -325,51 +325,6 @@
                     </div>
                 </TooltipWrapper>
             </div>
-
-            <div
-                v-if="currentUser.id === userDialog.id"
-                class="border-t border-muted-foreground/20 flex flex-col gap-1.5">
-                <div
-                    class="flex justify-between items-center text-xs cursor-pointer hover:text-foreground mt-1.5"
-                    @click="toggleAvatarCopying">
-                    <span class="text-muted-foreground">{{ t('dialog.user.info.avatar_cloning') }}</span>
-                    <span class="text-muted-foreground">{{
-                        currentUser.allowAvatarCopying
-                            ? t('dialog.user.info.avatar_cloning_allow')
-                            : t('dialog.user.info.avatar_cloning_deny')
-                    }}</span>
-                </div>
-                <div
-                    class="flex justify-between items-center text-xs cursor-pointer hover:text-foreground"
-                    @click="toggleAllowBooping">
-                    <span class="text-muted-foreground">{{ t('dialog.user.info.booping') }}</span>
-                    <span class="text-muted-foreground">{{
-                        currentUser.isBoopingEnabled
-                            ? t('dialog.user.info.avatar_cloning_allow')
-                            : t('dialog.user.info.avatar_cloning_deny')
-                    }}</span>
-                </div>
-                <div
-                    class="flex justify-between items-center text-xs cursor-pointer hover:text-foreground"
-                    @click="toggleSharedConnectionsOptOut">
-                    <span class="text-muted-foreground">{{ t('dialog.user.info.show_mutual_friends') }}</span>
-                    <span class="text-muted-foreground">{{
-                        !currentUser.hasSharedConnectionsOptOut
-                            ? t('dialog.user.info.avatar_cloning_allow')
-                            : t('dialog.user.info.avatar_cloning_deny')
-                    }}</span>
-                </div>
-                <div
-                    class="flex justify-between items-center text-xs cursor-pointer hover:text-foreground"
-                    @click="toggleDiscordFriendsOptOut">
-                    <span class="text-muted-foreground">{{ t('dialog.user.info.show_discord_connections') }}</span>
-                    <span class="text-muted-foreground">{{
-                        !currentUser.hasDiscordFriendsOptOut
-                            ? t('dialog.user.info.avatar_cloning_allow')
-                            : t('dialog.user.info.avatar_cloning_deny')
-                    }}</span>
-                </div>
-            </div>
         </div>
     </div>
 
@@ -516,8 +471,6 @@
     const { t } = useI18n();
 
     const { userDialog, currentUser } = storeToRefs(useUserStore());
-    const { toggleSharedConnectionsOptOut, toggleDiscordFriendsOptOut, toggleAvatarCopying, toggleAllowBooping } =
-        useUserStore();
 
     const { showFullscreenImageDialog } = useGalleryStore();
     const { userStatusClass } = useUserDisplay();

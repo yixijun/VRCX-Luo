@@ -285,6 +285,16 @@ describe('PlayerList.vue', () => {
         expect(panels[1].attributes('data-min-size')).toBe('32');
     });
 
+    test('uses the existing world creation-time localization key', () => {
+        mocks.currentInstanceWorld.value.ref.id = 'wrld_123';
+
+        const wrapper = mount(PlayerList);
+        const labels = wrapper.findAll('span').map((span) => span.text());
+
+        expect(labels).toContain('dialog.world.info.created_at');
+        expect(labels).not.toContain('dialog.world.info.created');
+    });
+
     test('uses the full player table when there is no resizable summary content', () => {
         const wrapper = mount(PlayerList);
 

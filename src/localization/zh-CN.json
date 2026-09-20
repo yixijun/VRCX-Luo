@@ -282,6 +282,7 @@
             "proxy_settings": "代理设置",
             "settings": "设置",
             "language": "语言",
+            "loginSelected": "登录已选择的 {count} 个账号",
             "field": {
                 "username": "用户名或邮箱地址",
                 "password": "密码",
@@ -1688,6 +1689,8 @@
                 "open_previous_instance": "打开之前加入的房间的列表",
                 "show_mutual_friends": "是否允许查看共同好友",
                 "show_discord_connections": "是否允许查看绑定的 Discord 账号信息",
+                "instance_closed_at": "房间关闭时间",
+                "instance_minimum_avatar_performance": "最低模型性能评级",
                 "bio_diff_toggle": "切换简介对比",
                 "bio_archive": "简介归档"
             },
@@ -1912,7 +1915,15 @@
                 "content_gore": "血腥",
                 "content_violence": "暴力",
                 "content_adult": "成人内容",
-                "content_sex": "性暗示"
+                "content_sex": "性暗示",
+                "performanceRating": {
+                    "Excellent": "优秀",
+                    "Good": "良好",
+                    "Medium": "中等",
+                    "Poor": "较差",
+                    "VeryPoor": "非常差",
+                    "None": "无"
+                }
             },
             "labels": {
                 "public": "（公开）",
@@ -2341,7 +2352,8 @@
             "legacy": "传统",
             "roles": "身份组",
             "open_ingame": "在 VRChat 中打开",
-            "display_name": "自定义房间名称 (需要 VRC+)"
+            "display_name": "自定义房间名称 (需要 VRC+)",
+            "minimum_avatar_performance": "最低模型性能评级"
         },
         "launch": {
             "header": "启动",
@@ -3822,6 +3834,9 @@
         "auto_follow_active": "跟随中",
         "reorder": "调整顺序",
         "move_up": "上移",
-        "move_down": "下移"
+        "move_down": "下移",
+        "view_mode": "账号视图",
+        "view_merged": "合并视图",
+        "view_primary": "主账号"
     }
 }
