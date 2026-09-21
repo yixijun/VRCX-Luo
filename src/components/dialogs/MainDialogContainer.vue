@@ -240,6 +240,7 @@
             case 'previous-instances-group':
                 return 'x-dialog previous-instances-dialog h-[calc(100dvh-3rem)] sm:max-w-250 overflow-hidden flex flex-col';
             case 'user':
+                return 'x-dialog main-entity-dialog user-main-dialog sm:max-w-235 overflow-hidden flex flex-col';
             default:
                 return 'x-dialog main-entity-dialog sm:max-w-235 overflow-hidden flex flex-col';
         }
@@ -406,6 +407,11 @@
         width: min(60rem, calc(100vw - 2rem));
     }
 
+    :global(.user-main-dialog) {
+        width: min(58.75rem, calc(100vw - 2rem));
+        height: calc(100dvh - 3rem);
+    }
+
     :deep(.previous-instances-dialog) {
         max-height: calc(100dvh - 3rem);
         background: var(--background);
@@ -434,6 +440,10 @@
     }
 
     @media (max-height: 42rem) {
+        :global(.user-main-dialog) {
+            height: calc(100dvh - 1.5rem);
+        }
+
         :deep(.main-entity-dialog) {
             max-height: calc(100dvh - 1.5rem);
         }
