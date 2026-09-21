@@ -2,203 +2,203 @@
     <div class="relative h-full">
         <div ref="scrollViewportRef" class="h-full w-full overflow-auto overflow-x-hidden">
             <div class="px-1.5 py-2.5">
-                <div v-if="virtualRows.length" class="relative w-full box-border" :style="virtualContainerStyle">
-                    <template v-for="item in virtualItems" :key="String(item.virtualItem.key)">
-                        <div
-                            v-if="item.row"
-                            class="absolute left-0 top-0 w-full box-border"
-                            :data-index="item.virtualItem.index"
-                            :ref="virtualizer.measureElement"
-                            :style="rowStyle(item)">
-                            <template v-if="item.row.type === 'toggle-header'">
-                                <div
-                                    class="flex cursor-pointer items-center pt-4 pb-1.5 text-xs"
-                                    :style="item.row.headerPadding ? { padding: item.row.headerPadding } : undefined"
-                                    @click="item.row.onClick && item.row.onClick()">
-                                    <ChevronDown
-                                        class="transition-transform duration-200 ease-in-out"
-                                        :class="{ '-rotate-90': !item.row.expanded }" />
-                                    <span class="ml-1.5">
-                                        {{ item.row.label }}
-                                        <template v-if="item.row.count !== null && item.row.count !== undefined">
-                                            &horbar; {{ item.row.count }}
-                                        </template>
-                                    </span>
-                                </div>
-                            </template>
+                <TransitionGroup
+                    tag="div"
+                    class="relative w-full box-border"
+                    :style="virtualContainerStyle"
+                    :css="false"
+                    @enter="presenceEnter"
+                    @leave="presenceLeave">
+                    <div
+                        v-for="item in virtualItems"
+                        :key="String(item.virtualItem.key)"
+                        class="absolute left-0 top-0 w-full box-border"
+                        :data-friend-id="item.row?.friend?.id"
+                        :data-index="item.virtualItem.index"
+                        :ref="virtualizer.measureElement"
+                        :style="rowStyle(item)">
+                        <template v-if="item.row.type === 'toggle-header'">
+                            <div
+                                class="flex cursor-pointer items-center pt-4 pb-1.5 text-xs"
+                                :style="item.row.headerPadding ? { padding: item.row.headerPadding } : undefined"
+                                @click="item.row.onClick && item.row.onClick()">
+                                <ChevronDown
+                                    class="transition-transform duration-200 ease-in-out"
+                                    :class="{ '-rotate-90': !item.row.expanded }" />
+                                <span class="ml-1.5">
+                                    {{ item.row.label }}
+                                    <template v-if="item.row.count !== null && item.row.count !== undefined">
+                                        &horbar; {{ item.row.count }}
+                                    </template>
+                                </span>
+                            </div>
+                        </template>
 
-                            <template v-else-if="item.row.type === 'me-item'">
-                                <ContextMenu>
-                                    <ContextMenuTrigger as-child>
+                        <template v-else-if="item.row.type === 'me-item'">
+                            <ContextMenu>
+                                <ContextMenuTrigger as-child>
+                                    <div
+                                        class="friend-row box-border flex items-center p-1.5 text-[13px] cursor-pointer hover:bg-muted/50 hover:rounded-lg"
+                                        @click="showUserDialog(currentUser.id)">
                                         <div
-                                            class="friend-row box-border flex items-center p-1.5 text-[13px] cursor-pointer hover:bg-muted/50 hover:rounded-lg"
-                                            @click="showUserDialog(currentUser.id)">
-                                            <div
-                                                class="relative inline-block flex-none size-9 mr-2.5"
-                                                :class="userStatusClass(currentUser)">
-                                                <Avatar class="size-full rounded-full">
-                                                    <AvatarImage :src="userImage(currentUser)" class="object-cover" />
-                                                    <AvatarFallback>
-                                                        <User class="size-5 text-muted-foreground" />
-                                                    </AvatarFallback>
-                                                </Avatar>
-                                                <IconFrame
-                                                    :enabled="sidebarCosmetics"
-                                                    :icon-frame="currentUser.iconFrame" />
-                                            </div>
-                                            <div class="flex-1 overflow-hidden h-9 flex flex-col justify-between">
-                                                <span
-                                                    class="block truncate font-medium leading-[18px]"
-                                                    :style="{ color: currentUser.$userColour }"
-                                                    >{{ currentUser.displayName }}</span
-                                                >
-                                                <Location
-                                                    v-if="isGameRunning && !gameLogDisabled"
-                                                    class="extra block truncate text-xs"
-                                                    :location="lastLocation.location"
-                                                    :traveling="lastLocationDestination"
-                                                    :link="false" />
-                                                <Location
-                                                    v-else-if="
-                                                        isRealInstance(currentUser.$locationTag) ||
-                                                        isRealInstance(currentUser.$travelingToLocation)
-                                                    "
-                                                    class="extra block truncate text-xs"
-                                                    :location="currentUser.$locationTag"
-                                                    :traveling="currentUser.$travelingToLocation"
-                                                    :link="false" />
-
-                                                <span v-else class="extra block truncate text-xs">{{
-                                                    currentUser.statusDescription
-                                                }}</span>
-                                            </div>
+                                            class="relative inline-block flex-none size-9 mr-2.5"
+                                            :class="userStatusClass(currentUser)">
+                                            <Avatar class="size-full rounded-full">
+                                                <AvatarImage :src="userImage(currentUser)" class="object-cover" />
+                                                <AvatarFallback>
+                                                    <User class="size-5 text-muted-foreground" />
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <IconFrame
+                                                :enabled="sidebarCosmetics"
+                                                :icon-frame="currentUser.iconFrame" />
                                         </div>
-                                    </ContextMenuTrigger>
-                                    <ContextMenuContent>
-                                        <ContextMenuSub>
-                                            <ContextMenuSubTrigger>
-                                                {{ t('dialog.user.actions.edit_status') }}
-                                            </ContextMenuSubTrigger>
-                                            <ContextMenuSubContent>
-                                                <ContextMenuCheckboxItem
-                                                    v-for="option in statusOptions"
-                                                    :key="option.value"
-                                                    :model-value="currentUser.status === option.value"
-                                                    class="gap-2"
-                                                    @click="changeStatus(option.value)">
-                                                    <i class="x-user-status" :class="option.statusClass"></i>
-                                                    {{ option.label }}
-                                                </ContextMenuCheckboxItem>
-                                            </ContextMenuSubContent>
-                                        </ContextMenuSub>
-                                        <ContextMenuSub>
-                                            <ContextMenuSubTrigger>
-                                                {{ t('dialog.social_status.history') }}
-                                            </ContextMenuSubTrigger>
-                                            <ContextMenuSubContent>
-                                                <ContextMenuCheckboxItem
-                                                    :model-value="!currentUser.statusDescription"
-                                                    @click="setStatusFromHistory('')">
-                                                    {{ t('dialog.gallery_select.none') }}
-                                                </ContextMenuCheckboxItem>
-                                                <ContextMenuSeparator v-if="recentStatuses.length" />
-                                                <ContextMenuCheckboxItem
-                                                    v-for="(item, idx) in recentStatuses"
-                                                    :key="idx"
-                                                    :model-value="currentUser.statusDescription === item"
-                                                    @click="setStatusFromHistory(item)">
-                                                    {{ item }}
-                                                </ContextMenuCheckboxItem>
-                                            </ContextMenuSubContent>
-                                        </ContextMenuSub>
-                                        <ContextMenuSub v-if="statusPresets.length">
-                                            <ContextMenuSubTrigger>
-                                                {{ t('dialog.social_status.presets') }}
-                                            </ContextMenuSubTrigger>
-                                            <ContextMenuSubContent>
-                                                <ContextMenuItem
-                                                    v-for="(preset, idx) in statusPresets"
-                                                    :key="idx"
-                                                    class="gap-2"
-                                                    @click="applyStatusPreset(preset)">
-                                                    <i
-                                                        class="x-user-status"
-                                                        :class="presetStatusClass(preset.status)"></i>
-                                                    <span class="truncate max-w-[180px]">{{
-                                                        getPresetDisplayText(preset)
-                                                    }}</span>
-                                                </ContextMenuItem>
-                                            </ContextMenuSubContent>
-                                        </ContextMenuSub>
-                                    </ContextMenuContent>
-                                </ContextMenu>
-                            </template>
+                                        <div class="flex-1 overflow-hidden h-9 flex flex-col justify-between">
+                                            <span
+                                                class="block truncate font-medium leading-[18px]"
+                                                :style="{ color: currentUser.$userColour }"
+                                                >{{ currentUser.displayName }}</span
+                                            >
+                                            <Location
+                                                v-if="isGameRunning && !gameLogDisabled"
+                                                class="extra block truncate text-xs"
+                                                :location="lastLocation.location"
+                                                :traveling="lastLocationDestination"
+                                                :link="false" />
+                                            <Location
+                                                v-else-if="
+                                                    isRealInstance(currentUser.$locationTag) ||
+                                                    isRealInstance(currentUser.$travelingToLocation)
+                                                "
+                                                class="extra block truncate text-xs"
+                                                :location="currentUser.$locationTag"
+                                                :traveling="currentUser.$travelingToLocation"
+                                                :link="false" />
 
-                            <template v-else-if="item.row.type === 'instance-header'">
-                                <div class="mb-1 flex items-center">
-                                    <Location class="inline text-xs" :location="item.row.location" />
-                                    <span class="text-xs ml-1.5">{{ `(${item.row.count})` }}</span>
-                                </div>
-                            </template>
+                                            <span v-else class="extra block truncate text-xs">{{
+                                                currentUser.statusDescription
+                                            }}</span>
+                                        </div>
+                                    </div>
+                                </ContextMenuTrigger>
+                                <ContextMenuContent>
+                                    <ContextMenuSub>
+                                        <ContextMenuSubTrigger>
+                                            {{ t('dialog.user.actions.edit_status') }}
+                                        </ContextMenuSubTrigger>
+                                        <ContextMenuSubContent>
+                                            <ContextMenuCheckboxItem
+                                                v-for="option in statusOptions"
+                                                :key="option.value"
+                                                :model-value="currentUser.status === option.value"
+                                                class="gap-2"
+                                                @click="changeStatus(option.value)">
+                                                <i class="x-user-status" :class="option.statusClass"></i>
+                                                {{ option.label }}
+                                            </ContextMenuCheckboxItem>
+                                        </ContextMenuSubContent>
+                                    </ContextMenuSub>
+                                    <ContextMenuSub>
+                                        <ContextMenuSubTrigger>
+                                            {{ t('dialog.social_status.history') }}
+                                        </ContextMenuSubTrigger>
+                                        <ContextMenuSubContent>
+                                            <ContextMenuCheckboxItem
+                                                :model-value="!currentUser.statusDescription"
+                                                @click="setStatusFromHistory('')">
+                                                {{ t('dialog.gallery_select.none') }}
+                                            </ContextMenuCheckboxItem>
+                                            <ContextMenuSeparator v-if="recentStatuses.length" />
+                                            <ContextMenuCheckboxItem
+                                                v-for="(item, idx) in recentStatuses"
+                                                :key="idx"
+                                                :model-value="currentUser.statusDescription === item"
+                                                @click="setStatusFromHistory(item)">
+                                                {{ item }}
+                                            </ContextMenuCheckboxItem>
+                                        </ContextMenuSubContent>
+                                    </ContextMenuSub>
+                                    <ContextMenuSub v-if="statusPresets.length">
+                                        <ContextMenuSubTrigger>
+                                            {{ t('dialog.social_status.presets') }}
+                                        </ContextMenuSubTrigger>
+                                        <ContextMenuSubContent>
+                                            <ContextMenuItem
+                                                v-for="(preset, idx) in statusPresets"
+                                                :key="idx"
+                                                class="gap-2"
+                                                @click="applyStatusPreset(preset)">
+                                                <i class="x-user-status" :class="presetStatusClass(preset.status)"></i>
+                                                <span class="truncate max-w-[180px]">{{
+                                                    getPresetDisplayText(preset)
+                                                }}</span>
+                                            </ContextMenuItem>
+                                        </ContextMenuSubContent>
+                                    </ContextMenuSub>
+                                </ContextMenuContent>
+                            </ContextMenu>
+                        </template>
 
-                            <template v-else-if="item.row.type === 'friend-item'">
-                                <ContextMenu>
-                                    <ContextMenuTrigger as-child>
-                                        <FriendItem
-                                            :friend="item.row.friend"
-                                            :style="item.row.itemStyle"
-                                            :is-group-by-instance="item.row.isGroupByInstance" />
-                                    </ContextMenuTrigger>
-                                    <ContextMenuContent>
-                                        <ContextMenuItem
-                                            v-if="item.row.friend.state === 'online'"
-                                            @click="friendRequestInvite(item.row.friend)">
-                                            {{ t('dialog.user.actions.request_invite') }}
-                                            <ContextMenuShortcut
-                                                v-if="isActionRecent(item.row.friend.id, 'Request Invite')">
-                                                <Clock class="size-3.5 text-muted-foreground" />
-                                            </ContextMenuShortcut>
-                                        </ContextMenuItem>
-                                        <ContextMenuItem
-                                            v-if="isGameRunning"
-                                            :disabled="!canInviteToMyLocation"
-                                            @click="friendInvite(item.row.friend)">
-                                            {{ t('dialog.user.actions.invite') }}
-                                            <ContextMenuShortcut v-if="isActionRecent(item.row.friend.id, 'Invite')">
-                                                <Clock class="size-3.5 text-muted-foreground" />
-                                            </ContextMenuShortcut>
-                                        </ContextMenuItem>
-                                        <ContextMenuItem
-                                            :disabled="!currentUser.isBoopingEnabled"
-                                            @click="friendSendBoop(item.row.friend)">
-                                            {{ t('dialog.user.actions.send_boop') }}
-                                        </ContextMenuItem>
-                                        <ContextMenuSeparator
-                                            v-if="
-                                                item.row.friend.state === 'online' && hasFriendLocation(item.row.friend)
-                                            " />
-                                        <ContextMenuItem
-                                            v-if="
-                                                item.row.friend.state === 'online' && hasFriendLocation(item.row.friend)
-                                            "
-                                            :disabled="!canJoinFriend(item.row.friend)"
-                                            @click="friendJoin(item.row.friend)">
-                                            {{ t('dialog.user.info.launch_invite_tooltip') }}
-                                        </ContextMenuItem>
-                                        <ContextMenuItem
-                                            v-if="
-                                                item.row.friend.state === 'online' && hasFriendLocation(item.row.friend)
-                                            "
-                                            :disabled="!canJoinFriend(item.row.friend)"
-                                            @click="friendInviteSelf(item.row.friend)">
-                                            {{ t('dialog.user.info.self_invite_tooltip') }}
-                                        </ContextMenuItem>
-                                    </ContextMenuContent>
-                                </ContextMenu>
-                            </template>
-                        </div>
-                    </template>
-                </div>
+                        <template v-else-if="item.row.type === 'instance-header'">
+                            <div class="mb-1 flex items-center">
+                                <Location class="inline text-xs" :location="item.row.location" />
+                                <span class="text-xs ml-1.5">{{ `(${item.row.count})` }}</span>
+                            </div>
+                        </template>
+
+                        <template v-else-if="item.row.type === 'friend-item'">
+                            <ContextMenu>
+                                <ContextMenuTrigger as-child>
+                                    <FriendItem
+                                        :friend="item.row.friend"
+                                        :style="item.row.itemStyle"
+                                        :is-group-by-instance="item.row.isGroupByInstance" />
+                                </ContextMenuTrigger>
+                                <ContextMenuContent>
+                                    <ContextMenuItem
+                                        v-if="item.row.friend.state === 'online'"
+                                        @click="friendRequestInvite(item.row.friend)">
+                                        {{ t('dialog.user.actions.request_invite') }}
+                                        <ContextMenuShortcut
+                                            v-if="isActionRecent(item.row.friend.id, 'Request Invite')">
+                                            <Clock class="size-3.5 text-muted-foreground" />
+                                        </ContextMenuShortcut>
+                                    </ContextMenuItem>
+                                    <ContextMenuItem
+                                        v-if="isGameRunning"
+                                        :disabled="!canInviteToMyLocation"
+                                        @click="friendInvite(item.row.friend)">
+                                        {{ t('dialog.user.actions.invite') }}
+                                        <ContextMenuShortcut v-if="isActionRecent(item.row.friend.id, 'Invite')">
+                                            <Clock class="size-3.5 text-muted-foreground" />
+                                        </ContextMenuShortcut>
+                                    </ContextMenuItem>
+                                    <ContextMenuItem
+                                        :disabled="!currentUser.isBoopingEnabled"
+                                        @click="friendSendBoop(item.row.friend)">
+                                        {{ t('dialog.user.actions.send_boop') }}
+                                    </ContextMenuItem>
+                                    <ContextMenuSeparator
+                                        v-if="
+                                            item.row.friend.state === 'online' && hasFriendLocation(item.row.friend)
+                                        " />
+                                    <ContextMenuItem
+                                        v-if="item.row.friend.state === 'online' && hasFriendLocation(item.row.friend)"
+                                        :disabled="!canJoinFriend(item.row.friend)"
+                                        @click="friendJoin(item.row.friend)">
+                                        {{ t('dialog.user.info.launch_invite_tooltip') }}
+                                    </ContextMenuItem>
+                                    <ContextMenuItem
+                                        v-if="item.row.friend.state === 'online' && hasFriendLocation(item.row.friend)"
+                                        :disabled="!canJoinFriend(item.row.friend)"
+                                        @click="friendInviteSelf(item.row.friend)">
+                                        {{ t('dialog.user.info.self_invite_tooltip') }}
+                                    </ContextMenuItem>
+                                </ContextMenuContent>
+                            </ContextMenu>
+                        </template>
+                    </div>
+                </TransitionGroup>
             </div>
         </div>
         <QuickLaunchButton v-if="active" :target="scrollViewportRef" :teleport="false" />
@@ -260,6 +260,7 @@
     import { useInviteChecks } from '../../../composables/useInviteChecks';
     import { isActionRecent, recordRecentAction } from '../../../composables/useRecentActions';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
+    import { useFriendPresenceMotion } from '../../../composables/useFriendPresenceMotion';
     import { getFriendsLocations } from '../../../shared/utils/location.js';
     import { parseLocation } from '../../../shared/utils';
 
@@ -303,6 +304,10 @@
         sortedFriends
     } = storeToRefs(friendStore);
     const appearanceSettingsStore = useAppearanceSettingsStore();
+    const { presenceEnter, presenceLeave } = useFriendPresenceMotion(
+        () => [...onlineFriends.value, ...activeFriends.value, ...offlineFriends.value],
+        () => appearanceSettingsStore.animationsEnabled && !accountHub.isMergedView
+    );
     const {
         isSidebarGroupByInstance,
         isHideFriendsInSameInstance,
@@ -446,9 +451,7 @@
         return bTime - aTime;
     }
 
-    const offlineFriendsByRecency = computed(() =>
-        offlineFriends.value.slice().sort(compareByOfflineRecency)
-    );
+    const offlineFriendsByRecency = computed(() => offlineFriends.value.slice().sort(compareByOfflineRecency));
 
     // VIP friends divide by group
     const vipFriendsDivideByGroup = computed(() => {
@@ -776,10 +779,12 @@
 
     const virtualItems = computed(() => {
         const items = virtualizer.value?.getVirtualItems?.() ?? [];
-        return items.map((virtualItem) => ({
-            virtualItem,
-            row: virtualRows.value[virtualItem.index]
-        }));
+        return items
+            .map((virtualItem) => ({
+                virtualItem,
+                row: virtualRows.value[virtualItem.index]
+            }))
+            .filter((item) => item.row);
     });
 
     const virtualContainerStyle = computed(() => ({
