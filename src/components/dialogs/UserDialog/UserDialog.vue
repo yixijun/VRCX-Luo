@@ -576,6 +576,7 @@
         overflow-y: auto;
         padding-right: 0.75rem;
         scrollbar-width: thin;
+        scrollbar-gutter: stable;
     }
 
     .user-dialog__splitter {
@@ -606,7 +607,7 @@
         border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
         border-radius: var(--radius-lg);
         background: color-mix(in srgb, var(--muted) 74%, transparent);
-        opacity: 0.8;
+        opacity: 0;
     }
 
     .user-dialog__main {
@@ -625,18 +626,25 @@
     }
 
     .user-dialog__tabs :deep([role='tablist']) {
-        padding-inline: 0.125rem;
-        border-radius: var(--radius-md) var(--radius-md) 0 0;
-        background: color-mix(in srgb, var(--background) 92%, transparent);
+        padding: 0.25rem 0.375rem;
+        border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+        border-radius: 0.875rem;
+        background: color-mix(in srgb, var(--background) 94%, var(--foreground) 6%);
     }
 
     .user-dialog__tabs :deep([role='tab']) {
         height: 2.375rem;
         padding-inline: 0.75rem;
+        border-radius: 0.5rem;
+    }
+
+    .user-dialog__tabs :deep([role='tab'][data-state='active']) {
+        background: color-mix(in srgb, var(--primary) 10%, transparent);
     }
 
     .user-dialog__tabs :deep([role='tabpanel']) {
         padding-top: 0.75rem;
+        scrollbar-gutter: stable;
     }
 
     @media (max-width: 60rem) {

@@ -65,10 +65,10 @@
                             @click="showFullscreenImageDialog(userDialog.instance?.ref?.world?.imageUrl)"
                             loading="lazy" />
                     </div>
-                    <div class="flex flex-wrap items-start" style="flex: 1; max-height: 150px; overflow: auto">
+                    <div class="user-instance-members">
                         <div
                             v-if="userDialog.$location.userId"
-                            class="box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer w-[167px]"
+                            class="user-instance-member box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer"
                             @click="showUserDialog(userDialog.$location.userId)">
                             <template v-if="userDialog.$location.user">
                                 <div
@@ -99,7 +99,7 @@
                         <div
                             v-for="user in userDialog.users || []"
                             :key="user.id"
-                            class="user-instance-member box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer w-[167px]"
+                            class="user-instance-member box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer"
                             @click="showUserDialog(user.id)">
                             <div class="relative inline-block flex-none size-9 mr-2.5" :class="userStatusClass(user)">
                                 <Avatar class="size-9">
@@ -878,19 +878,34 @@
     .user-info-card {
         min-width: 0;
         overflow: hidden;
-        border: 0;
-        border-radius: var(--radius-lg);
+        border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+        border-radius: 0.875rem;
+        padding: 1rem;
         background: var(--surface-panel);
-        box-shadow: var(--shadow-surface);
-        transition:
-            box-shadow var(--motion-base) ease,
-            transform var(--motion-fast) ease;
+        box-shadow: 0 2px 8px rgb(0 0 0 / 5%);
     }
 
-    .user-info-card:hover,
     .user-info-card:focus-within {
-        box-shadow: var(--shadow-floating);
-        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--primary) 35%, var(--border));
+    }
+
+    .user-instance-members {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
+        gap: 0.25rem;
+        max-height: 12rem;
+        overflow-y: auto;
+        margin-top: 0.75rem;
+        scrollbar-gutter: stable;
+    }
+
+    .user-instance-member {
+        min-width: 0;
+        border-radius: 0.625rem;
+    }
+
+    .user-instance-member:hover {
+        background: color-mix(in srgb, var(--foreground) 6%, transparent);
     }
 
     /* formatDifference returns these markers for the bio diff view. Keep the

@@ -1,5 +1,5 @@
 <template>
-    <div class="rounded-lg bg-(--profile-card) overflow-hidden flex flex-col relative">
+    <div class="user-summary-card rounded-lg bg-(--profile-card) overflow-hidden flex flex-col relative">
         <ProfileEffect :profile-effect="userDialog.ref.profileEffect" class="z-1" />
         <div class="relative aspect-17/6">
             <div
@@ -517,3 +517,13 @@
     const toggleBadgeShowcased = props.toggleBadgeShowcased;
     const userDialogCommand = props.userDialogCommand;
 </script>
+
+<style scoped>
+    .user-summary-card {
+        flex-shrink: 0;
+        border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
+        border-radius: 1rem;
+        background: color-mix(in srgb, var(--profile-card, var(--background)) 94%, var(--foreground) 6%);
+        box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
+    }
+</style>
