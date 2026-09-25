@@ -281,6 +281,26 @@
                             @clear-selection="clearSelectedAvatars"
                             @copy-selection="copySelectedAvatars"
                             @bulk-unfavorite="showAvatarBulkUnfavoriteSelectionConfirm">
+                            <template #actions>
+                                <Button
+                                    v-if="activeRemoteGroup && !isSearchActive"
+                                    size="sm"
+                                    variant="outline"
+                                    :disabled="isRemoteAvatarCheckRunning || !currentRemoteFavorites.length"
+                                    @click="handleCheckRemoteAvatarAvailability">
+                                    <Spinner v-if="isRemoteAvatarCheckRunning" />
+                                    <ScanSearch v-else class="size-4" />
+                                    <span v-if="isRemoteAvatarCheckRunning">
+                                        {{
+                                            t('view.favorite.avatars.check_alive_progress', {
+                                                current: remoteAvatarCheckProgress.current,
+                                                total: remoteAvatarCheckProgress.total
+                                            })
+                                        }}
+                                    </span>
+                                    <span v-else>{{ t('view.favorite.avatars.check_alive') }}</span>
+                                </Button>
+                            </template>
                             <template #title>
                                 <span v-if="isSearchActive">{{ t('view.favorite.avatars.search') }}</span>
                                 <template v-else-if="activeRemoteGroup">
@@ -351,6 +371,7 @@
                                                 :favorite="favorite"
                                                 :group="activeRemoteGroup"
                                                 :selected="selectedFavoriteAvatars.includes(favorite.id)"
+                                                :is-detected-invalid="currentRemoteInvalidAvatarIds.has(favorite.id)"
                                                 :edit-mode="avatarEditMode"
                                                 @toggle-select="toggleAvatarSelection(favorite.id, $event)" />
                                         </div>
@@ -425,7 +446,15 @@
 
 <script setup>
     import { computed, markRaw, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue';
-    import { Ellipsis, Loader, MoreHorizontal, Plus, RefreshCcw, RefreshCw } from 'lucide-vue-next';
+    import {
+        Ellipsis,
+        Loader,
+        MoreHorizontal,
+        Plus,
+        RefreshCcw,
+        RefreshCw,
+        ScanSearch
+    } from 'lucide-vue-next';
     import { Button } from '@/components/ui/button';
     import { DataTableEmpty } from '@/components/ui/data-table';
     import { InputGroupField } from '@/components/ui/input-group';
@@ -467,7 +496,8 @@
         refreshFavorites,
         getLocalAvatarFavorites,
         checkInvalidLocalAvatars,
-        removeInvalidLocalAvatars
+        removeInvalidLocalAvatars,
+        checkInvalidRemoteFavoriteAvatars
     } from '../../coordinators/favoriteCoordinator';
 
     import AvatarExportDialog from './dialogs/AvatarExportDialog.vue';
@@ -566,6 +596,9 @@
     const avatarFavoriteSearch = ref('');
     const avatarFavoriteSearchResults = ref([]);
     const avatarEditMode = ref(false);
+    const isRemoteAvatarCheckRunning = ref(false);
+    const remoteAvatarCheckProgress = reactive({ current: 0, total: 0 });
+    const invalidRemoteAvatarsByGroup = reactive(new Map());
     const avatarToolbarMenuOpen = ref(false);
     const refreshingLocalFavorites = ref(false);
     const worker = ref(null);
@@ -655,6 +688,24 @@
             return [];
         }
         return groupedAvatarFavorites.value[activeRemoteGroup.value.key] || [];
+    });
+
+    const currentRemoteInvalidAvatarIds = computed(
+        () => invalidRemoteAvatarsByGroup.get(activeRemoteGroup.value?.key) || new Set()
+    );
+
+    watch(groupedAvatarFavorites, (groups) => {
+        for (const [groupKey, invalidIds] of invalidRemoteAvatarsByGroup) {
+            const currentIds = new Set((groups[groupKey] || []).map((favorite) => favorite.id));
+            for (const id of invalidIds) {
+                if (!currentIds.has(id)) {
+                    invalidIds.delete(id);
+                }
+            }
+            if (!invalidIds.size) {
+                invalidRemoteAvatarsByGroup.delete(groupKey);
+            }
+        }
     });
 
     const currentLocalFavorites = computed(() => {
@@ -869,15 +920,27 @@
             }
 
             if (result.invalid === 0) {
-                toast.success(t('view.favorite.avatars.no_invalid_found'));
+                if (result.skipped) {
+                    toast.warning(
+                        t('view.favorite.avatars.check_incomplete', {
+                            count: result.skipped
+                        })
+                    );
+                } else {
+                    toast.success(t('view.favorite.avatars.no_invalid_found'));
+                }
                 return;
             }
 
             const invalidIdsText = result.invalidIds.join('\n');
+            const skippedNotice = result.skipped
+                ? `\n\n${t('view.favorite.avatars.check_incomplete', { count: result.skipped })}`
+                : '';
 
             const confirmDeleteResult = await modalStore.confirm({
                 description:
                     `${t('view.favorite.avatars.confirm_delete_description', { count: result.invalid })}` +
+                    skippedNotice +
                     `\n\n${t('view.favorite.avatars.removed_list_header')}\n` +
                     invalidIdsText,
                 title: t('view.favorite.avatars.confirm_delete_invalid'),
@@ -914,6 +977,60 @@
             }
             console.error(err);
             toast.error(String(err.message || err));
+        }
+    }
+
+    async function handleCheckRemoteAvatarAvailability() {
+        if (isRemoteAvatarCheckRunning.value || !activeRemoteGroup.value) {
+            return;
+        }
+
+        const targetGroupKey = activeRemoteGroup.value.key;
+        const favoritesToCheck = [...(groupedAvatarFavorites.value[targetGroupKey] || [])];
+        isRemoteAvatarCheckRunning.value = true;
+        remoteAvatarCheckProgress.current = 0;
+        remoteAvatarCheckProgress.total = favoritesToCheck.length;
+
+        try {
+            const result = await checkInvalidRemoteFavoriteAvatars(
+                favoritesToCheck,
+                (current, total) => {
+                    remoteAvatarCheckProgress.current = current;
+                    remoteAvatarCheckProgress.total = total;
+                }
+            );
+
+            const invalidIds = new Set(result.invalidIds);
+            if (invalidIds.size) {
+                invalidRemoteAvatarsByGroup.set(targetGroupKey, invalidIds);
+                if (activeRemoteGroup.value?.key === targetGroupKey) {
+                    selectedFavoriteAvatars.value = [...invalidIds];
+                    avatarEditMode.value = true;
+                }
+                toast.warning(
+                    t('view.favorite.avatars.invalid_marked_summary', {
+                        count: invalidIds.size
+                    })
+                );
+            } else {
+                invalidRemoteAvatarsByGroup.delete(targetGroupKey);
+                if (!result.skipped) {
+                    toast.success(t('view.favorite.avatars.no_invalid_found'));
+                }
+            }
+
+            if (result.skipped) {
+                toast.info(
+                    t('view.favorite.avatars.check_incomplete', {
+                        count: result.skipped
+                    })
+                );
+            }
+        } catch (err) {
+            console.error(err);
+            toast.error(String(err.message || err));
+        } finally {
+            isRemoteAvatarCheckRunning.value = false;
         }
     }
 
@@ -1225,7 +1342,8 @@
         if (!selectedFavoriteAvatars.value.length) {
             return;
         }
-        const total = selectedFavoriteAvatars.value.length;
+        const selectedIds = [...selectedFavoriteAvatars.value];
+        const total = selectedIds.length;
         modalStore
             .confirm({
                 description: t('confirm.bulk_unfavorite', { count: total }),
@@ -1234,7 +1352,7 @@
             })
             .then(({ ok }) => {
                 if (ok) {
-                    bulkUnfavoriteSelectedAvatars(selectedFavoriteAvatars.value);
+                    bulkUnfavoriteSelectedAvatars(selectedIds);
                 }
             })
             .catch(() => {});
@@ -1244,14 +1362,47 @@
      *
      * @param ids
      */
-    function bulkUnfavoriteSelectedAvatars(ids) {
-        ids.forEach((id) => {
-            favoriteRequest.deleteFavorite({
-                objectId: id
-            });
+    async function deleteFavoriteAvatars(ids) {
+        const uniqueIds = [...new Set(ids.filter(Boolean))];
+        if (!uniqueIds.length) {
+            return { removed: 0, failedIds: [] };
+        }
+        const failedIds = [];
+        let removed = 0;
+        let nextIndex = 0;
+        const workerCount = Math.min(3, uniqueIds.length);
+
+        await Promise.all(
+            Array.from({ length: workerCount }, async () => {
+                while (nextIndex < uniqueIds.length) {
+                    const id = uniqueIds[nextIndex++];
+                    try {
+                        await favoriteRequest.deleteFavorite({ objectId: id });
+                        removed++;
+                    } catch (err) {
+                        failedIds.push(id);
+                        console.error(`Failed to remove avatar favorite ${id}:`, err);
+                    }
+                }
+            })
+        );
+
+        return { removed, failedIds };
+    }
+
+    async function bulkUnfavoriteSelectedAvatars(ids) {
+        const result = await deleteFavoriteAvatars(ids);
+        selectedFavoriteAvatars.value = result.failedIds;
+        avatarEditMode.value = result.failedIds.length > 0;
+        const summary = t('view.favorite.avatars.batch_delete_summary', {
+            removed: result.removed,
+            failed: result.failedIds.length
         });
-        selectedFavoriteAvatars.value = [];
-        avatarEditMode.value = false;
+        if (result.failedIds.length) {
+            toast.warning(summary);
+        } else {
+            toast.success(summary);
+        }
     }
 
     onBeforeUnmount(() => {

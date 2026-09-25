@@ -68,7 +68,7 @@
                     <div class="user-instance-members">
                         <div
                             v-if="userDialog.$location.userId"
-                            class="user-instance-member box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer"
+                            class="user-instance-member user-instance-member--owner box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer"
                             @click="showUserDialog(userDialog.$location.userId)">
                             <template v-if="userDialog.$location.user">
                                 <div
@@ -558,15 +558,63 @@
                     </label>
                 </div>
             </DialogHeader>
+            <div
+                class="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/60 bg-muted/30 px-3 py-2">
+                <div class="flex items-center gap-2 text-xs text-muted-foreground">
+                    <span>{{
+                        t('dialog.user.info.bio_archive_selected', { count: bioArchiveSelectedIds.length })
+                    }}</span>
+                    <Button variant="ghost" size="sm" class="h-7 px-2" @click="toggleBioArchiveSelectAll">
+                        {{
+                            bioArchiveSelectedIds.length === bioArchiveRecords.length && bioArchiveRecords.length > 0
+                                ? t('dialog.user.info.bio_archive_clear_selection')
+                                : t('dialog.user.info.bio_archive_select_all')
+                        }}
+                    </Button>
+                </div>
+                <div class="flex items-center gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        :disabled="bioArchiveSelectedIds.length !== 2"
+                        @click="bioArchiveComparisonVisible = true">
+                        {{ t('dialog.user.info.bio_archive_compare') }}
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        :disabled="bioArchiveSelectedIds.length === 0"
+                        @click="confirmBioArchiveDelete(bioArchiveSelectedIds)">
+                        <Trash2 class="mr-1.5 h-3.5 w-3.5" />
+                        {{ t('dialog.user.info.bio_archive_delete_selected', { count: bioArchiveSelectedIds.length }) }}
+                    </Button>
+                </div>
+            </div>
             <div class="max-h-[60vh] space-y-3 overflow-y-auto pr-1">
                 <div v-if="bioArchiveLoading" class="text-sm text-muted-foreground">...</div>
                 <div v-else-if="bioArchiveRecords.length === 0" class="text-sm text-muted-foreground">-</div>
                 <div
                     v-for="(record, index) in bioArchiveRecords"
-                    :key="record.createdAt + '-' + index"
+                    :key="record.id"
                     class="rounded-md border border-border/60 bg-card p-3 shadow-sm">
-                    <div class="mb-2 text-xs text-muted-foreground">
-                        {{ formatDateFilter(record.createdAt, 'long') }}
+                    <div class="mb-2 flex items-center justify-between gap-2">
+                        <label class="flex min-w-0 cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                            <input
+                                v-model="bioArchiveSelectedIds"
+                                type="checkbox"
+                                :value="record.id"
+                                class="h-4 w-4 shrink-0 accent-primary"
+                                @change="bioArchiveComparisonVisible = false" />
+                            <span class="truncate">{{ formatDateFilter(record.createdAt, 'long') }}</span>
+                        </label>
+                        <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            :aria-label="t('dialog.user.info.bio_archive_delete_record')"
+                            :title="t('dialog.user.info.bio_archive_delete_record')"
+                            @click="confirmBioArchiveDelete([record.id])">
+                            <Trash2 class="h-3.5 w-3.5 text-destructive" />
+                        </Button>
                     </div>
                     <pre
                         v-if="bioArchiveDiffEnabled"
@@ -577,6 +625,64 @@
                         record.bio || '-'
                     }}</pre>
                 </div>
+            </div>
+        </DialogContent>
+    </Dialog>
+    <Dialog v-model:open="bioArchiveComparisonVisible">
+        <DialogContent class="x-dialog sm:max-w-5xl">
+            <DialogHeader>
+                <div class="flex items-center justify-between gap-3 pr-8">
+                    <DialogTitle>{{ t('dialog.user.info.bio_archive_compare') }}</DialogTitle>
+                    <Button variant="outline" size="sm" @click="bioArchiveComparisonVisible = false">
+                        {{ t('dialog.user.info.bio_archive_close_compare') }}
+                    </Button>
+                </div>
+            </DialogHeader>
+            <div v-if="selectedBioArchiveRecords.length === 2" class="grid min-h-0 grid-cols-1 gap-3 md:grid-cols-2">
+                <section class="min-h-0 overflow-hidden rounded-md border border-border/60 bg-card">
+                    <header
+                        class="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+                        <span class="text-xs font-semibold text-muted-foreground">
+                            {{ t('dialog.user.info.bio_archive_older') }}
+                        </span>
+                        <span class="text-xs text-muted-foreground">
+                            {{ formatDateFilter(selectedBioArchiveRecords[0].createdAt, 'long') }}
+                        </span>
+                    </header>
+                    <pre
+                        class="max-h-[65vh] overflow-auto p-3 text-sm leading-6 font-[inherit]"
+                        style="white-space: pre-wrap; margin: 0"
+                        v-if="bioArchiveDiffEnabled"
+                        v-html="bioArchiveOlderComparisonHtml"></pre>
+                    <pre
+                        v-else
+                        class="max-h-[65vh] overflow-auto p-3 text-sm leading-6 font-[inherit]"
+                        style="white-space: pre-wrap; margin: 0"
+                        >{{ selectedBioArchiveRecords[0].bio || '-' }}</pre
+                    >
+                </section>
+                <section class="min-h-0 overflow-hidden rounded-md border border-border/60 bg-card">
+                    <header
+                        class="flex flex-wrap items-center justify-between gap-2 border-b border-border/60 px-3 py-2">
+                        <span class="text-xs font-semibold text-muted-foreground">
+                            {{ t('dialog.user.info.bio_archive_newer') }}
+                        </span>
+                        <span class="text-xs text-muted-foreground">
+                            {{ formatDateFilter(selectedBioArchiveRecords[1].createdAt, 'long') }}
+                        </span>
+                    </header>
+                    <pre
+                        class="max-h-[65vh] overflow-auto p-3 text-sm leading-6 font-[inherit]"
+                        style="white-space: pre-wrap; margin: 0"
+                        v-if="bioArchiveDiffEnabled"
+                        v-html="bioArchiveNewerComparisonHtml"></pre>
+                    <pre
+                        v-else
+                        class="max-h-[65vh] overflow-auto p-3 text-sm leading-6 font-[inherit]"
+                        style="white-space: pre-wrap; margin: 0"
+                        >{{ selectedBioArchiveRecords[1].bio || '-' }}</pre
+                    >
+                </section>
             </div>
         </DialogContent>
     </Dialog>
@@ -667,6 +773,26 @@
     const bioArchiveLoading = ref(false);
     const bioArchiveDiffEnabled = ref(true);
     const bioArchiveRecords = ref([]);
+    const bioArchiveSelectedIds = ref([]);
+    const bioArchiveComparisonVisible = ref(false);
+    const selectedBioArchiveRecords = computed(() =>
+        bioArchiveRecords.value
+            .filter((record) => bioArchiveSelectedIds.value.includes(record.id))
+            .sort((first, second) => Number(first.id) - Number(second.id))
+    );
+    const bioArchiveComparisonDiffHtml = computed(() => {
+        const [olderRecord, newerRecord] = selectedBioArchiveRecords.value;
+        if (!olderRecord || !newerRecord) {
+            return '';
+        }
+        return formatBioArchiveDiff(olderRecord.bio || '', newerRecord.bio || '', formatDifference);
+    });
+    const bioArchiveOlderComparisonHtml = computed(() =>
+        bioArchiveComparisonDiffHtml.value.replace(/<span class="x-text-added">[\s\S]*?<\/span>/g, '')
+    );
+    const bioArchiveNewerComparisonHtml = computed(() =>
+        bioArchiveComparisonDiffHtml.value.replace(/<span class="x-text-removed">[\s\S]*?<\/span>/g, '')
+    );
     let bioDiffRequestId = 0;
 
     async function loadBioDiff() {
@@ -704,6 +830,12 @@
 
     async function showBioArchive() {
         bioArchiveVisible.value = true;
+        bioArchiveSelectedIds.value = [];
+        bioArchiveComparisonVisible.value = false;
+        await reloadBioArchiveRecords();
+    }
+
+    async function reloadBioArchiveRecords() {
         bioArchiveLoading.value = true;
         try {
             bioArchiveRecords.value = (await database.getRecentBioChangesForUser(userDialog.value.id, 100)) || [];
@@ -711,6 +843,52 @@
             bioArchiveRecords.value = [];
         } finally {
             bioArchiveLoading.value = false;
+        }
+    }
+
+    function toggleBioArchiveSelectAll() {
+        if (bioArchiveSelectedIds.value.length === bioArchiveRecords.value.length) {
+            bioArchiveSelectedIds.value = [];
+        } else {
+            bioArchiveSelectedIds.value = bioArchiveRecords.value.map((record) => record.id);
+        }
+        bioArchiveComparisonVisible.value = false;
+    }
+
+    async function confirmBioArchiveDelete(ids) {
+        const recordIds = [...new Set(ids.map(Number).filter((id) => Number.isInteger(id) && id > 0))];
+        if (recordIds.length === 0) {
+            return;
+        }
+        const isBatch = recordIds.length > 1;
+        const { ok } = await modalStore.confirm({
+            title: t('dialog.user.info.bio_archive_delete_title'),
+            description: t(
+                isBatch
+                    ? 'dialog.user.info.bio_archive_delete_selected_confirm'
+                    : 'dialog.user.info.bio_archive_delete_record_confirm',
+                { count: recordIds.length }
+            ),
+            confirmText: t('common.actions.delete'),
+            cancelText: t('common.actions.cancel'),
+            destructive: true
+        });
+        if (!ok) {
+            return;
+        }
+        try {
+            if (recordIds.length === 1) {
+                await database.deleteBioArchiveRecord(userDialog.value.id, recordIds[0]);
+            } else {
+                await database.deleteBioArchiveRecords(userDialog.value.id, recordIds);
+            }
+            bioArchiveSelectedIds.value = [];
+            bioArchiveComparisonVisible.value = false;
+            await reloadBioArchiveRecords();
+            await loadBioDiff();
+            toast.success(t('dialog.user.info.bio_archive_deleted', { count: recordIds.length }));
+        } catch {
+            toast.error(t('dialog.user.info.bio_archive_delete_failed'));
         }
     }
 
@@ -879,7 +1057,7 @@
         min-width: 0;
         overflow: hidden;
         border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
-        border-radius: 0.875rem;
+        border-radius: var(--radius-xl);
         padding: 1rem;
         background: var(--surface-panel);
         box-shadow: 0 2px 8px rgb(0 0 0 / 5%);
@@ -891,17 +1069,23 @@
 
     .user-instance-members {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(min(9rem, 100%), 1fr));
-        gap: 0.25rem;
+        grid-template-columns: repeat(auto-fit, minmax(min(8.5rem, 100%), 9rem));
+        justify-content: start;
+        gap: 0.375rem;
         max-height: 12rem;
         overflow-y: auto;
-        margin-top: 0.75rem;
+        margin-top: 0.5rem;
         scrollbar-gutter: stable;
     }
 
     .user-instance-member {
         min-width: 0;
-        border-radius: 0.625rem;
+        border-radius: var(--radius-lg);
+    }
+
+    .user-instance-member--owner {
+        border: 1px solid color-mix(in srgb, var(--primary) 50%, var(--border));
+        background: color-mix(in srgb, var(--primary) 7%, transparent);
     }
 
     .user-instance-member:hover {
@@ -916,14 +1100,14 @@
         color: #ff6b6b;
         background-color: rgb(255 0 0 / 18%);
         padding: 2px 2px;
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
     }
 
     :deep(.x-text-added) {
         color: #4ade80;
         background-color: rgb(76 255 80 / 18%);
         padding: 2px 2px;
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
     }
 
     @media (prefers-reduced-motion: reduce) {

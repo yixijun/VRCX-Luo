@@ -308,7 +308,27 @@
             "world": {
                 "header": "世界",
                 "category": "依類別搜尋",
-                "community_lab": "包含社區實驗室"
+                "community_lab": "包含社區實驗室",
+                "categories": {
+                    "hot": "熱門",
+                    "spotlight_pc": "PC 精選",
+                    "spotlight_cross_platform": "跨平台精選",
+                    "community_labs": "社群實驗室",
+                    "active_cross_platform": "跨平台熱門",
+                    "active_my_platform": "本平台熱門",
+                    "random": "隨機",
+                    "avatar_worlds": "模型世界",
+                    "games": "遊戲",
+                    "updated_recently": "最近更新",
+                    "new": "最新",
+                    "recent": "最近瀏覽",
+                    "mine": "我的世界",
+                    "classics": "經典"
+                },
+                "loading_more": "正在載入更多世界…",
+                "end_of_results": "沒有更多世界了",
+                "load_failed": "載入世界失敗",
+                "retry": "重試"
             },
             "avatar": {
                 "header": "角色",
@@ -349,10 +369,17 @@
                 "local_favorites": "本地收藏列表 (需要 VRC+)",
                 "new_group": "新群組",
                 "cancel_refresh": "取消刷新",
-                "check_invalid": "檢查已刪除／私人角色",
-                "check_description": "偵測並移除群組中的無效角色",
+                "check_alive": "檢查角色是否存在",
+                "check_alive_progress": "檢查中 {current}/{total}",
+                "check_alive_description": "逐一檢查此群組中的角色。只有 API 明確回覆角色不存在時才會標記為失效；私人角色或暫時無法連線的角色會保留，不會自動刪除。",
+                "invalid_badge": "已失效",
+                "invalid_marked_summary": "找到 {count} 個失效角色，已標紅並選取，可批次取消收藏。",
+                "check_incomplete": "有 {count} 個角色暫時無法確認狀態，已保留且不會自動刪除。",
+                "batch_delete_summary": "已移除 {removed} 個角色收藏，{failed} 個失敗。",
+                "check_invalid": "檢查分組中的失效角色",
+                "check_description": "只有 API 明確回覆角色不存在時才會標記為失效；私人角色或暫時無法連線的角色會保留。",
                 "checking": "正在檢查無效角色…",
-                "removed_list_header": "待刪除的角色：",
+                "removed_list_header": "待移除的角色：",
                 "copy_removed_ids": "複製角色 ID",
                 "copied_ids": "已將角色 ID 複製到剪貼簿",
                 "copy_failed": "無法複製到剪貼簿",
@@ -625,6 +652,8 @@
                 "calendar_description": "群組活動行事曆"
             },
             "user": {
+                "batch_add_friends": "批次新增好友",
+                "batch_add_friends_description": "貼上使用者 ID 或個人資料連結，逐一傳送好友邀請",
                 "discord_names_description": "尋找你 VRChat 好友的 Discord 使用者名稱",
                 "export_friend_list_description": "匯出你的 VRChat 好友列表",
                 "export_own_avatars_description": "匯出你的個人 VRChat 化身"
@@ -2011,6 +2040,34 @@
             "errors": "錯誤：",
             "clear_errors": "清除錯誤"
         },
+        "batch_add_friends": {
+            "title": "批次新增好友",
+            "description": "每行貼上一個使用者 ID 或個人資料連結。重複項目會自動忽略；已是好友或有待處理邀請的使用者會略過。",
+            "input_placeholder": "貼上使用者 ID 或個人資料連結，每行一個……",
+            "ready_count": "辨識到 {count} 位使用者",
+            "duplicate_count": "重複項目：{count}",
+            "invalid_lines": "無法辨識的行：{count}",
+            "clear": "清除",
+            "start": "開始傳送",
+            "stop": "停止",
+            "progress": "處理進度",
+            "confirm_title": "傳送批次好友邀請？",
+            "confirm_description": "將依序檢查並向 {count} 位使用者傳送好友邀請。邀請會依序傳送，也可以隨時停止。",
+            "summary": "已傳送 {sent}，已略過 {skipped}，失敗 {failed}，已取消 {cancelled}",
+            "status": {
+                "waiting": "等待中",
+                "checking": "檢查中",
+                "sent": "邀請已傳送",
+                "added": "已新增",
+                "already_friend": "已是好友",
+                "outgoing": "邀請已送出",
+                "incoming": "對方已送出邀請",
+                "self": "這是你自己",
+                "not_found": "找不到使用者",
+                "failed": "失敗",
+                "cancelled": "已取消"
+            }
+        },
         "export_friends_list": {
             "header": "匯出好友列表",
             "csv": "CSV",
@@ -2744,6 +2801,9 @@
         "auth": {
             "login_greeting": "你好，{name}！",
             "logout_greeting": "再見，{name}！",
+            "hitokoto_loading": "正在為你取一句話…",
+            "hitokoto_fallback": "願每一次相遇，都留下溫柔的回聲。",
+            "hitokoto_source": "一言",
             "email_2fa_resent": "已重新發送電子郵件 2FA 驗證。",
             "email_2fa_no_credentials": "沒有已儲存的登入憑證，無法發送 2FA 郵件。請重新登入。",
             "incorrect_primary_password": "主要密碼錯誤",

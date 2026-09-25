@@ -33,7 +33,7 @@
                     <UserDialogInfoTab ref="infoTabRef" @show-bio-dialog="showBioDialog" />
                 </template>
 
-                <template v-if="userDialog.id !== currentUser.id && !currentUser.hasSharedConnectionsOptOut" #mutual>
+                <template v-if="userDialog.id !== currentUser.id" #mutual>
                     <UserDialogMutualFriendsTab ref="mutualFriendsTabRef" />
                 </template>
 
@@ -147,7 +147,7 @@
             { value: 'Avatars', label: t('dialog.user.avatars.header') },
             { value: 'JSON', label: t('dialog.user.json.header') }
         ];
-        if (userDialog.value.id !== currentUser.value.id && !currentUser.value.hasSharedConnectionsOptOut) {
+        if (userDialog.value.id !== currentUser.value.id) {
             tabs.splice(1, 0, { value: 'mutual', label: t('dialog.user.mutual_friends.header') });
         }
         // Insert Activity before JSON
@@ -392,10 +392,12 @@
                 }
             }
         } else if (tabName === 'Worlds') {
-            worldsTabRef.value?.setUserDialogWorlds(userId);
+            const hasCompleteProfileWorlds = worldsTabRef.value?.setUserDialogWorlds(userId);
             if (userDialogLastWorld.value !== userId) {
                 userDialogLastWorld.value = userId;
-                worldsTabRef.value?.refreshUserDialogWorlds();
+                if (!hasCompleteProfileWorlds) {
+                    worldsTabRef.value?.refreshUserDialogWorlds();
+                }
             }
         } else if (tabName === 'favorite-worlds') {
             if (userDialogLastFavoriteWorld.value !== userId) {
@@ -628,14 +630,14 @@
     .user-dialog__tabs :deep([role='tablist']) {
         padding: 0.25rem 0.375rem;
         border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
-        border-radius: 0.875rem;
+        border-radius: var(--radius-xl);
         background: color-mix(in srgb, var(--background) 94%, var(--foreground) 6%);
     }
 
     .user-dialog__tabs :deep([role='tab']) {
         height: 2.375rem;
         padding-inline: 0.75rem;
-        border-radius: 0.5rem;
+        border-radius: var(--radius-md);
     }
 
     .user-dialog__tabs :deep([role='tab'][data-state='active']) {

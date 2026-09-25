@@ -1,7 +1,9 @@
 import { database } from '../services/database';
 import { userRequest } from '../api';
 import { useTrackedNonFriendsStore } from '../stores/trackedNonFriends';
+import { useUserStore } from '../stores/user';
 import { watchState } from '../services/watchState';
+import { recordBioSnapshotForUser } from './bioSnapshotCoordinator';
 
 let isRunning = false;
 
@@ -39,17 +41,27 @@ export async function refreshTrackedNonFriendsFlow() {
                     await database.updateTrackedNonFriendDisplayName(userId, displayName);
                 }
 
-                // Record bio change
-                const currentBio = ref.bio || '';
-                const lastBio = await database.getLastBioChangeForUser(userId);
-                if (!lastBio || lastBio.bio !== currentBio) {
-                    database.addBioToDatabase({
-                        created_at: new Date().toISOString(),
-                        userId,
-                        displayName,
-                        bio: currentBio,
-                        previousBio: lastBio ? lastBio.bio : ''
-                    });
+                // Bios live on the public-profile resource; do not archive the
+                // potentially stale legacy /users response.
+                try {
+                    const profileResult = await userRequest.getPublicProfile({ userId });
+                    const profile = profileResult?.json;
+                    if (typeof profile?.bio === 'string') {
+                        await recordBioSnapshotForUser({
+                            database,
+                            userId: profile.id || userId,
+                            currentUserId: useUserStore().currentUser.id,
+                            currentBio: profile.bio,
+                            previousBio: undefined,
+                            isFriend: false,
+                            displayName: profile.displayName || displayName
+                        });
+                    }
+                } catch (profileError) {
+                    console.warn(
+                        `[NonFriendRefresh] 刷新用户 ${userId} 的公开简介失败:`,
+                        profileError?.message || profileError
+                    );
                 }
 
                 // Record status change

@@ -4,6 +4,7 @@
             <slot name="title" />
         </div>
         <div class="flex items-center gap-2 text-[13px]">
+            <slot name="actions" />
             <span>{{ t('view.favorite.edit_mode') }}</span>
             <Switch
                 :model-value="editMode"

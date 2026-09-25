@@ -988,7 +988,7 @@ export function newLocalAvatarFavoriteGroup(group) {
  * Check invalid local avatar favorites
  * @param {string | null} targetGroup - Target group to check, null for all groups
  * @param {Function | null} onProgress - Progress callback function, receives (current, total) parameters
- * @returns {Promise<{total: number, invalid: number, invalidIds: string[]}>}
+ * @returns {Promise<{total: number, invalid: number, skipped: number, invalidIds: string[]}>}
  */
 export async function checkInvalidLocalAvatars(
     targetGroup = null,
@@ -998,6 +998,7 @@ export async function checkInvalidLocalAvatars(
     const result = {
         total: 0,
         invalid: 0,
+        skipped: 0,
         invalidIds: []
     };
 
@@ -1033,10 +1034,59 @@ export async function checkInvalidLocalAvatars(
                 });
                 await new Promise((resolve) => setTimeout(resolve, 500));
             } catch (err) {
-                console.error(`Failed to fetch avatar ${favorite.id}:`, err);
-                result.invalid++;
-                result.invalidIds.push(favorite.id);
+                if (err?.status === 404) {
+                    result.invalid++;
+                    result.invalidIds.push(favorite.id);
+                } else {
+                    result.skipped++;
+                    console.warn(`Could not verify avatar ${favorite.id}:`, err);
+                }
             }
+        }
+    }
+
+    return result;
+}
+
+/**
+ * Check whether remote favorite avatars still exist. Transient/API failures and
+ * private avatars are left untouched; only an explicit 404 is treated as gone.
+ * @param {{id: string}[]} favorites
+ * @param {Function | null} onProgress
+ * @returns {Promise<{total: number, invalid: number, skipped: number, invalidIds: string[]}>}
+ */
+export async function checkInvalidRemoteFavoriteAvatars(
+    favorites,
+    onProgress = null
+) {
+    const ids = [...new Set(favorites.map((favorite) => favorite.id).filter(Boolean))];
+    const result = {
+        total: ids.length,
+        invalid: 0,
+        skipped: 0,
+        invalidIds: []
+    };
+
+    for (let index = 0; index < ids.length; index++) {
+        const avatarId = ids[index];
+        if (typeof onProgress === 'function') {
+            onProgress(index + 1, ids.length);
+        }
+
+        try {
+            await avatarRequest.getAvatar({ avatarId });
+        } catch (err) {
+            if (err?.status === 404) {
+                result.invalid++;
+                result.invalidIds.push(avatarId);
+            } else {
+                result.skipped++;
+                console.warn(`Could not verify avatar ${avatarId}:`, err);
+            }
+        }
+
+        if (index < ids.length - 1) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
         }
     }
 

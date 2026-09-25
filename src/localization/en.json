@@ -381,7 +381,27 @@
             "world": {
                 "header": "World",
                 "category": "Search by category",
-                "community_lab": "Include community labs"
+                "community_lab": "Include community labs",
+                "categories": {
+                    "hot": "Hot",
+                    "spotlight_pc": "Spotlight - PC",
+                    "spotlight_cross_platform": "Spotlight - Cross Platform",
+                    "community_labs": "Community Labs",
+                    "active_cross_platform": "Active - Cross Platform",
+                    "active_my_platform": "Active - My Platform",
+                    "random": "Random",
+                    "avatar_worlds": "Avatar Worlds",
+                    "games": "Games",
+                    "updated_recently": "Updated Recently",
+                    "new": "New",
+                    "recent": "Recent",
+                    "mine": "Mine",
+                    "classics": "Classics"
+                },
+                "loading_more": "Loading more worlds…",
+                "end_of_results": "No more worlds",
+                "load_failed": "Failed to load worlds",
+                "retry": "Retry"
             },
             "avatar": {
                 "header": "Avatar",
@@ -422,10 +442,17 @@
                 "local_favorites": "Local Favorites (Requires VRC+)",
                 "new_group": "New Group",
                 "cancel_refresh": "Cancel Refresh",
-                "check_invalid": "Check for deleted/private avatars",
-                "check_description": "Detect and remove invalid avatars from this group",
+                "check_alive": "Check Avatar Availability",
+                "check_alive_progress": "Checking {current}/{total}",
+                "check_alive_description": "Check each avatar in this group. Only an explicit not-found response is marked as unavailable; private avatars and temporary connection failures are kept.",
+                "invalid_badge": "Unavailable",
+                "invalid_marked_summary": "Found {count} unavailable avatar(s). They are marked red and selected for bulk unfavorite.",
+                "check_incomplete": "Could not verify {count} avatar(s); they were kept and will not be removed automatically.",
+                "batch_delete_summary": "Removed {removed} avatar favorite(s); {failed} failed.",
+                "check_invalid": "Check for unavailable avatars",
+                "check_description": "Only an explicit not-found response is marked as unavailable; private avatars and temporary connection failures are kept.",
                 "checking": "Checking for invalid avatars...",
-                "removed_list_header": "Avatars pending deletion:",
+                "removed_list_header": "Avatars pending removal:",
                 "copy_removed_ids": "Copy Avatar IDs",
                 "copied_ids": "Avatar IDs copied to clipboard",
                 "copy_failed": "Failed to copy to clipboard",
@@ -793,6 +820,8 @@
                 "calendar_description": "Group Events Calendar"
             },
             "user": {
+                "batch_add_friends": "Bulk Add Friends",
+                "batch_add_friends_description": "Paste user IDs or profile links to send friend requests one at a time",
                 "discord_names_description": "Find the Discord usernames of your VRChat friends",
                 "export_friend_list_description": "Export your friends list from VRChat",
                 "export_own_avatars_description": "Export your personal avatars from VRChat"
@@ -1336,7 +1365,8 @@
                         "description": "Encrypt Password (Disables Auto Login)"
                     },
                     "auto_join_group_certification": {
-                        "header": "Certification"
+                        "header": "Automatically Join the Default VRCX Group",
+                        "description": "When the group list loads, automatically join this group if you are not already a member."
                     },
                     "relaunch_vrchat": {
                         "header": "Auto Relaunch VRChat After Crash",
@@ -1670,11 +1700,30 @@
                 "show_discord_connections": "Show Discord Connections",
                 "instance_minimum_avatar_performance": "Minimum Avatar Performance",
                 "bio_diff_toggle": "Toggle bio diff",
-                "bio_archive": "Bio Archive"
+                "bio_archive": "Bio Archive",
+                "bio_archive_selected": "{count} selected",
+                "bio_archive_select_all": "Select all",
+                "bio_archive_clear_selection": "Clear selection",
+                "bio_archive_compare": "Compare selected",
+                "bio_archive_close_compare": "Close comparison",
+                "bio_archive_older": "Older version",
+                "bio_archive_newer": "Newer version",
+                "bio_archive_delete_record": "Delete this archive",
+                "bio_archive_delete_selected": "Delete selected ({count})",
+                "bio_archive_delete_title": "Delete bio archive",
+                "bio_archive_delete_record_confirm": "Delete this bio archive? This action cannot be undone.",
+                "bio_archive_delete_selected_confirm": "Delete the {count} selected bio archives? This action cannot be undone.",
+                "bio_archive_deleted": "Deleted {count} bio archives",
+                "bio_archive_delete_failed": "Failed to delete bio archive"
             },
             "groups": {
                 "header": "Groups",
                 "total_count": "Total {count}",
+                "count": "{count} groups",
+                "refresh": "Refresh groups",
+                "search_placeholder": "Search groups",
+                "empty": "No groups yet",
+                "search_no_results": "No matching groups found",
                 "sort_by": "Sort by:",
                 "edit_mode": "Edit Mode",
                 "exit_edit_mode": "Exit Edit Mode",
@@ -1692,6 +1741,7 @@
             "worlds": {
                 "header": "Worlds",
                 "total_count": "Total {count}",
+                "search_placeholder": "Search worlds",
                 "sort_by": "Sort by:",
                 "order_by": "Order by:",
                 "sorting": {
@@ -1712,6 +1762,7 @@
             "avatars": {
                 "header": "Avatars",
                 "total_count": "Total {count}",
+                "search_placeholder": "Search avatars",
                 "sort_by": "Sort by:",
                 "sort_by_name": "Name",
                 "sort_by_update": "Updated",
@@ -1726,6 +1777,11 @@
             },
             "mutual_friends": {
                 "header": "Mutual Friends",
+                "count": "{count} mutual friends",
+                "refresh": "Refresh mutual friends",
+                "search_placeholder": "Search mutual friends",
+                "empty": "No mutual friends yet",
+                "search_no_results": "No matching mutual friends found",
                 "confirmed_date_tooltip": "The date this mutual-friend connection was last fetched and confirmed from VRChat, not the date they became friends.",
                 "sorting": {
                     "alphabetical": "Alphabetical",
@@ -2483,6 +2539,34 @@
             "errors": "Errors:",
             "clear_errors": "Clear Errors"
         },
+        "batch_add_friends": {
+            "title": "Bulk Add Friends",
+            "description": "Paste one user ID or profile link per line. Duplicates are ignored; users who are already friends or have a pending request are skipped.",
+            "input_placeholder": "Paste user IDs or profile links, one per line...",
+            "ready_count": "{count} users recognized",
+            "duplicate_count": "Duplicates: {count}",
+            "invalid_lines": "Unrecognized lines: {count}",
+            "clear": "Clear",
+            "start": "Send Requests",
+            "stop": "Stop",
+            "progress": "Progress",
+            "confirm_title": "Send bulk friend requests?",
+            "confirm_description": "VRCX will check {count} users and send requests sequentially. You can stop at any time.",
+            "summary": "Sent {sent}, skipped {skipped}, failed {failed}, cancelled {cancelled}",
+            "status": {
+                "waiting": "Waiting",
+                "checking": "Checking",
+                "sent": "Request sent",
+                "added": "Added",
+                "already_friend": "Already friends",
+                "outgoing": "Request already sent",
+                "incoming": "Incoming request",
+                "self": "Your own ID",
+                "not_found": "User not found",
+                "failed": "Failed",
+                "cancelled": "Cancelled"
+            }
+        },
         "export_friends_list": {
             "header": "Export Friends List",
             "csv": "CSV",
@@ -2848,10 +2932,23 @@
         },
         "group_calendar": {
             "header": "Group Calendar",
+            "calendar_mode": "Calendar",
+            "discover_mode": "Discover",
             "list_view": "List View",
             "calendar_view": "Calendar View",
             "no_events": "No events found",
             "search_placeholder": "Search groups or events...",
+            "discover_search_placeholder": "Search all VRChat events...",
+            "scope_upcoming": "Upcoming",
+            "scope_live": "Live now",
+            "scope_all": "All time",
+            "refresh_discover": "Refresh events",
+            "discover_loading": "Loading events...",
+            "discover_failed": "Failed to load events",
+            "retry": "Retry",
+            "discover_empty": "No matching events found",
+            "results_count": "{count} events loaded",
+            "load_more": "Load more",
             "search_no_matching": "No matching events found",
             "search_no_this_month": "No events this month",
             "event_card": {
@@ -3190,6 +3287,9 @@
         "auth": {
             "login_greeting": "Hello there, {name}!",
             "logout_greeting": "See you again, {name}!",
+            "hitokoto_loading": "Finding a line for you…",
+            "hitokoto_fallback": "May every encounter leave a gentle echo.",
+            "hitokoto_source": "Hitokoto",
             "email_2fa_resent": "Email 2FA resent.",
             "email_2fa_no_credentials": "Cannot send 2FA email without saved credentials. Please login again.",
             "incorrect_primary_password": "Incorrect primary password",

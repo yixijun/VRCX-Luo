@@ -305,7 +305,11 @@
             "world": {
                 "header": "ワールド",
                 "category": "カテゴリで検索",
-                "community_lab": "コミュニティ ラボを表示"
+                "community_lab": "コミュニティ ラボを表示",
+                "loading_more": "ワールドを読み込み中…",
+                "end_of_results": "これ以上ワールドはありません",
+                "load_failed": "ワールドの読み込みに失敗しました",
+                "retry": "再試行"
             },
             "avatar": {
                 "header": "アバター",
@@ -346,10 +350,17 @@
                 "local_favorites": "ローカルのお気に入り (VRC+が必要)",
                 "new_group": "グループ作成",
                 "cancel_refresh": "キャッシュ削除",
-                "check_invalid": "このグループの無効なアバターをチェック",
-                "check_description": "このグループ内の無効なアバターを検出して削除",
+                "check_alive": "アバターの存在を確認",
+                "check_alive_progress": "確認中 {current}/{total}",
+                "check_alive_description": "このグループのアバターを1つずつ確認します。APIから明確に「見つからない」と返されたものだけを無効として扱い、非公開アバターや一時的な接続エラーは削除しません。",
+                "invalid_badge": "無効",
+                "invalid_marked_summary": "無効なアバターが{count}個見つかりました。赤く表示して一括解除用に選択しました。",
+                "check_incomplete": "{count}個のアバターは状態を確認できなかったため、そのまま残しました。",
+                "batch_delete_summary": "お気に入りから{removed}個を削除しました（失敗：{failed}個）。",
+                "check_invalid": "このグループの無効なアバターを確認",
+                "check_description": "APIから見つからないと明確に返されたものだけを無効として扱います。非公開アバターや一時的な接続エラーは残します。",
                 "checking": "無効なアバターをチェック中...",
-                "removed_list_header": "削除されたアバターリスト：",
+                "removed_list_header": "削除対象のアバター：",
                 "copy_removed_ids": "削除されたアバターIDをコピー",
                 "copied_ids": "アバターIDをクリップボードにコピーしました",
                 "copy_failed": "クリップボードへのコピーに失敗しました",
@@ -609,6 +620,8 @@
                 "calendar_description": "グループのイベントカレンダー"
             },
             "user": {
+                "batch_add_friends": "フレンドを一括追加",
+                "batch_add_friends_description": "ユーザー ID またはプロフィールリンクを貼り付けて、順番にフレンド申請を送信します",
                 "discord_names_description": "フレンドの Discord ユーザー名を取得",
                 "export_friend_list_description": "VRChat からフレンドリストをエクスポート",
                 "export_own_avatars_description": "VRChat から自分のアバターをエクスポート"
@@ -1982,6 +1995,34 @@
             "errors": "エラー:",
             "clear_errors": "エラーを消去"
         },
+        "batch_add_friends": {
+            "title": "フレンドを一括追加",
+            "description": "1 行につき 1 つのユーザー ID またはプロフィールリンクを貼り付けてください。重複は無視され、フレンド済みまたは申請中のユーザーはスキップされます。",
+            "input_placeholder": "ユーザー ID またはプロフィールリンクを 1 行ずつ貼り付け...",
+            "ready_count": "{count} 人のユーザーを認識しました",
+            "duplicate_count": "重複: {count}",
+            "invalid_lines": "認識できない行: {count}",
+            "clear": "クリア",
+            "start": "申請を送信",
+            "stop": "停止",
+            "progress": "進行状況",
+            "confirm_title": "フレンド申請を一括送信しますか？",
+            "confirm_description": "{count} 人を順番に確認してフレンド申請を送信します。いつでも停止できます。",
+            "summary": "送信 {sent}、スキップ {skipped}、失敗 {failed}、キャンセル {cancelled}",
+            "status": {
+                "waiting": "待機中",
+                "checking": "確認中",
+                "sent": "申請を送信しました",
+                "added": "追加済み",
+                "already_friend": "フレンド済み",
+                "outgoing": "申請済み",
+                "incoming": "相手から申請あり",
+                "self": "自分の ID です",
+                "not_found": "ユーザーが見つかりません",
+                "failed": "失敗",
+                "cancelled": "キャンセル済み"
+            }
+        },
         "export_friends_list": {
             "header": "フレンドリスト",
             "csv": "CSV ファイル",
@@ -2624,6 +2665,9 @@
         "auth": {
             "login_greeting": "{name} さん、こんにちは！",
             "logout_greeting": "またお会いしましょう、{name}！",
+            "hitokoto_loading": "ひとことを取得しています…",
+            "hitokoto_fallback": "出会いの一つひとつが、優しい響きを残しますように。",
+            "hitokoto_source": "Hitokoto",
             "email_2fa_resent": "2FAメールを再送信しました。",
             "email_2fa_no_credentials": "保存された認証情報がないと2FAメールを送信できません。再度ログインしてください。",
             "incorrect_primary_password": "プライマリパスワードが正しくありません。",

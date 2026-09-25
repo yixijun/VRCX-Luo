@@ -100,7 +100,7 @@
     position: relative;
     margin: 4px 0;
     overflow: hidden;
-    border-radius: 2px;
+    border-radius: var(--radius-md, 4px);
 }
 
 .noty_theme__mint.noty_bar .noty_body {

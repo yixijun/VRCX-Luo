@@ -3,8 +3,6 @@ import { defineStore } from 'pinia';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 
-import Noty from 'noty';
-
 import {
     runLoginSuccessFlow,
     runLogoutFlow
@@ -12,7 +10,7 @@ import {
 import { AppDebug } from '../services/appConfig';
 import { authRequest } from '../api';
 import { database } from '../services/database';
-import { escapeTag } from '../shared/utils';
+import { showLoginGreeting } from '../services/loginNotification';
 import { links } from '../shared/constants/link';
 import { initWebsocket } from '../services/websocket';
 import { request } from '../services/request';
@@ -109,12 +107,10 @@ export const useAuthStore = defineStore('Auth', () => {
 
                 // Only show greeting on actual login (transition from logged out, or initial hydration)
                 if (!oldIsLoggedIn || !oldCurrentUser || !oldCurrentUser.id) {
-                    new Noty({
-                        type: 'success',
-                        text: t('message.auth.login_greeting', {
-                            name: `<strong>${escapeTag(currentUser.displayName)}</strong>`
-                        })
-                    }).show();
+                    showLoginGreeting({
+                        displayName: currentUser.displayName,
+                        translate: t
+                    });
                 }
             }
         },

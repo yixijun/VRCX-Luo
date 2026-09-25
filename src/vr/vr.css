@@ -45,7 +45,14 @@ body {
     --vr-text-favorite: #fbbf24;
     --vr-border: rgba(255, 255, 255, 0.06);
     --vr-border-strong: rgba(255, 255, 255, 0.12);
-    --vr-radius: 8px;
+    --radius: 0.65rem;
+    --radius-xs: 0.25rem;
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
+    --radius-xl: calc(var(--radius) + 2px);
+    --radius-2xl: calc(var(--radius) + 6px);
+    --vr-radius: var(--radius-md);
 
     --vr-font-xs: 14px;
     --vr-font-sm: 16px;
@@ -74,7 +81,7 @@ body {
     position: relative;
     margin: 8px 0;
     overflow: hidden;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 .noty_theme__relax.noty_bar .noty_body,
@@ -192,7 +199,7 @@ body {
 .noty-img {
     height: 84px;
     float: left;
-    border-radius: 8px;
+    border-radius: var(--radius-md);
 }
 
 ::-webkit-scrollbar {
@@ -202,12 +209,12 @@ body {
 
 ::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.1);
-    border-radius: 16px;
+    border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.25);
-    border-radius: 16px;
+    border-radius: 999px;
 }
 
 body,
@@ -317,7 +324,7 @@ button {
         rgba(255, 255, 255, 0.6),
         rgba(255, 255, 255, 0.9)
     );
-    border-radius: 2px;
+    border-radius: 999px;
 }
 
 .np-progress-circle {
@@ -388,7 +395,7 @@ button {
     width: 50px;
     margin-right: 0;
     margin-left: 5px;
-    border-radius: 2px;
+    border-radius: var(--radius-xs);
 }
 
 .x-friend-item > .avatar > img {

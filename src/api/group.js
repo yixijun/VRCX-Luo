@@ -931,6 +931,30 @@ const groupReq = {
         });
     },
 
+    /**
+     * Discover upcoming or live public calendar events.
+     * @param {{ scope?: 'all' | 'live' | 'upcoming', n?: number, nextCursor?: string, categories?: string, tags?: string, featuredResults?: string, nonFeaturedResults?: string, personalizedResults?: string, minimumInterestCount?: number, minimumRemainingMinutes?: number, upcomingOffsetMinutes?: number }} params
+     * @returns {Promise<{ nextCursor?: string, results: import('../types/api/group').GroupCalendarEvent[] }>}
+     */
+    discoverCalendarEvents(params) {
+        return request('calendar/discover', {
+            method: 'GET',
+            params
+        });
+    },
+
+    /**
+     * Search public calendar events across dates.
+     * @param {{ searchTerm: string, utcOffset?: number, n?: number, offset?: number }} params
+     * @returns {Promise<{ hasNext: boolean, totalCount: number, results: import('../types/api/group').GroupCalendarEvent[] }>}
+     */
+    searchCalendarEvents(params) {
+        return request('calendar/search', {
+            method: 'GET',
+            params
+        });
+    },
+
     followGroupEvent(params) {
         return request(`calendar/${params.groupId}/${params.eventId}/follow`, {
             method: 'POST',

@@ -56,7 +56,7 @@
         padding: 0;
         color: var(--vr-text-muted);
         border: 1px solid transparent;
-        border-radius: 5px;
+        border-radius: var(--radius-sm);
         background: transparent;
         cursor: pointer;
         transition:

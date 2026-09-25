@@ -28,8 +28,15 @@
                         <div :class="timeClass">
                             {{ formattedTime }}
                         </div>
-                        <div>
-                            {{ capitalizeFirst(event.accessType) }}
+                        <div class="event-meta">
+                            <span>{{ capitalizeFirst(event.accessType) }}</span>
+                            <span
+                                v-if="mode === 'grid' && event.interestedUserCount !== undefined"
+                                class="event-interest"
+                                :aria-label="`${t('dialog.group_calendar.event_card.interested_user')}: ${event.interestedUserCount}`">
+                                <Users class="size-3" aria-hidden="true" />
+                                {{ event.interestedUserCount }}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -134,7 +141,7 @@
 </template>
 
 <script setup>
-    import { Calendar, Download, Image, Share2, Star, Trash2 } from 'lucide-vue-next';
+    import { Calendar, Download, Image, Share2, Star, Trash2, Users } from 'lucide-vue-next';
     import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
     import { computed, ref } from 'vue';
     import { Button } from '@/components/ui/button';
@@ -437,6 +444,22 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+    }
+
+    .event-card .event-meta,
+    .event-card .event-interest {
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .event-card .event-meta {
+        gap: 8px;
+    }
+
+    .event-card .event-interest {
+        gap: 3px;
+        color: var(--muted-foreground);
+        white-space: nowrap;
     }
 
     .timeline-view .event-card .event-info > :first-child {

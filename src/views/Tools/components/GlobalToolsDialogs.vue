@@ -1,5 +1,6 @@
 <template>
     <GroupCalendarDialog :visible="groupCalendar" @close="closeDialog('groupCalendar')" />
+    <BatchAddFriendsDialog :visible="batchAddFriends" @close="closeDialog('batchAddFriends')" />
     <NoteExportDialog :isNoteExportDialogVisible="noteExport" @close="closeDialog('noteExport')" />
     <ExportDiscordNamesDialog v-model:discordNamesDialogVisible="exportDiscordNames" :friends="friends" />
     <ExportFriendsListDialog v-model:isExportFriendsListDialogVisible="exportFriendsList" :friends="friends" />
@@ -25,6 +26,7 @@
     import { useFriendStore, useToolsStore } from '../../../stores';
 
     import AutoChangeStatusDialog from '../dialogs/AutoChangeStatusDialog.vue';
+    import BatchAddFriendsDialog from '../dialogs/BatchAddFriendsDialog.vue';
     import ProfileCompletionDialog from '../dialogs/ProfileCompletionDialog.vue';
     import RegistryBackupDialog from '../dialogs/RegistryBackupDialog.vue';
 
@@ -39,6 +41,7 @@
     const { friends } = storeToRefs(useFriendStore());
     const toolsStore = useToolsStore();
     const {
+        batchAddFriends,
         autoChangeStatus,
         infoCompletion,
         editInviteMessages,

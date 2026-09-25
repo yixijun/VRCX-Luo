@@ -188,6 +188,16 @@ const toolDefinitions = [
         action: { type: 'dialog', dialogKey: 'group-calendar' }
     },
     {
+        key: 'batch-add-friends',
+        category: 'user',
+        iconKey: 'user-plus',
+        navIcon: 'ri-user-add-line',
+        titleKey: 'view.tools.user.batch_add_friends',
+        descriptionKey: 'view.tools.user.batch_add_friends_description',
+        navEligible: true,
+        action: { type: 'dialog', dialogKey: 'batch-add-friends' }
+    },
+    {
         key: 'discord-names',
         category: 'user',
         iconKey: 'users',

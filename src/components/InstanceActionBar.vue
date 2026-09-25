@@ -191,7 +191,7 @@
         min-width: 2rem;
         height: 2rem;
         min-height: 2rem;
-        border-radius: 0.5rem;
+        border-radius: var(--radius-md);
         background: color-mix(in oklch, var(--background) 82%, transparent);
         transition:
             color 140ms ease,

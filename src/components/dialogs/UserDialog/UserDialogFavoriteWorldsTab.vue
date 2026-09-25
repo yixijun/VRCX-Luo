@@ -1,54 +1,57 @@
 <template>
-    <!-- <Button
-            variant="outline"
-            v-if="userFavoriteWorlds && userFavoriteWorlds.length > 0"
-            type="default"
+    <div class="flex min-h-0 flex-col gap-3">
+        <UserDialogResourceToolbar>
+            <template #summary>
+                <Button
+                    class="rounded-full"
+                    variant="ghost"
+                    size="icon-sm"
+                    :disabled="userDialog.isFavoriteWorldsLoading"
+                    :aria-label="t('common.actions.refresh')"
+                    @click="getUserFavoriteWorlds(userDialog.id)">
+                    <Spinner v-if="userDialog.isFavoriteWorldsLoading" />
+                    <RefreshCw v-else />
+                </Button>
+                <span class="user-resource-count">
+                    <Globe class="size-3.5" />
+                    {{ t('dialog.user.worlds.total_count', { count: favoriteWorldTotalCount }) }}
+                </span>
+            </template>
+            <template #controls>
+                <UserDialogResourceSearch
+                    v-model="searchQuery"
+                    :placeholder="t('dialog.user.worlds.search_placeholder')" />
+            </template>
+        </UserDialogResourceToolbar>
+
+        <UserDialogResourceGrid
+            v-if="searchActive"
+            :items="allFilteredFavoriteWorlds"
+            key-field="favoriteId"
             :loading="userDialog.isFavoriteWorldsLoading"
-            size="small"
-            :icon="RefreshCw"
-            circle
-            style="position: absolute; right: 15px; bottom: 15px; z-index: 99"
-            @click="getUserFavoriteWorlds(userDialog.id)">
-        </Button> -->
-    <template v-if="userDialog.userFavoriteWorlds && userDialog.userFavoriteWorlds.length > 0">
-        <Input v-model="searchQuery" class="h-8 w-40 mt-2" placeholder="Search worlds" @click.stop />
-        <template v-if="searchActive">
-            <div
-                class="flex flex-wrap items-start"
-                style="margin-top: 8px; min-height: 60px; max-height: 50vh; overflow: auto">
-                <div
-                    v-for="world in allFilteredFavoriteWorlds"
-                    :key="world.favoriteId"
-                    class="box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer w-[167px]"
-                    @click="showWorldDialog(world.id)">
-                    <div class="relative inline-block flex-none size-9 mr-2.5">
-                        <Avatar class="size-9">
-                            <AvatarImage :src="world.thumbnailImageUrl" class="object-cover" />
-                            <AvatarFallback>
-                                <Image class="size-4 text-muted-foreground" />
-                            </AvatarFallback>
-                        </Avatar>
-                    </div>
-                    <div class="flex-1 overflow-hidden">
-                        <span class="block truncate font-medium leading-[18px]" v-text="world.name"></span>
-                        <span v-if="world.occupants" class="block truncate text-xs">({{ world.occupants }})</span>
-                    </div>
-                </div>
-            </div>
-        </template>
+            @select="showWorldDialog($event.id)">
+            <template #subtitle="{ item }">
+                <span v-if="item.occupants">({{ item.occupants }})</span>
+            </template>
+            <template #empty>
+                <Search class="size-5" aria-hidden="true" />
+                <span>{{ t('common.no_matching_records') }}</span>
+            </template>
+        </UserDialogResourceGrid>
+
         <TabsUnderline
-            v-else
+            v-else-if="userDialog.userFavoriteWorlds?.length"
             v-model="favoriteWorldsTab"
             :items="favoriteWorldTabs"
             :unmount-on-hide="false"
-            class="zero-margin-tabs"
-            style="margin-top: 8px; height: 50vh">
+            class="zero-margin-tabs min-h-0 flex-1"
+            style="height: 50vh">
             <template
                 v-for="(list, index) in userDialog.userFavoriteWorlds"
                 :key="`favorite-worlds-label-${index}`"
                 v-slot:[`label-${index}`]>
                 <span>
-                    <i class="x-status-icon" style="margin-right: 8px" :class="userFavoriteWorldsStatus(list[1])"> </i>
+                    <i class="x-status-icon" style="margin-right: 8px" :class="userFavoriteWorldsStatus(list[1])"></i>
                     <span class="font-bold text-sm" v-text="list[0]"></span>
                     <span style="font-size: 10px; margin-left: 6px"
                         >{{ list[2].length }}/{{ favoriteLimits.maxFavoritesPerGroup.world }}</span
@@ -59,44 +62,35 @@
                 v-for="(list, index) in userDialog.userFavoriteWorlds"
                 :key="`favorite-worlds-content-${index}`"
                 v-slot:[String(index)]>
-                <div
-                    class="flex flex-wrap items-start"
-                    style="margin-top: 8px; margin-bottom: 16px; min-height: 60px; max-height: none">
-                    <div
-                        v-for="world in list[2]"
-                        :key="world.favoriteId"
-                        class="box-border flex items-center rounded-md p-1.5 text-[13px] cursor-pointer w-[167px]"
-                        @click="showWorldDialog(world.id)">
-                        <div class="relative inline-block flex-none size-9 mr-2.5">
-                            <Avatar class="size-9">
-                                <AvatarImage :src="world.thumbnailImageUrl" class="object-cover" />
-                                <AvatarFallback>
-                                    <Image class="size-4 text-muted-foreground" />
-                                </AvatarFallback>
-                            </Avatar>
-                        </div>
-                        <div class="flex-1 overflow-hidden">
-                            <span class="block truncate font-medium leading-[18px]" v-text="world.name"></span>
-                            <span v-if="world.occupants" class="block truncate text-xs">({{ world.occupants }})</span>
-                        </div>
-                    </div>
-                </div>
+                <UserDialogResourceGrid
+                    :items="list[2]"
+                    key-field="favoriteId"
+                    :loading="userDialog.isFavoriteWorldsLoading"
+                    @select="showWorldDialog($event.id)">
+                    <template #subtitle="{ item }">
+                        <span v-if="item.occupants">({{ item.occupants }})</span>
+                    </template>
+                </UserDialogResourceGrid>
             </template>
         </TabsUnderline>
-    </template>
-    <template v-else-if="!userDialog.isFavoriteWorldsLoading">
-        <div style="display: flex; justify-content: center; align-items: center; height: 100%">
-            <DataTableEmpty type="nodata" />
-        </div>
-    </template>
+
+        <UserDialogResourceGrid
+            v-else
+            :items="[]"
+            :loading="userDialog.isFavoriteWorldsLoading">
+            <template #empty>
+                <Search v-if="searchQuery.trim()" class="size-5" aria-hidden="true" />
+                <span>{{ t(searchQuery.trim() ? 'common.no_matching_records' : 'common.no_data') }}</span>
+            </template>
+        </UserDialogResourceGrid>
+    </div>
 </template>
 
 <script setup>
     import { computed, ref, watch } from 'vue';
-    import { Image } from 'lucide-vue-next';
-    import { Input } from '@/components/ui/input';
-    import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-    import { DataTableEmpty } from '@/components/ui/data-table';
+    import { Globe, RefreshCw, Search } from 'lucide-vue-next';
+    import { Button } from '@/components/ui/button';
+    import { Spinner } from '@/components/ui/spinner';
     import { TabsUnderline } from '@/components/ui/tabs';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
@@ -105,10 +99,13 @@
     import { showWorldDialog } from '../../../coordinators/worldCoordinator';
     import { handleFavoriteWorldList } from '../../../coordinators/favoriteCoordinator';
     import { favoriteRequest } from '../../../api';
+    import UserDialogResourceGrid from './UserDialogResourceGrid.vue';
+    import UserDialogResourceSearch from './UserDialogResourceSearch.vue';
+    import UserDialogResourceToolbar from './UserDialogResourceToolbar.vue';
 
     const { t } = useI18n();
 
-    const { userDialog, currentUser } = storeToRefs(useUserStore());
+    const { userDialog } = storeToRefs(useUserStore());
     const { favoriteLimits } = storeToRefs(useFavoriteStore());
 
     const favoriteWorldsTab = ref('0');
@@ -123,6 +120,9 @@
 
     const searchQuery = ref('');
     const searchActive = computed(() => searchQuery.value.trim().length > 0);
+    const favoriteWorldTotalCount = computed(() =>
+        (userDialog.value.userFavoriteWorlds || []).reduce((total, list) => total + (list[2]?.length || 0), 0)
+    );
     const allFilteredFavoriteWorlds = computed(() => {
         const query = searchQuery.value.trim().toLowerCase();
         if (!query) return [];

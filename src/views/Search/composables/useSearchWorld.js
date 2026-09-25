@@ -20,14 +20,22 @@ export function useSearchWorld() {
     const searchWorldCategoryIndex = ref(null);
     const searchWorldResults = ref([]);
     const isSearchWorldLoading = ref(false);
+    const hasMoreWorldResults = ref(false);
+    const searchWorldError = ref(false);
+    let searchGeneration = 0;
+    let activeRequestGeneration = null;
 
     /**
      *
      * @param ref
      */
     function searchWorld(ref) {
+        searchGeneration += 1;
         searchWorldOption.value = '';
         searchWorldCategoryIndex.value = ref?.index ?? null;
+        searchWorldResults.value = [];
+        hasMoreWorldResults.value = true;
+        searchWorldError.value = false;
         const params = {
             n: 10,
             offset: 0
@@ -91,7 +99,7 @@ export function useSearchWorld() {
         }
         // TODO: option.platform
         searchWorldParams.value = params;
-        moreSearchWorld();
+        return moreSearchWorld(0, false);
     }
 
     /**
@@ -111,11 +119,20 @@ export function useSearchWorld() {
 
     /**
      *
-     * @param go
+     * @param {number} [go=0]
+     * @param {boolean} [appendResults=go > 0]
      */
-    function moreSearchWorld(go) {
+    async function moreSearchWorld(go = 0, appendResults = go > 0) {
+        const currentGeneration = searchGeneration;
+        if (!searchWorldParams.value.n || activeRequestGeneration === currentGeneration) {
+            return;
+        }
+        if (go > 0 && !hasMoreWorldResults.value) {
+            return;
+        }
+
         const params = /** @type {{ n: number, offset: number, [key: string]: any }} */ (
-            searchWorldParams.value
+            { ...searchWorldParams.value }
         );
         if (go) {
             params.offset += params.n * go;
@@ -123,31 +140,61 @@ export function useSearchWorld() {
                 params.offset = 0;
             }
         }
+        searchWorldParams.value = params;
+        activeRequestGeneration = currentGeneration;
+        searchWorldError.value = false;
         isSearchWorldLoading.value = true;
-        worldRequest
-            .getWorlds(params, searchWorldOption.value)
-            .finally(() => {
-                isSearchWorldLoading.value = false;
-            })
-            .then((args) => {
-                const map = new Map();
-                for (const json of args.json) {
-                    const ref = cachedWorlds.get(json.id);
-                    if (typeof ref !== 'undefined') {
-                        map.set(ref.id, ref);
-                    }
+
+        try {
+            const args = await worldRequest.getWorlds(params, searchWorldOption.value);
+            if (currentGeneration !== searchGeneration) {
+                return;
+            }
+
+            const map = new Map(
+                appendResults ? searchWorldResults.value.map((world) => [world.id, world]) : []
+            );
+            for (const json of args.json) {
+                const world = cachedWorlds.get(json.id);
+                if (typeof world !== 'undefined') {
+                    map.set(world.id, world);
                 }
-                searchWorldResults.value = Array.from(map.values());
-                return args;
-            });
+            }
+            searchWorldResults.value = Array.from(map.values());
+            hasMoreWorldResults.value = args.json.length >= params.n;
+        } catch (error) {
+            if (currentGeneration === searchGeneration) {
+                searchWorldError.value = true;
+                console.error('Failed to load world search results:', error);
+            }
+        } finally {
+            if (activeRequestGeneration === currentGeneration) {
+                activeRequestGeneration = null;
+                isSearchWorldLoading.value = false;
+            }
+        }
+    }
+
+    function retryWorldSearch() {
+        if (!searchWorldParams.value.n || isSearchWorldLoading.value) {
+            return;
+        }
+        hasMoreWorldResults.value = true;
+        searchWorldError.value = false;
+        return moreSearchWorld(0, searchWorldResults.value.length > 0);
     }
 
     /**
      *
      */
     function clearWorldSearch() {
+        searchGeneration += 1;
+        activeRequestGeneration = null;
         searchWorldParams.value = {};
         searchWorldResults.value = [];
+        hasMoreWorldResults.value = false;
+        searchWorldError.value = false;
+        isSearchWorldLoading.value = false;
     }
 
     return {
@@ -157,8 +204,11 @@ export function useSearchWorld() {
         searchWorldCategoryIndex,
         searchWorldResults,
         isSearchWorldLoading,
+        hasMoreWorldResults,
+        searchWorldError,
         searchWorld,
         moreSearchWorld,
+        retryWorldSearch,
         handleSearchWorldCategorySelect,
         clearWorldSearch
     };

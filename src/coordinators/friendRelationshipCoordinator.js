@@ -36,6 +36,34 @@ export function handleFriendStatus(args) {
 }
 
 /**
+ * Record a sent friend request and update an open user dialog.
+ * @param {{params: {userId: string}, json: {success?: boolean}}} args
+ */
+export function handleFriendRequestSent(args) {
+    const userStore = useUserStore();
+    const friendStore = useFriendStore();
+    const userRef = userStore.cachedUsers.get(args.params.userId);
+    if (!userRef) {
+        return;
+    }
+
+    const entry = {
+        created_at: new Date().toJSON(),
+        type: 'FriendRequest',
+        userId: userRef.id,
+        displayName: userRef.displayName
+    };
+    storeToRefs(friendStore).friendLogTable.value.data.push(entry);
+    database.addFriendLogHistory(entry);
+
+    const dialog = userStore.userDialog;
+    if (dialog.visible && dialog.id === args.params.userId) {
+        dialog.isFriend = Boolean(args.json.success);
+        dialog.outgoingRequest = !args.json.success;
+    }
+}
+
+/**
  * @param {object} args
  */
 export function handleFriendDelete(args) {

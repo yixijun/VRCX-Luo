@@ -42,12 +42,16 @@ const userReq = {
      * icon out of the user resource. Keep this request separate from
      * getUser so callers can use the new endpoint without losing the old
      * user/presence payload used throughout VRCX.
-     * @param {{ userId: string }} params
+     * @param {{ userId: string, withGroupsAndWorlds?: boolean }} params
      * @type {import('../types/api/profile').GetPublicProfile}
      */
     getPublicProfile(params) {
+        const queryParams = params.withGroupsAndWorlds
+            ? { withGroupsAndWorlds: true }
+            : undefined;
         return request(`profile/${params.userId}`, {
-            method: 'GET'
+            method: 'GET',
+            ...(queryParams ? { params: queryParams } : {})
         }).then((json) => ({
             json,
             params

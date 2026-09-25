@@ -331,6 +331,14 @@ export function shouldIgnoreError(code, endpoint) {
         return true;
     }
     if (
+        code === 403 &&
+        typeof endpoint === 'string' &&
+        endpoint.startsWith('avatars/') &&
+        endpoint.split('/').length === 2
+    ) {
+        return true;
+    }
+    if (
         (code === 403 || code === 404 || code === -1) &&
         endpoint?.startsWith('instances/')
     ) {

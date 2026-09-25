@@ -522,7 +522,7 @@
     .user-summary-card {
         flex-shrink: 0;
         border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
-        border-radius: 1rem;
+        border-radius: var(--radius-2xl);
         background: color-mix(in srgb, var(--profile-card, var(--background)) 94%, var(--foreground) 6%);
         box-shadow: 0 2px 8px rgb(0 0 0 / 6%);
     }

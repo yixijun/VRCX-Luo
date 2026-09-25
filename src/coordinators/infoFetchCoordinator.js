@@ -1,7 +1,13 @@
 import { reactive, computed } from 'vue';
 import { database } from '../services/database';
-import { useFriendStore, useTrackedNonFriendsStore, useManualRelationsStore } from '../stores';
+import {
+    useFriendStore,
+    useTrackedNonFriendsStore,
+    useManualRelationsStore,
+    useUserStore
+} from '../stores';
 import { userRequest } from '../api';
+import { recordBioSnapshotForUser } from './bioSnapshotCoordinator';
 
 /**
  * 信息抓取补全的全局响应式状态。
@@ -94,6 +100,7 @@ export async function runSilentInfoFetch() {
 
     const targets = buildTargetList();
     const counts = getTargetCount();
+    const currentUserId = useUserStore().currentUser.id;
     infoFetchState.total = targets.length;
     infoFetchState.friendsTotal = counts.friends;
     infoFetchState.trackedTotal = counts.tracked;
@@ -109,6 +116,7 @@ export async function runSilentInfoFetch() {
         if (cancelled) break;
 
         let userJson = null;
+        let profileJson = null;
 
         // 通过 API 获取最新资料
         try {
@@ -126,29 +134,46 @@ export async function runSilentInfoFetch() {
             }
         }
 
+        // Public bios now come from the dedicated profile endpoint. Keep the
+        // legacy user response for status and presence fields only.
+        try {
+            const result = await userRequest.getPublicProfile({ userId: target.userId });
+            profileJson = result.json;
+        } catch {
+            if (cancelled) break;
+            await new Promise((r) => setTimeout(r, 500));
+            try {
+                const result = await userRequest.getPublicProfile({ userId: target.userId });
+                profileJson = result.json;
+            } catch (retryError) {
+                console.error(`[InfoFetch] Failed to fetch public profile ${target.userId} after retry`, retryError);
+            }
+        }
+
+        if (profileJson && typeof profileJson.bio === 'string') {
+            try {
+                const recorded = await recordBioSnapshotForUser({
+                    database,
+                    userId: profileJson.id || userJson?.id || target.userId,
+                    currentUserId,
+                    currentBio: profileJson.bio,
+                    previousBio: undefined,
+                    isFriend: false,
+                    displayName: profileJson.displayName || userJson?.displayName || target.displayName
+                });
+                if (recorded) {
+                    infoFetchState.bioUpdated++;
+                }
+            } catch {
+                // Ignore profile archive failures and continue the status scan.
+            }
+        }
+
         if (userJson) {
             const userId = userJson.id;
             const displayName = userJson.displayName || target.displayName;
 
-            // 1. Bio 对比
-            try {
-                const currentBio = userJson.bio || '';
-                const lastBio = await database.getLastBioChangeForUser(userId);
-                if (!lastBio || lastBio.bio !== currentBio) {
-                    database.addBioToDatabase({
-                        created_at: new Date().toJSON(),
-                        userId,
-                        displayName,
-                        bio: currentBio,
-                        previousBio: lastBio ? lastBio.bio : ''
-                    });
-                    infoFetchState.bioUpdated++;
-                }
-            } catch {
-                // ignore
-            }
-
-            // 2. Status/灯色 对比
+            // Status/灯色 对比
             try {
                 const currentStatus = userJson.status || 'offline';
                 const currentStatusDesc = userJson.statusDescription || '';

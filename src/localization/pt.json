@@ -297,7 +297,11 @@
             "world": {
                 "header": "Mundo",
                 "category": "Pesquisar por categoria",
-                "community_lab": "Incluir labs da comunidade"
+                "community_lab": "Incluir labs da comunidade",
+                "loading_more": "Carregando mais mundos…",
+                "end_of_results": "Não há mais mundos",
+                "load_failed": "Falha ao carregar mundos",
+                "retry": "Tentar novamente"
             },
             "avatar": {
                 "header": "Avatar",
@@ -338,10 +342,17 @@
                 "local_favorites": "Favoritos Locais (Requer VRC+)",
                 "new_group": "Novo Grupo",
                 "cancel_refresh": "Cancelar Atualização",
-                "check_invalid": "Verificar avatares excluídos/privados",
-                "check_description": "Detectar e remover avatares inválidos deste grupo",
+                "check_alive": "Verificar disponibilidade do avatar",
+                "check_alive_progress": "Verificando {current}/{total}",
+                "check_alive_description": "Verifique os avatares deste grupo um por um. Apenas uma resposta explícita de não encontrado será marcada como indisponível; avatares privados e falhas temporárias de conexão serão mantidos.",
+                "invalid_badge": "Indisponível",
+                "invalid_marked_summary": "{count} avatar(es) indisponível(is) encontrado(s), marcados em vermelho e selecionados para remoção em lote.",
+                "check_incomplete": "Não foi possível verificar {count} avatar(es); eles foram mantidos e não serão removidos automaticamente.",
+                "batch_delete_summary": "{removed} favorito(s) removido(s); {failed} falharam.",
+                "check_invalid": "Verificar avatares indisponíveis",
+                "check_description": "Apenas respostas explícitas de não encontrado serão marcadas como indisponíveis; avatares privados e falhas temporárias de conexão serão mantidos.",
                 "checking": "Verificando avatares inválidos...",
-                "removed_list_header": "Avatares pendentes de exclusão:",
+                "removed_list_header": "Avatares pendentes de remoção:",
                 "copy_removed_ids": "Copiar IDs de Avatar",
                 "copied_ids": "IDs de avatar copiados para a área de transferência",
                 "copy_failed": "Falha ao copiar para a área de transferência",
@@ -601,6 +612,8 @@
                 "calendar_description": "Calendário de Eventos do Grupo"
             },
             "user": {
+                "batch_add_friends": "Adicionar amigos em lote",
+                "batch_add_friends_description": "Cole IDs de usuário ou links de perfil para enviar solicitações de amizade em sequência",
                 "discord_names_description": "Encontre os nomes de usuário do Discord dos seus amigos do VRChat",
                 "export_friend_list_description": "Exporte sua lista de amigos do VRChat",
                 "export_own_avatars_description": "Exporte seus avatares pessoais do VRChat"
@@ -1949,6 +1962,34 @@
             "errors": "Erros:",
             "clear_errors": "Limpar Erros"
         },
+        "batch_add_friends": {
+            "title": "Adicionar amigos em lote",
+            "description": "Cole um ID de usuário ou link de perfil por linha. Duplicatas são ignoradas; usuários que já são amigos ou têm uma solicitação pendente são ignorados.",
+            "input_placeholder": "Cole IDs de usuário ou links de perfil, um por linha...",
+            "ready_count": "{count} usuários reconhecidos",
+            "duplicate_count": "Duplicados: {count}",
+            "invalid_lines": "Linhas não reconhecidas: {count}",
+            "clear": "Limpar",
+            "start": "Enviar solicitações",
+            "stop": "Parar",
+            "progress": "Progresso",
+            "confirm_title": "Enviar solicitações de amizade em lote?",
+            "confirm_description": "O VRCX vai verificar {count} usuários e enviar as solicitações em sequência. Você pode parar a qualquer momento.",
+            "summary": "Enviadas {sent}, ignoradas {skipped}, falhas {failed}, canceladas {cancelled}",
+            "status": {
+                "waiting": "Aguardando",
+                "checking": "Verificando",
+                "sent": "Solicitação enviada",
+                "added": "Adicionado",
+                "already_friend": "Já é amigo",
+                "outgoing": "Solicitação já enviada",
+                "incoming": "Solicitação recebida",
+                "self": "Seu próprio ID",
+                "not_found": "Usuário não encontrado",
+                "failed": "Falha",
+                "cancelled": "Cancelado"
+            }
+        },
         "export_friends_list": {
             "header": "Exportar Lista de Amigos",
             "csv": "CSV",
@@ -2591,6 +2632,9 @@
         "auth": {
             "login_greeting": "Olá, {name}!",
             "logout_greeting": "Até logo, {name}!",
+            "hitokoto_loading": "Buscando uma frase…",
+            "hitokoto_fallback": "Que cada encontro deixe um eco gentil.",
+            "hitokoto_source": "Hitokoto",
             "email_2fa_resent": "E-mail 2FA reenviado.",
             "email_2fa_no_credentials": "Não é possível enviar e-mail 2FA sem credenciais salvas. Por favor, faça login novamente.",
             "incorrect_primary_password": "Senha principal incorreta",

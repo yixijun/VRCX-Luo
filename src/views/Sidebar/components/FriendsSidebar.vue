@@ -158,6 +158,7 @@
                                     <ContextMenuItem
                                         v-if="item.row.friend.state === 'online'"
                                         @click="friendRequestInvite(item.row.friend)">
+                                        <Mail class="size-4" />
                                         {{ t('dialog.user.actions.request_invite') }}
                                         <ContextMenuShortcut
                                             v-if="isActionRecent(item.row.friend.id, 'Request Invite')">
@@ -168,6 +169,7 @@
                                         v-if="isGameRunning"
                                         :disabled="!canInviteToMyLocation"
                                         @click="friendInvite(item.row.friend)">
+                                        <MessageSquare class="size-4" />
                                         {{ t('dialog.user.actions.invite') }}
                                         <ContextMenuShortcut v-if="isActionRecent(item.row.friend.id, 'Invite')">
                                             <Clock class="size-3.5 text-muted-foreground" />
@@ -176,6 +178,7 @@
                                     <ContextMenuItem
                                         :disabled="!currentUser.isBoopingEnabled"
                                         @click="friendSendBoop(item.row.friend)">
+                                        <Hand class="size-4" />
                                         {{ t('dialog.user.actions.send_boop') }}
                                     </ContextMenuItem>
                                     <ContextMenuSeparator
@@ -186,12 +189,14 @@
                                         v-if="item.row.friend.state === 'online' && hasFriendLocation(item.row.friend)"
                                         :disabled="!canJoinFriend(item.row.friend)"
                                         @click="friendJoin(item.row.friend)">
+                                        <LogIn class="size-4" />
                                         {{ t('dialog.user.info.launch_invite_tooltip') }}
                                     </ContextMenuItem>
                                     <ContextMenuItem
                                         v-if="item.row.friend.state === 'online' && hasFriendLocation(item.row.friend)"
                                         :disabled="!canJoinFriend(item.row.friend)"
                                         @click="friendInviteSelf(item.row.friend)">
+                                        <Mail class="size-4" />
                                         {{ t('dialog.user.info.self_invite_tooltip') }}
                                     </ContextMenuItem>
                                 </ContextMenuContent>
@@ -223,7 +228,7 @@
 
 <script setup>
     import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue';
-    import { ChevronDown, Clock, Navigation, User } from 'lucide-vue-next';
+    import { ChevronDown, Clock, Hand, LogIn, Mail, MessageSquare, Navigation, User } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';

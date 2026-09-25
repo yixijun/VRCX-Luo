@@ -511,24 +511,11 @@ export function showUserDialog(userId) {
         }
     };
 
-    // Capture cached bio and status before the API fetch so we can detect whether
-    // applyUser (called inside the fetch) already triggered
-    // runHandleUserUpdateFlow to record the same change.
-    const bioBefore = userStore.cachedUsers.get(userId)?.bio;
+    // Status still comes from the legacy user endpoint; bio snapshots only
+    // come from the dedicated public-profile endpoint.
     const statusBefore = userStore.cachedUsers.get(userId)?.status;
     let bioSnapshotAttempted = false;
-    let publicProfileSettled = false;
-    let legacyBioCandidate = null;
-    const queueBioSnapshot = (bio, displayName, source = 'legacy') => {
-        if (source === 'profile') {
-            publicProfileSettled = true;
-        }
-        if (source === 'legacy' && !publicProfileSettled) {
-            if (typeof bio === 'string') {
-                legacyBioCandidate = { bio, displayName };
-            }
-            return;
-        }
+    const queueBioSnapshot = (bio, displayName) => {
         if (bioSnapshotAttempted || typeof bio !== 'string') {
             return;
         }
@@ -538,15 +525,15 @@ export function showUserDialog(userId) {
             userId,
             currentUserId: currentUser.id,
             currentBio: bio || '',
-            previousBio: bioBefore,
-            isFriend: friendStore.friends.has(userId),
+            previousBio: undefined,
+            isFriend: false,
             displayName: displayName || userId
         })
-            .then(() => {
+            .then((recorded) => {
                 // The Info tab may have already queried the archive while
                 // this async database write was in flight. Bump a reactive
                 // version after the write so it retries the diff query.
-                if (userId === D.id) {
+                if (recorded && userId === D.id) {
                     D.bioSnapshotVersion += 1;
                 }
             })
@@ -555,16 +542,9 @@ export function showUserDialog(userId) {
             });
     };
     updateUserDialogProfile({
+        withGroupsAndWorlds: true,
         onProfileLoaded: (profile) => {
-            queueBioSnapshot(profile.bio, D.ref?.displayName || profile.displayName, 'profile');
-        },
-        onProfileSettled: () => {
-            publicProfileSettled = true;
-            if (legacyBioCandidate) {
-                const candidate = legacyBioCandidate;
-                legacyBioCandidate = null;
-                queueBioSnapshot(candidate.bio, candidate.displayName);
-            }
+            queueBioSnapshot(profile.bio, D.ref?.displayName || profile.displayName);
         }
     });
     queryRequest
@@ -590,11 +570,6 @@ export function showUserDialog(userId) {
                     D.id,
                     D.ref?.displayName || D.id
                 );
-
-                // The public profile request can resolve before or after this
-                // legacy user request. The request-local guard makes either
-                // path record one snapshot without racing into duplicates.
-                queueBioSnapshot(D.ref.bio, D.ref.displayName, 'legacy');
 
                 // Record status snapshot for any user (friend or stranger) when
                 // their profile is viewed, skipping if status hasn't changed.
@@ -838,6 +813,7 @@ export function showUserDialog(userId) {
  * and preserves the local dialog's selection while the request completes.
  *
  * @param {{
+ *     withGroupsAndWorlds?: boolean,
  *     onProfileLoaded?: (profile: object) => void,
  *     onProfileSettled?: () => void
  * }} [options]
@@ -845,7 +821,7 @@ export function showUserDialog(userId) {
 export function updateUserDialogProfile(options = {}) {
     const userStore = useUserStore();
     const appearanceSettingsStore = useAppearanceSettingsStore();
-    const { onProfileLoaded, onProfileSettled } = options;
+    const { withGroupsAndWorlds = false, onProfileLoaded, onProfileSettled } = options;
     const D = userStore.userDialog;
     const userId = D.id;
     if (!userId) {
@@ -853,7 +829,7 @@ export function updateUserDialogProfile(options = {}) {
     }
 
     return userRequest
-        .getPublicProfile({ userId })
+        .getPublicProfile({ userId, ...(withGroupsAndWorlds ? { withGroupsAndWorlds: true } : {}) })
         .then(({ json }) => {
             if (D.id !== userId) {
                 return;
@@ -961,7 +937,52 @@ function onPlayerTraveling(ref) {
  * @param {object} props
  */
 async function handleUserUpdate(ref, props) {
-    await runHandleUserUpdateFlow(ref, props);
+    const { bio: legacyBioChange, ...otherChanges } = props;
+    const currentUserId = useUserStore().currentUser.id;
+    const isFriend = useFriendStore().friends.has(ref.id);
+    if (legacyBioChange && isFriend && ref.id !== currentUserId) {
+        try {
+            const { json: profile } = await userRequest.getPublicProfile({
+                userId: ref.id
+            });
+            if (typeof profile?.bio === 'string') {
+                let recordedSnapshot = null;
+                const recorded = await recordBioSnapshotForUser({
+                    database,
+                    userId: profile.id || ref.id,
+                    currentUserId,
+                    currentBio: profile.bio,
+                    previousBio: undefined,
+                    isFriend: false,
+                    displayName: profile.displayName || ref.displayName,
+                    onRecorded: (snapshot) => {
+                        recordedSnapshot = snapshot;
+                    }
+                });
+                if (recorded && recordedSnapshot) {
+                    await runHandleUserUpdateFlow(
+                        ref,
+                        {
+                            ...otherChanges,
+                            bio: [
+                                recordedSnapshot.bio,
+                                recordedSnapshot.previousBio
+                            ]
+                        },
+                        { skipBioDatabase: true }
+                    );
+                    return;
+                }
+            }
+        } catch (error) {
+            if (AppDebug.debugWebRequests) {
+                console.warn('Failed to verify user bio from public profile:', error);
+            }
+        }
+    }
+
+    // Never feed the legacy /users bio into the archive or bio-change feed.
+    await runHandleUserUpdateFlow(ref, otherChanges);
 }
 
 /**

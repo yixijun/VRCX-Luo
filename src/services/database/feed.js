@@ -113,18 +113,47 @@ const feed = {
         await sqliteService.execute(
             (row) => {
                 results.push({
-                    bio: row[0],
-                    previousBio: row[1],
-                    createdAt: row[2]
+                    id: row[0],
+                    bio: row[1],
+                    previousBio: row[2],
+                    createdAt: row[3]
                 });
             },
-            `SELECT bio, previous_bio, created_at FROM ${dbVars.userPrefix}_feed_bio WHERE user_id = @userId ORDER BY id DESC LIMIT @limit`,
+            `SELECT id, bio, previous_bio, created_at FROM ${dbVars.userPrefix}_feed_bio WHERE user_id = @userId ORDER BY id DESC LIMIT @limit`,
             {
                 '@userId': userId,
                 '@limit': limit
             }
         );
         return results;
+    },
+
+    async deleteBioArchiveRecord(userId, id) {
+        return this.deleteBioArchiveRecords(userId, [id]);
+    },
+
+    async deleteBioArchiveRecords(userId, ids) {
+        const recordIds = [
+            ...new Set(
+                (ids || [])
+                    .map(Number)
+                    .filter((id) => Number.isInteger(id) && id > 0)
+            )
+        ];
+        if (!userId || recordIds.length === 0) {
+            return 0;
+        }
+        const args = { '@userId': userId };
+        const placeholders = recordIds.map((id, index) => {
+            const key = `@id${index}`;
+            args[key] = id;
+            return key;
+        });
+        await sqliteService.executeNonQuery(
+            `DELETE FROM ${dbVars.userPrefix}_feed_bio WHERE user_id = @userId AND id IN (${placeholders.join(', ')})`,
+            args
+        );
+        return recordIds.length;
     },
 
     addAvatarToDatabase(entry) {

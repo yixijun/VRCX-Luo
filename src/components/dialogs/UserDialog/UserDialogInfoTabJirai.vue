@@ -759,7 +759,7 @@
 <style scoped>
     .user-instance-creator {
         border: 0;
-        border-radius: 0.5rem;
+        border-radius: var(--radius-md);
         background: color-mix(in oklch, var(--primary) 6%, transparent);
         transition:
             background-color 140ms ease,
@@ -782,14 +782,14 @@
         color: #ff0000;
         background-color: rgba(255, 0, 0, 0.2);
         padding: 2px 2px;
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
     }
 
     :deep(.x-text-added) {
         color: rgb(35, 188, 35);
         background-color: rgba(76, 255, 80, 0.2);
         padding: 2px 2px;
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
     }
 
     @media (prefers-reduced-motion: reduce) {

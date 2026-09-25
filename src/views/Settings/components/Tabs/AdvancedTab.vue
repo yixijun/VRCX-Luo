@@ -63,8 +63,10 @@
                 :description="t('view.settings.advanced.advanced.self_invite.description')">
                 <Switch :model-value="selfInviteOverride" @update:modelValue="setSelfInviteOverride" />
             </SettingsItem>
-            
-            <SettingsItem :label="t('view.settings.advanced.advanced.auto_join_group_certification.header')">
+
+            <SettingsItem
+                :label="t('view.settings.advanced.advanced.auto_join_group_certification.header')"
+                :description="t('view.settings.advanced.advanced.auto_join_group_certification.description')">
                 <Switch :model-value="autoJoinGroupCertification" @update:modelValue="setAutoJoinGroupCertification" />
             </SettingsItem>
         </SettingsGroup>

@@ -165,7 +165,7 @@
         align-items: center;
         gap: 0.4rem;
         border: 0;
-        border-radius: 0.5rem;
+        border-radius: var(--radius-md);
         background: color-mix(in oklch, var(--muted) 72%, transparent);
         padding: 0.35rem 0.65rem;
         color: var(--muted-foreground);
@@ -188,7 +188,7 @@
         min-width: 0;
         overflow: hidden;
         border: 1px solid var(--border-subtle);
-        border-radius: 0.5rem;
+        border-radius: var(--radius-md);
         background: color-mix(in oklch, var(--card) 95%, var(--foreground) 5%);
         box-shadow: 0 1px 2px rgb(0 0 0 / 8%);
         animation: room-arrive 220ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
@@ -236,7 +236,7 @@
         align-items: center;
         gap: 0.6rem;
         border: 0;
-        border-radius: 0.5rem;
+        border-radius: var(--radius-md);
         padding: 0.45rem 0.55rem;
         font-size: 0.8125rem;
         transition:

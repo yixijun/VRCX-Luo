@@ -82,7 +82,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const vrcRegistryAutoBackup = ref(true);
     const vrcRegistryAskRestore = ref(true);
     const sentryErrorReporting = ref(false);
-    const autoJoinGroupCertification = ref(true);
+    const autoJoinGroupCertification = ref(false);
 
     watch(
         () => watchState.isLoggedIn,
@@ -185,7 +185,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
             configRepository.getBool('VRCX_vrcRegistryAutoBackup', true),
             configRepository.getBool('VRCX_vrcRegistryAskRestore', true),
             configRepository.getString('VRCX_SentryEnabled', ''),
-            configRepository.getBool('VRCX_autoJoinGroupCertification', true)
+            configRepository.getBool('VRCX_autoJoinGroupCertification', false)
         ]);
 
         if (!bioLanguageConfig || !languageCodes.includes(bioLanguageConfig)) {

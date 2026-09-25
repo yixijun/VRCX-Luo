@@ -388,7 +388,27 @@
             "world": {
                 "header": "世界",
                 "category": "按类别搜索",
-                "community_lab": "包含位于社区实验室的世界"
+                "community_lab": "包含位于社区实验室的世界",
+                "categories": {
+                    "hot": "热门",
+                    "spotlight_pc": "PC 精选",
+                    "spotlight_cross_platform": "跨平台精选",
+                    "community_labs": "社区实验室",
+                    "active_cross_platform": "跨平台活跃",
+                    "active_my_platform": "本平台活跃",
+                    "random": "随机",
+                    "avatar_worlds": "模型世界",
+                    "games": "游戏",
+                    "updated_recently": "最近更新",
+                    "new": "最新",
+                    "recent": "最近访问",
+                    "mine": "我的世界",
+                    "classics": "经典"
+                },
+                "loading_more": "正在加载更多世界…",
+                "end_of_results": "没有更多世界了",
+                "load_failed": "加载世界失败",
+                "retry": "重试"
             },
             "avatar": {
                 "header": "模型",
@@ -429,10 +449,17 @@
                 "local_favorites": "本地收藏（需要 VRC+）",
                 "new_group": "创建新的收藏夹",
                 "cancel_refresh": "清除缓存",
+                "check_alive": "检测模型是否存活",
+                "check_alive_progress": "检测中 {current}/{total}",
+                "check_alive_description": "逐个检查这个分组中的模型。只有接口明确返回“模型不存在”时才会标记失效；私人模型或暂时无法连接的模型不会被自动删除。",
+                "invalid_badge": "已失效",
+                "invalid_marked_summary": "检测出 {count} 个失效模型，已标红并选中，可以批量取消收藏。",
+                "check_incomplete": "有 {count} 个模型暂时无法确认状态，它们已保留，不会自动删除。",
+                "batch_delete_summary": "已移除 {removed} 个模型收藏，{failed} 个失败。",
                 "check_invalid": "检测这个分组的失效模型",
-                "check_description": "检测并删除这个分组中的失效模型",
+                "check_description": "只将接口明确返回“模型不存在”的情况标记为失效；私人模型或暂时无法连接的模型会保留。",
                 "checking": "正在检测失效模型...",
-                "removed_list_header": "已删除的模型列表：",
+                "removed_list_header": "待移除的模型列表：",
                 "copy_removed_ids": "复制已删除的模型ID",
                 "copied_ids": "模型ID已复制到剪贴板",
                 "copy_failed": "复制到剪贴板失败",
@@ -800,6 +827,8 @@
                 "calendar_description": "查看活动日历"
             },
             "user": {
+                "batch_add_friends": "批量添加好友",
+                "batch_add_friends_description": "粘贴玩家 ID 或个人资料链接，逐个发送好友请求",
                 "discord_names_description": "查找好友的 Discord 名称（如果他们有写上去的话）",
                 "export_friend_list_description": "从 VRChat 导出你的好友列表",
                 "export_own_avatars_description": "从 VRChat 中导出你创建的模型的 ID 列表"
@@ -1355,7 +1384,8 @@
                         "description": "使用独立密码加密 VRCX 数据（将停用自动登录）"
                     },
                     "auto_join_group_certification": {
-                        "header": "认证"
+                        "header": "自动加入 VRCX 默认群组",
+                        "description": "加载群组列表时，如果尚未加入此群组，就会自动加入。"
                     },
                     "relaunch_vrchat": {
                         "header": "崩溃后重启",
@@ -1692,11 +1722,30 @@
                 "instance_closed_at": "房间关闭时间",
                 "instance_minimum_avatar_performance": "最低模型性能评级",
                 "bio_diff_toggle": "切换简介对比",
-                "bio_archive": "简介归档"
+                "bio_archive": "简介归档",
+                "bio_archive_selected": "已选择 {count} 条",
+                "bio_archive_select_all": "全选",
+                "bio_archive_clear_selection": "清除选择",
+                "bio_archive_compare": "对比所选",
+                "bio_archive_close_compare": "关闭对比",
+                "bio_archive_older": "较早版本",
+                "bio_archive_newer": "较新版本",
+                "bio_archive_delete_record": "删除这条归档",
+                "bio_archive_delete_selected": "删除所选 ({count})",
+                "bio_archive_delete_title": "删除简介归档",
+                "bio_archive_delete_record_confirm": "确定删除这条简介归档吗？此操作无法撤销。",
+                "bio_archive_delete_selected_confirm": "确定删除所选的 {count} 条简介归档吗？此操作无法撤销。",
+                "bio_archive_deleted": "已删除 {count} 条简介归档",
+                "bio_archive_delete_failed": "删除简介归档失败"
             },
             "groups": {
                 "header": "群组",
                 "total_count": "总共 {count} 个",
+                "count": "{count} 个群组",
+                "refresh": "刷新群组",
+                "search_placeholder": "搜索群组",
+                "empty": "暂无群组",
+                "search_no_results": "没有找到匹配的群组",
                 "sort_by": "排序方式：",
                 "edit_mode": "编辑模式",
                 "exit_edit_mode": "退出编辑模式",
@@ -1714,6 +1763,7 @@
             "worlds": {
                 "header": "创建的世界",
                 "total_count": "总共 {count} 个",
+                "search_placeholder": "搜索世界",
                 "sort_by": "排序方式：",
                 "order_by": "顺序：",
                 "sorting": {
@@ -1734,6 +1784,7 @@
             "avatars": {
                 "header": "创建的模型",
                 "total_count": "总共 {count} 个",
+                "search_placeholder": "搜索模型",
                 "sort_by": "排序方式：",
                 "sort_by_name": "名称",
                 "sort_by_update": "更新时间",
@@ -1748,6 +1799,11 @@
             },
             "mutual_friends": {
                 "header": "共同好友",
+                "count": "{count} 位共同好友",
+                "refresh": "刷新共同好友",
+                "search_placeholder": "搜索共同好友",
+                "empty": "暂无共同好友",
+                "search_no_results": "没有找到匹配的共同好友",
                 "confirmed_date_tooltip": "最近一次从 VRChat 获取并确认该共同好友关系的日期，不是成为好友的日期。",
                 "sorting": {
                     "alphabetical": "字母顺序",
@@ -2505,6 +2561,34 @@
             "errors": "错误：",
             "clear_errors": "清除错误"
         },
+        "batch_add_friends": {
+            "title": "批量添加好友",
+            "description": "每行粘贴一个玩家 ID 或个人资料链接。重复项会自动忽略；已是好友或已有待处理请求的用户会跳过。",
+            "input_placeholder": "粘贴玩家 ID 或个人资料链接，每行一个……",
+            "ready_count": "识别到 {count} 个用户",
+            "duplicate_count": "重复项：{count}",
+            "invalid_lines": "无法识别的行：{count}",
+            "clear": "清空",
+            "start": "开始发送",
+            "stop": "停止",
+            "progress": "处理进度",
+            "confirm_title": "发送批量好友请求？",
+            "confirm_description": "将依次检查并向 {count} 位用户发送好友请求。请求会按顺序发送，可以随时停止。",
+            "summary": "已发送 {sent}，已跳过 {skipped}，失败 {failed}，已取消 {cancelled}",
+            "status": {
+                "waiting": "等待中",
+                "checking": "检查中",
+                "sent": "请求已发送",
+                "added": "已添加",
+                "already_friend": "已经是好友",
+                "outgoing": "请求已发出",
+                "incoming": "对方已发请求",
+                "self": "这是你自己",
+                "not_found": "用户不存在",
+                "failed": "失败",
+                "cancelled": "已取消"
+            }
+        },
         "export_friends_list": {
             "header": "导出好友列表",
             "csv": "CSV格式",
@@ -2912,10 +2996,23 @@
         },
         "group_calendar": {
             "header": "活动日历",
+            "calendar_mode": "日历",
+            "discover_mode": "发现活动",
             "list_view": "列表视图",
             "calendar_view": "日历视图",
             "no_events": "目前没有任何活动",
             "search_placeholder": "搜索群组或活动...",
+            "discover_search_placeholder": "搜索所有 VRChat 活动...",
+            "scope_upcoming": "即将开始",
+            "scope_live": "正在进行",
+            "scope_all": "所有时间",
+            "refresh_discover": "刷新活动",
+            "discover_loading": "正在加载活动...",
+            "discover_failed": "加载活动失败",
+            "retry": "重试",
+            "discover_empty": "没有符合条件的活动",
+            "results_count": "已加载 {count} 个活动",
+            "load_more": "加载更多",
             "search_no_matching": "没有找到任何符合条件的活动",
             "search_no_this_month": "这个月没有活动举行",
             "event_card": {
@@ -3254,6 +3351,9 @@
         "auth": {
             "login_greeting": "你好，{name}！祝你拥有美好的一天！",
             "logout_greeting": "下次再见，{name}！",
+            "hitokoto_loading": "正在为你取一言…",
+            "hitokoto_fallback": "愿每一次相遇，都留下温柔的回响。",
+            "hitokoto_source": "一言",
             "email_2fa_resent": "已重发验证码邮件",
             "email_2fa_no_credentials": "由于登录数据无效，无法重新发送验证码邮件，请重新登录。",
             "incorrect_primary_password": "独立密码错误",

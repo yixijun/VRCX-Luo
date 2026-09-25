@@ -34,11 +34,42 @@ export interface PublicProfile {
     themeId?: string;
     themeSubtextColor?: string;
     trustTags?: string[];
+    groups?: {
+        count: number;
+        list: Array<{
+            iconUrl?: string;
+            id: string;
+            name: string;
+        }>;
+    };
+    publicWorlds?: Array<{
+        id: string;
+        authorId: string;
+        name: string;
+        created_at?: string;
+        updated_at?: string;
+        favorites?: number;
+        popularity?: number;
+        tags?: string[];
+        thumbnailImageUrl?: string;
+        occupants?: number;
+        [key: string]: unknown;
+    }>;
+    totalPublicWorldsCount?: number;
+    worldFavoriteLists?: Array<{
+        count: number;
+        id: string;
+        name: string;
+        thumbnails: string[];
+    }>;
 }
 
-export type GetPublicProfile = (params: { userId: string }) => Promise<{
+export type GetPublicProfile = (params: {
+    userId: string;
+    withGroupsAndWorlds?: boolean;
+}) => Promise<{
     json: PublicProfile;
-    params: { userId: string };
+    params: { userId: string; withGroupsAndWorlds?: boolean };
 }>;
 
 export interface SelfProfile extends PublicProfile {

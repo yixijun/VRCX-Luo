@@ -24,7 +24,11 @@ import { useWorldStore } from '../stores/world';
 export async function runHandleUserUpdateFlow(
     ref,
     props,
-    { now = Date.now, nowIso = () => new Date().toJSON() } = {}
+    {
+        now = Date.now,
+        nowIso = () => new Date().toJSON(),
+        skipBioDatabase = false
+    } = {}
 ) {
     return runHandleUserUpdateFlowWithDependencies(ref, props, {
         now,
@@ -38,7 +42,8 @@ export async function runHandleUserUpdateFlow(
         notificationStore: useNotificationStore(),
         sharedFeedStore: useSharedFeedStore(),
         generalSettingsStore: useGeneralSettingsStore(),
-        database
+        database,
+        skipBioDatabase
     });
 }
 
@@ -59,6 +64,7 @@ export async function runHandleUserUpdateFlow(
  * @param {object} dependencies.sharedFeedStore
  * @param {object} dependencies.generalSettingsStore
  * @param {object} dependencies.database
+ * @param {boolean} [dependencies.skipBioDatabase]
  * @param {function} [dependencies.now]
  * @param {function} [dependencies.nowIso]
  * @returns {Promise<void>}
@@ -77,6 +83,7 @@ export async function runHandleUserUpdateFlowWithDependencies(
         sharedFeedStore,
         generalSettingsStore,
         database: databaseApi,
+        skipBioDatabase = false,
         now = Date.now,
         nowIso = () => new Date().toJSON()
     }
@@ -410,7 +417,9 @@ export async function runHandleUserUpdateFlowWithDependencies(
         notificationStore.queueFeedNoty(feed);
         sharedFeedStore.addEntry(feed);
         feedStore.addFeedEntry(feed);
-        databaseApi.addBioToDatabase(feed);
+        if (!skipBioDatabase) {
+            databaseApi.addBioToDatabase(feed);
+        }
     }
     if (
         props.note &&

@@ -949,7 +949,7 @@ export const useUserStore = defineStore('User', () => {
     /**
      */
     function toggleSharedConnectionsOptOut() {
-        userRequest.saveCurrentUser({
+        return userRequest.saveCurrentUser({
             hasSharedConnectionsOptOut:
                 !currentUser.value.hasSharedConnectionsOptOut
         });

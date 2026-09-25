@@ -8,7 +8,8 @@ import {
     createRateLimiter,
     executeWithBackoff,
     getFriendsSortFunction,
-    isRealInstance
+    isRealInstance,
+    parseLocation
 } from '../shared/utils';
 import { getUserMemo } from '../coordinators/memoCoordinator';
 import { friendRequest, userRequest } from '../api';
@@ -396,15 +397,39 @@ export const useFriendStore = defineStore('Friend', () => {
             friendsList[locationTag].push(friend);
         });
 
-        const sortedFriendsList = [];
-        for (const group of Object.values(friendsList)) {
-            if (group.length > 1) {
-                // Group order already matches the globally sorted online list.
-                sortedFriendsList.push(group);
+        const currentUserRef = userStore.cachedUsers.get(
+            userStore.currentUser.id
+        );
+        const currentLocationTag = [
+            currentUserRef?.$location?.tag,
+            userStore.currentUser.$locationTag,
+            locationStore.lastLocation.location
+        ].find((location) => isRealInstance(location));
+        const currentLocation = currentLocationTag
+            ? parseLocation(currentLocationTag)
+            : null;
+        const sameInstanceAsCurrentUser = (locationTag) => {
+            if (!currentLocation || !isRealInstance(locationTag)) {
+                return false;
             }
-        }
+            const location = parseLocation(locationTag);
+            return (
+                location.worldId === currentLocation.worldId &&
+                location.instanceId === currentLocation.instanceId
+            );
+        };
 
-        const result = sortedFriendsList.sort((a, b) => b.length - a.length);
+        const result = Object.entries(friendsList)
+            .filter(([, group]) => group.length > 1)
+            .sort(([locationA, groupA], [locationB, groupB]) => {
+                const isCurrentA = sameInstanceAsCurrentUser(locationA);
+                const isCurrentB = sameInstanceAsCurrentUser(locationB);
+                if (isCurrentA !== isCurrentB) {
+                    return isCurrentA ? -1 : 1;
+                }
+                return groupB.length - groupA.length;
+            })
+            .map(([, group]) => group);
         trackDerivedDebug('friendsInSameInstance', result.length);
         return result;
     });

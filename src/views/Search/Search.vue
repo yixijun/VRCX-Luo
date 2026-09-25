@@ -119,15 +119,27 @@
                                         v-for="row in cachedConfig.dynamicWorldRows"
                                         :key="row.index"
                                         :value="row.index">
-                                        {{ row.name }}
+                                        {{ localizedWorldCategoryName(row) }}
                                     </SelectItem>
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
                     </div>
-                    <div class="flex-1 overflow-y-auto min-h-0">
-                        <div v-if="isSearchWorldLoading" class="flex items-center justify-center h-full">
+                    <div
+                        ref="worldResultsScrollContainer"
+                        class="flex-1 overflow-y-auto min-h-0">
+                        <div
+                            v-if="isSearchWorldLoading && searchWorldResults.length === 0"
+                            class="flex items-center justify-center h-full">
                             <Spinner class="text-2xl" />
+                        </div>
+                        <div
+                            v-else-if="searchWorldError && searchWorldResults.length === 0"
+                            class="flex h-full flex-col items-center justify-center gap-3 text-sm text-muted-foreground">
+                            <span>{{ t('view.search.world.load_failed') }}</span>
+                            <Button size="sm" variant="outline" @click="retryWorldSearch">
+                                {{ t('view.search.world.retry') }}
+                            </Button>
                         </div>
                         <template v-else-if="searchWorldResults.length > 0">
                             <ItemGroup
@@ -162,6 +174,21 @@
                                     </div>
                                 </Item>
                             </ItemGroup>
+                            <div class="flex min-h-14 items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
+                                <template v-if="isSearchWorldLoading">
+                                    <Spinner class="size-4" />
+                                    <span>{{ t('view.search.world.loading_more') }}</span>
+                                </template>
+                                <div v-else-if="searchWorldError" class="flex items-center gap-2">
+                                    <span>{{ t('view.search.world.load_failed') }}</span>
+                                    <Button size="sm" variant="ghost" @click="retryWorldSearch">
+                                        {{ t('view.search.world.retry') }}
+                                    </Button>
+                                </div>
+                                <span v-else-if="!hasMoreWorldResults">
+                                    {{ t('view.search.world.end_of_results') }}
+                                </span>
+                            </div>
                         </template>
                         <DataTableEmpty v-else type="nodata" />
                     </div>
@@ -319,7 +346,7 @@
     } from '@/components/ui/item';
 
     import { computed, onUnmounted, ref } from 'vue';
-    import { useMagicKeys, whenever } from '@vueuse/core';
+    import { useInfiniteScroll, useMagicKeys, whenever } from '@vueuse/core';
     import { toast } from 'vue-sonner';
     import { Button } from '@/components/ui/button';
     import { Checkbox } from '@/components/ui/checkbox';
@@ -380,6 +407,33 @@
         return t('view.search.search_placeholder');
     });
 
+    const worldCategoryTranslationKeys = {
+        hot: 'hot',
+        'spotlight - pc': 'spotlight_pc',
+        'spotlight - cross platform': 'spotlight_cross_platform',
+        'community labs': 'community_labs',
+        'active - cross platform': 'active_cross_platform',
+        'active - my platform': 'active_my_platform',
+        random: 'random',
+        'avatar worlds': 'avatar_worlds',
+        games: 'games',
+        'updated recently': 'updated_recently',
+        new: 'new',
+        recent: 'recent',
+        mine: 'mine',
+        classics: 'classics'
+    };
+
+    function localizedWorldCategoryName(row) {
+        const normalizedName = row.name
+            ?.trim()
+            .toLocaleLowerCase()
+            .replace(/[–—]/g, '-')
+            .replace(/\s+/g, ' ');
+        const translationKey = worldCategoryTranslationKeys[normalizedName];
+        return translationKey ? t(`view.search.world.categories.${translationKey}`) : row.name;
+    }
+
     const {
         searchUserParams,
         searchUserByBio,
@@ -406,11 +460,29 @@
         searchWorldCategoryIndex,
         searchWorldResults,
         isSearchWorldLoading,
+        hasMoreWorldResults,
+        searchWorldError,
         searchWorld,
         moreSearchWorld,
+        retryWorldSearch,
         handleSearchWorldCategorySelect,
         clearWorldSearch
     } = useSearchWorld();
+
+    const worldResultsScrollContainer = ref(null);
+    useInfiniteScroll(
+        worldResultsScrollContainer,
+        () => moreSearchWorld(1),
+        {
+            distance: 320,
+            canLoadMore: () =>
+                activeSearchTab.value === 'world' &&
+                Boolean(searchWorldParams.value.n) &&
+                hasMoreWorldResults.value &&
+                !isSearchWorldLoading.value &&
+                !searchWorldError.value
+        }
+    );
 
     const {
         searchGroupParams,
@@ -433,10 +505,10 @@
                 };
             case 'world':
                 return {
-                    show: searchWorldResults.value.length > 0 && !isSearchWorldLoading.value,
-                    prevDisabled: !searchWorldParams.value.offset,
-                    nextDisabled: searchWorldResults.value.length < 10,
-                    onPrev: () => moreSearchWorld(-1),
+                    show: false,
+                    prevDisabled: true,
+                    nextDisabled: !hasMoreWorldResults.value || isSearchWorldLoading.value,
+                    onPrev: () => {},
                     onNext: () => moreSearchWorld(1)
                 };
             case 'avatar':

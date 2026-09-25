@@ -341,14 +341,14 @@
         color: #ff0000;
         background-color: rgba(255, 0, 0, 0.2);
         padding: 2px 2px;
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
     }
 
     .feed :deep(.x-text-added) {
         color: rgb(35, 188, 35);
         background-color: rgba(76, 255, 80, 0.2);
         padding: 2px 2px;
-        border-radius: 4px;
+        border-radius: var(--radius-xs);
     }
 
     .feed-drop-overlay {

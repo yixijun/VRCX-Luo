@@ -337,7 +337,7 @@
                             const nameBold = isHovered ? 'font-weight:700;' : '';
                             const valWeight = isHovered ? '700' : '600';
                             return (
-                                `<div style="display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:3px;${rowBg}">` +
+                                `<div style="display:flex;align-items:center;gap:6px;padding:2px 4px;border-radius:var(--radius-xs);${rowBg}">` +
                                 `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${p.color};flex-shrink:0"></span>` +
                                 `<span style="flex:1;font-size:12px;${nameBold}">${p.seriesName}</span>` +
                                 `<span style="font-size:12px;font-weight:${valWeight};tabular-nums">${p.value.toFixed(1)}%</span>` +

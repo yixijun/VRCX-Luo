@@ -206,7 +206,43 @@
                         auto-height
                         :loading="false"
                         :show-pagination="false"
-                        :on-row-click="handlePlayerListRowClick" />
+                        :on-row-click="handlePlayerListRowClick">
+                        <template #row-context-menu="{ row }">
+                            <UserContextMenuContent
+                                v-if="row.original?.ref?.id"
+                                :user-id="row.original.ref.id"
+                                state="online"
+                                :location="currentInstanceTag"
+                                in-current-instance>
+                                <template #append>
+                                    <ContextMenuItem
+                                        v-if="getPlayerDisplayName(row.original)"
+                                        @click="copyToClipboard(getPlayerDisplayName(row.original))">
+                                        <Copy class="size-4" />
+                                        {{ t('dialog.user.info.copy_display_name') }}
+                                    </ContextMenuItem>
+                                    <ContextMenuItem
+                                        v-if="row.original.ref.id"
+                                        @click="copyToClipboard(row.original.ref.id)">
+                                        <IdCard class="size-4" />
+                                        {{ t('dialog.user.info.copy_id') }}
+                                    </ContextMenuItem>
+                                </template>
+                            </UserContextMenuContent>
+                            <ContextMenuContent v-else>
+                                <ContextMenuItem @click="selectCurrentInstanceRow(row.original)">
+                                    <ExternalLink class="size-4" />
+                                    {{ t('common.actions.view_details') }}
+                                </ContextMenuItem>
+                                <ContextMenuItem
+                                    v-if="getPlayerDisplayName(row.original)"
+                                    @click="copyToClipboard(getPlayerDisplayName(row.original))">
+                                    <Copy class="size-4" />
+                                    {{ t('dialog.user.info.copy_display_name') }}
+                                </ContextMenuItem>
+                            </ContextMenuContent>
+                        </template>
+                    </DataTableLayout>
                 </div>
             </ResizablePanel>
         </ResizablePanelGroup>
@@ -225,7 +261,43 @@
                 auto-height
                 :loading="false"
                 :show-pagination="false"
-                :on-row-click="handlePlayerListRowClick" />
+                :on-row-click="handlePlayerListRowClick">
+                <template #row-context-menu="{ row }">
+                    <UserContextMenuContent
+                        v-if="row.original?.ref?.id"
+                        :user-id="row.original.ref.id"
+                        state="online"
+                        :location="currentInstanceTag"
+                        in-current-instance>
+                        <template #append>
+                            <ContextMenuItem
+                                v-if="getPlayerDisplayName(row.original)"
+                                @click="copyToClipboard(getPlayerDisplayName(row.original))">
+                                <Copy class="size-4" />
+                                {{ t('dialog.user.info.copy_display_name') }}
+                            </ContextMenuItem>
+                            <ContextMenuItem
+                                v-if="row.original.ref.id"
+                                @click="copyToClipboard(row.original.ref.id)">
+                                <IdCard class="size-4" />
+                                {{ t('dialog.user.info.copy_id') }}
+                            </ContextMenuItem>
+                        </template>
+                    </UserContextMenuContent>
+                    <ContextMenuContent v-else>
+                        <ContextMenuItem @click="selectCurrentInstanceRow(row.original)">
+                            <ExternalLink class="size-4" />
+                            {{ t('common.actions.view_details') }}
+                        </ContextMenuItem>
+                        <ContextMenuItem
+                            v-if="getPlayerDisplayName(row.original)"
+                            @click="copyToClipboard(getPlayerDisplayName(row.original))">
+                            <Copy class="size-4" />
+                            {{ t('dialog.user.info.copy_display_name') }}
+                        </ContextMenuItem>
+                    </ContextMenuContent>
+                </template>
+            </DataTableLayout>
         </div>
         <ChatboxBlacklistDialog
             :chatbox-blacklist-dialog="chatboxBlacklistDialog"
@@ -235,7 +307,7 @@
 
 <script setup>
     import { computed, nextTick, onActivated, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-    import { Apple, Home, Image, Monitor, Smartphone } from 'lucide-vue-next';
+    import { Apple, Copy, ExternalLink, Home, IdCard, Image, Monitor, Smartphone } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
 
@@ -247,9 +319,10 @@
         usePhotonStore,
         useUserStore
     } from '../../stores';
-    import { commaNumber, formatDateFilter } from '../../shared/utils';
+    import { commaNumber, copyToClipboard, formatDateFilter } from '../../shared/utils';
     import { Badge } from '../../components/ui/badge';
     import { DataTableLayout } from '../../components/ui/data-table';
+    import { ContextMenuContent, ContextMenuItem } from '../../components/ui/context-menu';
     import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable';
     import { createColumns } from './columns.jsx';
     import { useVrcxVueTable } from '../../lib/table/useVrcxVueTable';
@@ -263,6 +336,7 @@
     import PhotonEventTable from './components/PhotonEventTable.vue';
     import InstancePlayerEventsPopover from './components/InstancePlayerEventsPopover.vue';
     import { useUserDisplay } from '../../composables/useUserDisplay';
+    import UserContextMenuContent from '../../components/UserContextMenuContent.vue';
 
     const { randomUserColours } = storeToRefs(useAppearanceSettingsStore());
     const { userImage } = useUserDisplay();
@@ -462,6 +536,10 @@
         } else {
             lookupUser(ref);
         }
+    }
+
+    function getPlayerDisplayName(player) {
+        return player?.displayName || player?.ref?.displayName || '';
     }
 
     /**

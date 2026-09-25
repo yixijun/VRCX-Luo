@@ -308,5 +308,16 @@ describe('UserDialogInfoTab.vue', () => {
             expect(wrapper.find('[aria-label="dialog.user.info.bio_diff_toggle"]').exists()).toBe(true);
         });
 
+        test('keeps a valid legacy bio when the public profile response is empty', () => {
+            const wrapper = mountComponent({
+                userDialog: {
+                    ref: { bio: 'Bio from the user response' },
+                    publicProfileRef: { bio: '' }
+                }
+            });
+
+            expect(wrapper.text()).toContain('Bio from the user response');
+        });
+
     });
 });

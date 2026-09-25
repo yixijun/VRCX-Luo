@@ -5,6 +5,7 @@
                 <Item
                     variant="outline"
                     class="favorites-item cursor-pointer hover:bg-muted x-hover-list"
+                    :class="{ 'favorites-item--invalid': isDetectedInvalid }"
                     :style="itemStyle"
                     @click="handleViewDetails">
                     <ItemMedia variant="image">
@@ -28,6 +29,9 @@
                                 v-if="showUnavailable"
                                 :title="t('view.favorite.unavailable_tooltip')"
                                 class="h-4 w-4" />
+                            <Badge v-if="isDetectedInvalid" variant="destructive" class="ml-1">
+                                {{ t('view.favorite.avatars.invalid_badge') }}
+                            </Badge>
                             <Lock v-if="isPrivateAvatar" :title="t('view.favorite.private')" class="h-4 w-4" />
                         </ItemTitle>
                         <ItemDescription class="truncate line-clamp-1 text-xs">
@@ -85,7 +89,11 @@
         </ContextMenu>
     </template>
     <template v-else>
-        <Item variant="outline" class="favorites-item hover:bg-muted x-hover-list" :style="itemStyle">
+        <Item
+            variant="outline"
+            class="favorites-item hover:bg-muted x-hover-list"
+            :class="{ 'favorites-item--invalid': isDetectedInvalid }"
+            :style="itemStyle">
             <ItemMedia variant="image" />
             <ItemContent class="min-w-0">
                 <ItemTitle class="truncate max-w-full">{{ favorite.name || favorite.id }}</ItemTitle>
@@ -102,6 +110,7 @@
 <script setup>
     import { AlertTriangle, Image, Lock, MoreHorizontal, Trash2 } from 'lucide-vue-next';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+    import { Badge } from '@/components/ui/badge';
     import { Button } from '@/components/ui/button';
     import { Checkbox } from '@/components/ui/checkbox';
     import {
@@ -133,7 +142,8 @@
         group: [Object, String],
         isLocalFavorite: Boolean,
         editMode: { type: Boolean, default: false },
-        selected: { type: Boolean, default: false }
+        selected: { type: Boolean, default: false },
+        isDetectedInvalid: { type: Boolean, default: false }
     });
     const emit = defineEmits(['toggle-select']);
 
@@ -148,7 +158,9 @@
 
     const localFavFakeRef = computed(() => (props.isLocalFavorite ? props.favorite : props.favorite?.ref));
 
-    const showUnavailable = computed(() => !props.isLocalFavorite && props.favorite?.deleted);
+    const showUnavailable = computed(
+        () => !props.isLocalFavorite && (props.favorite?.deleted || props.isDetectedInvalid)
+    );
 
     const isPrivateAvatar = computed(() => !props.isLocalFavorite && props.favorite?.ref?.releaseStatus === 'private');
 
@@ -203,6 +215,15 @@
 </script>
 
 <style scoped>
+    .favorites-item--invalid {
+        border-color: color-mix(in oklab, var(--destructive) 55%, transparent);
+        background-color: color-mix(in oklab, var(--destructive) 18%, var(--background));
+    }
+
+    .favorites-item--invalid:hover {
+        background-color: color-mix(in oklab, var(--destructive) 25%, var(--background));
+    }
+
     .favorites-item :deep(img) {
         filter: saturate(0.8) contrast(0.8);
         transition: filter 0.2s ease;
