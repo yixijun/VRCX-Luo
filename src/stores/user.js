@@ -16,6 +16,7 @@ import { cosmeticsRequest, instanceRequest, userRequest } from '../api';
 import { AppDebug } from '../services/appConfig';
 import { database } from '../services/database';
 import { runUpdateCurrentUserLocationFlow } from '../coordinators/locationCoordinator';
+import { getProfileEditorSeed } from '../shared/utils/profileEditor';
 import { useAppearanceSettingsStore } from './settings/appearance';
 import { useFriendStore } from './friend';
 import { useInstanceStore } from './instance';
@@ -833,29 +834,7 @@ export const useUserStore = defineStore('User', () => {
             no: index + 1,
             status
         }));
-        D.status = currentUser.value.status || '';
-        D.statusDescription = currentUser.value.statusDescription || '';
-        D.pronouns = currentUser.value.pronouns || '';
-        D.bannerColor = currentUser.value.bannerColor || '';
-        D.bannerUrl = currentUser.value.bannerUrl || '';
-        D.bannerType = currentUser.value.bannerType || 'color';
-        D.iconUrl = currentUser.value.iconUrl || '';
-        D.selfProfileRef = {};
-        D.bio = '';
-        D.bioLinks = [];
-        D.themeId = '';
-        D.themes = [];
-        D.themeName = '';
-        D.themeButtonColor = '';
-        D.themeIconColor = '';
-        D.themeSubtextColor = '';
-        D.backgroundType = 'default';
-        D.backgroundTextureId = '';
-        D.backgroundGradientBottom = '';
-        D.backgroundGradientTop = '';
-        D.nameplateEffect = '';
-        D.profileEffect = '';
-        D.iconFrame = '';
+        Object.assign(D, getProfileEditorSeed(currentUser.value, userDialog.value));
         D.loading = true;
         D.visible = true;
 
@@ -863,30 +842,34 @@ export const useUserStore = defineStore('User', () => {
             .getSelfProfile()
             .then(({ json }) => {
                 const profile = json || {};
-                D.selfProfileRef = profile;
+                D.selfProfileRef = { ...D.selfProfileRef, ...profile };
                 D.status = profile.status ?? D.status;
                 D.statusDescription = profile.statusDescription ?? D.statusDescription;
                 D.pronouns = profile.pronouns ?? D.pronouns;
-                D.bio = profile.bio || '';
-                D.bioLinks = Array.isArray(profile.bioLinks) ? profile.bioLinks.slice() : [];
-                D.bannerColor = profile.bannerColor || '';
-                D.bannerUrl = profile.bannerUrl || '';
-                D.bannerType = profile.bannerType || 'color';
-                D.iconUrl = profile.userIcon || profile.iconUrl || '';
-                D.themes = Array.isArray(profile.themes) ? profile.themes : [];
-                D.themeId = profile.themeId || '';
+                D.bio = profile.bio ?? D.bio;
+                if (Array.isArray(profile.bioLinks)) {
+                    D.bioLinks = profile.bioLinks.slice();
+                }
+                D.bannerColor = profile.bannerColor ?? D.bannerColor;
+                D.bannerUrl = profile.bannerUrl ?? D.bannerUrl;
+                D.bannerType = profile.bannerType ?? D.bannerType;
+                D.iconUrl = profile.userIcon ?? profile.iconUrl ?? D.iconUrl;
+                if (Array.isArray(profile.themes)) {
+                    D.themes = profile.themes;
+                }
+                D.themeId = profile.themeId ?? D.themeId;
                 const selectedTheme = D.themes.find((theme) => theme.id === D.themeId);
-                D.themeName = selectedTheme?.name || '';
-                D.themeButtonColor = profile.themeButtonColor || selectedTheme?.buttonColor || '';
-                D.themeIconColor = profile.themeIconColor || selectedTheme?.iconColor || '';
-                D.themeSubtextColor = profile.themeSubtextColor || selectedTheme?.subtextColor || '';
-                D.backgroundType = profile.backgroundType || 'default';
-                D.backgroundTextureId = profile.backgroundTextureId || '';
-                D.backgroundGradientBottom = profile.backgroundGradientBottom || '';
-                D.backgroundGradientTop = profile.backgroundGradientTop || '';
-                D.nameplateEffect = profile.nameplateEffect || '';
-                D.profileEffect = profile.profileEffect || '';
-                D.iconFrame = profile.iconFrame || '';
+                D.themeName = selectedTheme?.name ?? D.themeName;
+                D.themeButtonColor = profile.themeButtonColor ?? selectedTheme?.buttonColor ?? D.themeButtonColor;
+                D.themeIconColor = profile.themeIconColor ?? selectedTheme?.iconColor ?? D.themeIconColor;
+                D.themeSubtextColor = profile.themeSubtextColor ?? selectedTheme?.subtextColor ?? D.themeSubtextColor;
+                D.backgroundType = profile.backgroundType ?? D.backgroundType;
+                D.backgroundTextureId = profile.backgroundTextureId ?? D.backgroundTextureId;
+                D.backgroundGradientBottom = profile.backgroundGradientBottom ?? D.backgroundGradientBottom;
+                D.backgroundGradientTop = profile.backgroundGradientTop ?? D.backgroundGradientTop;
+                D.nameplateEffect = profile.nameplateEffect ?? D.nameplateEffect;
+                D.profileEffect = profile.profileEffect ?? D.profileEffect;
+                D.iconFrame = profile.iconFrame ?? D.iconFrame;
             })
             .catch((error) => {
                 console.warn('Failed to load profile editor data:', error);

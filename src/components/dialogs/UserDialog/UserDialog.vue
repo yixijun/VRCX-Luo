@@ -113,6 +113,7 @@
         useUserStore
     } from '../../../stores';
     import { copyToClipboard } from '../../../shared/utils';
+    import { getBioEditorSeed } from '../../../shared/utils/profileEditor';
     import { formatJsonVars } from '../../../shared/utils/base/ui';
     import { miscRequest } from '../../../api';
     import { useUserDialogCommands } from './useUserDialogCommands';
@@ -530,8 +531,7 @@
      */
     function showBioDialog() {
         const D = bioDialog.value;
-        D.bio = currentUser.value.bio;
-        D.bioLinks = currentUser.value.bioLinks.slice();
+        Object.assign(D, getBioEditorSeed(currentUser.value, userDialog.value));
         D.visible = true;
     }
 

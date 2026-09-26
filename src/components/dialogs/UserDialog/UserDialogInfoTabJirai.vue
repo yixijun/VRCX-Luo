@@ -529,12 +529,14 @@
     });
     // Public profile data is fetched separately from the legacy user payload.
     // Keep the old fields as a compatibility fallback for cached responses.
-    const dialogBio = computed(
-        () => userDialog.value.publicProfileRef?.bio ?? userDialog.value.ref?.bio ?? ''
-    );
-    const dialogBioLinks = computed(
-        () => userDialog.value.publicProfileRef?.bioLinks ?? userDialog.value.ref?.bioLinks ?? []
-    );
+    const dialogBio = computed(() => {
+        const publicBio = userDialog.value.publicProfileRef?.bio;
+        return publicBio || userDialog.value.ref?.bio || '';
+    });
+    const dialogBioLinks = computed(() => {
+        const publicLinks = userDialog.value.publicProfileRef?.bioLinks;
+        return publicLinks?.length ? publicLinks : userDialog.value.ref?.bioLinks || [];
+    });
 
     const isEditNoteAndMemoDialogVisible = ref(false);
     const vrchatCredit = ref(null);

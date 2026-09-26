@@ -65,6 +65,7 @@
 
     import { getFaviconUrl } from '../../../shared/utils';
     import { userRequest } from '../../../api';
+    import { updateUserDialogProfile } from '../../../coordinators/userCoordinator';
 
     const { t } = useI18n();
     const props = defineProps({
@@ -84,7 +85,7 @@
         }
         D.loading = true;
         userRequest
-            .saveCurrentUser({
+            .saveProfile({
                 bio: D.bio,
                 bioLinks: D.bioLinks
             })
@@ -93,6 +94,7 @@
             })
             .then((args) => {
                 D.visible = false;
+                updateUserDialogProfile();
                 toast.success(t('message.user.bio_updated'));
                 return args;
             });

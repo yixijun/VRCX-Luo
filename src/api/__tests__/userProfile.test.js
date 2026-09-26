@@ -47,4 +47,19 @@ describe('user public profile request', () => {
             method: 'GET'
         });
     });
+
+    test('writes bio changes through the profile endpoint', async () => {
+        const params = { bio: 'updated bio', bioLinks: [] };
+        requestMock.mockResolvedValue({ id: 'usr_self' });
+
+        await expect(userRequest.saveProfile(params)).resolves.toEqual({
+            json: { id: 'usr_self' },
+            params
+        });
+
+        expect(requestMock).toHaveBeenCalledWith('profile/usr_self', {
+            method: 'PUT',
+            params
+        });
+    });
 });
