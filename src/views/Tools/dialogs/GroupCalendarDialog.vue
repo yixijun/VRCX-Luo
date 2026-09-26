@@ -746,6 +746,10 @@
         align-items: center;
         justify-content: space-between;
         gap: 16px;
+        /* DialogContent places its close button at top-right. Keep the
+         * calendar actions out of that hit area at every dialog width. */
+        box-sizing: border-box;
+        padding-right: 56px;
     }
 
     .calendar-header-controls {
@@ -753,7 +757,11 @@
         align-items: center;
         justify-content: flex-end;
         gap: 12px;
+        row-gap: 8px;
         min-width: 0;
+        max-width: 100%;
+        flex: 0 1 auto;
+        flex-wrap: wrap;
     }
 
     .calendar-dialog-header .dialog-title-container {
@@ -975,6 +983,7 @@
         .calendar-dialog-header {
             align-items: flex-start;
             flex-direction: column;
+            padding-right: 56px;
         }
 
         .calendar-header-controls {
