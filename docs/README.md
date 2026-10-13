@@ -9,6 +9,7 @@
 - [重构执行计划](./REFACTOR_PLAN.md)：按 Blocker / Major / Minor 划分的任务、当前状态和逐切片回滚协议。
 - [架构决策记录](./adr/README.md)：已接受和暂缓的架构决策，避免重复争论或误触多账户范围。
 - [Luo 改动清单](./JIRAI_FEATURES.md)：相对于上游的功能和改动记录。
+- [使用体验改进 Agent README](./AGENT_README.md)：基于现有功能审查的候选任务、代码入口、优先级与验收条件。
 - [多账号 V4 详细设计草案](./MULTI_ACCOUNT_V4_DETAIL_DESIGN.md)：账号会话、数据库前缀、WebSocket 和聚合视图设计。
 
 ## 数据与运行机制

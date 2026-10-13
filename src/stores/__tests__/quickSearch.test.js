@@ -33,6 +33,14 @@ vi.mock('../user', () => ({
     useUserStore: () => mocks.userStore
 }));
 
+vi.mock('../../services/database', () => ({
+    database: {
+        getRecentlyMetUsers: vi.fn().mockResolvedValue([]),
+        getRecentlyJoinedLocations: vi.fn().mockResolvedValue([]),
+        searchBiosByContent: vi.fn().mockResolvedValue([])
+    }
+}));
+
 const showUserDialog = vi.fn();
 const showAvatarDialog = vi.fn();
 const showWorldDialog = vi.fn();
@@ -171,6 +179,24 @@ describe('useQuickSearchStore', () => {
         });
 
         expect(store.friendResults).toEqual([]);
+    });
+
+    test('restores loaded recent items after clearing an active query', async () => {
+        const store = useQuickSearchStore();
+        store.recentlyMetUsers = [
+            { userId: 'usr_recent', displayName: 'Recent User' }
+        ];
+        store.recentlyJoinedLocations = [
+            { worldId: 'wrld_recent', worldName: 'Recent World' }
+        ];
+
+        store.setQuery('active');
+        await nextTick();
+        store.setQuery('');
+        await nextTick();
+
+        expect(store.recentlyMetResults).toEqual(store.recentlyMetUsers);
+        expect(store.recentBeenResults).toEqual(store.recentlyJoinedLocations);
     });
 
     test('re-dispatches search when currentUserId changes and query is active', async () => {

@@ -13,10 +13,23 @@ const mocks = vi.hoisted(() => ({
     favoriteWorldResults: { value: [] },
     ownGroupResults: { value: [] },
     joinedGroupResults: { value: [] },
+    recentlyMetResults: { value: [] },
+    recentBeenResults: { value: [] },
     hasResults: { value: false }
 }));
 
-vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
+vi.mock('pinia', async (i) => ({
+    ...(await i()),
+    storeToRefs: (s) =>
+        Object.fromEntries(
+            Object.entries(s).map(([key, value]) => [
+                key,
+                value && typeof value === 'object' && 'value' in value
+                    ? value.value
+                    : value
+            ])
+        )
+}));
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k) => k }) }));
 vi.mock('../../stores/quickSearch', () => ({
     useQuickSearchStore: () => ({
@@ -29,6 +42,8 @@ vi.mock('../../stores/quickSearch', () => ({
         favoriteWorldResults: mocks.favoriteWorldResults,
         ownGroupResults: mocks.ownGroupResults,
         joinedGroupResults: mocks.joinedGroupResults,
+        recentlyMetResults: mocks.recentlyMetResults,
+        recentBeenResults: mocks.recentBeenResults,
         hasResults: mocks.hasResults,
         selectResult: (...args) => mocks.selectResult(...args)
     })
@@ -38,6 +53,9 @@ vi.mock('../../composables/useUserDisplay', () => ({
 }));
 vi.mock('../QuickSearchSync.vue', () => ({
     default: { template: '<div data-testid="sync" />' }
+}));
+vi.mock('../UserIdentityInline.vue', () => ({
+    default: { template: '<span><slot /></span>' }
 }));
 vi.mock('@/components/ui/dialog', () => ({
     Dialog: { template: '<div><slot /></div>' },
@@ -58,7 +76,9 @@ vi.mock('@/components/ui/command', () => ({
     }
 }));
 vi.mock('lucide-vue-next', () => ({
+    Clock: { template: '<i />' },
     Globe: { template: '<i />' },
+    History: { template: '<i />' },
     Image: { template: '<i />' },
     Users: { template: '<i />' }
 }));
@@ -71,11 +91,44 @@ describe('QuickSearchDialog.vue', () => {
         mocks.query.value = '';
         mocks.hasResults.value = false;
         mocks.friendResults.value = [];
+        mocks.ownWorldResults.value = [];
+        mocks.ownGroupResults.value = [];
+        mocks.joinedGroupResults.value = [];
+        mocks.recentlyMetResults.value = [];
+        mocks.recentBeenResults.value = [];
     });
 
     it('renders search dialog structure', () => {
         const wrapper = mount(QuickSearchDialog);
         expect(wrapper.text()).toContain('side_panel.search_placeholder');
         expect(wrapper.find('[data-testid="sync"]').exists()).toBe(true);
+    });
+
+    it('renders world and group results that the store already provides', async () => {
+        mocks.query.value = 'alpha';
+        mocks.hasResults.value = true;
+        mocks.ownWorldResults.value = [
+            { id: 'wrld_1', name: 'Alpha World', imageUrl: '' }
+        ];
+        mocks.ownGroupResults.value = [
+            { id: 'grp_1', name: 'Alpha Group', imageUrl: '' }
+        ];
+        mocks.joinedGroupResults.value = [
+            { id: 'grp_2', name: 'Joined Alpha', imageUrl: '' }
+        ];
+
+        const wrapper = mount(QuickSearchDialog);
+
+        expect(wrapper.text()).toContain('Alpha World');
+        expect(wrapper.text()).toContain('Alpha Group');
+        expect(wrapper.text()).toContain('Joined Alpha');
+
+        const worldItem = wrapper
+            .findAll('button')
+            .find((button) => button.text().includes('Alpha World'));
+        await worldItem.trigger('click');
+        expect(mocks.selectResult).toHaveBeenCalledWith(
+            mocks.ownWorldResults.value[0]
+        );
     });
 });

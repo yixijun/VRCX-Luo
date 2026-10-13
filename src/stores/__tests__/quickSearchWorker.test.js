@@ -114,6 +114,43 @@ describe('quickSearchWorker message protocol', () => {
         expect(result.payload.joinedGroups).toHaveLength(0);
     });
 
+    test('normalizes bare prefix results so selecting them has a target type', async () => {
+        const harness = setupWorkerHarness();
+        await import('../quickSearchWorker.js');
+
+        harness.dispatch({
+            type: 'updateIndex',
+            payload: {
+                friends: [{ id: 'usr_1', name: 'Alice', imageUrl: '' }],
+                avatars: [],
+                worlds: [{ id: 'wrld_1', name: 'World One', imageUrl: '' }],
+                groups: [{ id: 'grp_1', name: 'Group One', imageUrl: '' }],
+                favAvatars: [],
+                favWorlds: []
+            }
+        });
+
+        for (const [query, key, type] of [
+            ['!', 'friends', 'friend'],
+            ['@', 'ownWorlds', 'world'],
+            ['#', 'ownGroups', 'group']
+        ]) {
+            harness.dispatch({
+                type: 'search',
+                payload: {
+                    seq: query.charCodeAt(0),
+                    query,
+                    currentUserId: 'usr_me',
+                    language: 'en-US'
+                }
+            });
+
+            const result = harness.sent.at(-1).payload[key];
+            expect(result).toHaveLength(1);
+            expect(result[0]).toMatchObject({ type, id: result[0].id });
+        }
+    });
+
     test('matches fuzzy names and Chinese pinyin initials', async () => {
         const harness = setupWorkerHarness();
         await import('../quickSearchWorker.js');
@@ -142,9 +179,9 @@ describe('quickSearchWorker message protocol', () => {
                 language: 'en-US'
             }
         });
-        expect(harness.sent.at(-1).payload.friends.map((item) => item.id)).toContain(
-            'u_fuzzy'
-        );
+        expect(
+            harness.sent.at(-1).payload.friends.map((item) => item.id)
+        ).toContain('u_fuzzy');
 
         harness.dispatch({
             type: 'search',
@@ -155,8 +192,8 @@ describe('quickSearchWorker message protocol', () => {
                 language: 'zh-CN'
             }
         });
-        expect(harness.sent.at(-1).payload.friends.map((item) => item.id)).toContain(
-            'u_pinyin'
-        );
+        expect(
+            harness.sent.at(-1).payload.friends.map((item) => item.id)
+        ).toContain('u_pinyin');
     });
 });

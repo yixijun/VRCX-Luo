@@ -60,7 +60,10 @@ export const useQuickSearchStore = defineStore('QuickSearch', () => {
             friendResults.value.length > 0 ||
             ownAvatarResults.value.length > 0 ||
             favoriteAvatarResults.value.length > 0 ||
+            ownWorldResults.value.length > 0 ||
             favoriteWorldResults.value.length > 0 ||
+            ownGroupResults.value.length > 0 ||
+            joinedGroupResults.value.length > 0 ||
             recentlyMetResults.value.length > 0 ||
             recentBeenResults.value.length > 0
     );
@@ -148,7 +151,7 @@ export const useQuickSearchStore = defineStore('QuickSearch', () => {
         const q = query.value;
         if (!q || q.trim().length === 0) {
             ++searchSeq;
-            clearResults();
+            clearSearchResults();
             return;
         }
         const seq = ++searchSeq;
@@ -186,7 +189,7 @@ export const useQuickSearchStore = defineStore('QuickSearch', () => {
         }
 
         query.value = '';
-        clearResults();
+        clearAllSearchData();
         stopIndexWatchers();
         disposeWorker();
     });
@@ -231,7 +234,8 @@ export const useQuickSearchStore = defineStore('QuickSearch', () => {
                     id: bio.userId,
                     name: friendCtx.name || bio.displayName,
                     type: 'friend',
-                    imageUrl: friendCtx.ref?.currentAvatarThumbnailImageUrl || '',
+                    imageUrl:
+                        friendCtx.ref?.currentAvatarThumbnailImageUrl || '',
                     memo: friendCtx.memo || '',
                     note: friendCtx.ref?.note || '',
                     bio: bio.bio || '',
@@ -247,7 +251,7 @@ export const useQuickSearchStore = defineStore('QuickSearch', () => {
         }
     }
 
-    function clearResults() {
+    function clearSearchResults() {
         friendResults.value = [];
         ownAvatarResults.value = [];
         favoriteAvatarResults.value = [];
@@ -255,10 +259,14 @@ export const useQuickSearchStore = defineStore('QuickSearch', () => {
         favoriteWorldResults.value = [];
         ownGroupResults.value = [];
         joinedGroupResults.value = [];
-        recentlyMetUsers.value = [];
-        recentlyJoinedLocations.value = [];
         recentlyMetResults.value = [];
         recentBeenResults.value = [];
+    }
+
+    function clearAllSearchData() {
+        clearSearchResults();
+        recentlyMetUsers.value = [];
+        recentlyJoinedLocations.value = [];
     }
 
     function open() {

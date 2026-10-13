@@ -136,6 +136,7 @@ let indexedWorlds = []; // { id, name, authorId, imageUrl }
 let indexedGroups = []; // { id, name, ownerId, imageUrl }
 let indexedFavAvatars = []; // { id, name, imageUrl }
 let indexedFavWorlds = []; // { id, name, imageUrl }
+const MAX_PREFIX_RESULTS = 50;
 
 /**
  * Update the search index with fresh data snapshots.
@@ -247,7 +248,6 @@ function searchFriends(query, cleanQuery, comparer, limit = 10) {
     return results;
 }
 
-
 function searchItems(
     cleanQuery,
     items,
@@ -288,6 +288,23 @@ function searchItems(
     return results;
 }
 
+function mapIndexedItems(items, type) {
+    return items.slice(0, MAX_PREFIX_RESULTS).map((ref) => ({
+        id: ref.id,
+        name: ref.name,
+        type,
+        imageUrl: ref.imageUrl || '',
+        ...(type === 'friend'
+            ? {
+                  memo: ref.memo || '',
+                  note: ref.note || '',
+                  bio: ref.bio || '',
+                  matchedField: 'name'
+              }
+            : {})
+    }));
+}
+
 function handleSearch(payload) {
     const { seq, query, currentUserId, language } = payload;
 
@@ -320,7 +337,10 @@ function handleSearch(payload) {
     if (query.startsWith('!')) {
         const q = query.slice(1);
         const cq = removeWhitespace(q);
-        const friends = !q && !cq ? Array.from(indexedFriends) : searchFriends(q, cq, comparer);
+        const friends =
+            !q && !cq
+                ? mapIndexedItems(indexedFriends, 'friend')
+                : searchFriends(q, cq, comparer);
         self.postMessage({
             type: 'searchResult',
             payload: {
@@ -340,7 +360,10 @@ function handleSearch(payload) {
     if (query.startsWith('@')) {
         const q = query.slice(1);
         const cq = removeWhitespace(q);
-        const worlds = !q && !cq ? Array.from(indexedWorlds) : searchItems(cq, indexedWorlds, 'world', comparer);
+        const worlds =
+            !q && !cq
+                ? mapIndexedItems(indexedWorlds, 'world')
+                : searchItems(cq, indexedWorlds, 'world', comparer);
         self.postMessage({
             type: 'searchResult',
             payload: {
@@ -360,7 +383,10 @@ function handleSearch(payload) {
     if (query.startsWith('#')) {
         const q = query.slice(1);
         const cq = removeWhitespace(q);
-        const users = !q && !cq ? Array.from(indexedGroups) : searchItems(cq, indexedGroups, 'group', comparer);
+        const users =
+            !q && !cq
+                ? mapIndexedItems(indexedGroups, 'group')
+                : searchItems(cq, indexedGroups, 'group', comparer);
         self.postMessage({
             type: 'searchResult',
             payload: {

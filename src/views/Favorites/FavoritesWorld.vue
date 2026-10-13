@@ -376,6 +376,7 @@
     import { useFavoritesGroupPanel } from './composables/useFavoritesGroupPanel.js';
     import { useFavoritesLocalGroups } from './composables/useFavoritesLocalGroups.js';
     import { useFavoritesSplitter } from './composables/useFavoritesSplitter.js';
+    import { filterWorldFavoriteEntries, normalizeWorldFavoriteSearch } from './worldFavoriteSearch.js';
     import {
         renameLocalWorldFavoriteGroup,
         removeLocalWorldFavorite,
@@ -525,8 +526,9 @@
     });
 
     const hasWorldSelection = computed(() => selectedFavoriteWorlds.value.length > 0);
-    const hasSearchInput = computed(() => worldFavoriteSearch.value.trim().length > 0);
-    const isSearchActive = computed(() => worldFavoriteSearch.value.trim().length >= 3);
+    const normalizedWorldFavoriteSearch = computed(() => normalizeWorldFavoriteSearch(worldFavoriteSearch.value));
+    const hasSearchInput = computed(() => normalizedWorldFavoriteSearch.value.length > 0);
+    const isSearchActive = computed(() => hasSearchInput.value);
 
     const closeWorldToolbarMenu = () => {
         worldToolbarMenuOpen.value = false;
@@ -996,28 +998,12 @@
      * @param worldFavoriteSearch
      */
     function doSearchWorldFavorites(searchInput) {
-        const search = (searchInput ?? worldFavoriteSearch.value).trim().toLowerCase();
-        if (search.length < 3) {
-            worldFavoriteSearchResults.value = [];
-            return;
-        }
-        const isTagMode = worldSearchMode.value === 'tag';
-        const filtered = searchableWorldEntries.value.filter((ref) => {
-            if (!ref || typeof ref.id === 'undefined' || typeof ref.name === 'undefined') {
-                return false;
-            }
-            if (isTagMode) {
-                if (Array.isArray(ref.tags)) {
-                    return ref.tags.some(
-                        (tag) => tag.startsWith('author_tag_') && tag.substring(11).toLowerCase().includes(search)
-                    );
-                }
-                return false;
-            }
-            const authorName = ref.authorName || '';
-            return ref.name.toLowerCase().includes(search) || authorName.toLowerCase().includes(search);
-        });
-        worldFavoriteSearchResults.value = filtered;
+        const search = searchInput ?? normalizedWorldFavoriteSearch.value;
+        worldFavoriteSearchResults.value = filterWorldFavoriteEntries(
+            searchableWorldEntries.value,
+            search,
+            worldSearchMode.value
+        );
     }
     const searchWorldFavorites = debounce(doSearchWorldFavorites, 200);
 
