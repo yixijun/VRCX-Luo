@@ -7,7 +7,7 @@
                     <span>{{ t('view.charts.two_person_relationship.shared_world_ranking') }}</span>
                     <span
                         class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
-                        {{ items.length }}
+                        {{ total || items.length }}
                     </span>
                 </DialogTitle>
             </DialogHeader>
@@ -17,7 +17,9 @@
                 data-testid="shared-world-ranking-scroll"
                 class="min-h-0 flex-1 overflow-y-auto p-2 sm:p-3"
                 @scroll.passive="handleScroll">
-                <div v-if="items.length === 0" class="px-3 py-10 text-center text-sm text-muted-foreground">
+                <div
+                    v-if="items.length === 0 && !loading"
+                    class="px-3 py-10 text-center text-sm text-muted-foreground">
                     {{ t('view.charts.two_person_relationship.no_data') }}
                 </div>
 
@@ -32,7 +34,7 @@
                             :data-index="virtualItem.index"
                             :ref="virtualizer.measureElement"
                             :style="{ transform: `translateY(${virtualItem.start}px)` }"
-                            @click="selectWorld(loadedItems[virtualItem.index])">
+                            @click="selectWorld(items[virtualItem.index])">
                             <span
                                 :class="[
                                     'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
@@ -42,19 +44,23 @@
                             </span>
 
                             <Location
-                                :location="loadedItems[virtualItem.index].worldId"
+                                :location="items[virtualItem.index].worldId"
                                 :link="false"
                                 class="min-w-0 flex-1 text-sm" />
 
                             <span class="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
                                 <span>{{
                                     t('view.charts.two_person_relationship.shared_world_ranking_visits', {
-                                        count: loadedItems[virtualItem.index].visitCount
+                                        count: items[virtualItem.index].visitCount
                                     })
                                 }}</span>
                             </span>
                         </button>
                     </template>
+                </div>
+
+                <div v-if="loading" class="px-3 py-3 text-center text-xs text-muted-foreground">
+                    {{ t('view.friends_locations.loading_more') }}
                 </div>
             </div>
         </DialogContent>
@@ -74,42 +80,45 @@
         items: {
             type: Array,
             default: () => []
+        },
+        total: {
+            type: Number,
+            default: 0
+        },
+        hasMore: {
+            type: Boolean,
+            default: false
+        },
+        loading: {
+            type: Boolean,
+            default: false
         }
     });
 
     const isOpen = defineModel('open', { type: Boolean, default: false });
-    const emit = defineEmits(['select']);
+    const emit = defineEmits(['select', 'load-more']);
     const { t } = useI18n();
     const scrollViewportRef = ref(null);
-    const loadedCount = ref(0);
-    const INITIAL_PAGE_SIZE = 30;
     const LOAD_AHEAD_PX = 260;
-
-    const loadedItems = computed(() => props.items.slice(0, loadedCount.value));
-
-    function resetLoadedItems() {
-        loadedCount.value = Math.min(INITIAL_PAGE_SIZE, props.items.length);
-    }
-
-    function loadMoreItems() {
-        if (loadedCount.value >= props.items.length) return;
-        loadedCount.value = Math.min(loadedCount.value + INITIAL_PAGE_SIZE, props.items.length);
-    }
 
     function handleScroll(event) {
         const element = event.currentTarget;
         if (!element) return;
-        if (element.scrollTop + element.clientHeight >= element.scrollHeight - LOAD_AHEAD_PX) {
-            loadMoreItems();
+        if (
+            props.hasMore &&
+            !props.loading &&
+            element.scrollTop + element.clientHeight >= element.scrollHeight - LOAD_AHEAD_PX
+        ) {
+            emit('load-more');
         }
     }
 
     const virtualizer = useVirtualizer(
         computed(() => ({
-            count: loadedItems.value.length,
+            count: props.items.length,
             getScrollElement: () => scrollViewportRef.value,
             estimateSize: () => 52,
-            getItemKey: (index) => loadedItems.value[index]?.worldId ?? index,
+            getItemKey: (index) => props.items[index]?.worldId ?? index,
             overscan: 6
         }))
     );
@@ -122,7 +131,6 @@
     watch(
         [() => props.items, isOpen],
         () => {
-            resetLoadedItems();
             nextTick(() => virtualizer.value?.measure?.());
         },
         { immediate: true }

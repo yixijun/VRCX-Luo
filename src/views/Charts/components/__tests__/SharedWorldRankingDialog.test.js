@@ -62,7 +62,8 @@ describe('SharedWorldRankingDialog.vue', () => {
     test('only mounts the visible ranking rows for a large result set', () => {
         const wrapper = mount(SharedWorldRankingDialog, {
             props: {
-                items: makeItems(502),
+                items: makeItems(30),
+                total: 502,
                 open: true
             }
         });
@@ -78,7 +79,9 @@ describe('SharedWorldRankingDialog.vue', () => {
     test('loads another page when scrolling near the end', async () => {
         const wrapper = mount(SharedWorldRankingDialog, {
             props: {
-                items: makeItems(502),
+                items: makeItems(30),
+                total: 502,
+                hasMore: true,
                 open: true
             }
         });
@@ -94,6 +97,6 @@ describe('SharedWorldRankingDialog.vue', () => {
 
         await scrollViewport.trigger('scroll');
 
-        expect(virtualizerHarness.optionsRef.value.count).toBe(60);
+        expect(wrapper.emitted('load-more')).toHaveLength(1);
     });
 });

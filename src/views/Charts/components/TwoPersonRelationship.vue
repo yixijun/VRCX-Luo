@@ -190,11 +190,11 @@
                             variant="outline"
                             size="sm"
                             class="ml-auto shrink-0 gap-1.5 rounded-lg"
-                            @click="isSharedWorldRankingOpen = true">
+                            @click="openSharedWorldRanking">
                             <MapPin class="size-3.5" />
                             <span>{{ t('view.charts.two_person_relationship.shared_world_ranking') }}</span>
                             <span class="text-xs text-muted-foreground tabular-nums">{{
-                                sharedWorldRanking.length
+                                sharedWorldRankingTotal || sharedWorldRanking.length
                             }}</span>
                         </Button>
                     </TooltipWrapper>
@@ -202,7 +202,11 @@
 
                 <SharedWorldRankingDialog
                     v-model:open="isSharedWorldRankingOpen"
-                    :items="sharedWorldRanking"
+                    :items="sharedWorldRankingItems"
+                    :total="sharedWorldRankingTotal"
+                    :has-more="sharedWorldRankingHasMore"
+                    :loading="sharedWorldRankingLoading"
+                    @load-more="loadMoreSharedWorldRanking"
                     @select="openInstanceDialog" />
 
                 <div
@@ -370,6 +374,13 @@
     const maxPlayerCountMap = ref(new Map());
     const showSelfPresence = ref(false);
     const isSharedWorldRankingOpen = ref(false);
+    const sharedWorldRankingItems = ref([]);
+    const sharedWorldRankingTotal = ref(0);
+    const sharedWorldRankingHasMore = ref(false);
+    const sharedWorldRankingLoading = ref(false);
+    const sharedWorldRankingLoadedKey = ref(null);
+    const SHARED_WORLD_RANKING_PAGE_SIZE = 30;
+    let sharedWorldRankingRequestId = 0;
 
     const appearanceStore = useAppearanceSettingsStore();
     const { dtHour12 } = storeToRefs(appearanceStore);
@@ -555,6 +566,81 @@
     const sharedRoomVisitCount = computed(() => countSharedRoomVisits(sharedInstances.value));
     const sharedWorldRanking = computed(() => buildSharedWorldRanking(sharedInstances.value));
 
+    function getSharedWorldRankingPairKey() {
+        if (!selectedFriendAId.value || !selectedFriendBId.value) return null;
+        return `${selectedFriendAId.value}:${selectedFriendBId.value}`;
+    }
+
+    function resetSharedWorldRanking() {
+        sharedWorldRankingRequestId += 1;
+        sharedWorldRankingItems.value = [];
+        sharedWorldRankingTotal.value = 0;
+        sharedWorldRankingHasMore.value = false;
+        sharedWorldRankingLoading.value = false;
+        sharedWorldRankingLoadedKey.value = null;
+    }
+
+    async function loadSharedWorldRankingPage(reset = false) {
+        const pairKey = getSharedWorldRankingPairKey();
+        if (!pairKey || sharedWorldRankingLoading.value) return;
+
+        const offset = reset ? 0 : sharedWorldRankingItems.value.length;
+        const requestId = ++sharedWorldRankingRequestId;
+        sharedWorldRankingLoading.value = true;
+        try {
+            const page = await database.getCoInstanceWorldRankingPageBetweenFriends(
+                selectedFriendAId.value,
+                selectedFriendBId.value,
+                SHARED_WORLD_RANKING_PAGE_SIZE,
+                offset
+            );
+            if (requestId !== sharedWorldRankingRequestId || pairKey !== getSharedWorldRankingPairKey()) {
+                return;
+            }
+
+            sharedWorldRankingItems.value = reset ? page.items : [...sharedWorldRankingItems.value, ...page.items];
+            if (page.total > 0 || reset) {
+                sharedWorldRankingTotal.value = page.total;
+            }
+            sharedWorldRankingHasMore.value = page.hasMore;
+            sharedWorldRankingLoadedKey.value = pairKey;
+        } catch (error) {
+            if (requestId === sharedWorldRankingRequestId) {
+                console.error('Error loading shared world ranking:', error);
+                sharedWorldRankingHasMore.value = false;
+            }
+        } finally {
+            if (requestId === sharedWorldRankingRequestId) {
+                sharedWorldRankingLoading.value = false;
+            }
+        }
+    }
+
+    function openSharedWorldRanking() {
+        const pairKey = getSharedWorldRankingPairKey();
+        if (!pairKey) return;
+        isSharedWorldRankingOpen.value = true;
+        if (sharedWorldRankingLoadedKey.value !== pairKey) {
+            // The summary is already available for the current pair. Reuse its
+            // first page so opening the dialog stays instant; later pages are
+            // fetched from the database as the user scrolls.
+            sharedWorldRankingItems.value = sharedWorldRanking.value.slice(
+                0,
+                SHARED_WORLD_RANKING_PAGE_SIZE
+            );
+            sharedWorldRankingTotal.value = sharedWorldRanking.value.length;
+            sharedWorldRankingHasMore.value =
+                sharedWorldRankingItems.value.length < sharedWorldRankingTotal.value;
+            sharedWorldRankingLoadedKey.value = pairKey;
+        }
+    }
+
+    function loadMoreSharedWorldRanking() {
+        if (sharedWorldRankingHasMore.value && !sharedWorldRankingLoading.value) {
+            loadSharedWorldRankingPage();
+        }
+    }
+
     async function loadData() {
         if (!selectedFriendAId.value || !selectedFriendBId.value) return;
         isLoading.value = true;
@@ -588,6 +674,7 @@
 
     function handleFriendASelect(friendId) {
         selectedFriendAId.value = friendId || null;
+        resetSharedWorldRanking();
         rawResults.value = [];
         selfPresenceMap.value = new Map();
         maxPlayerCountMap.value = new Map();
@@ -598,6 +685,7 @@
 
     function handleFriendBSelect(friendId) {
         selectedFriendBId.value = friendId || null;
+        resetSharedWorldRanking();
         rawResults.value = [];
         selfPresenceMap.value = new Map();
         maxPlayerCountMap.value = new Map();
@@ -610,6 +698,7 @@
         const tmp = selectedFriendAId.value;
         selectedFriendAId.value = selectedFriendBId.value;
         selectedFriendBId.value = tmp;
+        resetSharedWorldRanking();
         rawResults.value = [];
         selfPresenceMap.value = new Map();
         maxPlayerCountMap.value = new Map();

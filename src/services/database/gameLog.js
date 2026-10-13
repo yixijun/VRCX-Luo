@@ -1642,6 +1642,192 @@ const gameLog = {
     },
 
     /**
+     * Get a paged world ranking for the shared instances of two friends.
+     *
+     * The aggregation happens in SQLite so the renderer receives only one
+     * page of world-level rows instead of the full instance history.
+     * @param {string} friendAUserId - The first friend's user ID
+     * @param {string} friendBUserId - The second friend's user ID
+     * @param {number} limit - Number of worlds to return
+     * @param {number} offset - Number of worlds to skip
+     * @returns {Promise<{items: Array<{worldId: string, latestLocation: string, visitCount: number, totalCoexistenceTime: number}>, total: number, hasMore: boolean}>}
+     */
+    async getCoInstanceWorldRankingPageBetweenFriends(
+        friendAUserId,
+        friendBUserId,
+        limit = 30,
+        offset = 0
+    ) {
+        const pageLimit = Math.min(Math.max(Number(limit) || 30, 1), 100);
+        const pageOffset = Math.max(Number(offset) || 0, 0);
+        const items = [];
+        let total = 0;
+
+        await sqliteService.execute(
+            (row) => {
+                const rowTotal = Number(row[4]);
+                if (Number.isFinite(rowTotal)) {
+                    total = rowTotal;
+                }
+                items.push({
+                    worldId: row[0],
+                    latestLocation: row[1],
+                    visitCount: Number(row[2]) || 0,
+                    totalCoexistenceTime: Number(row[3]) || 0
+                });
+            },
+            `WITH direct_sessions AS (
+                SELECT
+                    a.location,
+                    a.created_at AS friend_a_leave,
+                    a.time AS friend_a_time,
+                    b.created_at AS friend_b_leave,
+                    b.time AS friend_b_time
+                FROM gamelog_join_leave a
+                INNER JOIN gamelog_join_leave b
+                    ON a.location = b.location
+                WHERE a.type = 'OnPlayerLeft'
+                    AND b.type = 'OnPlayerLeft'
+                    AND a.user_id = @friendAUserId
+                    AND b.user_id = @friendBUserId
+                    AND a.location NOT IN ('', 'traveling', 'private', 'private:private')
+                    AND b.location NOT IN ('', 'traveling', 'private', 'private:private')
+                    AND a.time > 0
+                    AND b.time > 0
+                    AND strftime('%Y-%m-%dT%H:%M:%SZ', a.created_at, '-' || (a.time * 1.0 / 1000) || ' seconds') < b.created_at
+                    AND strftime('%Y-%m-%dT%H:%M:%SZ', b.created_at, '-' || (b.time * 1.0 / 1000) || ' seconds') < a.created_at
+            ),
+            friend_a_inferred AS (
+                SELECT location, created_at, time
+                FROM (
+                    SELECT previous_location AS location, created_at, time
+                    FROM ${dbVars.userPrefix}_feed_gps
+                    WHERE user_id = @friendAUserId
+                        AND previous_location NOT IN ('', 'offline', 'traveling', 'private', 'private:private')
+                        AND time > 0
+                    UNION ALL
+                    SELECT location, created_at, time
+                    FROM ${dbVars.userPrefix}_feed_online_offline
+                    WHERE user_id = @friendAUserId
+                        AND type = 'Offline'
+                        AND location NOT IN ('', 'offline', 'traveling', 'private', 'private:private')
+                        AND time > 0
+                )
+            ),
+            friend_b_inferred AS (
+                SELECT location, created_at, time
+                FROM (
+                    SELECT previous_location AS location, created_at, time
+                    FROM ${dbVars.userPrefix}_feed_gps
+                    WHERE user_id = @friendBUserId
+                        AND previous_location NOT IN ('', 'offline', 'traveling', 'private', 'private:private')
+                        AND time > 0
+                    UNION ALL
+                    SELECT location, created_at, time
+                    FROM ${dbVars.userPrefix}_feed_online_offline
+                    WHERE user_id = @friendBUserId
+                        AND type = 'Offline'
+                        AND location NOT IN ('', 'offline', 'traveling', 'private', 'private:private')
+                        AND time > 0
+                )
+            ),
+            inferred_sessions AS (
+                SELECT
+                    a.location,
+                    a.created_at AS friend_a_leave,
+                    a.time AS friend_a_time,
+                    b.created_at AS friend_b_leave,
+                    b.time AS friend_b_time
+                FROM friend_a_inferred a
+                INNER JOIN friend_b_inferred b
+                    ON a.location = b.location
+                WHERE strftime('%s', a.created_at) * 1000 - a.time < strftime('%s', b.created_at) * 1000
+                    AND strftime('%s', b.created_at) * 1000 - b.time < strftime('%s', a.created_at) * 1000
+            ),
+            all_sessions AS (
+                SELECT location, friend_a_leave, friend_a_time, friend_b_leave, friend_b_time
+                FROM direct_sessions
+                UNION
+                SELECT location, friend_a_leave, friend_a_time, friend_b_leave, friend_b_time
+                FROM inferred_sessions
+            ),
+            session_times AS (
+                SELECT
+                    location,
+                    friend_a_leave,
+                    MIN(
+                        strftime('%s', friend_a_leave) * 1000,
+                        strftime('%s', friend_b_leave) * 1000
+                    ) AS overlap_end_ms,
+                    MAX(
+                        strftime('%s', friend_a_leave) * 1000 - friend_a_time,
+                        strftime('%s', friend_b_leave) * 1000 - friend_b_time
+                    ) AS overlap_start_ms
+                FROM all_sessions
+                WHERE instr(location, ':') > 0
+            ),
+            scored_sessions AS (
+                SELECT
+                    location,
+                    substr(location, 1, instr(location, ':') - 1) AS world_id,
+                    friend_a_leave,
+                    CASE
+                        WHEN overlap_end_ms > overlap_start_ms
+                        THEN overlap_end_ms - overlap_start_ms
+                        ELSE 0
+                    END AS coexistence_time
+                FROM session_times
+            ),
+            worlds AS (
+                SELECT
+                    world_id,
+                    COUNT(*) AS visit_count,
+                    SUM(coexistence_time) AS total_coexistence_time,
+                    MAX(friend_a_leave) AS latest_visited_at,
+                    COUNT(*) OVER () AS total_count
+                FROM scored_sessions
+                GROUP BY world_id
+            ),
+            latest_locations AS (
+                SELECT
+                    world_id,
+                    location,
+                    ROW_NUMBER() OVER (
+                        PARTITION BY world_id
+                        ORDER BY friend_a_leave DESC
+                    ) AS row_number
+                FROM scored_sessions
+            )
+            SELECT
+                worlds.world_id,
+                latest_locations.location,
+                worlds.visit_count,
+                worlds.total_coexistence_time,
+                worlds.total_count
+            FROM worlds
+            INNER JOIN latest_locations
+                ON latest_locations.world_id = worlds.world_id
+                AND latest_locations.row_number = 1
+            ORDER BY worlds.visit_count DESC,
+                worlds.total_coexistence_time DESC,
+                worlds.latest_visited_at DESC
+            LIMIT @limit OFFSET @offset`,
+            {
+                '@friendAUserId': friendAUserId,
+                '@friendBUserId': friendBUserId,
+                '@limit': pageLimit,
+                '@offset': pageOffset
+            }
+        );
+
+        return {
+            items,
+            total,
+            hasMore: pageOffset + items.length < total
+        };
+    },
+
+    /**
      * Get self (current user) presence records for a list of locations.
      * Returns a map from location → array of { selfLeave: string, selfTime: number }.
      * @param {string} userId - The current user's ID

@@ -174,6 +174,69 @@ describe('gameLog.getCoInstanceHistoryBetweenFriends', () => {
     });
 });
 
+describe('gameLog.getCoInstanceWorldRankingPageBetweenFriends', () => {
+    beforeEach(() => {
+        mocks.execute.mockReset();
+    });
+
+    test('returns one database-ranked page and pagination metadata', async () => {
+        mocks.execute.mockImplementation(async (callback, sql, params) => {
+            callback(['wrld_top', 'wrld_top:123~region(us)', 12, 540000, 42]);
+            callback(['wrld_next', 'wrld_next:456~region(us)', 8, 360000, 42]);
+            expect(sql).toContain('LIMIT @limit OFFSET @offset');
+            expect(sql).toContain('COUNT(*) OVER () AS total_count');
+            expect(params).toMatchObject({
+                '@friendAUserId': 'usr_a',
+                '@friendBUserId': 'usr_b',
+                '@limit': 30,
+                '@offset': 30
+            });
+        });
+
+        await expect(
+            gameLog.getCoInstanceWorldRankingPageBetweenFriends(
+                'usr_a',
+                'usr_b',
+                30,
+                30
+            )
+        ).resolves.toEqual({
+            items: [
+                {
+                    worldId: 'wrld_top',
+                    latestLocation: 'wrld_top:123~region(us)',
+                    visitCount: 12,
+                    totalCoexistenceTime: 540000
+                },
+                {
+                    worldId: 'wrld_next',
+                    latestLocation: 'wrld_next:456~region(us)',
+                    visitCount: 8,
+                    totalCoexistenceTime: 360000
+                }
+            ],
+            total: 42,
+            hasMore: true
+        });
+    });
+
+    test('normalizes unsafe page sizes and offsets', async () => {
+        mocks.execute.mockResolvedValue(undefined);
+
+        await gameLog.getCoInstanceWorldRankingPageBetweenFriends(
+            'usr_a',
+            'usr_b',
+            0,
+            -20
+        );
+
+        expect(mocks.execute.mock.calls[0][2]).toMatchObject({
+            '@limit': 30,
+            '@offset': 0
+        });
+    });
+});
+
 describe('gameLog.getMyTopWorlds', () => {
     beforeEach(() => {
         mocks.execute.mockReset();
