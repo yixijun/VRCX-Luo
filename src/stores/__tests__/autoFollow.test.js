@@ -83,9 +83,9 @@ globalThis.AppApi = {
 
 import { useAutoFollowStore } from '../autoFollow';
 
-function friend(location = 'wrld_target:2') {
+function friend(location = 'wrld_target:2', id = 'usr_friend') {
     return {
-        id: 'usr_friend',
+        id,
         displayName: 'Friend',
         location
     };
@@ -110,6 +110,9 @@ describe('useAutoFollowStore', () => {
         mocks.launchGame.mockClear();
         mocks.tryOpenInstanceInVrc.mockClear();
         mocks.quitGame.mockClear();
+        AppApi.IsGameRunning = () => Promise.resolve(mocks.isGameRunning);
+        AppApi.IsSteamVRRunning = () => Promise.resolve(mocks.isSteamVRRunning);
+        AppApi.QuitGame = (...args) => mocks.quitGame(...args);
     });
 
     it('starts listening without launching when already in the same instance', async () => {
@@ -131,7 +134,11 @@ describe('useAutoFollowStore', () => {
         await store.startFollow(friend(), { confirm: true, initialJoin: true });
 
         expect(mocks.quitGame).toHaveBeenCalledTimes(1);
-        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, true);
+        expect(mocks.launchGame).toHaveBeenCalledWith(
+            'wrld_target:2',
+            null,
+            true
+        );
         expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
     });
 
@@ -142,7 +149,11 @@ describe('useAutoFollowStore', () => {
         await store.startFollow(friend(), { confirm: true, initialJoin: true });
 
         expect(mocks.quitGame).toHaveBeenCalledTimes(1);
-        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, true);
+        expect(mocks.launchGame).toHaveBeenCalledWith(
+            'wrld_target:2',
+            null,
+            true
+        );
         expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
     });
 
@@ -154,7 +165,11 @@ describe('useAutoFollowStore', () => {
         await store.startFollow(friend(), { confirm: true, initialJoin: true });
 
         expect(store.launchMode).toBe('vr');
-        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, false);
+        expect(mocks.launchGame).toHaveBeenCalledWith(
+            'wrld_target:2',
+            null,
+            false
+        );
         expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
         expect(mocks.quitGame).not.toHaveBeenCalled();
     });
@@ -167,7 +182,11 @@ describe('useAutoFollowStore', () => {
         await store.startFollow(friend(), { confirm: true, initialJoin: true });
 
         expect(store.launchMode).toBe('vr');
-        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, false);
+        expect(mocks.launchGame).toHaveBeenCalledWith(
+            'wrld_target:2',
+            null,
+            false
+        );
     });
 
     it('auto-detects VR launch when VRChat is running in VR mode', async () => {
@@ -177,7 +196,10 @@ describe('useAutoFollowStore', () => {
         await store.startFollow(friend(), { confirm: true, initialJoin: true });
 
         expect(store.launchMode).toBe('vr');
-        expect(mocks.tryOpenInstanceInVrc).toHaveBeenCalledWith('wrld_target:2', null);
+        expect(mocks.tryOpenInstanceInVrc).toHaveBeenCalledWith(
+            'wrld_target:2',
+            null
+        );
         expect(mocks.launchGame).not.toHaveBeenCalled();
         expect(mocks.quitGame).not.toHaveBeenCalled();
     });
@@ -187,10 +209,18 @@ describe('useAutoFollowStore', () => {
         mocks.isSteamVRRunning = true;
         const store = useAutoFollowStore();
 
-        await store.startFollow(friend(), { confirm: true, initialJoin: true, launchMode: 'desktop' });
+        await store.startFollow(friend(), {
+            confirm: true,
+            initialJoin: true,
+            launchMode: 'desktop'
+        });
 
         expect(mocks.quitGame).toHaveBeenCalledTimes(1);
-        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_target:2', null, true);
+        expect(mocks.launchGame).toHaveBeenCalledWith(
+            'wrld_target:2',
+            null,
+            true
+        );
         expect(mocks.tryOpenInstanceInVrc).not.toHaveBeenCalled();
     });
 
@@ -216,9 +246,16 @@ describe('useAutoFollowStore', () => {
         mocks.isGameNoVR = false;
         const store = useAutoFollowStore();
 
-        await store.startFollow(friend(), { confirm: true, initialJoin: true, launchMode: 'vr' });
+        await store.startFollow(friend(), {
+            confirm: true,
+            initialJoin: true,
+            launchMode: 'vr'
+        });
 
-        expect(mocks.tryOpenInstanceInVrc).toHaveBeenCalledWith('wrld_target:2', null);
+        expect(mocks.tryOpenInstanceInVrc).toHaveBeenCalledWith(
+            'wrld_target:2',
+            null
+        );
         expect(mocks.launchGame).not.toHaveBeenCalled();
         expect(mocks.quitGame).not.toHaveBeenCalled();
     });
@@ -233,7 +270,11 @@ describe('useAutoFollowStore', () => {
             }
         };
 
-        await store.startFollow(target, { confirm: true, initialJoin: true, launchMode: 'vr' });
+        await store.startFollow(target, {
+            confirm: true,
+            initialJoin: true,
+            launchMode: 'vr'
+        });
 
         expect(mocks.tryOpenInstanceInVrc).toHaveBeenCalledWith(
             'wrld_target:2~friends(usr_owner)',
@@ -243,7 +284,10 @@ describe('useAutoFollowStore', () => {
 
     it('confirms before stopping the current target', async () => {
         const store = useAutoFollowStore();
-        await store.startFollow(friend(), { confirm: false, initialJoin: false });
+        await store.startFollow(friend(), {
+            confirm: false,
+            initialJoin: false
+        });
 
         await store.toggleFollow(friend());
 
@@ -274,7 +318,11 @@ describe('useAutoFollowStore', () => {
 
         expect(store.isActive).toBe(true);
         expect(mocks.quitGame).toHaveBeenCalledTimes(1);
-        expect(mocks.launchGame).toHaveBeenCalledWith('wrld_returned:5', null, true);
+        expect(mocks.launchGame).toHaveBeenCalledWith(
+            'wrld_returned:5',
+            null,
+            true
+        );
     });
 
     it('re-detects launch mode when the followed target changes rooms', async () => {
@@ -293,5 +341,121 @@ describe('useAutoFollowStore', () => {
         expect(store.launchMode).toBe('vr');
         expect(mocks.launchGame).toHaveBeenCalledWith('wrld_vr:7', null, false);
         expect(mocks.quitGame).not.toHaveBeenCalled();
+    });
+
+    it('invalidates a pending join when automatic follow is stopped', async () => {
+        let releaseRuntime;
+        const runtimeReady = new Promise((resolve) => {
+            releaseRuntime = resolve;
+        });
+        AppApi.IsGameRunning = () => runtimeReady;
+
+        const store = useAutoFollowStore();
+        const startPromise = store.startFollow(friend(), {
+            confirm: false,
+            initialJoin: true,
+            launchMode: 'desktop'
+        });
+        await flushPromises();
+
+        expect(store.isJoining).toBe(true);
+        await store.stopFollow({ confirm: false });
+        expect(store.isActive).toBe(false);
+
+        releaseRuntime(true);
+        await startPromise;
+        await flushPromises();
+
+        expect(mocks.quitGame).not.toHaveBeenCalled();
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+        expect(store.isJoining).toBe(false);
+    });
+
+    it('keeps only the latest room while a join is in progress', async () => {
+        const target = reactive(friend('wrld_target:2'));
+        mocks.friends.set(target.id, { ref: target });
+
+        let releaseFirstLaunch;
+        let launchCount = 0;
+        mocks.launchGame.mockImplementation((location) => {
+            launchCount += 1;
+            if (launchCount === 1) {
+                return new Promise((resolve) => {
+                    releaseFirstLaunch = resolve;
+                });
+            }
+            return Promise.resolve(true);
+        });
+
+        const store = useAutoFollowStore();
+        const startPromise = store.startFollow(target, {
+            confirm: false,
+            initialJoin: true,
+            launchMode: 'desktop'
+        });
+        await flushPromises();
+
+        expect(mocks.launchGame).toHaveBeenCalledWith(
+            'wrld_target:2',
+            null,
+            true
+        );
+        target.location = 'wrld_next:3';
+        await nextTick();
+        target.location = 'wrld_latest:4';
+        await nextTick();
+        await flushPromises();
+
+        releaseFirstLaunch(true);
+        await startPromise;
+        await flushPromises();
+
+        expect(
+            mocks.launchGame.mock.calls.map(([location]) => location)
+        ).toEqual(['wrld_target:2', 'wrld_latest:4']);
+    });
+
+    it('invalidates the old target when switching followed friends during a join', async () => {
+        let releaseFirstRead;
+        let isFirstRead = true;
+        const firstRuntimeRead = new Promise((resolve) => {
+            releaseFirstRead = resolve;
+        });
+        AppApi.IsGameRunning = () => {
+            if (isFirstRead) {
+                isFirstRead = false;
+                return firstRuntimeRead;
+            }
+            return Promise.resolve(true);
+        };
+
+        const firstTarget = reactive(friend('wrld_first:2'));
+        const secondTarget = reactive(friend('wrld_second:3', 'usr_other'));
+        mocks.friends.set(firstTarget.id, { ref: firstTarget });
+        mocks.friends.set(secondTarget.id, { ref: secondTarget });
+
+        const store = useAutoFollowStore();
+        const firstStart = store.startFollow(firstTarget, {
+            confirm: false,
+            initialJoin: true,
+            launchMode: 'desktop'
+        });
+        await flushPromises();
+
+        const secondStart = store.startFollow(secondTarget, {
+            confirm: false,
+            initialJoin: true,
+            launchMode: 'desktop'
+        });
+        await flushPromises();
+        expect(store.targetFriendId).toBe('usr_other');
+
+        releaseFirstRead(true);
+        await Promise.all([firstStart, secondStart]);
+        await flushPromises();
+
+        expect(
+            mocks.launchGame.mock.calls.map(([location]) => location)
+        ).toEqual(['wrld_second:3']);
     });
 });

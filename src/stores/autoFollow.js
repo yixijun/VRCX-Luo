@@ -13,7 +13,12 @@ import { parseLocation } from '../shared/utils/locationParser';
 const JOIN_COOLDOWN_MS = 15_000;
 
 function getFollowTarget(friendRef) {
-    const location = friendRef?.travelingToLocation || friendRef?.$travelingToLocation || friendRef?.location || friendRef?.$locationTag || '';
+    const location =
+        friendRef?.travelingToLocation ||
+        friendRef?.$travelingToLocation ||
+        friendRef?.location ||
+        friendRef?.$locationTag ||
+        '';
     if (!isRealInstance(location)) {
         return {
             location: '',
@@ -24,7 +29,12 @@ function getFollowTarget(friendRef) {
     const locationInfo = friendRef?.$location || {};
     return {
         location,
-        shortName: parsedLocation.shortName || locationInfo.shortName || friendRef?.shortName || friendRef?.secureName || ''
+        shortName:
+            parsedLocation.shortName ||
+            locationInfo.shortName ||
+            friendRef?.shortName ||
+            friendRef?.secureName ||
+            ''
     };
 }
 
@@ -38,7 +48,9 @@ function sameInstance(a, b) {
     }
     const left = parseLocation(a);
     const right = parseLocation(b);
-    return left.worldId === right.worldId && left.instanceId === right.instanceId;
+    return (
+        left.worldId === right.worldId && left.instanceId === right.instanceId
+    );
 }
 
 export const useAutoFollowStore = defineStore('AutoFollow', () => {
@@ -54,12 +66,16 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
     let unwatchFriend = null;
     let lastJoinLocation = '';
     let lastJoinAt = 0;
+    let joinEpoch = 0;
+    let pendingJoin = null;
 
     const activeLabel = computed(() => {
         if (!isActive.value) {
             return '自动跟随';
         }
-        return targetFriendName.value ? `跟随中：${targetFriendName.value}` : '跟随中';
+        return targetFriendName.value
+            ? `跟随中：${targetFriendName.value}`
+            : '跟随中';
     });
 
     function cleanupWatcher() {
@@ -85,7 +101,9 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
             return false;
         }
         const now = Date.now();
-        return location !== lastJoinLocation || now - lastJoinAt > JOIN_COOLDOWN_MS;
+        return (
+            location !== lastJoinLocation || now - lastJoinAt > JOIN_COOLDOWN_MS
+        );
     }
 
     async function readRuntimeState() {
@@ -123,48 +141,148 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         return 'desktop';
     }
 
+    function isJoinCurrent(epoch) {
+        return isActive.value && epoch === joinEpoch;
+    }
+
+    async function processJoin(request) {
+        const launchStore = useLaunchStore();
+        const locationStore = useLocationStore();
+        let current = request;
+        let result = false;
+
+        try {
+            while (current) {
+                const epoch = current.epoch;
+                if (!isJoinCurrent(epoch)) {
+                    break;
+                }
+                if (
+                    sameInstance(
+                        current.location,
+                        locationStore.lastLocation.location
+                    )
+                ) {
+                    statusText.value = '已在同一房间，正在监听好友位置变化';
+                    current = pendingJoin;
+                    pendingJoin = null;
+                    continue;
+                }
+                if (!canJoinNow(current.location)) {
+                    current = pendingJoin;
+                    pendingJoin = null;
+                    continue;
+                }
+
+                lastJoinLocation = current.location;
+                lastJoinAt = Date.now();
+                statusText.value =
+                    current.reason === 'changed'
+                        ? '好友切换房间，正在跟随'
+                        : '正在加入好友所在房间';
+
+                try {
+                    const runtimeState = await readRuntimeState();
+                    if (!isJoinCurrent(epoch)) {
+                        result = false;
+                    } else {
+                        const mode =
+                            preferredLaunchMode.value ||
+                            (await resolveLaunchMode());
+                        if (!isJoinCurrent(epoch)) {
+                            result = false;
+                        } else {
+                            launchMode.value = mode;
+                            if (mode === 'vr') {
+                                if (runtimeState.isGameRunning) {
+                                    if (!isJoinCurrent(epoch)) {
+                                        result = false;
+                                    } else {
+                                        await launchStore.tryOpenInstanceInVrc(
+                                            current.location,
+                                            current.shortName || null
+                                        );
+                                        result = true;
+                                    }
+                                } else if (isJoinCurrent(epoch)) {
+                                    await launchStore.launchGame(
+                                        current.location,
+                                        current.shortName || null,
+                                        false
+                                    );
+                                    result = true;
+                                }
+                            } else if (runtimeState.isGameRunning) {
+                                if (isJoinCurrent(epoch)) {
+                                    await AppApi.QuitGame();
+                                }
+                                if (isJoinCurrent(epoch)) {
+                                    await launchStore.launchGame(
+                                        current.location,
+                                        current.shortName || null,
+                                        true
+                                    );
+                                    result = true;
+                                }
+                            } else if (isJoinCurrent(epoch)) {
+                                await launchStore.launchGame(
+                                    current.location,
+                                    current.shortName || null,
+                                    true
+                                );
+                                result = true;
+                            }
+                        }
+                    }
+                } catch (err) {
+                    if (isJoinCurrent(epoch)) {
+                        console.error('Auto follow failed', err);
+                        toast.error('自动跟随失败');
+                    }
+                    result = false;
+                }
+
+                if (!isActive.value) {
+                    break;
+                }
+                current = pendingJoin;
+                pendingJoin = null;
+            }
+        } finally {
+            isJoining.value = false;
+        }
+
+        return result;
+    }
+
     async function runJoin(location, reason = 'manual', shortName = '') {
-        if (!isRealInstance(location) || isJoining.value || !canJoinNow(location)) {
+        if (!isRealInstance(location) || !isActive.value) {
             return false;
         }
 
-        const launchStore = useLaunchStore();
-        const locationStore = useLocationStore();
+        if (isJoining.value) {
+            pendingJoin = {
+                location,
+                reason,
+                shortName,
+                epoch: joinEpoch
+            };
+            targetLocation.value = location;
+            return false;
+        }
 
+        const locationStore = useLocationStore();
         if (sameInstance(location, locationStore.lastLocation.location)) {
             statusText.value = '已在同一房间，正在监听好友位置变化';
             return true;
         }
 
-        isJoining.value = true;
-        lastJoinLocation = location;
-        lastJoinAt = Date.now();
-        statusText.value = reason === 'changed' ? '好友切换房间，正在跟随' : '正在加入好友所在房间';
-
-        try {
-            const runtimeState = await readRuntimeState();
-            const mode = preferredLaunchMode.value || (await resolveLaunchMode());
-            launchMode.value = mode;
-            if (mode === 'vr') {
-                if (runtimeState.isGameRunning) {
-                    await launchStore.tryOpenInstanceInVrc(location, shortName || null);
-                } else {
-                    await launchStore.launchGame(location, shortName || null, false);
-                }
-            } else {
-                if (runtimeState.isGameRunning) {
-                    await AppApi.QuitGame();
-                }
-                await launchStore.launchGame(location, shortName || null, true);
-            }
-            return true;
-        } catch (err) {
-            console.error('Auto follow failed', err);
-            toast.error('自动跟随失败');
+        if (!canJoinNow(location)) {
             return false;
-        } finally {
-            isJoining.value = false;
         }
+
+        isJoining.value = true;
+        return processJoin({ location, reason, shortName, epoch: joinEpoch });
     }
 
     function watchTargetFriend() {
@@ -185,7 +303,8 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
                     return;
                 }
                 if (!location) {
-                    statusText.value = '好友离线或暂时没有可加入房间，等待重新上线';
+                    statusText.value =
+                        '好友离线或暂时没有可加入房间，等待重新上线';
                     return;
                 }
                 targetLocation.value = location;
@@ -242,7 +361,10 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
         }
 
         const locationStore = useLocationStore();
-        const isSameRoom = sameInstance(location, locationStore.lastLocation.location);
+        const isSameRoom = sameInstance(
+            location,
+            locationStore.lastLocation.location
+        );
         if (options.confirm !== false) {
             const ok = await confirmStart(friendRef, location, isSameRoom);
             if (!ok) {
@@ -250,16 +372,28 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
             }
         }
 
+        const switchingTarget =
+            isActive.value &&
+            targetFriendId.value &&
+            targetFriendId.value !== friendRef.id;
+        if (switchingTarget) {
+            joinEpoch += 1;
+            pendingJoin = null;
+        }
+
         isActive.value = true;
         targetFriendId.value = friendRef.id;
-        targetFriendName.value = friendRef.displayName || friendRef.name || friendRef.id;
+        targetFriendName.value =
+            friendRef.displayName || friendRef.name || friendRef.id;
         targetLocation.value = location;
         preferredLaunchMode.value =
             options.launchMode === 'desktop' || options.launchMode === 'vr'
                 ? options.launchMode
                 : '';
         launchMode.value = await resolveLaunchMode(preferredLaunchMode.value);
-        statusText.value = isSameRoom ? '已在同一房间，正在监听好友位置变化' : '已开启，准备加入好友房间';
+        statusText.value = isSameRoom
+            ? '已在同一房间，正在监听好友位置变化'
+            : '已开启，准备加入好友房间';
         watchTargetFriend();
         toast.success(`自动跟随已开启：${targetFriendName.value}`);
 
@@ -277,12 +411,13 @@ export const useAutoFollowStore = defineStore('AutoFollow', () => {
             return false;
         }
         const name = targetFriendName.value;
+        joinEpoch += 1;
+        pendingJoin = null;
         isActive.value = false;
         targetFriendId.value = '';
         targetFriendName.value = '';
         targetLocation.value = '';
         statusText.value = '';
-        isJoining.value = false;
         launchMode.value = 'desktop';
         preferredLaunchMode.value = '';
         lastJoinLocation = '';
