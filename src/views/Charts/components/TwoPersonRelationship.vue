@@ -206,7 +206,9 @@
                     :total="sharedWorldRankingTotal"
                     :has-more="sharedWorldRankingHasMore"
                     :loading="sharedWorldRankingLoading"
+                    :error="sharedWorldRankingError"
                     @load-more="loadMoreSharedWorldRanking"
+                    @retry="loadMoreSharedWorldRanking"
                     @select="openInstanceDialog" />
 
                 <div
@@ -378,6 +380,7 @@
     const sharedWorldRankingTotal = ref(0);
     const sharedWorldRankingHasMore = ref(false);
     const sharedWorldRankingLoading = ref(false);
+    const sharedWorldRankingError = ref(false);
     const sharedWorldRankingLoadedKey = ref(null);
     const SHARED_WORLD_RANKING_PAGE_SIZE = 30;
     let sharedWorldRankingRequestId = 0;
@@ -577,6 +580,7 @@
         sharedWorldRankingTotal.value = 0;
         sharedWorldRankingHasMore.value = false;
         sharedWorldRankingLoading.value = false;
+        sharedWorldRankingError.value = false;
         sharedWorldRankingLoadedKey.value = null;
     }
 
@@ -587,6 +591,7 @@
         const offset = reset ? 0 : sharedWorldRankingItems.value.length;
         const requestId = ++sharedWorldRankingRequestId;
         sharedWorldRankingLoading.value = true;
+        sharedWorldRankingError.value = false;
         try {
             const page = await database.getCoInstanceWorldRankingPageBetweenFriends(
                 selectedFriendAId.value,
@@ -607,7 +612,7 @@
         } catch (error) {
             if (requestId === sharedWorldRankingRequestId) {
                 console.error('Error loading shared world ranking:', error);
-                sharedWorldRankingHasMore.value = false;
+                sharedWorldRankingError.value = true;
             }
         } finally {
             if (requestId === sharedWorldRankingRequestId) {

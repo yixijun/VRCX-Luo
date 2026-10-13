@@ -99,4 +99,36 @@ describe('SharedWorldRankingDialog.vue', () => {
 
         expect(wrapper.emitted('load-more')).toHaveLength(1);
     });
+
+    test('shows a retry action after a page load error', async () => {
+        const wrapper = mount(SharedWorldRankingDialog, {
+            props: {
+                items: makeItems(30),
+                total: 502,
+                hasMore: true,
+                error: true,
+                open: true
+            }
+        });
+
+        await wrapper
+            .get('[data-testid="shared-world-ranking-retry"]')
+            .trigger('click');
+
+        expect(wrapper.emitted('retry')).toHaveLength(1);
+        expect(wrapper.text()).toContain(
+            'view.charts.two_person_relationship.shared_world_ranking_load_failed'
+        );
+
+        const scrollViewport = wrapper.get(
+            '[data-testid="shared-world-ranking-scroll"]'
+        );
+        Object.defineProperties(scrollViewport.element, {
+            clientHeight: { configurable: true, value: 500 },
+            scrollHeight: { configurable: true, value: 1560 },
+            scrollTop: { configurable: true, value: 1100, writable: true }
+        });
+        await scrollViewport.trigger('scroll');
+        expect(wrapper.emitted('load-more')).toBeUndefined();
+    });
 });

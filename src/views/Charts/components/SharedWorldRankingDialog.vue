@@ -62,6 +62,25 @@
                 <div v-if="loading" class="px-3 py-3 text-center text-xs text-muted-foreground">
                     {{ t('view.friends_locations.loading_more') }}
                 </div>
+
+                <div
+                    v-else-if="error"
+                    class="flex items-center justify-center gap-2 px-3 py-3 text-xs text-destructive">
+                    <span>{{ t('view.charts.two_person_relationship.shared_world_ranking_load_failed') }}</span>
+                    <button
+                        type="button"
+                        data-testid="shared-world-ranking-retry"
+                        class="rounded-md px-2 py-1 font-medium text-foreground underline-offset-2 hover:underline"
+                        @click="emit('retry')">
+                        {{ t('quick_launch.retry') }}
+                    </button>
+                </div>
+
+                <div
+                    v-else-if="items.length > 0 && !hasMore"
+                    class="px-3 py-3 text-center text-xs text-muted-foreground">
+                    {{ t('common.no_more') }}
+                </div>
             </div>
         </DialogContent>
     </Dialog>
@@ -92,11 +111,15 @@
         loading: {
             type: Boolean,
             default: false
+        },
+        error: {
+            type: Boolean,
+            default: false
         }
     });
 
     const isOpen = defineModel('open', { type: Boolean, default: false });
-    const emit = defineEmits(['select', 'load-more']);
+    const emit = defineEmits(['select', 'load-more', 'retry']);
     const { t } = useI18n();
     const scrollViewportRef = ref(null);
     const LOAD_AHEAD_PX = 260;
@@ -107,6 +130,7 @@
         if (
             props.hasMore &&
             !props.loading &&
+            !props.error &&
             element.scrollTop + element.clientHeight >= element.scrollHeight - LOAD_AHEAD_PX
         ) {
             emit('load-more');
