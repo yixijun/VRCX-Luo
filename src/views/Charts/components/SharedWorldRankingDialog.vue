@@ -12,7 +12,11 @@
                 </DialogTitle>
             </DialogHeader>
 
-            <div ref="scrollViewportRef" class="min-h-0 flex-1 overflow-y-auto p-2 sm:p-3">
+            <div
+                ref="scrollViewportRef"
+                data-testid="shared-world-ranking-scroll"
+                class="min-h-0 flex-1 overflow-y-auto p-2 sm:p-3"
+                @scroll.passive="handleScroll">
                 <div v-if="items.length === 0" class="px-3 py-10 text-center text-sm text-muted-foreground">
                     {{ t('view.charts.two_person_relationship.no_data') }}
                 </div>
@@ -28,7 +32,7 @@
                             :data-index="virtualItem.index"
                             :ref="virtualizer.measureElement"
                             :style="{ transform: `translateY(${virtualItem.start}px)` }"
-                            @click="selectWorld(items[virtualItem.index])">
+                            @click="selectWorld(loadedItems[virtualItem.index])">
                             <span
                                 :class="[
                                     'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
@@ -38,14 +42,14 @@
                             </span>
 
                             <Location
-                                :location="items[virtualItem.index].worldId"
+                                :location="loadedItems[virtualItem.index].worldId"
                                 :link="false"
                                 class="min-w-0 flex-1 text-sm" />
 
                             <span class="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
                                 <span>{{
                                     t('view.charts.two_person_relationship.shared_world_ranking_visits', {
-                                        count: items[virtualItem.index].visitCount
+                                        count: loadedItems[virtualItem.index].visitCount
                                     })
                                 }}</span>
                             </span>
@@ -77,13 +81,35 @@
     const emit = defineEmits(['select']);
     const { t } = useI18n();
     const scrollViewportRef = ref(null);
+    const loadedCount = ref(0);
+    const INITIAL_PAGE_SIZE = 30;
+    const LOAD_AHEAD_PX = 260;
+
+    const loadedItems = computed(() => props.items.slice(0, loadedCount.value));
+
+    function resetLoadedItems() {
+        loadedCount.value = Math.min(INITIAL_PAGE_SIZE, props.items.length);
+    }
+
+    function loadMoreItems() {
+        if (loadedCount.value >= props.items.length) return;
+        loadedCount.value = Math.min(loadedCount.value + INITIAL_PAGE_SIZE, props.items.length);
+    }
+
+    function handleScroll(event) {
+        const element = event.currentTarget;
+        if (!element) return;
+        if (element.scrollTop + element.clientHeight >= element.scrollHeight - LOAD_AHEAD_PX) {
+            loadMoreItems();
+        }
+    }
 
     const virtualizer = useVirtualizer(
         computed(() => ({
-            count: props.items.length,
+            count: loadedItems.value.length,
             getScrollElement: () => scrollViewportRef.value,
             estimateSize: () => 52,
-            getItemKey: (index) => props.items[index]?.worldId ?? index,
+            getItemKey: (index) => loadedItems.value[index]?.worldId ?? index,
             overscan: 6
         }))
     );
@@ -94,8 +120,9 @@
     }));
 
     watch(
-        () => [props.items.length, isOpen.value],
+        [() => props.items, isOpen],
         () => {
+            resetLoadedItems();
             nextTick(() => virtualizer.value?.measure?.());
         },
         { immediate: true }
