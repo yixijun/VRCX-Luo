@@ -13,6 +13,8 @@ const mocks = vi.hoisted(() => ({
     friendsListSearch: null,
     getAllUserStats: vi.fn(),
     getAllUserMutualCount: vi.fn(),
+    getAllUserMutualOptedOut: vi.fn(),
+    fetchMutualGraph: vi.fn(),
     confirmDeleteFriend: vi.fn(),
     handleFriendDelete: vi.fn(),
     showUserDialog: vi.fn(),
@@ -70,7 +72,12 @@ vi.mock('../../../stores', () => ({
         friends: mocks.friends,
         allFavoriteFriendIds: mocks.allFavoriteFriendIds,
         getAllUserStats: mocks.getAllUserStats,
-        getAllUserMutualCount: mocks.getAllUserMutualCount
+        getAllUserMutualCount: mocks.getAllUserMutualCount,
+        getAllUserMutualOptedOut: mocks.getAllUserMutualOptedOut
+    }),
+    useChartsStore: () => ({
+        mutualGraphStatus: { isFetching: false },
+        fetchMutualGraph: mocks.fetchMutualGraph
     }),
     useModalStore: () => ({
         confirm: (...args) => mocks.modalConfirm(...args),
@@ -286,6 +293,8 @@ describe('FriendList.vue', () => {
         mocks.routerPush.mockReset();
         mocks.getAllUserStats.mockReset();
         mocks.getAllUserMutualCount.mockReset();
+        mocks.getAllUserMutualOptedOut.mockReset();
+        mocks.fetchMutualGraph.mockReset();
         mocks.showUserDialog.mockReset();
         mocks.modalConfirm.mockClear();
         mocks.modalAlert.mockReset();
@@ -294,6 +303,9 @@ describe('FriendList.vue', () => {
         mocks.toastSuccess.mockReset();
         mocks.setOptions.mockReset();
         mocks.setPageIndex.mockReset();
+        mocks.setPageIndex.mockImplementation((pageIndex) => {
+            mocks.pagination.value = { ...mocks.pagination.value, pageIndex };
+        });
         mocks.setSorting.mockReset();
         mocks.toggleBulkColumnVisibility.mockReset();
     });
@@ -359,6 +371,57 @@ describe('FriendList.vue', () => {
         expect(
             wrapper.vm.friendsListDisplayData.map((item) => item.id)
         ).toEqual(['usr_1']);
+    });
+
+    test('resets the page for search changes without resetting the selected sorting', async () => {
+        mocks.pagination.value = { pageIndex: 3, pageSize: 10 };
+        mocks.sorting.value = [{ id: 'displayName', desc: false }];
+        mocks.friends.value = new Map([
+            ['usr_1', makeFriendCtx({ id: 'usr_1', displayName: 'Alice' })]
+        ]);
+
+        const wrapper = mount(FriendList);
+        await flushAsync();
+        mocks.setPageIndex.mockClear();
+        mocks.setSorting.mockClear();
+
+        mocks.friendsListSearch.value = 'alice';
+        wrapper.vm.friendsListSearchChange();
+        await flushAsync();
+
+        expect(mocks.setPageIndex).toHaveBeenCalledWith(0);
+        expect(mocks.setSorting).not.toHaveBeenCalled();
+        expect(mocks.sorting.value).toEqual([
+            { id: 'displayName', desc: false }
+        ]);
+    });
+
+    test('keeps a valid page during refresh and clamps it when results shrink', async () => {
+        mocks.pagination.value = { pageIndex: 1, pageSize: 2 };
+        mocks.friends.value = new Map([
+            ['usr_1', makeFriendCtx({ id: 'usr_1', displayName: 'Alice' })],
+            ['usr_2', makeFriendCtx({ id: 'usr_2', displayName: 'Bob' })],
+            ['usr_3', makeFriendCtx({ id: 'usr_3', displayName: 'Cara' })],
+            ['usr_4', makeFriendCtx({ id: 'usr_4', displayName: 'Drew' })]
+        ]);
+
+        const wrapper = mount(FriendList);
+        await flushAsync();
+        mocks.setPageIndex.mockClear();
+
+        wrapper.vm.applyFriendsListSearchChange({ resetPage: false });
+        await flushAsync();
+        expect(mocks.setPageIndex).not.toHaveBeenCalled();
+        expect(mocks.pagination.value.pageIndex).toBe(1);
+
+        mocks.friends.value = new Map([
+            ['usr_1', makeFriendCtx({ id: 'usr_1', displayName: 'Alice' })]
+        ]);
+        wrapper.vm.applyFriendsListSearchChange({ resetPage: false });
+        await flushAsync();
+
+        expect(mocks.setPageIndex).toHaveBeenCalledWith(0);
+        expect(mocks.pagination.value.pageIndex).toBe(0);
     });
 
     test('refreshFriendStats retries immediately after a failed stats request', async () => {

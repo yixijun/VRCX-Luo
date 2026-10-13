@@ -286,7 +286,7 @@
         () => route.path,
         () => {
             refreshFriendStats();
-            nextTick(() => applyFriendsListSearchChange());
+            nextTick(() => applyFriendsListSearchChange({ resetPage: false }));
         },
         { immediate: true }
     );
@@ -296,7 +296,7 @@
         () => {
             friendSearchCache.clear();
             refreshFriendStats({ force: true });
-            applyFriendsListSearchChange();
+            applyFriendsListSearchChange({ resetPage: false });
         }
     );
 
@@ -402,7 +402,7 @@
     /**
      *
      */
-    function applyFriendsListSearchChange() {
+    function applyFriendsListSearchChange({ resetPage = true } = {}) {
         friendsListLoading.value = true;
         let query = '';
         let cleanedQuery = '';
@@ -449,9 +449,16 @@
             results.push(ctx.ref);
         }
         friendsListDisplayData.value = results;
-        table.setPageIndex(0);
-        table.setSorting([...defaultSorting]);
-        sorting.value = [...defaultSorting];
+        if (resetPage) {
+            table.setPageIndex(0);
+        } else {
+            const pageSize = Number(pagination.value.pageSize) || 1;
+            const maxPageIndex = Math.max(0, Math.ceil(results.length / pageSize) - 1);
+            const currentPageIndex = Number(pagination.value.pageIndex) || 0;
+            if (currentPageIndex > maxPageIndex) {
+                table.setPageIndex(maxPageIndex);
+            }
+        }
         nextTick(() => {
             friendsListLoading.value = false;
         });
