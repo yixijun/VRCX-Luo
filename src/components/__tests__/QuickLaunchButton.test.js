@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
     setIsSteamVRRunning: vi.fn(),
     launchVRChat: vi.fn(),
     confirm: vi.fn(),
+    toastInfo: vi.fn(),
     toastSuccess: vi.fn(),
     toastError: vi.fn(),
     startSteamVR: vi.fn()
@@ -34,6 +35,7 @@ vi.mock('vue-i18n', () => ({
 
 vi.mock('vue-sonner', () => ({
     toast: {
+        info: (...args) => mocks.toastInfo(...args),
         success: (...args) => mocks.toastSuccess(...args),
         error: (...args) => mocks.toastError(...args)
     }
@@ -82,7 +84,10 @@ describe('QuickLaunchButton', () => {
         mocks.isSteamVRRunning = false;
         mocks.launchVRChat.mockResolvedValue(true);
         mocks.confirm.mockResolvedValue({ ok: true });
-        mocks.startSteamVR.mockResolvedValue(true);
+        mocks.startSteamVR.mockImplementation(async () => {
+            mocks.isSteamVRRunning = true;
+            return true;
+        });
         globalThis.AppApi = {
             IsSteamVRRunning: vi.fn(async () => mocks.isSteamVRRunning),
             StartSteamVR: (...args) => mocks.startSteamVR(...args)
@@ -173,6 +178,73 @@ describe('QuickLaunchButton', () => {
         expect(mocks.confirm).toHaveBeenCalled();
         expect(mocks.startSteamVR).toHaveBeenCalled();
         expect(mocks.launchVRChat).toHaveBeenCalledWith(false);
+    });
+
+    test('waits for delayed SteamVR detection before launching VRChat', async () => {
+        mocks.startSteamVR.mockImplementation(async () => {
+            setTimeout(() => {
+                mocks.isSteamVRRunning = true;
+            }, 8_000);
+            return true;
+        });
+        mountComponent();
+        const vrItem = [...document.body.querySelectorAll('button')].find(
+            (button) => button.textContent.includes('quick_launch.vrchat_vr')
+        );
+
+        vrItem.click();
+        await vi.advanceTimersByTimeAsync(0);
+        await vi.advanceTimersByTimeAsync(7_999);
+        expect(mocks.launchVRChat).not.toHaveBeenCalled();
+
+        await vi.advanceTimersByTimeAsync(1);
+        await vi.runAllTimersAsync();
+
+        expect(mocks.toastInfo).toHaveBeenCalledWith(
+            'quick_launch.steamvr_starting'
+        );
+        expect(mocks.toastSuccess).toHaveBeenCalledWith(
+            'quick_launch.steamvr_detected'
+        );
+        expect(mocks.launchVRChat).toHaveBeenCalledWith(false);
+    });
+
+    test('shows a retryable timeout when SteamVR never becomes detectable', async () => {
+        mocks.startSteamVR.mockResolvedValue(true);
+        mountComponent();
+        const vrItem = [...document.body.querySelectorAll('button')].find(
+            (button) => button.textContent.includes('quick_launch.vrchat_vr')
+        );
+
+        vrItem.click();
+        await vi.advanceTimersByTimeAsync(15_000);
+        await vi.runAllTimersAsync();
+
+        expect(mocks.launchVRChat).not.toHaveBeenCalled();
+        expect(mocks.toastError).toHaveBeenCalledWith(
+            'quick_launch.steamvr_timeout',
+            expect.objectContaining({ action: expect.any(Object) })
+        );
+    });
+
+    test('stops when SteamVR status detection fails', async () => {
+        AppApi.IsSteamVRRunning = vi.fn(async () => {
+            throw new Error('probe failed');
+        });
+        mountComponent();
+        const vrItem = [...document.body.querySelectorAll('button')].find(
+            (button) => button.textContent.includes('quick_launch.vrchat_vr')
+        );
+
+        vrItem.click();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(mocks.confirm).not.toHaveBeenCalled();
+        expect(mocks.startSteamVR).not.toHaveBeenCalled();
+        expect(mocks.launchVRChat).not.toHaveBeenCalled();
+        expect(mocks.toastError).toHaveBeenCalledWith(
+            'quick_launch.steamvr_detection_failed'
+        );
     });
 
     test('continues VR launch when SteamVR prompt is declined', async () => {

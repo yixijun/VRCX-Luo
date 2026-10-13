@@ -91,7 +91,7 @@
                         data-testid="launch-default-button"
                         class="h-9 min-w-0 flex-1"
                         :variant="canOpenInstanceInGame ? 'secondary' : 'default'"
-                        :disabled="!launchDialog.secureOrShortName"
+                        :disabled="!launchDialog.secureOrShortName || isSteamVRStarting"
                         @click="handleLaunchDefault(launchDialog.location, launchDialog.shortName)">
                         {{ launchModeLabel }}
                     </Button>
@@ -102,7 +102,7 @@
                                 class="h-9 flex-none"
                                 size="icon"
                                 :variant="canOpenInstanceInGame ? 'secondary' : 'default'"
-                                :disabled="!launchDialog.secureOrShortName"
+                                :disabled="!launchDialog.secureOrShortName || isSteamVRStarting"
                                 aria-label="More options"
                                 @click.stop>
                                 <MoreHorizontal class="size-4" />
@@ -178,6 +178,7 @@
     import { getLaunchURL, isRealInstance, parseLocation } from '../../shared/utils';
     import { useInviteChecks } from '../../composables/useInviteChecks';
     import { instanceRequest, queryRequest } from '../../api';
+    import { STEAMVR_START_STATUS, waitForSteamVRRunning } from '../../shared/utils/steamvrStartup.js';
 
     import InviteDialog from './InviteDialog/InviteDialog.vue';
     import configRepository from '../../services/config';
@@ -193,20 +194,20 @@
 
     const { canOpenInstanceInGame } = storeToRefs(useInviteStore());
     const gameStore = useGameStore();
-    const { isGameRunning, isSteamVRRunning } = storeToRefs(gameStore);
+    const { isGameRunning } = storeToRefs(gameStore);
     const { checkCanInvite } = useInviteChecks();
 
     const launchModeLabel = computed(() =>
         launchDialog.value.desktop ? t('dialog.launch.start_as_desktop') : t('dialog.launch.launch')
     );
 
-    const STEAMVR_START_DELAY_MS = 5000;
     let launchAsDesktopTimeoutId;
-    let steamVrStartTimeoutId;
+    let activeSteamVRWait = null;
+    const isSteamVRStarting = ref(false);
 
     onBeforeUnmount(() => {
         clearTimeout(launchAsDesktopTimeoutId);
-        clearTimeout(steamVrStartTimeoutId);
+        activeSteamVRWait?.cancel();
     });
 
     const launchDialog = ref({
@@ -299,7 +300,7 @@
             return running;
         } catch (error) {
             console.error(error);
-            return isSteamVRRunning.value;
+            return null;
         }
     }
 
@@ -307,20 +308,14 @@
      *
      * @returns {Promise<boolean>}
      */
-    function waitForSteamVRStart() {
-        clearTimeout(steamVrStartTimeoutId);
-        return new Promise((resolve) => {
-            steamVrStartTimeoutId = setTimeout(resolve, STEAMVR_START_DELAY_MS);
-        });
-    }
-
-    /**
-     *
-     * @returns {Promise<boolean>}
-     */
-    async function confirmStartSteamVRIfNeeded() {
-        if (await getCurrentSteamVRState()) {
+    async function confirmStartSteamVRIfNeeded(retry) {
+        const currentState = await getCurrentSteamVRState();
+        if (currentState === true) {
             return true;
+        }
+        if (currentState === null) {
+            toast.error(t('dialog.launch.steamvr_detection_failed'));
+            return false;
         }
 
         try {
@@ -339,10 +334,41 @@
                 toast.error(t('message.launch.steamvr_not_found'));
                 return false;
             }
-            await waitForSteamVRStart();
-            return true;
+            toast.info(t('dialog.launch.steamvr_starting'));
+            activeSteamVRWait = waitForSteamVRRunning({
+                checkRunning: async () => {
+                    const running = await getCurrentSteamVRState();
+                    if (running === null) {
+                        throw new Error('Unable to detect SteamVR state');
+                    }
+                    return running;
+                }
+            });
+            const result = await activeSteamVRWait.promise;
+            activeSteamVRWait = null;
+            if (result.status === STEAMVR_START_STATUS.RUNNING) {
+                toast.success(t('dialog.launch.steamvr_detected'));
+                return true;
+            }
+            if (result.status === STEAMVR_START_STATUS.TIMEOUT) {
+                toast.error(t('dialog.launch.steamvr_timeout'), {
+                    action: {
+                        label: t('dialog.launch.retry'),
+                        onClick: () => {
+                            void retry?.();
+                        }
+                    }
+                });
+                return false;
+            }
+            if (result.status === STEAMVR_START_STATUS.CANCELLED) {
+                return false;
+            }
+            toast.error(t('dialog.launch.steamvr_detection_failed'));
+            return false;
         } catch (error) {
             console.error(error);
+            toast.error(t('dialog.launch.steamvr_detection_failed'));
             return false;
         }
     }
@@ -354,8 +380,18 @@
      * @param desktop
      */
     async function handleLaunchGame(location, shortName, desktop) {
-        if (!desktop && !(await confirmStartSteamVRIfNeeded())) {
-            return;
+        if (!desktop) {
+            if (isSteamVRStarting.value) {
+                return;
+            }
+            isSteamVRStarting.value = true;
+            try {
+                if (!(await confirmStartSteamVRIfNeeded(() => handleLaunchGame(location, shortName, desktop)))) {
+                    return;
+                }
+            } finally {
+                isSteamVRStarting.value = false;
+            }
         }
 
         if (isGameRunning.value) {

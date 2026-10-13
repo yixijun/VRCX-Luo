@@ -114,7 +114,12 @@
         "steamvr": "Start SteamVR",
         "steamvr_running": "SteamVR is already running",
         "steamvr_started": "SteamVR started",
-        "steamvr_failed": "Failed to start SteamVR"
+        "steamvr_failed": "Failed to start SteamVR",
+        "steamvr_starting": "Starting SteamVR…",
+        "steamvr_detected": "SteamVR is now running",
+        "steamvr_timeout": "SteamVR did not start within the timeout",
+        "steamvr_detection_failed": "Could not detect SteamVR status",
+        "retry": "Retry"
     },
     "dashboard": {
         "default_name": "Dashboard",
@@ -2405,6 +2410,11 @@
             "steamvr_not_running_title": "SteamVR is not running",
             "steamvr_not_running_warning": "SteamVR is not running. Open SteamVR before launching VRChat in VR mode?",
             "open_steamvr": "Open SteamVR",
+            "steamvr_starting": "Starting SteamVR…",
+            "steamvr_detected": "SteamVR is now running",
+            "steamvr_timeout": "SteamVR did not start within the timeout",
+            "steamvr_detection_failed": "Could not detect SteamVR status",
+            "retry": "Retry",
             "confirm_yes": "Yes",
             "confirm_no": "Launch Anyway",
             "game_running_confirm": "Launch Anyway",

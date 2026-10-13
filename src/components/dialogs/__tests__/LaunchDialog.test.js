@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { ref } from 'vue';
 
@@ -10,6 +10,9 @@ const mocks = vi.hoisted(() => ({
     isSteamVRRunning: { __v_isRef: true, value: false },
     canOpenInstanceInGame: { __v_isRef: true, value: false },
     setIsSteamVRRunning: vi.fn(),
+    toastInfo: vi.fn(),
+    toastSuccess: vi.fn(),
+    toastError: vi.fn(),
     confirm: vi.fn(async () => ({ ok: true })),
     launchGame: vi.fn(),
     launchDialogData: {
@@ -32,7 +35,13 @@ Object.assign(globalThis, {
 
 vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k) => k }) }));
-vi.mock('vue-sonner', () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+vi.mock('vue-sonner', () => ({
+    toast: {
+        info: (...args) => mocks.toastInfo(...args),
+        success: (...args) => mocks.toastSuccess(...args),
+        error: (...args) => mocks.toastError(...args)
+    }
+}));
 vi.mock('../../../stores', () => ({
     useFriendStore: () => ({ friends: ref(new Map()) }),
     useGameStore: () => ({
@@ -40,7 +49,9 @@ vi.mock('../../../stores', () => ({
         isSteamVRRunning: mocks.isSteamVRRunning,
         setIsSteamVRRunning: (...args) => mocks.setIsSteamVRRunning(...args)
     }),
-    useInviteStore: () => ({ canOpenInstanceInGame: mocks.canOpenInstanceInGame }),
+    useInviteStore: () => ({
+        canOpenInstanceInGame: mocks.canOpenInstanceInGame
+    }),
     useLaunchStore: () => ({
         launchDialogData: mocks.launchDialogData,
         launchGame: (...args) => mocks.launchGame(...args),
@@ -146,11 +157,20 @@ describe('LaunchDialog.vue', () => {
         mocks.confirm.mockClear();
         mocks.launchGame.mockClear();
         mocks.setIsSteamVRRunning.mockClear();
+        mocks.toastInfo.mockClear();
+        mocks.toastSuccess.mockClear();
+        mocks.toastError.mockClear();
         mocks.isGameRunning.value = false;
         mocks.isSteamVRRunning.value = false;
         mocks.canOpenInstanceInGame.value = false;
-        AppApi.IsSteamVRRunning = vi.fn(async () => false);
+        AppApi.IsSteamVRRunning = vi.fn(
+            async () => mocks.isSteamVRRunning.value
+        );
         AppApi.StartSteamVR = vi.fn(async () => true);
+    });
+
+    afterEach(() => {
+        vi.useRealTimers();
     });
 
     it('renders launch dialog header', async () => {
@@ -180,17 +200,35 @@ describe('LaunchDialog.vue', () => {
         const wrapper = mount(LaunchDialog);
         await flushPromises();
 
-        const buttonLabels = wrapper.findAll('button').map((button) => button.text());
-        expect(wrapper.find('[data-testid="launch-button-group"]').exists()).toBe(true);
+        const buttonLabels = wrapper
+            .findAll('button')
+            .map((button) => button.text());
+        expect(
+            wrapper.find('[data-testid="launch-button-group"]').exists()
+        ).toBe(true);
         expect(buttonLabels.indexOf('dialog.launch.launch')).toBeLessThan(
             buttonLabels.indexOf('dialog.launch.open_ingame')
         );
-        expect(wrapper.get('[data-testid="launch-default-button"]').attributes('variant')).toBe('secondary');
-        expect(wrapper.get('[data-testid="open-ingame-button"]').attributes('variant')).toBe('default');
+        expect(
+            wrapper
+                .get('[data-testid="launch-default-button"]')
+                .attributes('variant')
+        ).toBe('secondary');
+        expect(
+            wrapper
+                .get('[data-testid="open-ingame-button"]')
+                .attributes('variant')
+        ).toBe('default');
     });
 
-    it('waits after starting SteamVR before launching VRChat in VR mode', async () => {
+    it('waits for delayed SteamVR detection before launching VRChat in VR mode', async () => {
         vi.useFakeTimers();
+        AppApi.StartSteamVR = vi.fn(async () => {
+            setTimeout(() => {
+                mocks.isSteamVRRunning.value = true;
+            }, 8_000);
+            return true;
+        });
         const wrapper = mount(LaunchDialog);
         await flushPromises();
 
@@ -209,14 +247,58 @@ describe('LaunchDialog.vue', () => {
         );
         expect(mocks.launchGame).not.toHaveBeenCalled();
 
-        await vi.advanceTimersByTimeAsync(4999);
+        await vi.advanceTimersByTimeAsync(7999);
         expect(mocks.launchGame).not.toHaveBeenCalled();
 
         await vi.advanceTimersByTimeAsync(1);
         expect(mocks.launchGame).toHaveBeenCalledTimes(1);
         expect(mocks.launchGame.mock.calls[0][2]).toBe(false);
+        expect(mocks.toastInfo).toHaveBeenCalledWith(
+            'dialog.launch.steamvr_starting'
+        );
+        expect(mocks.toastSuccess).toHaveBeenCalledWith(
+            'dialog.launch.steamvr_detected'
+        );
+    });
 
-        vi.useRealTimers();
+    it('shows a retryable timeout when SteamVR never becomes detectable', async () => {
+        vi.useFakeTimers();
+        const wrapper = mount(LaunchDialog);
+        await flushPromises();
+
+        const launchButton = wrapper
+            .findAllComponents(Button)
+            .find((button) => button.text() === 'dialog.launch.launch');
+        await launchButton.vm.$emit('click');
+        await flushPromises();
+        await vi.advanceTimersByTimeAsync(15_000);
+
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+        expect(mocks.toastError).toHaveBeenCalledWith(
+            'dialog.launch.steamvr_timeout',
+            expect.objectContaining({ action: expect.any(Object) })
+        );
+    });
+
+    it('stops when SteamVR status detection fails', async () => {
+        AppApi.IsSteamVRRunning = vi.fn(async () => {
+            throw new Error('probe failed');
+        });
+        const wrapper = mount(LaunchDialog);
+        await flushPromises();
+
+        const launchButton = wrapper
+            .findAllComponents(Button)
+            .find((button) => button.text() === 'dialog.launch.launch');
+        await launchButton.vm.$emit('click');
+        await flushPromises();
+
+        expect(mocks.confirm).not.toHaveBeenCalled();
+        expect(AppApi.StartSteamVR).not.toHaveBeenCalled();
+        expect(mocks.launchGame).not.toHaveBeenCalled();
+        expect(mocks.toastError).toHaveBeenCalledWith(
+            'dialog.launch.steamvr_detection_failed'
+        );
     });
 
     it('continues launching VRChat in VR mode when SteamVR prompt is declined', async () => {

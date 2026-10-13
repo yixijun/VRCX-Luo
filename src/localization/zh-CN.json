@@ -121,7 +121,12 @@
         "steamvr": "启动 SteamVR",
         "steamvr_running": "SteamVR 已在运行",
         "steamvr_started": "SteamVR 已启动",
-        "steamvr_failed": "SteamVR 启动失败"
+        "steamvr_failed": "SteamVR 启动失败",
+        "steamvr_starting": "正在启动 SteamVR…",
+        "steamvr_detected": "已检测到 SteamVR 运行",
+        "steamvr_timeout": "SteamVR 在限定时间内未启动",
+        "steamvr_detection_failed": "无法检测 SteamVR 状态",
+        "retry": "重试"
     },
     "dashboard": {
         "default_name": "仪表板",
@@ -2427,6 +2432,11 @@
             "steamvr_not_running_title": "SteamVR 未运行",
             "steamvr_not_running_warning": "SteamVR 当前未运行。是否先打开 SteamVR，再以 VR 模式启动 VRChat？",
             "open_steamvr": "打开 SteamVR",
+            "steamvr_starting": "正在启动 SteamVR…",
+            "steamvr_detected": "已检测到 SteamVR 运行",
+            "steamvr_timeout": "SteamVR 在限定时间内未启动",
+            "steamvr_detection_failed": "无法检测 SteamVR 状态",
+            "retry": "重试",
             "confirm_yes": "是，确认启动",
             "confirm_no": "仍然启动",
             "game_running_confirm": "仍然启动",
