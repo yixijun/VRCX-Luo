@@ -505,6 +505,7 @@ namespace VRCX
         {
             var enabled = !IsTraySilentModeEnabled();
             VRCXStorage.Instance.Set("VRCX_traySilentMode", enabled.ToString().ToLowerInvariant());
+            VRCXStorage.Instance.Set("VRCX_traySilentUntil", string.Empty);
             VRCXStorage.Instance.Save();
             UpdateTraySettingsMenu();
             Browser?.ExecuteScriptAsync(

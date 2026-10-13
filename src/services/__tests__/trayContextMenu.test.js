@@ -134,6 +134,11 @@ describe('tray context menu', () => {
         );
         expect(harness.storage).toHaveBeenNthCalledWith(
             3,
+            'VRCX_traySilentUntil',
+            ''
+        );
+        expect(harness.storage).toHaveBeenNthCalledWith(
+            4,
             'VRCX_vSleepMode',
             'true'
         );

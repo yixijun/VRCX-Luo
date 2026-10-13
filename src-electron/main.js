@@ -345,9 +345,16 @@ registerIpcHandlers({
             destroyTray();
             createTray();
         },
-        setTraySilentMode: (event, enabled) => {
+        setTraySilentMode: (event, enabled, silentUntil = null) => {
             const next = !!enabled;
             VRCXStorage.Set('VRCX_traySilentMode', String(next));
+            const normalizedUntil = Number(silentUntil);
+            VRCXStorage.Set(
+                'VRCX_traySilentUntil',
+                next && Number.isFinite(normalizedUntil) && normalizedUntil > Date.now()
+                    ? String(Math.trunc(normalizedUntil))
+                    : ''
+            );
             notifyTraySilentModeChanged(next);
             destroyTray();
             createTray();

@@ -47,7 +47,10 @@ declare global {
                 callback: (payload: any) => void
             ) => () => void;
             setDesktopNotificationsEnabled: (enabled: boolean) => Promise<void>;
-            setTraySilentMode: (enabled: boolean) => Promise<void>;
+            setTraySilentMode: (
+                enabled: boolean,
+                silentUntil?: number | null
+            ) => Promise<void>;
             setVSleepMode: (enabled: boolean) => Promise<void>;
             onDesktopNotificationsUpdated: (
                 callback: (enabled: boolean) => void

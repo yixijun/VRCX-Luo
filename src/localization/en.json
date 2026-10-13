@@ -1267,6 +1267,15 @@
                     "layout_table": "Notifications Page",
                     "notification_filter": "Notification Filters",
                     "test_notification": "Send Test Notification",
+                    "temporary_mute": {
+                        "header": "Temporary Mute",
+                        "label": "Mute notification sounds for a limited time",
+                        "description": "Visible notifications stay on. The original sound setting is restored automatically.",
+                        "fifteen_minutes": "15 minutes",
+                        "one_hour": "1 hour",
+                        "restore": "Restore now",
+                        "active_until": "Muted until {time}"
+                    },
                     "test_message": "Test notification.",
                     "steamvr_notifications": {
                         "header": "SteamVR Notifications",

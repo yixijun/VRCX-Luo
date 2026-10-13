@@ -30,6 +30,37 @@
             </SettingsItem>
         </SettingsGroup>
 
+        <SettingsGroup :title="t('view.settings.notifications.notifications.temporary_mute.header')">
+            <SettingsItem
+                :label="t('view.settings.notifications.notifications.temporary_mute.label')"
+                :description="t('view.settings.notifications.notifications.temporary_mute.description')">
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <span v-if="traySilentUntil" class="text-xs text-muted-foreground">
+                        {{
+                            t('view.settings.notifications.notifications.temporary_mute.active_until', {
+                                time: temporaryMuteUntilText
+                            })
+                        }}
+                    </span>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        @click="setTemporaryTraySilentMode(TEMPORARY_MUTE_DURATIONS.quarterHour)">
+                        {{ t('view.settings.notifications.notifications.temporary_mute.fifteen_minutes') }}
+                    </Button>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        @click="setTemporaryTraySilentMode(TEMPORARY_MUTE_DURATIONS.hour)">
+                        {{ t('view.settings.notifications.notifications.temporary_mute.one_hour') }}
+                    </Button>
+                    <Button v-if="traySilentMode" size="sm" variant="ghost" @click="clearTemporaryTraySilentMode">
+                        {{ t('view.settings.notifications.notifications.temporary_mute.restore') }}
+                    </Button>
+                </div>
+            </SettingsItem>
+        </SettingsGroup>
+
         <SettingsGroup :title="t('view.settings.notifications.notifications.desktop_notifications.header')">
             <SettingsItem
                 item-id="desktop-notifications"
@@ -207,6 +238,7 @@
     import { useI18n } from 'vue-i18n';
 
     import { useNotificationStore, useNotificationsSettingsStore } from '@/stores';
+    import { TEMPORARY_MUTE_DURATIONS } from '@/shared/utils/temporaryMute';
 
     import FeedFiltersDialog from '../../dialogs/FeedFiltersDialog.vue';
     import SettingsGroup from '../SettingsGroup.vue';
@@ -218,6 +250,8 @@
 
     const {
         desktopNotificationsEnabled,
+        traySilentMode,
+        traySilentUntil,
         desktopToast,
         afkDesktopToast,
         customNotificationSoundEnabled,
@@ -232,6 +266,8 @@
 
     const {
         setDesktopNotificationsEnabled,
+        setTemporaryTraySilentMode,
+        clearTemporaryTraySilentMode,
         setDesktopToast,
         setAfkDesktopToast,
         setCustomNotificationSoundEnabled,
@@ -253,6 +289,13 @@
     });
 
     const feedFiltersDialogMode = ref('');
+    const temporaryMuteUntilText = computed(() => {
+        if (!traySilentUntil.value) return '';
+        return new Date(traySilentUntil.value).toLocaleTimeString([], {
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    });
 
     const ttsVoiceIndex = computed({
         get: () => {

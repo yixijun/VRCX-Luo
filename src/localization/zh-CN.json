@@ -1286,6 +1286,15 @@
                     "layout_table": "通知标签页",
                     "notification_filter": "通知筛选器",
                     "test_notification": "发送测试通知",
+                    "temporary_mute": {
+                        "header": "限时静音",
+                        "label": "在限定时间内静音通知声音",
+                        "description": "可见通知仍会显示，到期后自动恢复原来的声音设置。",
+                        "fifteen_minutes": "15 分钟",
+                        "one_hour": "1 小时",
+                        "restore": "立即恢复",
+                        "active_until": "静音至 {time}"
+                    },
                     "test_message": "这是一个测试通知。",
                     "steamvr_notifications": {
                         "header": "SteamVR 通知",

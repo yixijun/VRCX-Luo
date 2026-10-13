@@ -3,6 +3,10 @@ import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
 
 import { sharedFeedFiltersDefaults } from '../../shared/constants';
+import {
+    normalizeSilentUntil,
+    resolveTemporaryMuteState
+} from '../../shared/utils/temporaryMute';
 import { useModalStore } from '../modal';
 import { useVrStore } from '../vr';
 
@@ -26,6 +30,7 @@ export const useNotificationsSettingsStore = defineStore(
         const imageNotifications = ref(true);
         const desktopNotificationsEnabled = ref(true);
         const traySilentMode = ref(false);
+        const traySilentUntil = ref(null);
         const vSleepMode = ref(false);
         const desktopToast = ref('Never');
         const afkDesktopToast = ref(false);
@@ -131,6 +136,7 @@ export const useNotificationsSettingsStore = defineStore(
         let desktopNotificationsInitialized = false;
         let pendingDesktopNotificationsEnabled = null;
         let customNotificationAudio = null;
+        let traySilentExpiryTimer = null;
 
         function applyDesktopNotificationsUpdate(enabled) {
             const next = enabled !== false;
@@ -166,6 +172,7 @@ export const useNotificationsSettingsStore = defineStore(
                 imageNotificationsConfig,
                 desktopNotificationsEnabledConfig,
                 traySilentModeConfig,
+                traySilentUntilConfig,
                 vSleepModeConfig,
                 desktopToastConfig,
                 afkDesktopToastConfig,
@@ -188,6 +195,7 @@ export const useNotificationsSettingsStore = defineStore(
                 configRepository.getBool('VRCX_imageNotifications', true),
                 VRCXStorage.Get('VRCX_desktopNotificationsEnabled'),
                 VRCXStorage.Get('VRCX_traySilentMode'),
+                VRCXStorage.Get('VRCX_traySilentUntil'),
                 VRCXStorage.Get('VRCX_vSleepMode'),
                 configRepository.getString('VRCX_desktopToast', 'Never'),
                 configRepository.getBool('VRCX_afkDesktopToast', false),
@@ -232,7 +240,19 @@ export const useNotificationsSettingsStore = defineStore(
                 pendingDesktopNotificationsEnabled = null;
             }
             desktopNotificationsInitialized = true;
-            traySilentMode.value = traySilentModeConfig === 'true';
+            const temporaryMute = resolveTemporaryMuteState({
+                enabled: traySilentModeConfig === 'true',
+                silentUntil: traySilentUntilConfig
+            });
+            traySilentMode.value = temporaryMute.enabled;
+            traySilentUntil.value = temporaryMute.silentUntil;
+            if (temporaryMute.expired) {
+                VRCXStorage.Set('VRCX_traySilentUntil', '');
+                VRCXStorage.Set('VRCX_traySilentMode', 'false');
+                window.electron?.setTraySilentMode?.(false, null);
+            } else {
+                scheduleTraySilentExpiry();
+            }
             vSleepMode.value = vSleepModeConfig === 'true';
             desktopToast.value = desktopToastConfig;
             afkDesktopToast.value = afkDesktopToastConfig;
@@ -264,6 +284,10 @@ export const useNotificationsSettingsStore = defineStore(
                 );
                 window.electron?.onTraySilentModeUpdated?.((enabled) => {
                     traySilentMode.value = enabled === true;
+                    if (!traySilentMode.value) {
+                        traySilentUntil.value = null;
+                        clearTraySilentExpiryTimer();
+                    }
                 });
                 window.addEventListener(
                     'vrcx-v-sleep-mode-updated',
@@ -273,6 +297,11 @@ export const useNotificationsSettingsStore = defineStore(
                     vSleepMode.value = enabled === true;
                     vrStore.updateOpenVR();
                 });
+                window.addEventListener('focus', syncTraySilentModeExpiration);
+                document.addEventListener(
+                    'visibilitychange',
+                    syncTraySilentModeExpiration
+                );
             }
         }
 
@@ -342,14 +371,77 @@ export const useNotificationsSettingsStore = defineStore(
             applyDesktopNotificationsUpdate(event.detail?.enabled);
         }
 
+        function clearTraySilentExpiryTimer() {
+            if (traySilentExpiryTimer) {
+                clearTimeout(traySilentExpiryTimer);
+                traySilentExpiryTimer = null;
+            }
+        }
+
+        function scheduleTraySilentExpiry() {
+            clearTraySilentExpiryTimer();
+            if (!traySilentUntil.value) return;
+            const delay = Math.max(0, traySilentUntil.value - Date.now());
+            traySilentExpiryTimer = setTimeout(() => {
+                traySilentExpiryTimer = null;
+                syncTraySilentModeExpiration();
+            }, delay);
+        }
+
+        async function syncTraySilentModeExpiration() {
+            if (!traySilentUntil.value) return;
+            const persistedUntil = normalizeSilentUntil(
+                await VRCXStorage.Get('VRCX_traySilentUntil')
+            );
+            if (persistedUntil && persistedUntil > Date.now()) {
+                traySilentUntil.value = persistedUntil;
+                scheduleTraySilentExpiry();
+                return;
+            }
+            if (persistedUntil) {
+                VRCXStorage.Set('VRCX_traySilentUntil', '');
+                VRCXStorage.Set('VRCX_traySilentMode', 'false');
+                traySilentUntil.value = null;
+                clearTraySilentExpiryTimer();
+                traySilentMode.value = false;
+                window.electron?.setTraySilentMode?.(false, null);
+                return;
+            }
+            // The host cleared the expiration, which means a manual tray
+            // action took precedence over the old timer.
+            traySilentUntil.value = null;
+            clearTraySilentExpiryTimer();
+        }
+
         function setTraySilentMode(value = null) {
+            traySilentUntil.value = null;
+            clearTraySilentExpiryTimer();
             traySilentMode.value =
                 value === null ? !traySilentMode.value : !!value;
+            VRCXStorage.Set('VRCX_traySilentUntil', '');
             VRCXStorage.Set(
                 'VRCX_traySilentMode',
                 traySilentMode.value.toString()
             );
-            window.electron?.setTraySilentMode?.(traySilentMode.value);
+            window.electron?.setTraySilentMode?.(traySilentMode.value, null);
+        }
+
+        function setTemporaryTraySilentMode(durationMs) {
+            const duration = Number(durationMs);
+            if (!Number.isFinite(duration) || duration <= 0) return;
+            traySilentUntil.value = Date.now() + Math.trunc(duration);
+            traySilentMode.value = true;
+            VRCXStorage.Set(
+                'VRCX_traySilentUntil',
+                String(traySilentUntil.value)
+            );
+            VRCXStorage.Set('VRCX_traySilentMode', 'true');
+            window.electron?.setTraySilentMode?.(true, traySilentUntil.value);
+            scheduleTraySilentExpiry();
+        }
+
+        function clearTemporaryTraySilentMode() {
+            setTraySilentMode(false);
         }
 
         function handleTraySilentModeUpdated(event) {
@@ -690,6 +782,7 @@ export const useNotificationsSettingsStore = defineStore(
             imageNotifications,
             desktopNotificationsEnabled,
             traySilentMode,
+            traySilentUntil,
             vSleepMode,
             desktopToast,
             afkDesktopToast,
@@ -715,6 +808,8 @@ export const useNotificationsSettingsStore = defineStore(
             setImageNotifications,
             setDesktopNotificationsEnabled,
             setTraySilentMode,
+            setTemporaryTraySilentMode,
+            clearTemporaryTraySilentMode,
             setVSleepMode,
             setDesktopToast,
             setAfkDesktopToast,

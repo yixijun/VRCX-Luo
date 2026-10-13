@@ -39,6 +39,7 @@ function createTrayContextMenu({
             click: () => {
                 const enabled = !isTraySilentModeEnabled();
                 setStorageValue('VRCX_traySilentMode', String(enabled));
+                setStorageValue('VRCX_traySilentUntil', '');
                 notifyTraySilentModeChanged(enabled);
                 refreshContextMenu();
             }

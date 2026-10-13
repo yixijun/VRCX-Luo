@@ -132,4 +132,28 @@ describe('useNotificationsSettingsStore file selection', () => {
         expect(store.desktopNotificationsEnabled).toBe(false);
         vi.unstubAllGlobals();
     });
+
+    it('persists temporary mute and clears it on manual restore', () => {
+        const storage = {
+            Get: vi.fn(() => ''),
+            Set: vi.fn()
+        };
+        vi.stubGlobal('VRCXStorage', storage);
+        setActivePinia(createPinia());
+        store = useNotificationsSettingsStore();
+
+        store.setTemporaryTraySilentMode(15 * 60 * 1000);
+        expect(store.traySilentMode).toBe(true);
+        expect(store.traySilentUntil).toBeGreaterThan(Date.now());
+        expect(storage.Set).toHaveBeenCalledWith(
+            'VRCX_traySilentUntil',
+            expect.any(String)
+        );
+
+        store.clearTemporaryTraySilentMode();
+        expect(store.traySilentMode).toBe(false);
+        expect(store.traySilentUntil).toBe(null);
+        expect(storage.Set).toHaveBeenCalledWith('VRCX_traySilentUntil', '');
+        vi.unstubAllGlobals();
+    });
 });
