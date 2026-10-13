@@ -773,7 +773,8 @@
             "two_person_relationship": {
                 "header": "Duo Relationship",
                 "tips": {
-                    "description": "Analyzes your game log database to find instances where two friends were present in the same room. Even if you weren't there, it reconstructs their shared moments from their individual join/leave records."
+                    "description": "Analyzes local game-log records to find overlapping sessions for two friends. It combines their recorded join/leave intervals, including inferred sessions from feed history.",
+                    "data_boundary": "These labels describe recorded evidence, not confirmed absence or intent. No self-presence record means no matching local record was found. Join-order labels are inferred from recorded times; missing logs or snapshots can make the order unclear."
                 },
                 "select_friend_a": "Select Friend A",
                 "select_friend_b": "Select Friend B",
@@ -791,14 +792,20 @@
                 "meet_count": "{count} encounters",
                 "settings": "Settings",
                 "show_self_presence": "Show my presence indicator",
-                "self_present": "Present",
-                "self_not_present": "Absent",
+                "self_present": "Self record found",
+                "self_not_present": "No self-presence record",
+                "self_present_tooltip": "A local presence record overlaps this shared session.",
+                "self_not_present_tooltip": "No matching local presence record was found; this does not prove you were absent.",
                 "instance_creator": "Creator",
                 "max_player_count": "Peak players",
-                "initiator_leftPlayer": "Left Follow",
-                "initiator_rightPlayer": "Right Follow",
-                "initiator_mutual": "Mutual",
-                "initiator_unknown": "Unknown"
+                "initiator_leftPlayer": "Inferred later join (left)",
+                "initiator_rightPlayer": "Inferred later join (right)",
+                "initiator_mutual": "Joined at nearly the same time",
+                "initiator_unknown": "Join order unclear",
+                "initiator_leftPlayer_tooltip": "Inferred from a join-time gap over three minutes; the left player joined later.",
+                "initiator_rightPlayer_tooltip": "Inferred from a join-time gap over three minutes; the right player joined later.",
+                "initiator_mutual_tooltip": "The recorded join times were within three minutes, so neither order is established.",
+                "initiator_unknown_tooltip": "The order could not be established from the available records, possibly because the data came from a snapshot."
             },
             "relationship_timeline": {
                 "header": "Relationship Timeline",

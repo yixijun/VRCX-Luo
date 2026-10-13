@@ -13,6 +13,9 @@
                             <div class="text-xs">
                                 {{ t('view.charts.two_person_relationship.tips.description') }}
                             </div>
+                            <div class="mt-2 text-xs text-muted-foreground">
+                                {{ t('view.charts.two_person_relationship.tips.data_boundary') }}
+                            </div>
                         </HoverCardContent>
                     </HoverCard>
                 </div>
@@ -190,7 +193,9 @@
                             @click="isSharedWorldRankingOpen = true">
                             <MapPin class="size-3.5" />
                             <span>{{ t('view.charts.two_person_relationship.shared_world_ranking') }}</span>
-                            <span class="text-xs text-muted-foreground tabular-nums">{{ sharedWorldRanking.length }}</span>
+                            <span class="text-xs text-muted-foreground tabular-nums">{{
+                                sharedWorldRanking.length
+                            }}</span>
                         </Button>
                     </TooltipWrapper>
                 </div>
@@ -250,44 +255,68 @@
                             </div>
 
                             <div class="flex items-center gap-2">
-                                <span
+                                <TooltipWrapper
                                     v-if="showSelfPresence"
-                                    :class="[
-                                        'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none',
-                                        item.selfPresent
-                                            ? 'bg-green-500/15 text-green-600 dark:text-green-400'
-                                            : 'bg-red-500/15 text-red-600 dark:text-red-400'
-                                    ]">
-                                    {{
-                                        item.selfPresent
-                                            ? t('view.charts.two_person_relationship.self_present')
-                                            : t('view.charts.two_person_relationship.self_not_present')
-                                    }}
-                                </span>
-                                <span
-                                    :class="[
-                                        'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none',
-                                        item.initiator === 'mutual'
-                                            ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
-                                            : item.initiator === 'unknown'
-                                              ? 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800'
-                                              : 'text-orange-600 dark:text-orange-400'
-                                    ]"
-                                    :style="
-                                        item.initiator === 'leftPlayer'
-                                            ? {
-                                                  background:
-                                                      'linear-gradient(to right, rgb(249 115 22 / 0.3), rgb(249 115 22 / 0))'
-                                              }
-                                            : item.initiator === 'rightPlayer'
-                                              ? {
-                                                    background:
-                                                        'linear-gradient(to left, rgb(249 115 22 / 0.3), rgb(249 115 22 / 0))'
-                                                }
-                                              : {}
-                                    ">
-                                    {{ t('view.charts.two_person_relationship.initiator_' + item.initiator) }}
-                                </span>
+                                    :content="
+                                        t(
+                                            'view.charts.two_person_relationship.' +
+                                                getSelfPresenceTooltipKey(item.selfPresent)
+                                        )
+                                    "
+                                    side="top">
+                                    <span
+                                        :class="[
+                                            'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none',
+                                            item.selfPresent
+                                                ? 'bg-green-500/15 text-green-600 dark:text-green-400'
+                                                : 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800'
+                                        ]">
+                                        {{
+                                            t(
+                                                'view.charts.two_person_relationship.' +
+                                                    getSelfPresenceLabelKey(item.selfPresent)
+                                            )
+                                        }}
+                                    </span>
+                                </TooltipWrapper>
+                                <TooltipWrapper
+                                    :content="
+                                        t(
+                                            'view.charts.two_person_relationship.' +
+                                                getInitiatorTooltipKey(item.initiator)
+                                        )
+                                    "
+                                    side="top">
+                                    <span
+                                        :class="[
+                                            'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium leading-none',
+                                            item.initiator === 'mutual'
+                                                ? 'bg-blue-500/15 text-blue-600 dark:text-blue-400'
+                                                : item.initiator === 'unknown'
+                                                  ? 'bg-zinc-500/15 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-800'
+                                                  : 'text-orange-600 dark:text-orange-400'
+                                        ]"
+                                        :style="
+                                            item.initiator === 'leftPlayer'
+                                                ? {
+                                                      background:
+                                                          'linear-gradient(to right, rgb(249 115 22 / 0.3), rgb(249 115 22 / 0))'
+                                                  }
+                                                : item.initiator === 'rightPlayer'
+                                                  ? {
+                                                        background:
+                                                            'linear-gradient(to left, rgb(249 115 22 / 0.3), rgb(249 115 22 / 0))'
+                                                    }
+                                                  : {}
+                                        ">
+                                        {{
+                                            t(
+                                                'view.charts.two_person_relationship.' +
+                                                    getInitiatorLabelKey(item.initiator)
+                                            )
+                                        }}
+                                    </span>
+                                </TooltipWrapper>
                             </div>
                         </div>
                     </button>
@@ -323,6 +352,12 @@
     import { useAppearanceSettingsStore, useFriendStore, useTrackedNonFriendsStore, useUserStore } from '@/stores';
     import { useUserDisplay } from '@/composables/useUserDisplay';
     import { buildSharedWorldRanking, countSharedRoomVisits } from './twoPersonRelationshipStats';
+    import {
+        getInitiatorLabelKey,
+        getInitiatorTooltipKey,
+        getSelfPresenceLabelKey,
+        getSelfPresenceTooltipKey
+    } from './twoPersonRelationshipPresentation';
 
     const { t } = useI18n();
 

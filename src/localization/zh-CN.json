@@ -780,7 +780,8 @@
             "two_person_relationship": {
                 "header": "双人关系",
                 "tips": {
-                    "description": "通过分析你的记录数据库，找出两位好友曾经共处一室的记录。即使你当时并不在场，它也会基于他们各自的游戏记录片段拼凑出完整的相遇时刻。"
+                    "description": "通过本地游戏日志查找两位好友时间重叠的房间记录，并合并他们记录到的进出时间，包括从活动记录推断出的时间段。",
+                    "data_boundary": "这些标签描述的是已记录的证据，不代表已经确认本人缺席或谁有意跟随。未找到本人在场记录只表示没有匹配的本地记录；进出顺序根据记录时间推断，缺失日志或快照可能导致顺序不明。"
                 },
                 "select_friend_a": "选择好友 A",
                 "select_friend_b": "选择好友 B",
@@ -798,14 +799,20 @@
                 "meet_count": "{count} 次共存",
                 "settings": "设置",
                 "show_self_presence": "显示自己是否在场",
-                "self_present": "在场",
-                "self_not_present": "缺席",
+                "self_present": "发现本人在场记录",
+                "self_not_present": "未找到本人在场记录",
+                "self_present_tooltip": "找到与这段共同在场时间重叠的本人本地记录。",
+                "self_not_present_tooltip": "没有找到匹配的本人本地记录；这不等于确认本人缺席。",
                 "instance_creator": "房间创建者",
                 "max_player_count": "最高同时在场人数",
-                "initiator_leftPlayer": "左侧跟随",
-                "initiator_rightPlayer": "右侧跟随",
-                "initiator_mutual": "双向奔赴",
-                "initiator_unknown": "未知"
+                "initiator_leftPlayer": "推测后加入（左侧）",
+                "initiator_rightPlayer": "推测后加入（右侧）",
+                "initiator_mutual": "近同时加入",
+                "initiator_unknown": "加入顺序不明",
+                "initiator_leftPlayer_tooltip": "根据超过 3 分钟的加入时间差推测；左侧玩家较晚加入。",
+                "initiator_rightPlayer_tooltip": "根据超过 3 分钟的加入时间差推测；右侧玩家较晚加入。",
+                "initiator_mutual_tooltip": "两人的记录加入时间相差不超过 3 分钟，因此无法确定谁先加入。",
+                "initiator_unknown_tooltip": "现有记录无法确定加入顺序，可能因为数据来自快照。"
             },
             "relationship_timeline": {
                 "header": "关系时间轴",
