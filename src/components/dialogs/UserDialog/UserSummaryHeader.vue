@@ -141,14 +141,53 @@
             </div>
 
             <div class="flex flex-wrap gap-1 text-[11px]" v-show="!userDialog.loading">
-                <TooltipWrapper side="top" :content="t('dialog.user.tags.trust_level')">
-                    <Badge
-                        variant="outline"
-                        class="name h-5 px-1.5 text-[11px] leading-none"
-                        :class="userDialog.ref.$trustClass">
-                        <Shield class="h-2.5 w-2.5" /> {{ userDialog.ref.$trustLevel }}
-                    </Badge>
-                </TooltipWrapper>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Badge
+                            variant="outline"
+                            class="name h-5 px-1.5 text-[11px] leading-none cursor-pointer"
+                            :class="userDialog.ref.$trustClass"
+                            :title="t('dialog.user.tags.trust_level_history')"
+                            :aria-label="t('dialog.user.tags.trust_level_history')"
+                            data-testid="trust-level-history-trigger">
+                            <Shield class="h-2.5 w-2.5" /> {{ userDialog.ref.$trustLevel }}
+                            <History class="ml-0.5 h-2.5 w-2.5 opacity-70" />
+                        </Badge>
+                    </PopoverTrigger>
+                    <PopoverContent side="bottom" align="start" class="w-80 p-3" data-testid="trust-level-history">
+                        <div class="flex items-center gap-1.5 mb-2 text-sm font-medium">
+                            <History class="h-3.5 w-3.5" />
+                            <span>{{ t('dialog.user.tags.trust_level_history') }}</span>
+                        </div>
+                        <div v-if="userDialog.trustLevelHistoryLoading" class="text-xs text-muted-foreground">
+                            {{ t('dialog.user.tags.trust_level_history_loading') }}
+                        </div>
+                        <div
+                            v-else-if="trustLevelTimeline.length"
+                            class="max-h-60 space-y-2 overflow-y-auto pr-1">
+                            <div
+                                v-for="entry in trustLevelTimeline"
+                                :key="entry.id"
+                                class="flex flex-col gap-1 rounded-md border border-border/60 px-2 py-1.5">
+                                <span class="text-[10px] text-muted-foreground">
+                                    {{ formatDateFilter(entry.createdAt, 'long') }}
+                                </span>
+                                <div class="flex items-center gap-1 text-xs">
+                                    <Badge variant="outline" class="h-5 px-1.5 text-[10px]" :class="entry.fromMeta.className">
+                                        {{ entry.from || '-' }}
+                                    </Badge>
+                                    <ArrowRight class="h-3 w-3 shrink-0 text-muted-foreground" />
+                                    <Badge variant="outline" class="h-5 px-1.5 text-[10px]" :class="entry.toMeta.className">
+                                        {{ entry.to || '-' }}
+                                    </Badge>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else class="text-xs text-muted-foreground">
+                            {{ t('dialog.user.tags.trust_level_history_empty') }}
+                        </div>
+                    </PopoverContent>
+                </Popover>
                 <TooltipWrapper
                     v-if="userDialog.ref.ageVerified && userDialog.ref.ageVerificationStatus"
                     side="top"
@@ -410,6 +449,7 @@
 <script setup>
     import {
         Apple,
+        ArrowRight,
         BadgeCheck,
         ChevronDown,
         IdCard,
@@ -419,6 +459,7 @@
         Shield,
         Smartphone,
         Hand,
+        History,
         UserPlus,
         Users,
         XCircle,
@@ -440,6 +481,7 @@
     import IconFrame from '../../IconFrame.vue';
     import NameplateEffect from '../../NameplateEffect.vue';
     import ProfileEffect from '../../ProfileEffect.vue';
+    import { buildTrustLevelTimeline } from './trustLevelHistory';
 
     import UserActionDropdown from './UserActionDropdown.vue';
     import { showGroupDialog } from '@/coordinators/groupCoordinator';
@@ -475,6 +517,10 @@
     const { showFullscreenImageDialog } = useGalleryStore();
     const { userStatusClass } = useUserDisplay();
     const { showEditProfileDialog = () => {} } = useUserStore();
+
+    const trustLevelTimeline = computed(() =>
+        buildTrustLevelTimeline(userDialog.value.trustLevelHistory || [])
+    );
 
     const profileImageError = ref(false);
     const userIconError = ref(false);

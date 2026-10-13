@@ -8,6 +8,10 @@ const TRUST_LEVEL_META = {
         shortLabel: 'Trusted',
         className: 'x-tag-veteran'
     },
+    'Veteran User': {
+        shortLabel: 'Veteran',
+        className: 'x-tag-veteran'
+    },
     'Known User': {
         shortLabel: 'Known',
         className: 'x-tag-trusted'

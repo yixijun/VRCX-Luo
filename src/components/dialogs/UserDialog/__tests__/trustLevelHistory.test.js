@@ -64,4 +64,11 @@ describe('buildTrustLevelTimeline', () => {
             className: 'text-muted-foreground border-muted-foreground/40'
         });
     });
+
+    test('styles the Veteran User level like other top trust levels', () => {
+        expect(getTrustLevelMeta('Veteran User')).toEqual({
+            shortLabel: 'Veteran',
+            className: 'x-tag-veteran'
+        });
+    });
 });

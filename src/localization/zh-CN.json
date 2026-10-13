@@ -1640,6 +1640,9 @@
                 "vrchat_team": "VRChat 团队成员",
                 "age_verified": "已完成年龄验证",
                 "trust_level": "信誉等级",
+                "trust_level_history": "查看信誉等级记录",
+                "trust_level_history_loading": "正在加载信誉等级记录...",
+                "trust_level_history_empty": "暂无信誉等级变更记录",
                 "mutual_friends": "共同好友",
                 "open_in_discord": "在 Discord 中打开",
                 "discord": "Discord"

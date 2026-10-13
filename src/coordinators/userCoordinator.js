@@ -448,8 +448,31 @@ export function showUserDialog(userId) {
     D.dateFriended = '';
     D.unFriended = false;
     D.dateFriendedInfo = [];
+    D.trustLevelHistory = [];
+    D.trustLevelHistoryLoading = true;
     D.mutualFriendCount = 0;
     D.mutualGroupCount = 0;
+
+    // Trust-level changes are already persisted in the friend log history.
+    // Load only this user's TrustLevel rows so the profile card can show the
+    // history without reading the full friend-log table.
+    database
+        .getFriendLogHistoryForUserId(userId, ['TrustLevel'])
+        .then((rows) => {
+            if (D.id === userId) {
+                D.trustLevelHistory = Array.isArray(rows) ? rows : [];
+            }
+        })
+        .catch((error) => {
+            if (AppDebug.debugWebRequests) {
+                console.warn('Failed to load trust level history:', error);
+            }
+        })
+        .finally(() => {
+            if (D.id === userId) {
+                D.trustLevelHistoryLoading = false;
+            }
+        });
     if (userId === currentUser.id) {
         getWorldName(currentUser.homeLocation).then((worldName) => {
             D.$homeLocationName = worldName;

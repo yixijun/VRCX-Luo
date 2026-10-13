@@ -255,6 +255,8 @@ export const useUserStore = defineStore('User', () => {
         dateFriended: '',
         unFriended: false,
         dateFriendedInfo: [],
+        trustLevelHistory: [],
+        trustLevelHistoryLoading: false,
         mutualFriendCount: 0,
         mutualGroupCount: 0,
         mutualFriends: [],
