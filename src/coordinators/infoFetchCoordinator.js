@@ -1,4 +1,4 @@
-import { reactive, computed } from 'vue';
+import { reactive } from 'vue';
 import { database } from '../services/database';
 import {
     useFriendStore,
@@ -14,14 +14,21 @@ import { recordBioSnapshotForUser } from './bioSnapshotCoordinator';
  * StatusBar / ProfileCompletionDialog 等 UI 组件直接读取此对象即可。
  */
 export const infoFetchState = reactive({
-    /** 'idle' | 'running' | 'done' */
+    /** 'idle' | 'running' | 'computing' | 'done' | 'partial' | 'failed' | 'cancelled' */
     status: 'idle',
     done: 0,
     total: 0,
     friendsTotal: 0,
     trackedTotal: 0,
     bioUpdated: 0,
-    statusUpdated: 0
+    statusUpdated: 0,
+    succeeded: 0,
+    failed: 0,
+    failureCount: 0,
+    failures: [],
+    failedTargets: [],
+    startedAt: null,
+    finishedAt: null
 });
 
 let cancelled = false;
@@ -83,72 +90,138 @@ function buildTargetList() {
     return list;
 }
 
+function normalizeTargets(targets) {
+    const seenIds = new Set();
+    return (targets || []).filter((target) => {
+        if (!target?.userId || seenIds.has(target.userId)) {
+            return false;
+        }
+        seenIds.add(target.userId);
+        return true;
+    });
+}
+
+function resetRunState(targets) {
+    infoFetchState.status = 'running';
+    infoFetchState.done = 0;
+    infoFetchState.total = targets.length;
+    infoFetchState.friendsTotal = 0;
+    infoFetchState.trackedTotal = 0;
+    infoFetchState.bioUpdated = 0;
+    infoFetchState.statusUpdated = 0;
+    infoFetchState.succeeded = 0;
+    infoFetchState.failed = 0;
+    infoFetchState.failureCount = 0;
+    infoFetchState.failures = [];
+    infoFetchState.failedTargets = [];
+    infoFetchState.startedAt = Date.now();
+    infoFetchState.finishedAt = null;
+}
+
+function getErrorMessage(error) {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+    return String(error || 'Unknown error');
+}
+
+function recordFailure(target, stage, error, failedTargetIds) {
+    infoFetchState.failures.push({
+        userId: target?.userId || '',
+        displayName: target?.displayName || '',
+        stage,
+        message: getErrorMessage(error)
+    });
+    infoFetchState.failureCount += 1;
+    if (target?.userId && !failedTargetIds.has(target.userId)) {
+        failedTargetIds.add(target.userId);
+        infoFetchState.failedTargets.push({ ...target });
+    }
+}
+
+async function fetchWithRetry(target, stage, request, failedTargetIds) {
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+        try {
+            const result = await request();
+            return { value: result?.json || null, cancelled: false };
+        } catch (error) {
+            if (attempt === 0) {
+                if (cancelled) {
+                    return { value: null, cancelled: true };
+                }
+                await new Promise((resolve) => setTimeout(resolve, 500));
+                if (cancelled) {
+                    return { value: null, cancelled: true };
+                }
+                continue;
+            }
+            recordFailure(target, stage, error, failedTargetIds);
+            return { value: null, cancelled: false };
+        }
+    }
+    return { value: null, cancelled: false };
+}
+
 /**
  * 执行全量信息抓取补全（个人简介 + 隐私状态）。
  * 通过 API 强制刷新每个用户的资料，与数据库对比后写入变更记录。
  *
  * 可由启动、L4 末尾、用户手动点击、ProfileCompletionDialog 等多处调用，内建防重入。
  */
-export async function runSilentInfoFetch() {
-    if (infoFetchState.status === 'running') return;
+export async function runSilentInfoFetch(options = {}) {
+    if (
+        infoFetchState.status === 'running' ||
+        infoFetchState.status === 'computing'
+    )
+        return;
 
     cancelled = false;
-    infoFetchState.status = 'running';
-    infoFetchState.done = 0;
-    infoFetchState.bioUpdated = 0;
-    infoFetchState.statusUpdated = 0;
 
-    const targets = buildTargetList();
+    const targets = normalizeTargets(options.targets || buildTargetList());
     const counts = getTargetCount();
     const currentUserId = useUserStore().currentUser.id;
+    resetRunState(targets);
     infoFetchState.total = targets.length;
-    infoFetchState.friendsTotal = counts.friends;
-    infoFetchState.trackedTotal = counts.tracked;
+    infoFetchState.friendsTotal = Array.isArray(options.targets)
+        ? targets.length
+        : counts.friends;
+    infoFetchState.trackedTotal = Array.isArray(options.targets)
+        ? 0
+        : counts.tracked;
 
     if (targets.length === 0) {
         infoFetchState.status = 'done';
+        infoFetchState.finishedAt = Date.now();
         return;
     }
 
-    console.log(`[InfoFetch] 开始抓取，共 ${targets.length} 个目标（好友 + 追踪非好友）`);
+    console.log(
+        `[InfoFetch] 开始抓取，共 ${targets.length} 个目标（好友 + 追踪非好友）`
+    );
+    const failedTargetIds = new Set();
 
     for (const target of targets) {
         if (cancelled) break;
 
-        let userJson = null;
-        let profileJson = null;
+        const userResult = await fetchWithRetry(
+            target,
+            'user_fetch',
+            () => userRequest.getUser({ userId: target.userId }),
+            failedTargetIds
+        );
+        if (userResult.cancelled) break;
+        const userJson = userResult.value;
+        if (cancelled) break;
 
-        // 通过 API 获取最新资料
-        try {
-            const result = await userRequest.getUser({ userId: target.userId });
-            userJson = result.json;
-        } catch {
-            // 如果失败（如 429），等 0.5s 后重试一次
-            if (cancelled) break;
-            await new Promise((r) => setTimeout(r, 500));
-            try {
-                const result = await userRequest.getUser({ userId: target.userId });
-                userJson = result.json;
-            } catch (retryError) {
-                console.error(`[InfoFetch] Failed to fetch ${target.userId} after retry`, retryError);
-            }
-        }
-
-        // Public bios now come from the dedicated profile endpoint. Keep the
-        // legacy user response for status and presence fields only.
-        try {
-            const result = await userRequest.getPublicProfile({ userId: target.userId });
-            profileJson = result.json;
-        } catch {
-            if (cancelled) break;
-            await new Promise((r) => setTimeout(r, 500));
-            try {
-                const result = await userRequest.getPublicProfile({ userId: target.userId });
-                profileJson = result.json;
-            } catch (retryError) {
-                console.error(`[InfoFetch] Failed to fetch public profile ${target.userId} after retry`, retryError);
-            }
-        }
+        const profileResult = await fetchWithRetry(
+            target,
+            'profile_fetch',
+            () => userRequest.getPublicProfile({ userId: target.userId }),
+            failedTargetIds
+        );
+        if (profileResult.cancelled) break;
+        const profileJson = profileResult.value;
+        if (cancelled) break;
 
         if (profileJson && typeof profileJson.bio === 'string') {
             try {
@@ -159,13 +232,16 @@ export async function runSilentInfoFetch() {
                     currentBio: profileJson.bio,
                     previousBio: undefined,
                     isFriend: false,
-                    displayName: profileJson.displayName || userJson?.displayName || target.displayName
+                    displayName:
+                        profileJson.displayName ||
+                        userJson?.displayName ||
+                        target.displayName
                 });
                 if (recorded) {
                     infoFetchState.bioUpdated++;
                 }
-            } catch {
-                // Ignore profile archive failures and continue the status scan.
+            } catch (error) {
+                recordFailure(target, 'bio_archive', error, failedTargetIds);
             }
         }
 
@@ -180,7 +256,8 @@ export async function runSilentInfoFetch() {
 
                 const validStatuses = ['join me', 'active', 'ask me', 'busy'];
                 if (validStatuses.includes(currentStatus)) {
-                    const lastStatus = await database.getLastStatusChangeForUser(userId);
+                    const lastStatus =
+                        await database.getLastStatusChangeForUser(userId);
                     if (
                         !lastStatus ||
                         lastStatus.status !== currentStatus ||
@@ -193,29 +270,62 @@ export async function runSilentInfoFetch() {
                             status: currentStatus,
                             statusDescription: currentStatusDesc,
                             previousStatus: lastStatus ? lastStatus.status : '',
-                            previousStatusDescription: lastStatus ? lastStatus.statusDescription : ''
+                            previousStatusDescription: lastStatus
+                                ? lastStatus.statusDescription
+                                : ''
                         });
                         infoFetchState.statusUpdated++;
                     }
                 }
-            } catch {
-                // ignore
+            } catch (error) {
+                recordFailure(target, 'status_archive', error, failedTargetIds);
             }
         }
 
+        if (cancelled) break;
         infoFetchState.done++;
     }
 
+    infoFetchState.failed = failedTargetIds.size;
+    infoFetchState.succeeded = Math.max(
+        0,
+        infoFetchState.done - infoFetchState.failed
+    );
+
     if (!cancelled) {
         infoFetchState.status = 'computing';
-        await useManualRelationsStore().computeSuggestions();
-        
-        infoFetchState.status = 'done';
-        console.log(
-            `[InfoFetch] 完成：Bio 更新 ${infoFetchState.bioUpdated} 条，Status 更新 ${infoFetchState.statusUpdated} 条`
-        );
+        try {
+            await useManualRelationsStore().computeSuggestions();
+        } catch (error) {
+            recordFailure(null, 'relationship_compute', error, failedTargetIds);
+        }
+        if (infoFetchState.failureCount === 0) {
+            infoFetchState.status = 'done';
+        } else if (infoFetchState.succeeded > 0) {
+            infoFetchState.status = 'partial';
+        } else {
+            infoFetchState.status = 'failed';
+        }
     } else {
-        infoFetchState.status = 'idle';
+        infoFetchState.status = 'cancelled';
         console.log('[InfoFetch] 已取消');
     }
+
+    infoFetchState.finishedAt = Date.now();
+    console.log(
+        `[InfoFetch] 完成：处理 ${infoFetchState.done}/${infoFetchState.total}，失败目标 ${infoFetchState.failed}，Bio 更新 ${infoFetchState.bioUpdated} 条，Status 更新 ${infoFetchState.statusUpdated} 条`
+    );
+}
+
+export function retryFailedInfoFetch() {
+    if (
+        infoFetchState.status === 'running' ||
+        infoFetchState.status === 'computing'
+    ) {
+        return Promise.resolve();
+    }
+    const targets = infoFetchState.failedTargets.map((target) => ({
+        ...target
+    }));
+    return runSilentInfoFetch(targets.length ? { targets } : {});
 }

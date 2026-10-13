@@ -358,7 +358,7 @@
                             <div
                                 class="flex items-center gap-1 px-2 h-[22px] whitespace-nowrap border-r border-border cursor-pointer hover:bg-accent"
                                 :style="statusBarItemStyle('profileInfoSync')"
-                                @click="runSilentInfoFetch">
+                                @click="handleInfoFetchClick">
                                 <!-- Running: yellow spinner -->
                                 <svg
                                     v-if="infoFetchState.status === 'running'"
@@ -392,6 +392,14 @@
                                         stroke-linecap="round"
                                         stroke-linejoin="round" />
                                 </svg>
+                                <span
+                                    v-else-if="
+                                        infoFetchState.status === 'partial' || infoFetchState.status === 'cancelled'
+                                    "
+                                    class="inline-block size-2 rounded-full shrink-0 bg-status-askme" />
+                                <span
+                                    v-else-if="infoFetchState.status === 'failed'"
+                                    class="inline-block size-2 rounded-full shrink-0 bg-destructive" />
                                 <!-- Idle: grey circle -->
                                 <span v-else class="inline-block size-2 rounded-full shrink-0 bg-status-offline-alt" />
                                 <span class="text-[10px] text-foreground">{{ t('status_bar.info_sync') }}</span>
@@ -573,7 +581,7 @@
     import { useI18n } from 'vue-i18n';
     import { openExternalLink } from '@/shared/utils/appActions';
     import { wsState } from '@/services/websocket';
-    import { infoFetchState, runSilentInfoFetch } from '@/coordinators/infoFetchCoordinator';
+    import { infoFetchState, retryFailedInfoFetch, runSilentInfoFetch } from '@/coordinators/infoFetchCoordinator';
 
     import dayjs from 'dayjs';
     import timezone from 'dayjs/plugin/timezone';
@@ -927,8 +935,33 @@
                 status: infoFetchState.statusUpdated
             });
         }
+        if (infoFetchState.status === 'partial') {
+            return t('view.tools.system_tools.info_completion_tooltip_partial', {
+                failed: infoFetchState.failed,
+                failureCount: infoFetchState.failureCount
+            });
+        }
+        if (infoFetchState.status === 'failed') {
+            return t('view.tools.system_tools.info_completion_tooltip_failed', {
+                failed: infoFetchState.failed,
+                failureCount: infoFetchState.failureCount
+            });
+        }
+        if (infoFetchState.status === 'cancelled') {
+            return t('view.tools.system_tools.info_completion_tooltip_cancelled', {
+                processed: infoFetchState.done,
+                total: infoFetchState.total
+            });
+        }
         return t('view.tools.system_tools.info_completion_tooltip_idle');
     });
+
+    function handleInfoFetchClick() {
+        if (infoFetchState.failedTargets.length) {
+            return retryFailedInfoFetch();
+        }
+        return runSilentInfoFetch();
+    }
 
     const appUptimeText = computed(() => {
         const elapsedSeconds = Math.floor((now.value - vrcxStore.appStartAt) / 1000);
