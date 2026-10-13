@@ -5,42 +5,52 @@
                 <DialogTitle class="flex items-center gap-2">
                     <MapPin class="size-4 text-muted-foreground" />
                     <span>{{ t('view.charts.two_person_relationship.shared_world_ranking') }}</span>
-                    <span class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
+                    <span
+                        class="rounded-full bg-muted px-2 py-0.5 text-xs font-medium tabular-nums text-muted-foreground">
                         {{ items.length }}
                     </span>
                 </DialogTitle>
             </DialogHeader>
 
-            <div class="min-h-0 flex-1 overflow-y-auto p-2 sm:p-3">
+            <div ref="scrollViewportRef" class="min-h-0 flex-1 overflow-y-auto p-2 sm:p-3">
                 <div v-if="items.length === 0" class="px-3 py-10 text-center text-sm text-muted-foreground">
                     {{ t('view.charts.two_person_relationship.no_data') }}
                 </div>
 
-                <div v-else class="divide-y divide-border/50 overflow-hidden rounded-lg border border-border/60">
-                    <button
-                        v-for="(item, index) in items"
-                        :key="item.worldId"
-                        type="button"
-                        class="group flex w-full min-w-0 items-center gap-3 px-3 py-3 text-left transition-colors hover:bg-accent/60 sm:px-4"
-                        @click="selectWorld(item)">
-                        <span
-                            :class="[
-                                'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
-                                rankClass(index)
-                            ]">
-                            {{ index + 1 }}
-                        </span>
+                <div
+                    v-else
+                    class="relative overflow-hidden rounded-lg border border-border/60"
+                    :style="virtualContainerStyle">
+                    <template v-for="virtualItem in virtualItems" :key="virtualItem.key">
+                        <button
+                            type="button"
+                            class="group absolute left-0 top-0 flex w-full min-w-0 items-center gap-3 border-b border-border/50 px-3 py-3 text-left transition-colors hover:bg-accent/60 sm:px-4"
+                            :data-index="virtualItem.index"
+                            :ref="virtualizer.measureElement"
+                            :style="{ transform: `translateY(${virtualItem.start}px)` }"
+                            @click="selectWorld(items[virtualItem.index])">
+                            <span
+                                :class="[
+                                    'flex size-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums',
+                                    rankClass(virtualItem.index)
+                                ]">
+                                {{ virtualItem.index + 1 }}
+                            </span>
 
-                        <Location :location="item.worldId" :link="false" class="min-w-0 flex-1 text-sm" />
+                            <Location
+                                :location="items[virtualItem.index].worldId"
+                                :link="false"
+                                class="min-w-0 flex-1 text-sm" />
 
-                        <span class="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
-                            <span>{{
-                                t('view.charts.two_person_relationship.shared_world_ranking_visits', {
-                                    count: item.visitCount
-                                })
-                            }}</span>
-                        </span>
-                    </button>
+                            <span class="flex shrink-0 items-center gap-1.5 text-xs text-muted-foreground tabular-nums">
+                                <span>{{
+                                    t('view.charts.two_person_relationship.shared_world_ranking_visits', {
+                                        count: items[virtualItem.index].visitCount
+                                    })
+                                }}</span>
+                            </span>
+                        </button>
+                    </template>
                 </div>
             </div>
         </DialogContent>
@@ -48,13 +58,15 @@
 </template>
 
 <script setup>
+    import { computed, nextTick, ref, watch } from 'vue';
     import { MapPin } from 'lucide-vue-next';
     import { useI18n } from 'vue-i18n';
+    import { useVirtualizer } from '@tanstack/vue-virtual';
 
     import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import Location from '@/components/Location.vue';
 
-    defineProps({
+    const props = defineProps({
         items: {
             type: Array,
             default: () => []
@@ -64,6 +76,30 @@
     const isOpen = defineModel('open', { type: Boolean, default: false });
     const emit = defineEmits(['select']);
     const { t } = useI18n();
+    const scrollViewportRef = ref(null);
+
+    const virtualizer = useVirtualizer(
+        computed(() => ({
+            count: props.items.length,
+            getScrollElement: () => scrollViewportRef.value,
+            estimateSize: () => 52,
+            getItemKey: (index) => props.items[index]?.worldId ?? index,
+            overscan: 6
+        }))
+    );
+
+    const virtualItems = computed(() => virtualizer.value?.getVirtualItems?.() ?? []);
+    const virtualContainerStyle = computed(() => ({
+        height: `${virtualizer.value?.getTotalSize?.() ?? 0}px`
+    }));
+
+    watch(
+        () => [props.items.length, isOpen.value],
+        () => {
+            nextTick(() => virtualizer.value?.measure?.());
+        },
+        { immediate: true }
+    );
 
     function rankClass(index) {
         if (index === 0) return 'bg-yellow-500/15 text-yellow-600 dark:text-yellow-400';
