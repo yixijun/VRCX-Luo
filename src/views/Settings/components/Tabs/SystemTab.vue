@@ -105,7 +105,7 @@
                     @update:modelValue="setDisableVrOverlayGpuAcceleration" />
             </SettingsItem>
 
-            <SettingsItem :label="t('view.settings.general.application.proxy')">
+            <SettingsItem item-id="proxy-settings" :label="t('view.settings.general.application.proxy')">
                 <Button size="sm" variant="outline" @click="promptProxySettings">{{
                     t('view.settings.general.application.proxy')
                 }}</Button>

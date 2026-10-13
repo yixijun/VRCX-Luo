@@ -952,6 +952,11 @@
         },
         "settings": {
             "header": "设置",
+            "search": {
+                "label": "搜索设置",
+                "placeholder": "搜索设置…",
+                "no_results": "没有匹配的设置"
+            },
             "category": {
                 "general": "通用",
                 "appearance": "外观",

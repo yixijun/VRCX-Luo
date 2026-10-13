@@ -943,6 +943,11 @@
         },
         "settings": {
             "header": "Settings",
+            "search": {
+                "label": "Search settings",
+                "placeholder": "Search settings…",
+                "no_results": "No matching settings"
+            },
             "category": {
                 "general": "General",
                 "appearance": "Appearance",

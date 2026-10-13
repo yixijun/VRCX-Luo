@@ -17,7 +17,9 @@
                 >
             </SettingsItem>
 
-            <SettingsItem :label="t('view.settings.wrist_overlay.steamvr_wrist_overlay.wrist_feed_overlay')">
+            <SettingsItem
+                item-id="wrist-feed-overlay"
+                :label="t('view.settings.wrist_overlay.steamvr_wrist_overlay.wrist_feed_overlay')">
                 <Switch
                     :model-value="overlayWrist"
                     :disabled="!openVR"

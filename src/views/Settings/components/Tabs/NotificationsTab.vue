@@ -32,6 +32,7 @@
 
         <SettingsGroup :title="t('view.settings.notifications.notifications.desktop_notifications.header')">
             <SettingsItem
+                item-id="desktop-notifications"
                 :label="t('view.settings.notifications.notifications.desktop_notifications.enabled')"
                 :description="t('view.settings.notifications.notifications.desktop_notifications.enabled_description')">
                 <Switch
@@ -83,6 +84,7 @@
             </SettingsItem>
 
             <SettingsItem
+                item-id="notification-sound"
                 :label="t('view.settings.notifications.notifications.desktop_notifications.custom_sound')"
                 :description="
                     t('view.settings.notifications.notifications.desktop_notifications.custom_sound_description')

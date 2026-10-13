@@ -16,7 +16,7 @@
                 </Select>
             </SettingsItem>
 
-            <SettingsItem :label="t('view.settings.appearance.appearance.font_family')">
+            <SettingsItem item-id="font-family" :label="t('view.settings.appearance.appearance.font_family')">
                 <DropdownMenu>
                     <DropdownMenuTrigger as-child>
                         <Button variant="outline" size="sm" class="min-w-[180px] justify-between font-normal">
@@ -107,6 +107,7 @@
             </SettingsItem>
 
             <SettingsItem
+                item-id="profile-themes"
                 :label="t('view.settings.appearance.appearance.vrc_profile_themes')"
                 :description="t('view.settings.appearance.appearance.vrc_profile_themes_description')">
                 <Switch :model-value="displayVRCProfileThemes" @update:modelValue="setDisplayVRCProfileThemes" />
@@ -143,14 +144,13 @@
             <SettingsItem
                 :label="t('view.settings.appearance.appearance.vrc_profile_cosmetics')"
                 :description="t('view.settings.appearance.appearance.vrc_profile_cosmetics_description')">
-                <Switch
-                    :model-value="displayVRCProfileCosmetics"
-                    @update:modelValue="setDisplayVRCProfileCosmetics" />
+                <Switch :model-value="displayVRCProfileCosmetics" @update:modelValue="setDisplayVRCProfileCosmetics" />
             </SettingsItem>
         </SettingsGroup>
 
         <SettingsGroup v-if="!isMacOS" :title="t('view.settings.interface.window_behavior.header')">
             <SettingsItem
+                item-id="close-window-action"
                 :label="t('view.settings.interface.window_behavior.close_button')"
                 :description="t('view.settings.interface.window_behavior.close_button_description')">
                 <Select :model-value="closeButtonAction" @update:modelValue="setCloseButtonAction">
@@ -266,7 +266,7 @@
                 </NumberField>
             </SettingsItem>
 
-            <SettingsItem :label="t('view.settings.appearance.appearance.table_page_sizes')">
+            <SettingsItem item-id="table-page-sizes" :label="t('view.settings.appearance.appearance.table_page_sizes')">
                 <Button size="sm" variant="outline" @click="tablePageSizesDialogOpen = true">{{
                     t('common.actions.configure')
                 }}</Button>

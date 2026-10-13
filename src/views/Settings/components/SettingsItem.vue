@@ -1,10 +1,16 @@
 <template>
-    <div class="settings-item min-h-9 min-w-0 py-1">
+    <div
+        :id="itemId ? `setting-${itemId}` : undefined"
+        :data-settings-item="itemId || undefined"
+        :tabindex="itemId ? -1 : undefined"
+        class="settings-item min-h-9 min-w-0 py-1">
         <div class="flex flex-col gap-0.5 min-w-0 flex-1">
             <span class="text-sm leading-snug font-medium text-foreground">{{ label }}</span>
             <span v-if="description" class="text-xs leading-relaxed text-muted-foreground">{{ description }}</span>
         </div>
-        <div class="settings-item-control flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2">
+        <div
+            data-settings-control
+            class="settings-item-control flex min-w-0 shrink-0 flex-wrap items-center justify-end gap-2">
             <slot />
         </div>
     </div>
@@ -13,7 +19,8 @@
 <script setup>
     defineProps({
         label: { type: String, required: true },
-        description: { type: String, default: '' }
+        description: { type: String, default: '' },
+        itemId: { type: String, default: '' }
     });
 </script>
 
