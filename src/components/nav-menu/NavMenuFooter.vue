@@ -163,6 +163,10 @@
                         </DropdownMenuItem>
 
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem @click="emit('login-other-account')">
+                            <span>{{ t('nav_menu.login_other_account') }}</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
                         <DropdownMenuItem variant="destructive" @click="emit('logout-click')">
                             <span>{{ t('dialog.user.actions.logout') }}</span>
                         </DropdownMenuItem>
@@ -273,6 +277,7 @@
         'theme-color-select',
         'table-density-select',
         'open-custom-nav',
+        'login-other-account',
         'logout-click',
         'toggle-nav-collapse',
         'open-github'

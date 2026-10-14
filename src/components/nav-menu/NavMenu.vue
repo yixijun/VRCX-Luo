@@ -142,6 +142,7 @@
             @theme-color-select="handleThemeColorSelect"
             @table-density-select="handleTableDensitySelect"
             @open-custom-nav="handleOpenCustomNavDialog"
+            @login-other-account="handleLoginOtherAccount"
             @logout-click="handleLogoutClick"
             @toggle-nav-collapse="toggleNavCollapse"
             @open-github="openGithub" />
@@ -320,6 +321,10 @@
 
     const handleLogoutClick = () => {
         logout();
+    };
+
+    const handleLoginOtherAccount = () => {
+        logout({ skipConfirmation: true });
     };
 
     const openGithub = () => {

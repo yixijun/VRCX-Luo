@@ -579,7 +579,22 @@ export const useAuthStore = defineStore('Auth', () => {
     /**
      *
      */
-    function logout() {
+    function logout({ skipConfirmation = false } = {}) {
+        const performLogout = () => {
+            const existingStyle = document.getElementById(
+                'login-container-style'
+            );
+            if (existingStyle) {
+                existingStyle.parentNode.removeChild(existingStyle);
+            }
+            void handleLogoutEvent();
+        };
+
+        if (skipConfirmation) {
+            performLogout();
+            return;
+        }
+
         modalStore
             .confirm({
                 description: t('confirm.logout'),
@@ -587,13 +602,7 @@ export const useAuthStore = defineStore('Auth', () => {
             })
             .then(({ ok }) => {
                 if (!ok) return;
-                const existingStyle = document.getElementById(
-                    'login-container-style'
-                );
-                if (existingStyle) {
-                    existingStyle.parentNode.removeChild(existingStyle);
-                }
-                handleLogoutEvent();
+                performLogout();
             })
             .catch(() => {});
     }

@@ -256,6 +256,7 @@ vi.mock('@/components/ui/dropdown-menu', () => ({
     DropdownMenuSeparator: { template: '<hr />' },
     DropdownMenuLabel: { template: '<div><slot /></div>' },
     DropdownMenuSub: { template: '<div><slot /></div>' },
+    DropdownMenuPortal: { template: '<div><slot /></div>' },
     DropdownMenuSubTrigger: { template: '<div><slot /></div>' },
     DropdownMenuSubContent: { template: '<div><slot /></div>' },
     DropdownMenuCheckboxItem: {
@@ -362,5 +363,17 @@ describe('NavMenu.vue', () => {
         await target.trigger('click');
 
         expect(mocks.directAccessPaste).toHaveBeenCalledTimes(1);
+    });
+
+    it('opens the login flow for another account without a second logout prompt', async () => {
+        const wrapper = mountComponent();
+        const target = wrapper
+            .findAll('[data-testid="dd-item"]')
+            .find((node) => node.text() === 'nav_menu.login_other_account');
+
+        expect(target).toBeTruthy();
+        await target.trigger('click');
+
+        expect(mocks.logout).toHaveBeenCalledWith({ skipConfirmation: true });
     });
 });
