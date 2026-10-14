@@ -158,28 +158,47 @@
                         <div class="flex items-center gap-1.5 mb-2 text-sm font-medium">
                             <History class="h-3.5 w-3.5" />
                             <span>{{ t('dialog.user.tags.trust_level_history') }}</span>
+                            <span
+                                v-if="trustLevelTimeline.length"
+                                class="ml-auto text-[10px] font-normal text-muted-foreground">
+                                {{ trustLevelTimeline.length }}
+                            </span>
                         </div>
                         <div v-if="userDialog.trustLevelHistoryLoading" class="text-xs text-muted-foreground">
                             {{ t('dialog.user.tags.trust_level_history_loading') }}
                         </div>
                         <div
                             v-else-if="trustLevelTimeline.length"
-                            class="max-h-60 space-y-2 overflow-y-auto pr-1">
+                            class="trust-level-timeline max-h-72 overflow-y-auto pr-1">
                             <div
-                                v-for="entry in trustLevelTimeline"
+                                v-for="(entry, index) in trustLevelTimeline"
                                 :key="entry.id"
-                                class="flex flex-col gap-1 rounded-md border border-border/60 px-2 py-1.5">
-                                <span class="text-[10px] text-muted-foreground">
-                                    {{ formatDateFilter(entry.createdAt, 'long') }}
-                                </span>
-                                <div class="flex items-center gap-1 text-xs">
-                                    <Badge variant="outline" class="h-5 px-1.5 text-[10px]" :class="entry.fromMeta.className">
-                                        {{ entry.from || '-' }}
-                                    </Badge>
-                                    <ArrowRight class="h-3 w-3 shrink-0 text-muted-foreground" />
-                                    <Badge variant="outline" class="h-5 px-1.5 text-[10px]" :class="entry.toMeta.className">
-                                        {{ entry.to || '-' }}
-                                    </Badge>
+                                class="trust-level-timeline__item">
+                                <div class="trust-level-timeline__rail" aria-hidden="true">
+                                    <span
+                                        v-if="index < trustLevelTimeline.length - 1"
+                                        class="trust-level-timeline__line"></span>
+                                    <span class="trust-level-timeline__dot"></span>
+                                </div>
+                                <div class="min-w-0 pb-3">
+                                    <span class="block text-[10px] leading-4 text-muted-foreground">
+                                        {{ formatDateFilter(entry.createdAt, 'long') }}
+                                    </span>
+                                    <div class="mt-1 flex flex-wrap items-center gap-1.5 text-xs">
+                                        <Badge
+                                            variant="outline"
+                                            class="h-5 px-1.5 text-[10px]"
+                                            :class="entry.fromMeta.className">
+                                            {{ entry.from || '-' }}
+                                        </Badge>
+                                        <ArrowRight class="h-3 w-3 shrink-0 text-muted-foreground" />
+                                        <Badge
+                                            variant="outline"
+                                            class="h-5 px-1.5 text-[10px]"
+                                            :class="entry.toMeta.className">
+                                            {{ entry.to || '-' }}
+                                        </Badge>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -565,6 +584,38 @@
 </script>
 
 <style scoped>
+    .trust-level-timeline__item {
+        display: grid;
+        grid-template-columns: 14px minmax(0, 1fr);
+        column-gap: 8px;
+    }
+
+    .trust-level-timeline__rail {
+        position: relative;
+        display: flex;
+        justify-content: center;
+    }
+
+    .trust-level-timeline__line {
+        position: absolute;
+        top: 10px;
+        bottom: 0;
+        width: 1px;
+        background: color-mix(in srgb, var(--border) 80%, transparent);
+    }
+
+    .trust-level-timeline__dot {
+        position: relative;
+        z-index: 1;
+        width: 9px;
+        height: 9px;
+        margin-top: 4px;
+        border: 2px solid var(--popover);
+        border-radius: 999px;
+        background: var(--primary);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
+    }
+
     .user-summary-card {
         flex-shrink: 0;
         border: 1px solid color-mix(in srgb, var(--border) 65%, transparent);
