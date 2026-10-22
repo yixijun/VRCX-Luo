@@ -252,6 +252,14 @@ U09 按当前安排暂缓；若后续恢复，应沿用 U07 的设置目录和�
 
 **验证入口：** `src/components/nav-menu/NavMenuFooter.vue`、`src/components/nav-menu/NavMenu.vue`、`src/stores/auth.js`；导航菜单回归测试覆盖入口触发和免二次确认行为，生产构建应随交付执行。
 
+### U18：接受邀请复用启动页面（已完成）
+
+**场景：** 点击接受邀请后直接启动 VRChat 或切换房间，没有机会选择 VR/PC。
+
+**原因与实现：** `acceptInviteAndLaunch` 原先根据 SteamVR/游戏运行状态自动选择模式并调用启动或附加接口。现在接受邀请成功后统一调用 `showLaunchDialog`，通知列表、侧栏和托盘共用此入口。复用现有启动页面的 VR/PC 选择、SteamVR 提示和“在游戏中打开”操作，并保留旧版/V2 邀请的房间地址及访问凭据；取消确认或接受失败时不打开启动页面。关闭启动页面只取消本次启动，邀请回复已经发送。
+
+**验证入口：** `src/stores/notification/__tests__/inviteLaunch.test.js` 覆盖游戏运行/未运行、旧版/V2 凭据、取消确认与请求失败；同时运行 LaunchDialog 和托盘动作回归、本地化检查及生产构建。交付时自动重启 CEF 测试版。
+
 ## 给执行 Agent 的约束与完成标准
 
 先读 [CONTEXT.md](../CONTEXT.md)、[架构决策](./adr/README.md) 和 [测试基线](./TEST_BASELINE.md)，并重新核对目标代码。这里记录的是审查时的静态证据，未来可能已经修复；旧测试基线也不能替代当前运行结果。

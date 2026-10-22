@@ -3108,7 +3108,7 @@
         "invite_group": "Continue? Invite User(s) To Group",
         "delete_log": "Continue? Delete Log",
         "accept_friend_request": "Continue? Accept Friend Request",
-        "accept_invite_and_launch": "Accept this invite and open its instance in VRChat?",
+        "accept_invite_and_launch": "Accept this invite and open launch options? You can choose VR, desktop mode, or open the instance in the running game.",
         "send_invite": "Continue? Send Invite",
         "decline_type": "Continue? Decline {type}",
         "delete_type": "Continue? {type}",
@@ -3424,7 +3424,7 @@
             "response_sent": "Invite response message sent",
             "response_photo_sent": "Invite response photo message sent",
             "location_unavailable": "This invite does not contain a valid instance location",
-            "accept_launch_failed": "Failed to accept the invite or open VRChat"
+            "accept_launch_failed": "Failed to accept the invite or open launch options"
         },
         "launch": {
             "invalid_path": "Invalid path, you must enter VRChat folder or launch.exe",

@@ -3172,7 +3172,7 @@
         "invite_group": "确定要邀请这些用户加入群组吗？",
         "delete_log": "确定要删除日志吗？",
         "accept_friend_request": "要接受这个好友请求吗？",
-        "accept_invite_and_launch": "接受这个邀请并在 VRChat 中打开对应房间吗？",
+        "accept_invite_and_launch": "接受这个邀请并打开启动页面吗？你可以选择 VR、PC 模式或在已运行的游戏中打开房间。",
         "send_invite": "要发送邀请吗？",
         "decline_type": "确定要拒绝{type}吗？",
         "delete_type": "确定要删除{type}吗？",
@@ -3488,7 +3488,7 @@
             "response_sent": "已发送邀请回复消息",
             "response_photo_sent": "已发送回复消息",
             "location_unavailable": "这个邀请不包含有效的房间位置",
-            "accept_launch_failed": "接受邀请或启动 VRChat 失败"
+            "accept_launch_failed": "接受邀请或打开启动页面失败"
         },
         "launch": {
             "invalid_path": "无效路径，你必须输入 VRChat 文件夹所在的路径或 “launch.exe” 所在的路径",

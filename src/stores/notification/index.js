@@ -1513,8 +1513,7 @@ export const useNotificationStore = defineStore("Notification", () => {
     }
 
     /**
-     * Accept a direct friend invite and open the invited instance.
-     * Supports both legacy invite notifications and V2 response actions.
+     * Resolve a saved quick response for legacy invite notifications.
      * @param {boolean} rsvp
      * @returns {Promise<{responseSlot: number | string, rsvp: boolean}>}
      */
@@ -1528,6 +1527,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         );
     }
 
+    // All manual invite entry points reuse LaunchDialog for mode selection.
     async function acceptInviteAndLaunch(row) {
         if (
             !row?.id ||
@@ -1579,19 +1579,10 @@ export const useNotificationStore = defineStore("Notification", () => {
                 handleNotificationHide(row.id);
             }
 
-            const steamVrRunning = await isSteamVrRunning();
-            if (gameStore.isGameRunning) {
-                await launchStore.tryOpenInstanceInVrc(
-                    location,
-                    row.shortName || row.details?.shortName || null,
-                );
-            } else {
-                await launchStore.launchGame(
-                    location,
-                    row.shortName || row.details?.shortName || null,
-                    !steamVrRunning,
-                );
-            }
+            await launchStore.showLaunchDialog(
+                location,
+                row.shortName || row.details?.shortName || row.data?.shortName || null,
+            );
             return true;
         } catch (error) {
             console.error(
@@ -1836,17 +1827,6 @@ export const useNotificationStore = defineStore("Notification", () => {
         const worldId = directLocation || data.worldId;
         const instanceId = details.instanceId || data.instanceId;
         return worldId && instanceId ? `${worldId}:${instanceId}` : "";
-    }
-
-    async function isSteamVrRunning() {
-        try {
-            const running = await AppApi.IsSteamVRRunning();
-            gameStore.setIsSteamVRRunning(running);
-            return running;
-        } catch (error) {
-            console.error("Failed to read SteamVR state:", error);
-            return gameStore.isSteamVRRunning;
-        }
     }
 
     /**
