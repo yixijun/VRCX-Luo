@@ -52,6 +52,7 @@ namespace VRCX
         private DateTime _lastWristPointerHitAt = DateTime.MinValue;
         private ETrackedControllerRole _wristControllerRole = ETrackedControllerRole.Invalid;
         private readonly WristPointerPoseResolver _wristPointerPoseResolver = new();
+        private readonly WristPointerOverlayProjection _wristPointerProjection = new();
 
         private const string OVERLAY_SHM_PATH = "/dev/shm/vrcx_overlay";
         private const int WRIST_FRAME_WIDTH = 512;
@@ -654,7 +655,7 @@ namespace VRCX
                             WristPointerMath.GetControllerForward(deviceAxisZ.X, deviceAxisZ.Y, deviceAxisZ.Z),
                             out ray
                         );
-                    currentHit = rayValid && WristPointerOverlayProjection.TryIntersect(
+                    currentHit = rayValid && _wristPointerProjection.TryIntersect(
                         overlay, overlayHandle, ray, poses, out x, out y);
 
                     if (currentHit)
@@ -756,6 +757,7 @@ namespace VRCX
             _wristControllerRole = ETrackedControllerRole.Invalid;
             _wristOverlayMouseScaleHandle = 0;
             _wristPointerPoseResolver.Reset();
+            _wristPointerProjection.Reset();
         }
 
         internal EVROverlayError ProcessDashboard(CVROverlay overlay, ref ulong dashboardHandle, bool dashboardVisible)
