@@ -6,6 +6,37 @@ namespace VRCX.Tests;
 
 public class WristPointerMathTests
 {
+    [Fact]
+    public void SubpixelTrackingDriftAtDisplayEdgeIsClampedButOutsidePointsAreRejected()
+    {
+        Assert.True(WristPointerMath.TryProjectOverlayPoint(new Vector3(0, .501f, 0), Matrix4x4.Identity, 1, 1, out _, out var y));
+        Assert.Equal(0f, y);
+        Assert.False(WristPointerMath.TryProjectOverlayPoint(new Vector3(0,.51f,0),Matrix4x4.Identity,1,1,out _,out _));
+    }
+
+    [Theory]
+    [InlineData(0f, 0f)]
+    [InlineData(0f, 1f)]
+    [InlineData(1f, 0f)]
+    [InlineData(1f, 1f)]
+    public void AnalyticalRayReachesCornersAfterHandRotation(float expectedX, float expectedY)
+    {
+        var transform=Matrix4x4.CreateScale(.25f)*Matrix4x4.CreateRotationX(.8f)*Matrix4x4.CreateTranslation(1,2,3);
+        var source=Vector3.Transform(new Vector3(expectedX-.5f,.5f-expectedY,1),transform);
+        var direction=Vector3.Normalize(Vector3.TransformNormal(-Vector3.UnitZ,transform));
+        Assert.True(WristPointerMath.TryIntersectOverlayRay(new WristPointerRay(source,direction),transform,1,1,out var x,out var y));
+        Assert.Equal(expectedX,x,4);
+        Assert.Equal(expectedY,y,4);
+    }
+
+    [Fact]
+    public void RayMissesBehindOutsideAndParallelToDisplayAreRejected()
+    {
+        Assert.False(WristPointerMath.TryIntersectOverlayRay(new WristPointerRay(new Vector3(0,0,1),Vector3.UnitZ),Matrix4x4.Identity,1,1,out _,out _));
+        Assert.False(WristPointerMath.TryIntersectOverlayRay(new WristPointerRay(new Vector3(0,0,1),Vector3.UnitX),Matrix4x4.Identity,1,1,out _,out _));
+        Assert.False(WristPointerMath.TryIntersectOverlayRay(new WristPointerRay(new Vector3(0,2,1),-Vector3.UnitZ),Matrix4x4.Identity,1,1,out _,out _));
+    }
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(1, 0)]

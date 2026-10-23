@@ -8,6 +8,21 @@ import {
 } from '../wristPointer';
 
 describe('wristPointer', () => {
+    it('keeps the bottom-right endpoint inside the wrist hit-test rectangle', () => {
+        const wrist = document.createElement('div');
+        const action = document.createElement('button');
+        action.dataset.vrAction = 'edge';
+        wrist.append(action);
+        vi.spyOn(wrist, 'getBoundingClientRect').mockReturnValue({left: 0, top: 0, width: 512, height: 510});
+        const click = vi.spyOn(action, 'click');
+        const documentRef = {
+            querySelector: () => wrist,
+            elementFromPoint: (x, y) => x >= 0 && x < 512 && y >= 0 && y < 510 ? action : null
+        };
+        expect(dispatchWristPointerClick({x: 1, y: 1, visible: true}, documentRef)).toBe(true);
+        expect(click).toHaveBeenCalledOnce();
+    });
+
     it('accepts the JSON payload used by the CEF bridge', () => {
         expect(
             normalizeWristPointer(

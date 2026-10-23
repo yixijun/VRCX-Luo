@@ -766,7 +766,6 @@ namespace VRCX
             _wristControllerRole = ETrackedControllerRole.Invalid;
             _wristOverlayMouseScaleHandle = 0;
             _wristPointerPoseResolver.Reset();
-            _wristPointerProjection.Reset();
         }
 
         internal EVROverlayError ProcessDashboard(CVROverlay overlay, ref ulong dashboardHandle, bool dashboardVisible)

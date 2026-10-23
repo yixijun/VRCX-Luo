@@ -20,6 +20,21 @@ internal enum WristPointerCoordinateSpace
 /// </summary>
 public static class WristPointerMath
 {
+    public static bool TryIntersectOverlayRay(WristPointerRay ray, Matrix4x4 overlayToWorld,
+        float widthMeters, float heightMeters, out float x, out float y)
+    {
+        x = y = 0.5f;
+        if (!IsFinite(ray.Source) || !IsFinite(ray.Direction) ||
+            !Matrix4x4.Invert(overlayToWorld, out var inverse)) return false;
+        var source = Vector3.Transform(ray.Source, inverse);
+        var direction = Vector3.TransformNormal(ray.Direction, inverse);
+        if (!IsFinite(source) || !IsFinite(direction) || Math.Abs(direction.Z) < 0.000001f) return false;
+        var distance = -source.Z / direction.Z;
+        if (!float.IsFinite(distance) || distance < 0) return false;
+        return TryProjectOverlayPoint(Vector3.Transform(source + direction * distance, overlayToWorld),
+            overlayToWorld, widthMeters, heightMeters, out x, out y);
+    }
+
     /// <summary>
     /// Projects a tracking-space intersection onto the actual overlay plane.
     /// Unlike vUVs format guessing, this is independent of texture crops,
@@ -35,7 +50,8 @@ public static class WristPointerMath
         var point = Vector3.Transform(worldPoint, inverse);
         var u = 0.5f + point.X / widthMeters;
         var v = 0.5f - point.Y / heightMeters;
-        const float tolerance = 0.0001f;
+        // Allow one wrist texel for pose sampling/float error at the border.
+        const float tolerance = 1f / 512f;
         if (!IsFinite(point) || u < -tolerance || u > 1 + tolerance || v < -tolerance || v > 1 + tolerance)
             return false;
         x = Math.Clamp(u, 0, 1);

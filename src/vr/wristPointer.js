@@ -72,8 +72,13 @@ export function dispatchWristPointerClick(
     }
 
     const rect = wristElement.getBoundingClientRect();
-    const clientX = rect.left + pointer.x * rect.width;
-    const clientY = rect.top + pointer.y * rect.height;
+    if (rect.width <= 0 || rect.height <= 0) {
+        return false;
+    }
+    // DOM hit rectangles exclude their right/bottom boundary. Keep a full
+    // range endpoint on the last pixel rather than in the adjacent HUD.
+    const clientX = rect.left + Math.min(pointer.x * rect.width, Math.max(0, rect.width - 0.5));
+    const clientY = rect.top + Math.min(pointer.y * rect.height, Math.max(0, rect.height - 0.5));
     const element = documentRef.elementFromPoint(clientX, clientY);
     /** @type {HTMLElement | null} */
     const action = element?.closest?.('[data-vr-action]');
