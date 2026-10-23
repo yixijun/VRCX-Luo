@@ -1,10 +1,25 @@
 <template>
     <div :class="['flex flex-col min-w-0 data-table', autoHeight && 'flex-1 min-h-0 overflow-hidden']">
-        <div v-if="$slots.toolbar" class="mb-2">
+        <div v-if="$slots.toolbar" class="mb-2" :class="{ 'vr-data-toolbar': vrWorkspace.active }">
             <slot name="toolbar"></slot>
         </div>
 
-        <div :class="['rounded-md border', autoHeight && 'flex-1 min-h-0 flex flex-col overflow-hidden']">
+        <VrDataCards
+            v-if="vrWorkspace.active"
+            :table="table"
+            :loading="loading"
+            :empty-type="emptyType"
+            :expanded-renderer="expandedRenderer"
+            :row-class="rowClass"
+            :on-row-click="onRowClick"
+            :enable-column-visibility="enableColumnVisibility">
+            <template v-if="$slots.empty" #empty><slot name="empty" /></template>
+            <template v-if="$slots.expanded" #expanded="{ row }"><slot name="expanded" :row="row" /></template>
+            <template v-if="$slots['row-context-menu']" #row-context-menu="{ row }">
+                <slot name="row-context-menu" :row="row" />
+            </template>
+        </VrDataCards>
+        <div v-else :class="['rounded-md border', autoHeight && 'flex-1 min-h-0 flex flex-col overflow-hidden']">
             <div
                 ref="tableScrollRef"
                 :class="['max-w-full overflow-auto relative', autoHeight && 'flex-1 min-h-0']"
@@ -342,6 +357,8 @@
 
     import DataTableEmpty from './DataTableEmpty.vue';
     import SortableTableHead from './SortableTableHead.vue';
+    import { vrWorkspace } from '@/services/vrWorkspace';
+    import VrDataCards from '@/vr/workspace/VrDataCards.vue';
 
     const appearanceSettingsStore = useAppearanceSettingsStore();
     const { isDataTableStriped } = storeToRefs(appearanceSettingsStore);

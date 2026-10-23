@@ -7,6 +7,33 @@ body.vr-workspace-active {
     font-size: 20px;
     padding-top: 0 !important;
 }
+.vr-data-toolbar > div,
+.vr-data-toolbar > div > div {
+    flex-wrap: wrap;
+    gap: 12px;
+}
+.vr-data-toolbar [role='group'] {
+    flex-wrap: wrap;
+    height: auto;
+    gap: 8px;
+}
+.vr-workspace-active .dt-pagination {
+    flex-wrap: wrap;
+    justify-content: center;
+    flex-shrink: 0;
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+}
+.vr-workspace-active .dt-pagination-sizes {
+    flex: 0 1 auto;
+    justify-content: flex-start;
+}
+.vr-workspace-active .dt-pagination-spacer {
+    display: none;
+}
+.vr-workspace-active .dt-pagination button {
+    min-width: 48px;
+}
 .vr-workspace-chrome {
     position: absolute;
     inset: 0;
