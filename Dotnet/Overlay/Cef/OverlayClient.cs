@@ -33,6 +33,7 @@ public static class OverlayClient
             var client = new ClientWebSocket();
             client.Options.KeepAliveInterval = TimeSpan.FromSeconds(5);
             client.Options.SetRequestHeader("user-agent", "VRCX Overlay Client");
+            client.Options.SetRequestHeader("X-VRCX-Overlay-Token", Environment.GetEnvironmentVariable("VRCX_OVERLAY_IPC_TOKEN") ?? "");
             return client;
         });
         _websocketClient = new WebsocketClient(WebsocketUri, clientFactory)

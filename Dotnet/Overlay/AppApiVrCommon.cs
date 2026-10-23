@@ -14,4 +14,5 @@ public abstract partial class AppApiVr
     public abstract string CurrentCulture();
     public abstract string CustomVrScript();
     public abstract List<KeyValuePair<string, string>> GetExecuteVrOverlayFunctionQueue();
+    public virtual bool SubmitDashboardAction(string json) => DashboardActionQueue.Enqueue(json);
 }

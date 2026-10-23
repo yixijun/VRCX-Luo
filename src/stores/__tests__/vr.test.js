@@ -147,4 +147,23 @@ describe('useVrStore', () => {
 
         expect(mocks.setVR).toHaveBeenCalledWith(true, true, true, false, 1);
     });
+
+    it('keeps the dashboard active while VRChat is closed', () => {
+        mocks.game.isGameRunning = false;
+        useVrStore().updateOpenVR();
+        expect(mocks.setVR).toHaveBeenCalledWith(true, false, false, false, 1);
+    });
+
+    it('keeps the dashboard active when both in-game overlays are disabled', () => {
+        mocks.wrist.overlayWrist = false;
+        mocks.notifications.overlayNotifications = false;
+        useVrStore().updateOpenVR();
+        expect(mocks.setVR).toHaveBeenCalledWith(true, false, false, false, 1);
+    });
+
+    it('honors the master SteamVR integration switch', () => {
+        mocks.notifications.openVR = false;
+        useVrStore().updateOpenVR();
+        expect(mocks.setVR).toHaveBeenCalledWith(false, false, false, false, 0);
+    });
 });

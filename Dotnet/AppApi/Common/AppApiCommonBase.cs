@@ -30,6 +30,7 @@ namespace VRCX
         public abstract bool RestartAsAdministrator();
         public string GetMemoryCleanupSnapshot() => GetMemoryCleanupSnapshotInternal();
         public string CleanupMemory(bool deep) => CleanupMemoryInternal(deep);
+        public string[] GetDashboardActions() => DashboardActionQueue.Drain();
 
         // Folders
         public abstract string GetVRChatAppDataLocation();

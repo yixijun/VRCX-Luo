@@ -306,7 +306,7 @@ registerIpcHandlers({
             menuButton,
             overlayHand
         ) => {
-            if (!active || (!hmdOverlay && !wristOverlay)) {
+            if (!active) {
                 disposeOverlay();
                 return;
             }

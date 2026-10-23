@@ -24,5 +24,7 @@
     <Compile Include="..\Dotnet\Overlay\WristPointerOverlayProjection.cs" Link="WristPointerOverlayProjection.cs" />
     <Compile Include="..\Dotnet\Overlay\WristPointerPoseResolver.cs" Link="WristPointerPoseResolver.cs" />
     <Compile Include="..\Dotnet\Overlay\D3D11DeviceCreation.cs" Link="D3D11DeviceCreation.cs" />
+    <Compile Include="..\Dotnet\Overlay\DashboardActionQueue.cs" Link="DashboardActionQueue.cs" />
+    <Compile Include="..\Dotnet\Overlay\DashboardOverlay.cs" Link="DashboardOverlay.cs" />
   </ItemGroup>
 </Project>

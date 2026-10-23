@@ -78,6 +78,7 @@
     <None Include="..\Version">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="vrcx-dashboard.vrmanifest" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup>
 	  <None Include="libs\openvr_api.dll">

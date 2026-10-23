@@ -1527,8 +1527,12 @@ export const useNotificationStore = defineStore("Notification", () => {
         );
     }
 
-    // All manual invite entry points reuse LaunchDialog for mode selection.
-    async function acceptInviteAndLaunch(row) {
+    // Dashboard supplies the mode selected in VR; desktop entry points open LaunchDialog.
+    /**
+     * @param {any} row
+     * @param {{dashboardConfirmed?: boolean, mode?: string, expectedAccountId?: string}} [options]
+     */
+    async function acceptInviteAndLaunch(row, options = {}) {
         if (
             !row?.id ||
             row.type !== "invite" ||
@@ -1543,7 +1547,9 @@ export const useNotificationStore = defineStore("Notification", () => {
             return false;
         }
 
-        const { ok } = await modalStore.confirm({
+        const { ok } = options.dashboardConfirmed === true
+            ? { ok: ['current', 'vr', 'desktop'].includes(options.mode) }
+            : await modalStore.confirm({
             description: t("confirm.accept_invite_and_launch"),
             title: t("confirm.title"),
         });
@@ -1579,7 +1585,12 @@ export const useNotificationStore = defineStore("Notification", () => {
                 handleNotificationHide(row.id);
             }
 
-            await launchStore.showLaunchDialog(
+            const shortName = row.shortName || row.details?.shortName || row.data?.shortName || null;
+            if (options.dashboardConfirmed === true) {
+                if (options.expectedAccountId && options.expectedAccountId !== userStore.currentUser.id) return false;
+                if (options.mode === 'current') await launchStore.tryOpenInstanceInVrc(location, shortName);
+                else await launchStore.launchGame(location, shortName, options.mode === 'desktop');
+            } else await launchStore.showLaunchDialog(
                 location,
                 row.shortName || row.details?.shortName || row.data?.shortName || null,
             );
@@ -1981,6 +1992,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         hideNotificationPrompt,
         acceptRequestInvite,
         acceptInviteAndLaunch,
+        declineDashboardInvite: declineTrayInvite,
         handleTrayNotificationAction,
         sendNotificationResponse,
         deleteNotificationLog,

@@ -205,6 +205,7 @@ declare global {
         RestartApplication(isUpgrade: boolean): Promise<void>;
         CheckForUpdateExe(): Promise<boolean>;
         ExecuteVrOverlayFunction(key: string, json: string): Promise<void>;
+        GetDashboardActions(): Promise<string[]>;
         FocusWindow(): Promise<void>;
         ChangeTheme(value: number): Promise<void>;
         DoFunny(): Promise<void>;
@@ -395,6 +396,7 @@ declare global {
     const AppApiVr: {
         Init(): Promise<void>;
         VrInit(): Promise<void>;
+        SubmitDashboardAction(json: string): Promise<boolean>;
         ToggleSystemMonitor(enabled: boolean): Promise<void>;
         CpuUsage(): Promise<number>;
         GetVRDevices(): Promise<string[][]>;

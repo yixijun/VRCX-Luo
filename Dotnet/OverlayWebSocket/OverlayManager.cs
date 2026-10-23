@@ -47,6 +47,7 @@ public class OverlayManager
             CreateNoWindow = true,
             WorkingDirectory = Program.BaseDirectory
         };
+        startInfo.Environment["VRCX_OVERLAY_IPC_TOKEN"] = OverlayServer.ConnectionToken;
         _process = Process.Start(startInfo);
         logger.Info("Overlay process started");
     }

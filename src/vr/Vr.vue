@@ -1290,7 +1290,8 @@
             </div>
         </div>
         <!-- HMD Overlay -->
-        <div class="hmd">
+        <DashboardPanel v-if="dashboardVisible" ref="dashboardPanel" />
+        <div v-show="!dashboardVisible" class="hmd">
             <svg class="np-progress-circle">
                 <circle
                     class="np-progress-circle-stroke"
@@ -1457,7 +1458,8 @@
         X,
         XCircle
     } from 'lucide-vue-next';
-    import { nextTick, onBeforeUnmount, onMounted, reactive, toRefs } from 'vue';
+    import { nextTick, onBeforeUnmount, onMounted, reactive, toRefs, ref } from 'vue';
+    import DashboardPanel from './components/DashboardPanel.vue';
     import { useI18n } from 'vue-i18n';
 
     import MarqueeText from 'vue-marquee-text-component';
@@ -1483,6 +1485,8 @@
     // desktop simulator.  Production VR still receives pointer movement and
     // click events, but the debugging marker is not part of the shipped UI.
     const showWristOriginMarker = true;
+    const dashboardVisible = ref(false);
+    const dashboardPanel = ref(null);
 
     import * as workerTimers from 'worker-timers';
 
@@ -1575,6 +1579,9 @@
         window.$vr.cleanHudFeed = cleanHudFeed;
         window.$vr.wristPointerMove = wristPointerMove;
         window.$vr.wristPointerClick = wristPointerClick;
+        window.$vr.dashboardVisibility = (json) => { dashboardVisible.value = JSON.parse(json); };
+        window.$vr.dashboardResult = (json) => dashboardPanel.value?.receive(json);
+        window.$vr.dashboardInput = (json) => dashboardPanel.value?.input(json);
 
         window.$vr.vrState = vrState;
 
@@ -1951,7 +1958,7 @@
                     const fullFunctionName = item[0];
                     const jsonArg = item[1];
                     if (
-                        (fullFunctionName === 'wristPointerMove' || fullFunctionName === 'wristPointerClick') &&
+                        ['wristPointerMove', 'wristPointerClick', 'dashboardInput'].includes(fullFunctionName) &&
                         typeof window.$vr === 'object' &&
                         typeof window.$vr[fullFunctionName] === 'function'
                     ) {

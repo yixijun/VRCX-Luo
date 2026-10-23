@@ -111,6 +111,22 @@ beforeEach(() => {
 });
 
 describe('accepting an invite', () => {
+    test.each(['vr', 'desktop', 'current'])('reuses the launch flow with the mode selected in SteamVR: %s', async (mode) => {
+        const row = { id: `dashboard-${mode}`, type: 'invite', location: 'wrld_test:123', shortName: 'access-token' };
+        expect(await useNotificationStore().acceptInviteAndLaunch(row, {dashboardConfirmed: true, mode})).toBe(true);
+        expect(confirm).not.toHaveBeenCalled();
+        expect(launch.showLaunchDialog).not.toHaveBeenCalled();
+        if (mode === 'current') expect(launch.tryOpenInstanceInVrc).toHaveBeenCalledWith('wrld_test:123', 'access-token');
+        else expect(launch.launchGame).toHaveBeenCalledWith('wrld_test:123', 'access-token', mode === 'desktop');
+    });
+
+    test('does not accept an invitation before a SteamVR launch mode is selected', async () => {
+        const row = {id: 'no-mode', type: 'invite', location: 'wrld_test:123'};
+        expect(await useNotificationStore().acceptInviteAndLaunch(row, {dashboardConfirmed: true})).toBe(false);
+        expect(requests.sendInviteResponse).not.toHaveBeenCalled();
+        expect(launch.launchGame).not.toHaveBeenCalled();
+    });
+
     test.each([false, true])(
         'opens the launch page when game running = %s',
         async (running) => {

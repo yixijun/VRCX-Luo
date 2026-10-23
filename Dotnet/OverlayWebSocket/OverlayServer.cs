@@ -15,6 +15,7 @@ namespace VRCX;
 
 public class OverlayServer
 {
+    internal static readonly string ConnectionToken = Guid.NewGuid().ToString("N");
     public static OverlayServer Instance { get; private set; }
 
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
@@ -88,6 +89,12 @@ public class OverlayServer
 
     private async Task ProcessRequest(HttpListenerContext listenerContext)
     {
+        if (listenerContext.Request.Headers["X-VRCX-Overlay-Token"] != ConnectionToken)
+        {
+            listenerContext.Response.StatusCode = 403;
+            listenerContext.Response.Close();
+            return;
+        }
         WebSocketContext webSocketContext;
         try
         {
@@ -162,6 +169,10 @@ public class OverlayServer
                 var isHmdAfk = string.Equals(message.Data, "true", StringComparison.OrdinalIgnoreCase);
                 if (MainForm.Instance?.Browser != null && !MainForm.Instance.Browser.IsLoading && MainForm.Instance.Browser.CanExecuteJavascriptInMainFrame)
                     MainForm.Instance.Browser.ExecuteScriptAsync("window?.$pinia?.game.updateIsHmdAfk", isHmdAfk);
+                break;
+
+            case OverlayMessageType.DashboardAction:
+                DashboardActionQueue.Enqueue(message.Data);
                 break;
 
             case OverlayMessageType.JsFunctionCall:

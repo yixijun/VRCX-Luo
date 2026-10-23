@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia';
-import { watch } from 'vue';
+import { watch, onScopeDispose } from 'vue';
 
 import { isRpcWorld } from '../shared/utils';
 import { useAdvancedSettingsStore } from './settings/advanced';
@@ -27,6 +27,23 @@ export const useVrStore = defineStore('Vr', () => {
     const gameLogStore = useGameLogStore();
     const userStore = useUserStore();
     const sharedFeedStore = useSharedFeedStore();
+    let dashboardBusy = false;
+    let dashboard;
+    async function pollDashboard() {
+        if (dashboardBusy || typeof AppApi.GetDashboardActions !== 'function') return;
+        dashboardBusy = true;
+        try {
+            const requests = await AppApi.GetDashboardActions();
+            if (requests.length) {
+                dashboard ??= (await import('../services/vrDashboard')).createVrDashboard(saveOpenVROption);
+                for (const request of requests) await dashboard(request);
+            }
+        } catch (error) { console.error('VR dashboard action failed', error); }
+        finally { dashboardBusy = false; }
+    }
+    const dashboardTimer = setInterval(pollDashboard, 500);
+    watch(() => watchState.isLoggedIn, pollDashboard);
+    onScopeDispose(() => clearInterval(dashboardTimer));
 
     watch(
         () => watchState.isFriendsLoaded,
@@ -151,13 +168,12 @@ export const useVrStore = defineStore('Vr', () => {
         };
         if (
             notificationsSettingsStore.openVR &&
-            gameStore.isSteamVRRunning &&
-            ((gameStore.isGameRunning && !gameStore.isGameNoVR) ||
-                wristOverlaySettingsStore.openVRAlways)
+            gameStore.isSteamVRRunning
         ) {
+            const showGameOverlays = (gameStore.isGameRunning && !gameStore.isGameNoVR) || wristOverlaySettingsStore.openVRAlways;
             let hmdOverlay = false;
             if (
-                !notificationsSettingsStore.vSleepMode &&
+                showGameOverlays && !notificationsSettingsStore.vSleepMode &&
                 (notificationsSettingsStore.overlayNotifications ||
                     advancedSettingsStore.progressPie ||
                     photonStore.photonEventOverlay ||
@@ -168,7 +184,7 @@ export const useVrStore = defineStore('Vr', () => {
             newState = {
                 active: true,
                 hmdOverlay,
-                wristOverlay: wristOverlaySettingsStore.overlayWrist,
+                wristOverlay: showGameOverlays && wristOverlaySettingsStore.overlayWrist,
                 menuButton: wristOverlaySettingsStore.overlaybutton,
                 overlayHand: parseInt(wristOverlaySettingsStore.overlayHand, 10)
             };

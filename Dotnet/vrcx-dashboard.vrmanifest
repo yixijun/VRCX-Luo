@@ -1,0 +1,10 @@
+{
+  "source": "builtin",
+  "applications": [{
+    "app_key": "app.vrcx.luo.dashboard",
+    "launch_type": "binary",
+    "binary_path_windows": "VRCX-Luo.exe",
+    "is_dashboard_overlay": true,
+    "strings": { "en_us": { "name": "VRCX-Luo", "description": "Friends, invitations and VR controls" }, "zh_cn": { "name": "VRCX-Luo", "description": "好友、邀请与 VR 控制面板" } }
+  }]
+}

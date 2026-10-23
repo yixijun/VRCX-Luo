@@ -28,6 +28,13 @@ namespace VRCX
             OverlayClient.SendMessage(message);
         }
 
+        public override bool SubmitDashboardAction(string json)
+        {
+            if (!DashboardActionQueue.IsValid(json) || !OverlayClient.Connected) return false;
+            OverlayClient.SendMessage(new OverlayMessage { Type = OverlayMessageType.DashboardAction, Data = json });
+            return true;
+        }
+
         public override void ToggleSystemMonitor(bool enabled)
         {
             SystemMonitorCef.Instance.Start(enabled);

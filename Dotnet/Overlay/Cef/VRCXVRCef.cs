@@ -54,6 +54,7 @@ namespace VRCX
         private ETrackedControllerRole _wristControllerRole = ETrackedControllerRole.Invalid;
         private readonly WristPointerPoseResolver _wristPointerPoseResolver = new();
         private readonly WristPointerOverlayProjection _wristPointerProjection = new();
+        private readonly DashboardOverlay _dashboard = new();
 
         private const int HMD_HEIGHT = 1024;
         private const int WRIST_SIZE = 512;
@@ -74,6 +75,7 @@ namespace VRCX
         private ComPtr<ID3D11DeviceContext> _deviceContext;
 
         private ComPtr<ID3D11Texture2D> _sharedTexture;
+        private ComPtr<ID3D11Texture2D> _dashboardTexture;
 
         public VRCXVRCef(bool isLegacy)
         {
@@ -204,6 +206,14 @@ namespace VRCX
                 );
 
                 // new
+                _dashboardTexture.Dispose();
+                SilkMarshal.ThrowHResult(_device.CreateTexture2D(new Texture2DDesc
+                {
+                    Width = TOTAL_WIDTH, Height = HMD_HEIGHT, MipLevels = 1, ArraySize = 1,
+                    Format = Format.FormatB8G8R8A8Unorm,
+                    SampleDesc = new SampleDesc { Count = 1 },
+                    BindFlags = (uint)BindFlag.ShaderResource, Usage = Usage.Default
+                }, null, ref _dashboardTexture));
                 _sharedOverlay?.UpdateRender(_device, _deviceContext, _sharedTexture);
 
                 _multithread = _device.QueryInterface<ID3D11Multithread>();
@@ -225,7 +235,6 @@ namespace VRCX
             var nextWristPointerUpdate = DateTime.MinValue;
             var overlayVisible1 = false;
             var overlayVisible2 = false;
-            var dashboardHandle = 0UL;
 
             _sharedOverlay = new OffScreenBrowser(
                 Program.LaunchDebug ? "http://localhost:9000/vr.html" : "file://vrcx/vr.html",
@@ -266,6 +275,12 @@ namespace VRCX
 
                         active = true;
                         SetupTextures();
+                        var dashboardManifest = Path.Join(Program.BaseDirectory, "vrcx-dashboard.vrmanifest");
+                        if (File.Exists(dashboardManifest))
+                        {
+                            OpenVR.Applications?.AddApplicationManifest(dashboardManifest, false);
+                            OpenVR.Applications?.IdentifyApplication((uint)Environment.ProcessId, DashboardOverlay.Key);
+                        }
                     }
 
                     while (system.PollNextEvent(ref e, (uint)Marshal.SizeOf(e)))
@@ -280,6 +295,7 @@ namespace VRCX
                             system = null;
 
                             ResetWristPointerState();
+                            _dashboard.Reset();
                             _wristOverlayHandle = 0;
                             _hmdOverlayHandle = 0;
                             break;
@@ -304,14 +320,9 @@ namespace VRCX
                         if (overlay != null)
                         {
                             var dashboardVisible = overlay.IsDashboardVisible();
-                            // var err = ProcessDashboard(overlay, ref dashboardHandle, dashboardVisible);
-                            // if (err != EVROverlayError.None &&
-                            //     dashboardHandle != 0)
-                            // {
-                            //     overlay.DestroyOverlay(dashboardHandle);
-                            //     dashboardHandle = 0;
-                            //     logger.Error(err);
-                            // }
+                            var dashboardError = ProcessDashboard(overlay);
+                            if (dashboardError != EVROverlayError.None)
+                                logger.Warn("SteamVR dashboard: {0}", dashboardError);
 
                             if (_wristOverlayActive)
                             {
@@ -352,6 +363,7 @@ namespace VRCX
                 {
                     active = false;
                     IsHmdAfk = false;
+                    _dashboard.Reset();
                     OpenVR.Shutdown();
                     _deviceListLock.EnterWriteLock();
                     try
@@ -373,6 +385,8 @@ namespace VRCX
             _sharedOverlay = null;
             _sharedTexture.Dispose();
             _sharedTexture = default;
+            _dashboardTexture.Dispose();
+            _dashboardTexture = default;
             _deviceContext.Dispose();
             _multithread.Dispose();
             _dxgi?.Dispose();
@@ -768,81 +782,21 @@ namespace VRCX
             _wristPointerPoseResolver.Reset();
         }
 
-        internal EVROverlayError ProcessDashboard(CVROverlay overlay, ref ulong dashboardHandle, bool dashboardVisible)
+        internal EVROverlayError ProcessDashboard(CVROverlay overlay)
         {
-            var err = EVROverlayError.None;
-
-            if (dashboardHandle == 0)
-            {
-                err = overlay.FindOverlay("VRCX", ref dashboardHandle);
-                if (err != EVROverlayError.None)
-                {
-                    if (err != EVROverlayError.UnknownOverlay)
-                    {
-                        return err;
-                    }
-
-                    ulong thumbnailHandle = 0;
-                    err = overlay.CreateDashboardOverlay("VRCX", "VRCX", ref dashboardHandle, ref thumbnailHandle);
-                    if (err != EVROverlayError.None)
-                    {
-                        return err;
-                    }
-
-                    var iconPath = Path.Join(Program.BaseDirectory, "VRCX.png");
-                    err = overlay.SetOverlayFromFile(thumbnailHandle, iconPath);
-                    if (err != EVROverlayError.None)
-                    {
-                        return err;
-                    }
-
-                    err = overlay.SetOverlayWidthInMeters(dashboardHandle, 1.5f);
-                    if (err != EVROverlayError.None)
-                    {
-                        return err;
-                    }
-
-                    err = overlay.SetOverlayInputMethod(dashboardHandle, VROverlayInputMethod.Mouse);
-                    if (err != EVROverlayError.None)
-                    {
-                        return err;
-                    }
-
-                    err = overlay.SetOverlayFlag(dashboardHandle, VROverlayFlags.NoDashboardTab, true);
-                    if (err != EVROverlayError.None)
-                    {
-                        return err;
-                    }
-                }
-            }
-
-            var e = new VREvent_t();
-
-            if (dashboardVisible)
+            return _dashboard.Update(overlay, Program.BaseDirectory, handle =>
             {
                 unsafe
                 {
-                    var texture = new Texture_t
-                    {
-                        handle = (IntPtr)_sharedTexture.Handle
-                    };
-                    var bounds = new VRTextureBounds_t
-                    {
-                        uMin = 0f,
-                        uMax = 1f,
-                        vMin = (float)(TOTAL_HEIGHT - HMD_HEIGHT) / TOTAL_HEIGHT,
-                        vMax = 1f
-                    };
-                    overlay.SetOverlayTextureBounds(dashboardHandle, ref bounds);
-                    err = overlay.SetOverlayTexture(dashboardHandle, ref texture);
-                    if (err != EVROverlayError.None)
-                    {
-                        return err;
-                    }
+                    // A full square texture avoids native cropped-atlas hit-test truncation.
+                    var source = new Box { Left = 0, Top = WRIST_SIZE, Front = 0, Right = TOTAL_WIDTH, Bottom = TOTAL_HEIGHT, Back = 1 };
+                    _deviceContext.CopySubresourceRegion(_dashboardTexture, 0, 0, 0, 0, _sharedTexture, 0, source);
+                    var texture = new Texture_t { handle = (IntPtr)_dashboardTexture.Handle };
+                    var bounds = new VRTextureBounds_t { uMin=0, uMax=1, vMin=0, vMax=1 };
+                    overlay.SetOverlayTextureBounds(handle, ref bounds);
+                    overlay.SetOverlayTexture(handle, ref texture);
                 }
-            }
-
-            return err;
+            }, ExecuteVrOverlayFunction);
         }
 
         internal EVROverlayError ProcessOverlay1(CVROverlay overlay, ref ulong overlayHandle, ref bool overlayVisible, bool dashboardVisible, uint overlayIndex)

@@ -5,5 +5,6 @@ public enum OverlayMessageType
     OverlayConnected,
     JsFunctionCall,
     UpdateVars,
-    IsHmdAfk
+    IsHmdAfk,
+    DashboardAction
 }

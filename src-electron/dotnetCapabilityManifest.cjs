@@ -43,6 +43,7 @@ const DOTNET_CAPABILITIES = Object.freeze({
         'GetLastScreenshot',
         'GetLaunchCommand',
         'GetMemoryCleanupSnapshot',
+        'GetDashboardActions',
         'GetScreenshotMetadata',
         'GetUGCPhotoLocation',
         'GetVersion',
@@ -115,6 +116,7 @@ const DOTNET_CAPABILITIES = Object.freeze({
         'XSNotification'
     ]),
     AppApiVrElectron: Object.freeze([
+        'SubmitDashboardAction',
         'CpuUsage',
         'CurrentCulture',
         'CustomVrScript',
@@ -349,6 +351,7 @@ defineSchemas('AppApiElectron', {
 });
 
 defineSchemas('AppApiVrElectron', {
+    SubmitDashboardAction: exact(string),
     ToggleSystemMonitor: exact(boolean)
 });
 
