@@ -16,7 +16,7 @@ internal sealed class VrWorkspaceDialogHandler : DialogHandler
         IReadOnlyCollection<string> acceptExtensions, IReadOnlyCollection<string> acceptDescriptions, IFileDialogCallback callback)
     {
         if (!DashboardWorkspaceCapture.Instance.Active) return false;
-        _ = Select(mode, title, defaultFilePath, acceptExtensions, callback);
+        _ = Select(mode, title, defaultFilePath, VrWorkspaceFileFilters.Extensions(acceptFilters, acceptExtensions), callback);
         return true;
     }
 
@@ -32,7 +32,7 @@ internal sealed class VrWorkspaceDialogHandler : DialogHandler
                     title,
                     defaultPath = mode == CefFileDialogMode.Save ? Path.GetDirectoryName(defaultFilePath) ?? "" : defaultFilePath,
                     filename = mode == CefFileDialogMode.Save ? Path.GetFileName(defaultFilePath) : "",
-                    filters = new[] { new { extensions = extensions?.Select(e => e.TrimStart('*', '.')).Where(e => e.Length > 0).ToArray() ?? Array.Empty<string>() } }
+                    filters = new[] { new { extensions } }
                 };
                 var response = await MainForm.Instance.Browser.EvaluateScriptAsPromiseAsync($"return window.chooseVrUploadFiles({JsonSerializer.Serialize(pickerMode)}, {JsonSerializer.Serialize(options)});", timeout: TimeSpan.FromMinutes(10));
                 if (callback.IsDisposed) return;

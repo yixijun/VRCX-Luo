@@ -15,6 +15,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="..\Dotnet\Cef\CloseToTrayDecision.cs" Link="CloseToTrayDecision.cs" />
+    <Compile Include="..\Dotnet\Cef\VrWorkspaceFileFilters.cs" Link="VrWorkspaceFileFilters.cs" />
     <Compile Include="..\Dotnet\Cef\CloseToTrayPrompt.cs" Link="CloseToTrayPrompt.cs" />
     <Compile Include="..\Dotnet\Cef\TrayNotificationModels.cs" Link="TrayNotificationModels.cs" />
     <Compile Include="..\Dotnet\Cef\TrayNotificationPreview.cs" Link="TrayNotificationPreview.cs" />
