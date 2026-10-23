@@ -20,6 +20,29 @@ internal enum WristPointerCoordinateSpace
 /// </summary>
 public static class WristPointerMath
 {
+    /// <summary>
+    /// Projects a tracking-space intersection onto the actual overlay plane.
+    /// Unlike vUVs format guessing, this is independent of texture crops,
+    /// mouse scale, and the order in which points are visited.
+    /// </summary>
+    public static bool TryProjectOverlayPoint(Vector3 worldPoint, Matrix4x4 overlayToWorld,
+        float widthMeters, float heightMeters, out float x, out float y)
+    {
+        x = y = 0.5f;
+        if (!IsFinite(worldPoint) || !float.IsFinite(widthMeters) || !float.IsFinite(heightMeters) ||
+            widthMeters <= 0 || heightMeters <= 0 || !Matrix4x4.Invert(overlayToWorld, out var inverse))
+            return false;
+        var point = Vector3.Transform(worldPoint, inverse);
+        var u = 0.5f + point.X / widthMeters;
+        var v = 0.5f - point.Y / heightMeters;
+        const float tolerance = 0.0001f;
+        if (!IsFinite(point) || u < -tolerance || u > 1 + tolerance || v < -tolerance || v > 1 + tolerance)
+            return false;
+        x = Math.Clamp(u, 0, 1);
+        y = Math.Clamp(v, 0, 1);
+        return true;
+    }
+
     public static Vector3 GetControllerForward(float matrixM2, float matrixM6, float matrixM10)
     {
         return new Vector3(-matrixM2, -matrixM6, -matrixM10);

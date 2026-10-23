@@ -6,6 +6,43 @@ namespace VRCX.Tests;
 
 public class WristPointerMathTests
 {
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(1, 0)]
+    [InlineData(0, 1)]
+    [InlineData(1, 1)]
+    [InlineData(0.25f, 0.75f)]
+    public void WorldIntersectionCoversEntireTranslatedRotatedWrist(float expectedX, float expectedY)
+    {
+        var transform = Matrix4x4.CreateScale(0.25f) *
+            Matrix4x4.CreateRotationX(1.1f) * Matrix4x4.CreateRotationY(0.4f) *
+            Matrix4x4.CreateTranslation(1, 2, 3);
+        var point = Vector3.Transform(new Vector3(expectedX - 0.5f, 0.5f - expectedY, 0), transform);
+        Assert.True(WristPointerMath.TryProjectOverlayPoint(point, transform, 1, 1, out var x, out var y));
+        Assert.Equal(expectedX, x, 4);
+        Assert.Equal(expectedY, y, 4);
+    }
+
+    [Fact]
+    public void OpenVrPoseCompositionPreservesWristCornersInTrackingSpace()
+    {
+        var relative = new Valve.VR.HmdMatrix34_t { m0 = 0.25f, m5 = 0.25f, m10 = 0.25f, m3 = 0.07f };
+        var device = new Valve.VR.HmdMatrix34_t { m2 = 1, m5 = 1, m8 = -1, m3 = 1, m7 = 2, m11 = 3 };
+        var transform = WristPointerOverlayProjection.ToMatrix(relative) * WristPointerOverlayProjection.ToMatrix(device);
+        // Top right in device space=(.195,.125,0), then rotate/translate.
+        Assert.True(WristPointerMath.TryProjectOverlayPoint(new Vector3(1,2.125f,2.805f), transform,1,1,out var x,out var y));
+        Assert.Equal(1f,x,4);
+        Assert.Equal(0f,y,4);
+    }
+
+    [Fact]
+    public void InvalidOrOutsideOverlayIntersectionIsRejected()
+    {
+        Assert.False(WristPointerMath.TryProjectOverlayPoint(new Vector3(0.7f,0,0),Matrix4x4.Identity,1,1,out _,out _));
+        Assert.False(WristPointerMath.TryProjectOverlayPoint(new Vector3(float.NaN,0,0),Matrix4x4.Identity,1,1,out _,out _));
+        Assert.False(WristPointerMath.TryProjectOverlayPoint(Vector3.Zero,default,1,1,out _,out _));
+    }
+
     [Fact]
     public void ControllerForwardUsesOpenVrNegativeZAxis()
     {

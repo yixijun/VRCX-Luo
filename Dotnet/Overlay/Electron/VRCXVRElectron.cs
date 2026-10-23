@@ -45,13 +45,12 @@ namespace VRCX
         private string _latestWristPointerClickPayload;
         private bool _hasWristPointerMove;
         private bool _hasWristPointerClick;
-        private bool _wristPointerTriggerWasPressed;
+        private readonly WristPointerButtonState _wristPointerButton = new();
         private bool _hasLastWristPointerPoint;
         private float _lastWristPointerX = 0.5f;
         private float _lastWristPointerY = 0.5f;
         private DateTime _lastWristPointerHitAt = DateTime.MinValue;
         private ETrackedControllerRole _wristControllerRole = ETrackedControllerRole.Invalid;
-        private WristPointerCoordinateSpace _wristPointerCoordinateSpace = WristPointerCoordinateSpace.Unknown;
         private readonly WristPointerPoseResolver _wristPointerPoseResolver = new();
 
         private const string OVERLAY_SHM_PATH = "/dev/shm/vrcx_overlay";
@@ -249,6 +248,7 @@ namespace VRCX
                             nextInit = DateTime.UtcNow.AddSeconds(10);
                             system = null;
 
+                            ResetWristPointerState();
                             _wristOverlayHandle = 0;
                             _hmdOverlayHandle = 0;
                             break;
@@ -290,6 +290,7 @@ namespace VRCX
                                     _wristOverlayHandle != 0)
                                 {
                                     overlay.DestroyOverlay(_wristOverlayHandle);
+                                    ResetWristPointerState();
                                     _wristOverlayHandle = 0;
                                     logger.Error(err);
                                 }
@@ -349,6 +350,8 @@ namespace VRCX
             _hmdOverlayActive = hmdOverlay;
             _wristOverlayActive = wristOverlay;
             _menuButton = menuButton;
+            if (_overlayHand != overlayHand)
+                ResetWristPointerState();
             _overlayHand = overlayHand;
 
             if (!_wristOverlayActive)
@@ -511,6 +514,10 @@ namespace VRCX
                                             Array.Copy(_rotationRight, _rotation, 3);
                                         }
 
+                                        if (_wristControllerRole != role)
+                                        {
+                                            ResetWristPointerState();
+                                        }
                                         _wristControllerRole = role;
                                         overlayIndex = i;
                                     }
@@ -592,7 +599,9 @@ namespace VRCX
             var poses = new TrackedDevicePose_t[OpenVR.k_unMaxTrackedDeviceCount];
             system.GetDeviceToAbsoluteTrackingPose(ETrackingUniverseOrigin.TrackingUniverseStanding, 0, poses);
 
-            var triggerPressed = false;
+            var sampleValid = false;
+            var digitalPressed = false;
+            var analogPressed = 0f;
             var hit = false;
             var currentHit = false;
             var x = 0.5f;
@@ -606,14 +615,15 @@ namespace VRCX
                     continue;
                 }
 
-                if (system.GetControllerState(i, ref state, (uint)Marshal.SizeOf(state)))
+                sampleValid = system.GetControllerState(i, ref state, (uint)Marshal.SizeOf(state));
+                if (sampleValid)
                 {
-                    triggerPressed = (state.ulButtonPressed & (1UL << (int)EVRButtonId.k_EButton_SteamVR_Trigger)) != 0 ||
-                        state.rAxis1.x >= 0.5f;
+                    digitalPressed = (state.ulButtonPressed & (1UL << (int)EVRButtonId.k_EButton_SteamVR_Trigger)) != 0;
+                    analogPressed = state.rAxis1.x;
                 }
 
                 var pose = poses[i];
-                if (overlay != null && overlayHandle != 0 && overlayVisible && pose.bPoseIsValid)
+                if (overlay != null && overlayHandle != 0 && overlayVisible && pose.bPoseIsValid && pose.bDeviceIsConnected)
                 {
                     var devicePose = pose.mDeviceToAbsoluteTracking;
                     var hasTipPose = _wristPointerPoseResolver.TryGetTipPose(
@@ -644,58 +654,8 @@ namespace VRCX
                             WristPointerMath.GetControllerForward(deviceAxisZ.X, deviceAxisZ.Y, deviceAxisZ.Z),
                             out ray
                         );
-                    var preferredX = 0.5f;
-                    var preferredY = 0.5f;
-                    var preferredHit = rayValid && TryComputeOverlayPoint(
-                        overlay,
-                        overlayHandle,
-                        ray,
-                        WRIST_FRAME_WIDTH,
-                        WRIST_FRAME_HEIGHT,
-                        WRIST_TEXTURE_U_MIN,
-                        WRIST_TEXTURE_U_MAX,
-                        WRIST_TEXTURE_V_MIN,
-                        WRIST_TEXTURE_V_MAX,
-                        ref _wristPointerCoordinateSpace,
-                        out preferredX,
-                        out preferredY
-                    );
-                    var fallbackX = 0.5f;
-                    var fallbackY = 0.5f;
-                    var fallbackHit = false;
-                    if (!preferredHit && hasTipPose &&
-                        WristPointerMath.TryNormalizeRay(
-                            deviceOrigin,
-                            WristPointerMath.GetControllerForward(deviceAxisZ.X, deviceAxisZ.Y, deviceAxisZ.Z),
-                            out var fallbackRay
-                        ))
-                    {
-                        fallbackHit = TryComputeOverlayPoint(
-                            overlay,
-                            overlayHandle,
-                            fallbackRay,
-                            WRIST_FRAME_WIDTH,
-                            WRIST_FRAME_HEIGHT,
-                            WRIST_TEXTURE_U_MIN,
-                            WRIST_TEXTURE_U_MAX,
-                            WRIST_TEXTURE_V_MIN,
-                            WRIST_TEXTURE_V_MAX,
-                            ref _wristPointerCoordinateSpace,
-                            out fallbackX,
-                            out fallbackY
-                        );
-                    }
-
-                    currentHit = WristPointerMath.TrySelectOverlayPoint(
-                        preferredHit,
-                        preferredX,
-                        preferredY,
-                        fallbackHit,
-                        fallbackX,
-                        fallbackY,
-                        out x,
-                        out y
-                    );
+                    currentHit = rayValid && WristPointerOverlayProjection.TryIntersect(
+                        overlay, overlayHandle, ray, poses, out x, out y);
 
                     if (currentHit)
                     {
@@ -724,65 +684,14 @@ namespace VRCX
                 break;
             }
 
+            var click = _wristPointerButton.Update(sampleValid, digitalPressed, analogPressed, overlayVisible && currentHit);
             var visible = overlayVisible && hit;
-            var pressed = visible && triggerPressed;
+            var pressed = visible && _wristPointerButton.IsPressed;
             PublishWristPointerMove(WristPointerMath.CreatePayload(x, y, visible, pressed, pointerHand));
-            if (overlayVisible && currentHit && triggerPressed && !_wristPointerTriggerWasPressed)
+            if (click)
             {
                 PublishWristPointerClick(WristPointerMath.CreatePayload(x, y, true, true, pointerHand));
             }
-
-            _wristPointerTriggerWasPressed = triggerPressed;
-        }
-
-        private static bool TryComputeOverlayPoint(
-            CVROverlay overlay,
-            ulong overlayHandle,
-            WristPointerRay ray,
-            int width,
-            int height,
-            float textureUMin,
-            float textureUMax,
-            float textureVMin,
-            float textureVMax,
-            ref WristPointerCoordinateSpace coordinateSpace,
-            out float x,
-            out float y
-        )
-        {
-            x = 0.5f;
-            y = 0.5f;
-            var intersectionParams = new VROverlayIntersectionParams_t
-            {
-                vSource = new HmdVector3_t
-                {
-                    v0 = ray.Source.X,
-                    v1 = ray.Source.Y,
-                    v2 = ray.Source.Z
-                },
-                vDirection = new HmdVector3_t
-                {
-                    v0 = ray.Direction.X,
-                    v1 = ray.Direction.Y,
-                    v2 = ray.Direction.Z
-                },
-                eOrigin = ETrackingUniverseOrigin.TrackingUniverseStanding
-            };
-            var intersectionResults = new VROverlayIntersectionResults_t();
-            return overlay.ComputeOverlayIntersection(overlayHandle, ref intersectionParams, ref intersectionResults) &&
-                WristPointerMath.TryConvertOverlayCoordinates(
-                    intersectionResults.vUVs.v0,
-                    intersectionResults.vUVs.v1,
-                    width,
-                    height,
-                    textureUMin,
-                    textureUMax,
-                    textureVMin,
-                    textureVMax,
-                    ref coordinateSpace,
-                    out x,
-                    out y
-                );
         }
 
         private void PublishWristPointerMove(string payload)
@@ -839,13 +748,12 @@ namespace VRCX
                 _hasWristPointerClick = false;
             }
 
-            _wristPointerTriggerWasPressed = false;
+            _wristPointerButton.Reset();
             _hasLastWristPointerPoint = false;
             _lastWristPointerX = 0.5f;
             _lastWristPointerY = 0.5f;
             _lastWristPointerHitAt = DateTime.MinValue;
             _wristControllerRole = ETrackedControllerRole.Invalid;
-            _wristPointerCoordinateSpace = WristPointerCoordinateSpace.Unknown;
             _wristOverlayMouseScaleHandle = 0;
             _wristPointerPoseResolver.Reset();
         }

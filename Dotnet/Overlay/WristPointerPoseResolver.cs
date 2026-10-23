@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Text;
 using Valve.VR;
 
@@ -6,9 +7,8 @@ namespace VRCX;
 
 /// <summary>
 /// Resolves the controller component pose used by the wrist pointer. The
-/// physical trigger component is preferred so the ray follows the trigger's
-/// position and direction; SteamVR's canonical tip pose is the compatibility
-/// fallback for models that do not expose a trigger component. The resolver
+/// neutral trigger pose is frozen relative to the device, so squeezing the trigger
+/// cannot change the ray origin or direction. The resolver
 /// keeps the device model lookup out of the per-frame ray math and falls back
 /// to the legacy device pose when a runtime does not expose render-model
 /// components.
@@ -22,7 +22,8 @@ internal sealed class WristPointerPoseResolver
     private uint _deviceIndex = OpenVR.k_unTrackedDeviceIndexInvalid;
     private ETrackedControllerRole _role = ETrackedControllerRole.Invalid;
     private string _renderModelName = string.Empty;
-    private string _pointerComponentName = string.Empty;
+    private HmdMatrix34_t _aimPose;
+    private bool _hasAimPose;
     private ulong _inputSourceHandle;
     private bool _inputSourceLookupAttempted;
     private DateTime _nextModelRefresh = DateTime.MinValue;
@@ -56,6 +57,12 @@ internal sealed class WristPointerPoseResolver
             return false;
         }
 
+        if (_hasAimPose)
+        {
+            tipPose = _aimPose;
+            return true;
+        }
+
         var renderModels = OpenVR.RenderModels;
         if (renderModels == null)
         {
@@ -65,21 +72,23 @@ internal sealed class WristPointerPoseResolver
         EnsureInputSourceHandle();
         var controllerModeState = new RenderModel_ControllerMode_State_t();
         var componentState = new RenderModel_ComponentState_t();
-        if (!string.IsNullOrEmpty(_pointerComponentName) && TryGetComponentState(
-                renderModels,
-                _pointerComponentName,
-                _inputSourceHandle,
-                ref controllerState,
-                ref controllerModeState,
-                ref componentState))
+        // Query a neutral trigger instead of its animated pressed transform.
+        var neutralState = new VRControllerState_t();
+        return TryGetStablePose(componentName =>
         {
-            tipPose = componentState.mTrackingToComponentLocal;
-            return true;
-        }
+            return TryGetComponentState(renderModels, componentName,
+                componentName == TriggerComponentName ? 0 : _inputSourceHandle,
+                ref neutralState, ref controllerModeState, ref componentState)
+                ? componentState.mTrackingToComponentLocal
+                : null;
+        }, out tipPose);
+    }
 
-        // Prefer the physical trigger so pointer origin and direction match
-        // the control the user is pressing. The tip pose remains the fallback
-        // for controller models which do not expose a trigger component.
+    internal bool TryGetStablePose(Func<string, HmdMatrix34_t?> readPose, out HmdMatrix34_t tipPose)
+    {
+        tipPose = _aimPose;
+        if (_hasAimPose)
+            return true;
         var componentNames = new[]
         {
             TriggerComponentName,
@@ -87,23 +96,24 @@ internal sealed class WristPointerPoseResolver
         };
         foreach (var componentName in componentNames)
         {
-            if (!TryGetComponentState(
-                    renderModels,
-                    componentName,
-                    _inputSourceHandle,
-                    ref controllerState,
-                    ref controllerModeState,
-                    ref componentState))
+            var pose = readPose(componentName);
+            if (!pose.HasValue)
             {
                 continue;
             }
 
-            _pointerComponentName = componentName;
-            tipPose = componentState.mTrackingToComponentLocal;
+            var candidate = pose.Value;
+            if (!WristPointerMath.TryNormalizeRay(
+                    new Vector3(candidate.m3, candidate.m7, candidate.m11),
+                    new Vector3(-candidate.m2, -candidate.m6, -candidate.m10), out _))
+                continue;
+
+            tipPose = pose.Value;
+            _aimPose = tipPose;
+            _hasAimPose = true;
             return true;
         }
 
-        _pointerComponentName = string.Empty;
         return false;
     }
 
@@ -117,7 +127,7 @@ internal sealed class WristPointerPoseResolver
         _deviceIndex = deviceIndex;
         _role = role;
         _renderModelName = string.Empty;
-        _pointerComponentName = string.Empty;
+        _hasAimPose = false;
         _inputSourceHandle = 0;
         _inputSourceLookupAttempted = false;
         _nextModelRefresh = DateTime.MinValue;
@@ -142,7 +152,7 @@ internal sealed class WristPointerPoseResolver
         if (!string.Equals(_renderModelName, renderModelName, StringComparison.Ordinal))
         {
             _renderModelName = renderModelName;
-            _pointerComponentName = string.Empty;
+            _hasAimPose = false;
             _inputSourceHandle = 0;
             _inputSourceLookupAttempted = false;
         }
@@ -184,7 +194,6 @@ internal sealed class WristPointerPoseResolver
             return;
         }
 
-        _inputSourceLookupAttempted = true;
         var input = OpenVR.Input;
         if (input == null)
         {
@@ -198,6 +207,7 @@ internal sealed class WristPointerPoseResolver
         if (input.GetInputSourceHandle(path, ref inputSourceHandle) == EVRInputError.None)
         {
             _inputSourceHandle = inputSourceHandle;
+            _inputSourceLookupAttempted = true;
         }
     }
 }

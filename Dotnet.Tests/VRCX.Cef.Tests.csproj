@@ -19,6 +19,10 @@
     <Compile Include="..\Dotnet\Cef\TrayNotificationModels.cs" Link="TrayNotificationModels.cs" />
     <Compile Include="..\Dotnet\Cef\TrayNotificationPreview.cs" Link="TrayNotificationPreview.cs" />
     <Compile Include="..\Dotnet\Overlay\WristPointerMath.cs" Link="WristPointerMath.cs" />
+    <Compile Include="..\Dotnet\Overlay\WristPointerButtonState.cs" Link="WristPointerButtonState.cs" />
+    <Compile Include="..\Dotnet\Overlay\OpenVR\openvr_api.cs" Link="openvr_api.cs" />
+    <Compile Include="..\Dotnet\Overlay\WristPointerOverlayProjection.cs" Link="WristPointerOverlayProjection.cs" />
+    <Compile Include="..\Dotnet\Overlay\WristPointerPoseResolver.cs" Link="WristPointerPoseResolver.cs" />
     <Compile Include="..\Dotnet\Overlay\D3D11DeviceCreation.cs" Link="D3D11DeviceCreation.cs" />
   </ItemGroup>
 </Project>

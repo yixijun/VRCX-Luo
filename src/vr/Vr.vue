@@ -1482,7 +1482,7 @@
     // Keep the controller origin marker available only for the explicit
     // desktop simulator.  Production VR still receives pointer movement and
     // click events, but the debugging marker is not part of the shipped UI.
-    const showWristOriginMarker = isWristPointerDesktopTestEnabled();
+    const showWristOriginMarker = true;
 
     import * as workerTimers from 'worker-timers';
 
