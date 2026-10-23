@@ -1,6 +1,9 @@
 <template>
     <template v-if="watchState.isLoggedIn">
-        <div class="flex flex-col flex-1 h-full min-h-0 min-w-0 overflow-hidden">
+        <div v-if="vrWorkspace.active" v-show="!vrWorkspace.home && !vrWorkspace.library" class="vr-workspace-content">
+            <RouterView v-slot="{ Component, route }"><component :is="Component" :key="route.path" /></RouterView>
+        </div>
+        <div v-else class="flex flex-col flex-1 h-full min-h-0 min-w-0 overflow-hidden">
             <SidebarProvider
                 :open="sidebarOpen"
                 :width="navWidth"
@@ -112,6 +115,7 @@
     import { useAppearanceSettingsStore } from '../../stores';
     import { useMainLayoutResizable } from '../../composables/useMainLayoutResizable';
     import { watchState } from '../../services/watchState';
+    import { vrWorkspace } from '../../services/vrWorkspace';
 
     import AvatarImportDialog from '../Favorites/dialogs/AvatarImportDialog.vue';
     import ChangelogDialog from '../Settings/dialogs/ChangelogDialog.vue';

@@ -1,0 +1,241 @@
+/* Applied only for the dedicated VR workspace; desktop density preferences are untouched. */
+body.vr-workspace-active {
+    --vr-hit: 48px;
+}
+.vr-workspace-active #x-app {
+    position: relative;
+    font-size: 20px;
+    padding-top: 0 !important;
+}
+.vr-workspace-chrome {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 20;
+    color: var(--foreground);
+}
+.vr-workspace-chrome button,
+.vr-workspace-chrome main,
+.vr-workspace-chrome section,
+.vr-workspace-chrome aside {
+    pointer-events: auto;
+}
+.vr-workspace-header {
+    position: absolute;
+    inset: 0 0 auto;
+    height: 88px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 24px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+}
+.vr-workspace-chrome button {
+    min-height: 52px;
+    padding: 12px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--card);
+    color: var(--foreground);
+    font-size: 20px;
+    text-align: left;
+    cursor: pointer;
+}
+.vr-workspace-chrome button:hover,
+.vr-workspace-chrome button.selected {
+    background: var(--accent);
+    border-color: var(--primary);
+}
+.vr-workspace-chrome button:active {
+    transform: scale(0.98);
+}
+.vr-workspace-chrome button:focus-visible {
+    outline: 3px solid var(--ring);
+    outline-offset: 2px;
+}
+.vr-workspace-chrome .vr-brand {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font-size: 24px;
+    min-width: 220px;
+}
+.vr-brand > i {
+    font-size: 32px;
+    color: var(--primary);
+}
+.vr-brand small {
+    display: block;
+    color: var(--muted-foreground);
+    font-size: 16px;
+}
+.vr-workspace-location {
+    flex: 1;
+    min-width: 0;
+}
+.vr-workspace-location strong {
+    display: block;
+    font-size: 23px;
+}
+.vr-workspace-location span {
+    display: block;
+    color: var(--muted-foreground);
+    font-size: 17px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.vr-workspace-nav {
+    position: absolute;
+    left: 0;
+    top: 88px;
+    bottom: 0;
+    width: 240px;
+    padding: 20px 16px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    background: var(--background);
+}
+.vr-nav-rule {
+    height: 1px;
+    background: var(--border);
+    margin: 4px 0;
+    flex-shrink: 0;
+}
+.vr-nav-account {
+    padding: 8px;
+}
+.vr-workspace-home,
+.vr-workspace-library,
+.vr-workspace-content {
+    position: absolute !important;
+    left: 240px;
+    top: 88px;
+    right: 0;
+    bottom: 0;
+    background: var(--background);
+    overflow: auto;
+}
+.vr-workspace-home {
+    padding: 28px;
+}
+.vr-home-intro > span {
+    font-size: 16px;
+    color: var(--primary);
+}
+.vr-home-intro h1 {
+    font-size: 30px;
+    font-weight: 650;
+    margin: 8px 0;
+}
+.vr-home-intro p {
+    color: var(--muted-foreground);
+    font-size: 17px;
+    margin-bottom: 24px;
+}
+.vr-module-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+    padding-bottom: 24px;
+}
+.vr-workspace-chrome .vr-module-card {
+    position: relative;
+    min-height: 154px;
+    padding: 24px;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+}
+.vr-module-card > i:first-child {
+    font-size: 28px;
+    color: var(--primary);
+}
+.vr-module-card > span {
+    font-size: 22px;
+    font-weight: 600;
+}
+.vr-module-card small {
+    font-size: 16px;
+    color: var(--muted-foreground);
+}
+.vr-module-card .vr-card-arrow {
+    position: absolute;
+    top: 22px;
+    right: 20px;
+    color: var(--muted-foreground);
+}
+.vr-workspace-library {
+    z-index: 25;
+    padding: 16px 24px;
+}
+.vr-workspace-content {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+.vr-workspace-content > .x-container {
+    height: 100%;
+    padding: 20px;
+    margin: 0;
+    width: 100%;
+}
+.vr-workspace-active
+    :is(
+        button,
+        [role='button'],
+        [role='tab'],
+        [role='menuitem'],
+        [role='menuitemcheckbox'],
+        [role='option'],
+        input,
+        select,
+        textarea
+    ) {
+    min-height: var(--vr-hit);
+    font-size: max(18px, 1em);
+}
+.vr-workspace-active :is([role='checkbox'], [role='switch']) {
+    min-width: 32px;
+    min-height: 32px;
+}
+.vr-workspace-active :is([role='dialog'], [role='alertdialog']) {
+    max-width: calc(100vw - 64px) !important;
+    max-height: calc(100vh - 48px) !important;
+    font-size: 20px;
+}
+.vr-workspace-active
+    :is([data-slot='select-content'], [role='menu'], [role='listbox']) {
+    max-height: 70vh;
+    font-size: 20px;
+}
+.vr-workspace-active table :is(td, th) {
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+    font-size: 18px;
+}
+.vr-workspace-active :is(.text-xs, .text-sm) {
+    font-size: 17px;
+}
+.vr-workspace-active :is(button, [role='button']) svg {
+    min-width: 20px;
+    min-height: 20px;
+}
+.vr-workspace-active
+    :is([data-slot='dialog-close'], [data-slot='sheet-close']) {
+    min-width: 48px;
+    min-height: 48px;
+}
+.vr-workspace-active .main-route-enter-active,
+.vr-workspace-active .main-route-leave-active {
+    transition: none !important;
+}

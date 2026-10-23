@@ -35,13 +35,21 @@ export const useVrStore = defineStore('Vr', () => {
         try {
             const requests = await AppApi.GetDashboardActions();
             if (requests.length) {
-                dashboard ??= (await import('../services/vrDashboard')).createVrDashboard(saveOpenVROption);
-                for (const request of requests) await dashboard(request);
+                for (const request of requests) {
+                    const parsed = JSON.parse(request);
+                    if (parsed.action === 'workspace') {
+                        try { await (await import('../services/vrWorkspace')).handleVrWorkspaceCommand(parsed); }
+                        catch (error) { AppApi.ExecuteVrOverlayFunction('dashboardWorkspaceStatus', JSON.stringify({error: error.message})); }
+                    } else {
+                        dashboard ??= (await import('../services/vrDashboard')).createVrDashboard(saveOpenVROption);
+                        await dashboard(request);
+                    }
+                }
             }
         } catch (error) { console.error('VR dashboard action failed', error); }
         finally { dashboardBusy = false; }
     }
-    const dashboardTimer = setInterval(pollDashboard, 500);
+    const dashboardTimer = setInterval(pollDashboard, 50);
     watch(() => watchState.isLoggedIn, pollDashboard);
     onScopeDispose(() => clearInterval(dashboardTimer));
 

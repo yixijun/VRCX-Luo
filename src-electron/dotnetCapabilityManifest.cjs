@@ -44,6 +44,9 @@ const DOTNET_CAPABILITIES = Object.freeze({
         'GetLaunchCommand',
         'GetMemoryCleanupSnapshot',
         'GetDashboardActions',
+        'SetVrWorkspaceCapture',
+        'SendVrWorkspaceInput',
+        'ListVrWorkspaceDirectory',
         'GetScreenshotMetadata',
         'GetUGCPhotoLocation',
         'GetVersion',
@@ -261,6 +264,9 @@ const {
 } = ARGUMENT_TYPES;
 
 defineSchemas('AppApiElectron', {
+    SetVrWorkspaceCapture: exact(boolean),
+    SendVrWorkspaceInput: exact(string),
+    ListVrWorkspaceDirectory: exact(string, integer),
     AddScreenshotMetadata: range(3, 4, [
         string,
         string,

@@ -6,6 +6,8 @@
  * independently testable without loading Electron or the main process.
  */
 const IPC_HANDLER_CONTRACT = Object.freeze([
+    Object.freeze(['app:setVrWorkspaceCapture', 'setVrWorkspaceCapture']),
+    Object.freeze(['app:sendVrWorkspaceInput', 'sendVrWorkspaceInput']),
     Object.freeze(['callDotNetMethod', 'callDotNetMethod']),
     Object.freeze(['dialog:openFile', 'openFileDialog']),
     Object.freeze(['dialog:openDirectory', 'openDirectoryDialog']),

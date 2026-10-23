@@ -13,6 +13,8 @@ declare global {
         $vr: any;
         $debug: AppDebug;
         __VRCX_WRIST_POINTER_DESKTOP_TEST__?: boolean;
+        closeVrWorkspace?: () => void;
+        chooseVrUploadFiles?: (mode: string, options?: any) => Promise<string[]>;
         AppApi: AppApi;
         AppApiVr: AppApiVr;
         WebApi: WebApi;
@@ -38,6 +40,8 @@ declare global {
             ) => Promise<any>;
         };
         electron: {
+            setVrWorkspaceCapture: (enabled: boolean) => Promise<boolean>;
+            sendVrWorkspaceInput: (input: any) => Promise<boolean>;
             getArch: () => Promise<string>;
             getClipboardText: () => Promise<string>;
             getNoUpdater: () => Promise<boolean>;
@@ -206,6 +210,9 @@ declare global {
         CheckForUpdateExe(): Promise<boolean>;
         ExecuteVrOverlayFunction(key: string, json: string): Promise<void>;
         GetDashboardActions(): Promise<string[]>;
+        SetVrWorkspaceCapture(enabled: boolean): Promise<boolean>;
+        SendVrWorkspaceInput(json: string): Promise<boolean>;
+        ListVrWorkspaceDirectory(path: string, offset: number): Promise<string>;
         FocusWindow(): Promise<void>;
         ChangeTheme(value: number): Promise<void>;
         DoFunny(): Promise<void>;

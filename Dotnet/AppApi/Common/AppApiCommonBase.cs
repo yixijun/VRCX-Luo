@@ -31,6 +31,9 @@ namespace VRCX
         public string GetMemoryCleanupSnapshot() => GetMemoryCleanupSnapshotInternal();
         public string CleanupMemory(bool deep) => CleanupMemoryInternal(deep);
         public string[] GetDashboardActions() => DashboardActionQueue.Drain();
+        public virtual Task<bool> SetVrWorkspaceCapture(bool enabled) => Task.FromResult(false);
+        public virtual Task<bool> SendVrWorkspaceInput(string json) => Task.FromResult(false);
+        public string ListVrWorkspaceDirectory(string path, int offset) => DashboardWorkspaceDirectory.List(path, offset);
 
         // Folders
         public abstract string GetVRChatAppDataLocation();

@@ -53,6 +53,8 @@
     import { useVrcxVueTable } from '../../../lib/table/useVrcxVueTable';
 
     import configRepository from '../../../services/config';
+    import { openFileDialog } from '../../../services/fileDialogAdapter';
+    import { vrWorkspace } from '../../../services/vrWorkspace';
 
     const { backupVrcRegistry } = useVrcxStore();
     const { isRegistryBackupDialogVisible } = storeToRefs(useVrcxStore());
@@ -238,17 +240,12 @@
      *
      */
     async function restoreVrcRegistryFromFile() {
-        const filePath = await AppApi.OpenFileSelectorDialog(null, '.json', 'JSON Files (*.json)|*.json');
-        if (WINDOWS) {
-            if (filePath === '') {
-                return;
-            }
-        }
-
         let json;
-        if (LINUX) {
+        if (LINUX && !vrWorkspace.active) {
             json = await openJsonFileSelectorDialogElectron();
         } else {
+            const filePath = await openFileDialog({defaultExt: '.json', defaultFilter: 'JSON Files (*.json)|*.json', filters: [{name: 'JSON', extensions: ['json']}]});
+            if (!filePath) return;
             json = await AppApi.ReadVrcRegJsonFile(filePath);
         }
 

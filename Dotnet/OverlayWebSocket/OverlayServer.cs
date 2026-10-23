@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.IO;
 using System.Net;
 using System.Net.WebSockets;
 using System.Text;
@@ -20,7 +21,7 @@ public class OverlayServer
 
     private static readonly Logger logger = LogManager.GetCurrentClassLogger();
 
-    private static readonly Lock SendLock = new();
+    private static readonly SemaphoreSlim SendLock = new(1, 1);
     private static readonly ConcurrentDictionary<WebSocket, byte> ConnectedWebSockets = new();
     private static CancellationTokenSource _cancellationToken;
 
@@ -120,9 +121,20 @@ public class OverlayServer
                 switch (receiveResult.MessageType)
                 {
                     case WebSocketMessageType.Text:
-                        var text = Encoding.UTF8.GetString(receiveBuffer, 0, receiveResult.Count);
+                        using (var body = new MemoryStream())
+                        {
+                        body.Write(receiveBuffer, 0, receiveResult.Count);
+                        while (!receiveResult.EndOfMessage)
+                        {
+                            receiveResult = await webSocket.ReceiveAsync(new ArraySegment<byte>(receiveBuffer), CancellationToken.None);
+                            if (receiveResult.MessageType != WebSocketMessageType.Text || body.Length + receiveResult.Count > 32768)
+                                throw new InvalidDataException("Overlay command is too large or malformed");
+                            body.Write(receiveBuffer, 0, receiveResult.Count);
+                        }
+                        var text = Encoding.UTF8.GetString(body.GetBuffer(), 0, (int)body.Length);
                         var message = JsonSerializer.Deserialize<OverlayMessage>(text);
-                        HandleMessage(message);
+                        await HandleMessage(message);
+                        }
                         continue;
 
                     case WebSocketMessageType.Close:
@@ -144,6 +156,7 @@ public class OverlayServer
         {
             webSocket.Dispose();
             ConnectedWebSockets.TryRemove(webSocket, out _);
+            if (ConnectedWebSockets.IsEmpty) await DashboardWorkspaceCapture.Instance.SetEnabled(false);
             logger.Info("Overlay IPC disconnected, count: {0}", ConnectedWebSockets.Count);
         }
     }
@@ -172,6 +185,21 @@ public class OverlayServer
                 break;
 
             case OverlayMessageType.DashboardAction:
+                if (DashboardActionQueue.IsValid(message.Data))
+                {
+                    using var command = JsonDocument.Parse(message.Data);
+                    var root = command.RootElement;
+                    if (root.GetProperty("action").GetString() == "workspace" && DashboardWorkspaceCapture.Instance.Active &&
+                        root.TryGetProperty("type", out var type))
+                    {
+                        if (type.GetString() == "input" && root.TryGetProperty("input", out var input))
+                        {
+                            await DashboardWorkspaceCapture.Instance.Input(input.GetRawText());
+                            break;
+                        }
+                        if (type.GetString() == "ping") { DashboardWorkspaceCapture.Instance.RenewLease(); break; }
+                    }
+                }
                 DashboardActionQueue.Enqueue(message.Data);
                 break;
 
@@ -183,8 +211,12 @@ public class OverlayServer
     }
 
     public void SendMessage(OverlayMessage message)
+        => _ = SendMessageAsync(message);
+
+    public async Task SendMessageAsync(OverlayMessage message)
     {
-        lock (SendLock)
+        await SendLock.WaitAsync();
+        try
         {
             var buffer = new ArraySegment<byte>(Encoding.UTF8.GetBytes(JsonSerializer.Serialize(message)));
             var connectedWebSockets = ConnectedWebSockets.Keys;
@@ -194,9 +226,11 @@ public class OverlayServer
                 if (webSocket == null || webSocket.State != WebSocketState.Open)
                     continue;
 
-                webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
+                await webSocket.SendAsync(buffer, WebSocketMessageType.Text, true, CancellationToken.None);
             }
         }
+        catch (Exception error) { logger.Warn(error, "Overlay IPC send failed"); }
+        finally { SendLock.Release(); }
     }
 
     public void UpdateVars(OverlayVars overlayVars)

@@ -6,6 +6,7 @@
             id="x-app"
             class="flex w-screen h-screen overflow-hidden cursor-default [&>.x-container]:pt-[15px]"
             :class="{ 'pt-7': isMacOS }">
+            <VrWorkspaceChrome v-if="vrWorkspace.active" />
             <RouterView></RouterView>
             <Toaster position="top-center" :theme="theme"></Toaster>
 
@@ -44,6 +45,10 @@
     import PromptDialogModal from './components/ui/dialog/PromptDialogModal.vue';
     import VRCXUpdateDialog from './components/dialogs/VRCXUpdateDialog.vue';
     import OpenExternalLinkDialog from './components/dialogs/OpenExternalLinkDialog.vue';
+    import VrWorkspaceChrome from './vr/workspace/VrWorkspaceChrome.vue';
+    import { vrWorkspace, setVrWorkspaceActive } from './services/vrWorkspace';
+    import './vr/workspace/workspace.css';
+    import { chooseVrUploadFiles } from './services/vrWorkspaceFilePicker';
 
     import '@/styles/globals.css';
 
@@ -61,6 +66,8 @@
 
     if (typeof window !== 'undefined') {
         window.$pinia = store;
+        window.closeVrWorkspace = () => setVrWorkspaceActive(false);
+        window.chooseVrUploadFiles = chooseVrUploadFiles;
         // Bridge: attach coordinator functions to store for C# IPC callbacks
         store.game.updateIsGameRunning = runUpdateIsGameRunningFlow;
         store.game.updateIsHmdAfk = runUpdateIsHmdAfkFlow;

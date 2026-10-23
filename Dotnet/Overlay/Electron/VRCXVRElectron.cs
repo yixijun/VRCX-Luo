@@ -266,6 +266,7 @@ namespace VRCX
                             system = null;
 
                             ResetWristPointerState();
+                            ExecuteVrOverlayFunction("dashboardVisibility", "false");
                             _dashboard.Reset();
                             _wristOverlayHandle = 0;
                             _hmdOverlayHandle = 0;
@@ -335,6 +336,7 @@ namespace VRCX
                     active = false;
                     _isOverlayStarted = false;
                     IsHmdAfk = false;
+                    ExecuteVrOverlayFunction("dashboardVisibility", "false");
                     _dashboard.Reset();
                     OpenVR.Shutdown();
                     _deviceListLock.EnterWriteLock();
@@ -1062,6 +1064,7 @@ namespace VRCX
 
         public override void ExecuteVrOverlayFunction(string function, string json)
         {
+            if (function == "dashboardShowKeyboard") { _dashboard.RequestKeyboard(json); return; }
             if (!_isOverlayStarted)
             {
                 _overlayFunctionQueue.Clear();

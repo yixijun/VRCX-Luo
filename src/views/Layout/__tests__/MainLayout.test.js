@@ -6,7 +6,8 @@ const mocks = vi.hoisted(() => ({
     replace: vi.fn(),
     setNavCollapsed: vi.fn(),
     setNavWidth: vi.fn(),
-    watchState: { isLoggedIn: false }
+    watchState: { isLoggedIn: false },
+    workspace: {active: false, home: false, library: ''}
 }));
 
 vi.mock('pinia', async (i) => ({ ...(await i()), storeToRefs: (s) => s }));
@@ -20,6 +21,7 @@ vi.mock('vue-router', async (importOriginal) => {
 vi.mock('../../../services/watchState', () => ({
     watchState: mocks.watchState
 }));
+vi.mock('../../../services/vrWorkspace', () => ({vrWorkspace: mocks.workspace}));
 vi.mock('../../../stores', () => ({
     useAppearanceSettingsStore: () => ({
         navWidth: ref(240),
@@ -42,7 +44,7 @@ vi.mock('../../../composables/useMainLayoutResizable', () => ({
 }));
 vi.mock('../../../components/ui/resizable', () => ({
     ResizablePanelGroup: { template: '<div><slot :layout="[]" /></div>' },
-    ResizablePanel: { template: '<div><slot /></div>' },
+    ResizablePanel: { template: '<div><slot /></div>', methods: {expand() {}, collapse() {}} },
     ResizableHandle: { template: '<div />' }
 }));
 vi.mock('../../../components/ui/sidebar', () => ({
@@ -50,7 +52,7 @@ vi.mock('../../../components/ui/sidebar', () => ({
     SidebarInset: { template: '<div><slot /></div>' }
 }));
 vi.mock('../../../components/nav-menu/NavMenu.vue', () => ({
-    default: { template: '<div />' }
+    default: { template: '<div data-testid="desktop-nav" />' }
 }));
 vi.mock('../../Sidebar/Sidebar.vue', () => ({
     default: { template: '<div />' }
@@ -59,7 +61,7 @@ vi.mock('../../../components/StatusBar.vue', () => ({
     default: { template: '<div />' }
 }));
 vi.mock('../../../components/dialogs/MainDialogContainer.vue', () => ({
-    default: { template: '<div />' }
+    default: { template: '<div data-testid="main-dialogs" />' }
 }));
 vi.mock('../../../components/FullscreenImagePreview.vue', () => ({
     default: { template: '<div />' }
@@ -89,6 +91,8 @@ vi.mock(
 vi.mock('../../../components/dialogs/InviteGroupDialog.vue', () => ({
     default: { template: '<div />' }
 }));
+vi.mock('../../../components/dialogs/GroupDialog/GroupEditDialog.vue', () => ({default: {template: '<div />'}}));
+vi.mock('../../../components/dialogs/GroupDialog/GroupEventEditDialog.vue', () => ({default: {template: '<div />'}}));
 vi.mock('../../Settings/dialogs/VRChatConfigDialog.vue', () => ({
     default: { template: '<div />' }
 }));
@@ -143,5 +147,19 @@ describe('MainLayout.vue', () => {
         expect(transition.attributes('name')).toBe('main-route');
         expect(transition.attributes('mode')).toBeUndefined();
         expect(wrapper.get('[data-testid="route-page"]').exists()).toBe(true);
+    });
+
+    it('renders VR content and retains the shared detail dialogs without the desktop sidebar', () => {
+        mocks.watchState.isLoggedIn = true;
+        mocks.workspace.active = true;
+        const wrapper = mount(MainLayout, {global: {stubs: {
+            RouterView: {template: '<slot :Component="Page" :route="route" />', data: () => ({Page: markRaw({template: '<main data-testid="vr-route" />'}), route: {path: '/feed'}})},
+            AutoFollowDialog: true, GlobalToolsDialogs: true, WhatsNewDialog: true, SpotlightDialog: true
+        }}});
+        expect(wrapper.get('.vr-workspace-content [data-testid="vr-route"]').exists()).toBe(true);
+        expect(wrapper.find('[data-testid="desktop-nav"]').exists()).toBe(false);
+        expect(wrapper.find('[data-testid="main-dialogs"]').exists()).toBe(true);
+        wrapper.unmount();
+        mocks.workspace.active = false;
     });
 });

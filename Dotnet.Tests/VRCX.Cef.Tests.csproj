@@ -26,5 +26,7 @@
     <Compile Include="..\Dotnet\Overlay\D3D11DeviceCreation.cs" Link="D3D11DeviceCreation.cs" />
     <Compile Include="..\Dotnet\Overlay\DashboardActionQueue.cs" Link="DashboardActionQueue.cs" />
     <Compile Include="..\Dotnet\Overlay\DashboardOverlay.cs" Link="DashboardOverlay.cs" />
+    <Compile Include="..\Dotnet\Overlay\DashboardWorkspaceInput.cs" Link="DashboardWorkspaceInput.cs" />
+    <Compile Include="..\Dotnet\Overlay\DashboardWorkspaceDirectory.cs" Link="DashboardWorkspaceDirectory.cs" />
   </ItemGroup>
 </Project>

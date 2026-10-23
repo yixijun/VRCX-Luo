@@ -318,6 +318,7 @@
 </template>
 
 <script setup>
+    import { openFileDialog } from '../../services/fileDialogAdapter';
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { useMagicKeys, whenever } from '@vueuse/core';
     import { onMounted, onUnmounted, reactive, ref, computed } from 'vue';
@@ -577,19 +578,13 @@
      *
      */
     async function getAndDisplayScreenshotFromFile() {
-        let filePath = '';
+        const filePath = await openFileDialog({
+            defaultPath: await AppApi.GetVRChatPhotosLocation(),
+            defaultExt: '.png', defaultFilter: 'PNG Files (*.png)|*.png',
+            filters: [{name: 'PNG', extensions: ['png']}]
+        });
 
-        if (LINUX) {
-            filePath = await window.electron.openFileDialog();
-        } else {
-            filePath = await AppApi.OpenFileSelectorDialog(
-                await AppApi.GetVRChatPhotosLocation(),
-                '.png',
-                'PNG Files (*.png)|*.png'
-            );
-        }
-
-        if (filePath === '') {
+        if (!filePath) {
             return;
         }
 

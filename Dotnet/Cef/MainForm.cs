@@ -105,6 +105,7 @@ namespace VRCX
                 DragHandler = new CustomDragHandler(),
                 MenuHandler = new CustomMenuHandler(),
                 DownloadHandler = new CustomDownloadHandler(),
+                DialogHandler = new VrWorkspaceDialogHandler(),
                 RequestHandler = new CustomRequestHandler(),
                 BrowserSettings =
                 {

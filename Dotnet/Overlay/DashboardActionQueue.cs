@@ -9,7 +9,7 @@ internal static class DashboardActionQueue
 {
     private static readonly ConcurrentQueue<string> Queue = new();
     private static readonly HashSet<string> Actions = new(StringComparer.Ordinal) {
-        "refresh", "wrist", "hud", "silent", "sleep", "join", "invite", "requestInvite", "accept", "decline"
+        "refresh", "wrist", "hud", "silent", "sleep", "join", "invite", "requestInvite", "accept", "decline", "workspace"
     };
 
     internal static bool IsValid(string json)

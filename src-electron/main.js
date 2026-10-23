@@ -146,6 +146,8 @@ initializeDotnet({ interopApi, version, args });
 
 /** @type {Electron.CrossProcessExports.BrowserWindow} */
 let mainWindow = undefined;
+const {createVrWorkspaceCapture} = require('./vrWorkspaceCapture.cjs');
+const vrWorkspaceCapture = createVrWorkspaceCapture({getWindow: () => mainWindow, publish: (json) => interopApi.callMethod('AppApiElectron', 'ExecuteVrOverlayFunction', ['dashboardWorkspaceFrame', json])});
 
 const VRCXStorage = interopApi.getDotNetObject('VRCXStorage');
 const hasAskedToMoveAppImage =
@@ -307,6 +309,7 @@ registerIpcHandlers({
             overlayHand
         ) => {
             if (!active) {
+                vrWorkspaceCapture.setEnabled(false);
                 disposeOverlay();
                 return;
             }
@@ -318,6 +321,8 @@ registerIpcHandlers({
                 }
             }
         },
+        setVrWorkspaceCapture: (_event, enabled) => vrWorkspaceCapture.setEnabled(enabled),
+        sendVrWorkspaceInput: (_event, input) => vrWorkspaceCapture.input(input),
         getArch: () => {
             return process.arch.toString();
         },

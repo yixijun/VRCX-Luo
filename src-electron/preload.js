@@ -45,6 +45,8 @@ contextBridge.exposeInMainWorld('interopApi', {
 const validChannels = ['launch-command'];
 
 contextBridge.exposeInMainWorld('electron', {
+    setVrWorkspaceCapture: (enabled) => ipcRenderer.invoke('app:setVrWorkspaceCapture', enabled),
+    sendVrWorkspaceInput: (input) => ipcRenderer.invoke('app:sendVrWorkspaceInput', input),
     getArch: () => ipcRenderer.invoke('app:getArch'),
     getClipboardText: () => ipcRenderer.invoke('app:getClipboardText'),
     getNoUpdater: () => ipcRenderer.invoke('app:getNoUpdater'),

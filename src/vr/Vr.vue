@@ -1582,6 +1582,9 @@
         window.$vr.dashboardVisibility = (json) => { dashboardVisible.value = JSON.parse(json); };
         window.$vr.dashboardResult = (json) => dashboardPanel.value?.receive(json);
         window.$vr.dashboardInput = (json) => dashboardPanel.value?.input(json);
+        window.$vr.dashboardWorkspaceFrame = (json) => dashboardPanel.value?.workspaceFrame(json);
+        window.$vr.dashboardWorkspaceStatus = (json) => dashboardPanel.value?.workspaceStatus(json);
+        window.$vr.dashboardKeyboardText = (json) => AppApiVr.SubmitDashboardAction(JSON.stringify({id: `keyboard-${Date.now()}`, action: 'workspace', type: 'input', input: {type: 'text', text: JSON.parse(json)}}));
 
         window.$vr.vrState = vrState;
 

@@ -1,8 +1,10 @@
 <template>
-    <section class="dashboard-panel" data-dashboard-root>
+    <WorkspacePanel v-if="workspace" ref="workspacePanel" @close="workspace = false" />
+    <section v-else class="dashboard-panel" data-dashboard-root>
         <header>
             <div><h1>VRCX-Luo</h1><p>{{ snapshot.displayName || '请先在桌面登录' }} · {{ snapshot.location || 'SteamVR 控制面板' }}</p></div>
             <button data-dashboard-action :disabled="busy" @click="send('refresh')">刷新</button>
+            <button data-dashboard-action @click="workspace = true">VR 工作区 · 全部功能</button>
         </header>
         <nav>
             <button v-for="item in tabs" :key="item.id" data-dashboard-action :class="{active: tab === item.id}" @click="tab = item.id; page = 0">{{ item.label }}</button>
@@ -61,6 +63,9 @@
 
 <script setup>
     import { computed, onMounted, onBeforeUnmount, ref } from 'vue';
+    import WorkspacePanel from './WorkspacePanel.vue';
+    const workspace = ref(false);
+    const workspacePanel = ref(null);
     const snapshot = ref({ accountId: '', friends: [], invites: [], settings: {} });
     const tab = ref('controls');
     const tabs = [{id: 'controls', label: '控制与设备'}, {id: 'friends', label: '好友'}, {id: 'invites', label: '邀请'}];
@@ -116,6 +121,7 @@
         send(action.action, {targetId: action.targetId, mode});
     }
     function input(json) {
+        if (workspace.value) { workspacePanel.value?.input(json); return; }
         const event = JSON.parse(json);
         const root = document.querySelector('[data-dashboard-root]');
         if (!root) return;
@@ -135,7 +141,9 @@
     }
     onMounted(() => { refresh(); refreshTimer = setInterval(refresh, 5000); });
     onBeforeUnmount(() => { clearInterval(refreshTimer); clearTimeout(responseTimer); });
-    defineExpose({ receive, input });
+    function workspaceFrame(json) { workspacePanel.value?.frame(json); }
+    function workspaceStatus(json) { workspacePanel.value?.status(json); }
+    defineExpose({ receive, input, workspaceFrame, workspaceStatus });
 </script>
 
 <style scoped>

@@ -1,3 +1,6 @@
+import { vrWorkspace } from './vrWorkspace';
+import { openVrFilePicker } from './vrWorkspaceFilePicker';
+
 /**
  * @typedef {object} FileDialogOptions
  * @property {string} [defaultPath]
@@ -70,6 +73,7 @@ export function createDirectoryDialogAdapter({
  * @returns {Promise<string | null | undefined>}
  */
 export function openFileDialog(options) {
+    if (vrWorkspace.active) return openVrFilePicker('file', options);
     return createFileDialogAdapter({
         isWindows: WINDOWS,
         electronApi: window.electron,
@@ -84,6 +88,7 @@ export function openFileDialog(options) {
  * @returns {Promise<string | null | undefined>}
  */
 export function openDirectoryDialog(options) {
+    if (vrWorkspace.active) return openVrFilePicker('directory', options);
     return createDirectoryDialogAdapter({
         isWindows: WINDOWS,
         electronApi: window.electron,

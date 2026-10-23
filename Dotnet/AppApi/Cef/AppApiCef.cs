@@ -30,6 +30,9 @@ namespace VRCX
             MainForm.Instance.Browser.ShowDevTools();
         }
 
+        public override Task<bool> SetVrWorkspaceCapture(bool enabled) => DashboardWorkspaceCapture.Instance.SetEnabled(enabled);
+        public override Task<bool> SendVrWorkspaceInput(string json) => DashboardWorkspaceCapture.Instance.Input(json);
+
         public void HandleClosePromptChoice(string action, bool dontAskAgain)
         {
             MainForm.Instance.BeginInvoke(
@@ -44,6 +47,7 @@ namespace VRCX
 
         public override void SetVR(bool active, bool hmdOverlay, bool wristOverlay, bool menuButton, int overlayHand)
         {
+            if (!active && DashboardWorkspaceCapture.Instance.Active) _ = DashboardWorkspaceCapture.Instance.SetEnabled(false);
             var updateVars = new OverlayVars
             {
                 Active = active,

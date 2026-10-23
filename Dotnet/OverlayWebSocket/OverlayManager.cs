@@ -17,7 +17,7 @@ public class OverlayManager
         if (OverlayServer.IsConnected() ||
             _process != null && !_process.HasExited)
         {
-            logger.Error("Overlay server already started");
+            logger.Debug("Overlay process is already starting or connected");
             return;
         }
 

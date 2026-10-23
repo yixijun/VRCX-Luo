@@ -3,6 +3,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { registerIpcHandlers } from '../../../src-electron/ipcHandlers.cjs';
 
 const handlerContracts = [
+    ['app:setVrWorkspaceCapture', 'setVrWorkspaceCapture'],
+    ['app:sendVrWorkspaceInput', 'sendVrWorkspaceInput'],
     ['callDotNetMethod', 'callDotNetMethod'],
     ['dialog:openFile', 'openFileDialog'],
     ['dialog:openDirectory', 'openDirectoryDialog'],
