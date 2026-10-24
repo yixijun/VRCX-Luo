@@ -123,8 +123,8 @@
                                 </SelectGroup>
                             </SelectContent>
                         </Select>
+                        <WorldTagFilter v-model="searchWorldTags" @search="applyWorldTagSearch" />
                     </div>
-                    <WorldTagFilter v-model="searchWorldTags" @search="applyWorldTagSearch" />
                     <div
                         ref="worldResultsScrollContainer"
                         class="flex-1 overflow-y-auto min-h-0">

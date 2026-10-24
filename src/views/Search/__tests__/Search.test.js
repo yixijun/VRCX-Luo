@@ -363,6 +363,7 @@ describe('Search.vue', () => {
         const wrapper = mountSearch();
         await wrapper.get('[data-testid="set-tab-world"]').trigger('click');
         const world = wrapper.get('[data-testid="content-world"]');
+        await world.findAll('button').find(button => button.text() === 'view.search.world.tags_label').trigger('click');
         const preset = world.findAll('button').find(button => button.text() === 'view.search.world.tag_presets.game');
         await preset.trigger('click');
         expect(mocks.useSearchWorldApi.searchWorldTags.value).toBe('game');

@@ -25,12 +25,14 @@ function open() {
 describe('world tag filter controls', () => {
     it('submits custom tags on Enter', async () => {
         const { search } = open();
+        await wrapper.get('[data-slot="collapsible-trigger"]').trigger('click');
         await wrapper.get('input').setValue('game, chill');
         await wrapper.get('input').trigger('keyup.enter');
         expect(search).toHaveBeenCalledExactlyOnceWith('game, chill');
     });
     it('applies a quick tag and clears input using the existing clear control', async () => {
         const { value, search } = open();
+        await wrapper.get('[data-slot="collapsible-trigger"]').trigger('click');
         await wrapper
             .findAll('button')
             .find((button) => button.text() === 'Games')
@@ -43,5 +45,19 @@ describe('world tag filter controls', () => {
         expect(clear).toBeDefined();
         await clear.trigger('click');
         expect(value.value).toBe('');
+    });
+    it('starts collapsed and preserves the tag draft when closed without searching', async () => {
+        const { value, search } = open();
+        const trigger = wrapper.get('[data-slot="collapsible-trigger"]');
+        expect(trigger.attributes('aria-expanded')).toBe('false');
+        expect(wrapper.find('input').exists()).toBe(false);
+        await trigger.trigger('click');
+        await wrapper.get('input').setValue('game, chill');
+        await trigger.trigger('click');
+        expect(trigger.attributes('aria-expanded')).toBe('false');
+        expect(value.value).toBe('game, chill');
+        await trigger.trigger('click');
+        expect(wrapper.get('input').element.value).toBe('game, chill');
+        expect(search).not.toHaveBeenCalled();
     });
 });
