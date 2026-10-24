@@ -1064,6 +1064,7 @@ namespace VRCX
 
         public override void ExecuteVrOverlayFunction(string function, string json)
         {
+            if (function == "configUpdate") _dashboard.ApplyConfiguration(json);
             if (function == "dashboardShowKeyboard") { _dashboard.RequestKeyboard(json); return; }
             if (!_isOverlayStarted)
             {

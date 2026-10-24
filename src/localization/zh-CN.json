@@ -1009,7 +1009,9 @@
             },
             "vr": {
                 "vr_core": {
-                    "header": "通用设置项"
+                    "header": "通用设置项",
+                    "dashboard": "SteamVR 面板",
+                    "dashboard_description": "在 SteamVR 底部菜单显示 VRCX-Luo 入口。关闭时会退出 VR 工作区；手背 HUD 和通知仍由各自的设置控制。"
                 },
                 "vr_notifications": {
                     "header": "通知"

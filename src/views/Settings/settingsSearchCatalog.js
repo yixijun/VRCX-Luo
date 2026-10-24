@@ -65,6 +65,19 @@ export const settingsSearchCatalog = Object.freeze([
         aliases: ['vr overlay', 'steamvr', 'wayvr', 'overlay', '叠加层', '腕部']
     },
     {
+        id: 'steamvr-dashboard',
+        tab: 'vr',
+        labelKey: 'view.settings.vr.vr_core.dashboard',
+        groupKey: 'view.settings.vr.vr_core.header',
+        aliases: [
+            'steamvr dashboard',
+            'steamvr panel',
+            'VR 工作区',
+            '底部菜单',
+            'SteamVR 面板'
+        ]
+    },
+    {
         id: 'wrist-feed-overlay',
         tab: 'vr',
         labelKey:

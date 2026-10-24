@@ -11,6 +11,7 @@ export const useWristOverlaySettingsStore = defineStore(
         const sharedFeed = useSharedFeedStore();
 
         const overlayWrist = ref(true);
+        const steamVrDashboard = ref(true);
         const hidePrivateFromFeed = ref(false);
         const openVRAlways = ref(false);
         const overlaybutton = ref(false);
@@ -25,6 +26,7 @@ export const useWristOverlaySettingsStore = defineStore(
         async function initWristOverlaySettings() {
             const [
                 overlayWristConfig,
+                steamVrDashboardConfig,
                 hidePrivateFromFeedConfig,
                 openVRAlwaysConfig,
                 overlaybuttonConfig,
@@ -37,6 +39,7 @@ export const useWristOverlaySettingsStore = defineStore(
                 pcUptimeOnFeedConfig
             ] = await Promise.all([
                 configRepository.getBool('VRCX_overlayWrist', false),
+                configRepository.getBool('VRCX_steamVrDashboard', true),
                 configRepository.getBool('VRCX_hidePrivateFromFeed', false),
                 configRepository.getBool('openVRAlways', false),
                 configRepository.getBool('VRCX_overlaybutton', false),
@@ -50,6 +53,7 @@ export const useWristOverlaySettingsStore = defineStore(
             ]);
 
             overlayWrist.value = overlayWristConfig;
+            steamVrDashboard.value = steamVrDashboardConfig;
             hidePrivateFromFeed.value = hidePrivateFromFeedConfig;
             openVRAlways.value = openVRAlwaysConfig;
             overlaybutton.value = overlaybuttonConfig;
@@ -65,6 +69,14 @@ export const useWristOverlaySettingsStore = defineStore(
         function setOverlayWrist() {
             overlayWrist.value = !overlayWrist.value;
             configRepository.setBool('VRCX_overlayWrist', overlayWrist.value);
+        }
+        /** @param {boolean} value */
+        function setSteamVrDashboard(value) {
+            steamVrDashboard.value = value === true;
+            return configRepository.setBool(
+                'VRCX_steamVrDashboard',
+                steamVrDashboard.value
+            );
         }
         function setHidePrivateFromFeed() {
             hidePrivateFromFeed.value = !hidePrivateFromFeed.value;
@@ -137,6 +149,7 @@ export const useWristOverlaySettingsStore = defineStore(
 
         return {
             overlayWrist,
+            steamVrDashboard,
             hidePrivateFromFeed,
             openVRAlways,
             overlaybutton,
@@ -149,6 +162,7 @@ export const useWristOverlaySettingsStore = defineStore(
             pcUptimeOnFeed,
 
             setOverlayWrist,
+            setSteamVrDashboard,
             setHidePrivateFromFeed,
             setOpenVRAlways,
             setOverlaybutton,

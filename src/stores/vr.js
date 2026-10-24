@@ -30,24 +30,46 @@ export const useVrStore = defineStore('Vr', () => {
     let dashboardBusy = false;
     let dashboard;
     async function pollDashboard() {
-        if (dashboardBusy || typeof AppApi.GetDashboardActions !== 'function') return;
+        if (dashboardBusy || typeof AppApi.GetDashboardActions !== 'function')
+            return;
         dashboardBusy = true;
         try {
             const requests = await AppApi.GetDashboardActions();
             if (requests.length) {
                 for (const request of requests) {
                     const parsed = JSON.parse(request);
+                    if (
+                        !wristOverlaySettingsStore.steamVrDashboard &&
+                        !(
+                            parsed.action === 'workspace' &&
+                            parsed.type === 'close'
+                        )
+                    )
+                        continue;
                     if (parsed.action === 'workspace') {
-                        try { await (await import('../services/vrWorkspace')).handleVrWorkspaceCommand(parsed); }
-                        catch (error) { AppApi.ExecuteVrOverlayFunction('dashboardWorkspaceStatus', JSON.stringify({error: error.message})); }
+                        try {
+                            await (
+                                await import('../services/vrWorkspace')
+                            ).handleVrWorkspaceCommand(parsed);
+                        } catch (error) {
+                            AppApi.ExecuteVrOverlayFunction(
+                                'dashboardWorkspaceStatus',
+                                JSON.stringify({ error: error.message })
+                            );
+                        }
                     } else {
-                        dashboard ??= (await import('../services/vrDashboard')).createVrDashboard(saveOpenVROption);
+                        dashboard ??= (
+                            await import('../services/vrDashboard')
+                        ).createVrDashboard(saveOpenVROption);
                         await dashboard(request);
                     }
                 }
             }
-        } catch (error) { console.error('VR dashboard action failed', error); }
-        finally { dashboardBusy = false; }
+        } catch (error) {
+            console.error('VR dashboard action failed', error);
+        } finally {
+            dashboardBusy = false;
+        }
     }
     const dashboardTimer = setInterval(pollDashboard, 50);
     watch(() => watchState.isLoggedIn, pollDashboard);
@@ -78,6 +100,11 @@ export const useVrStore = defineStore('Vr', () => {
         updateVRLastLocation();
         AppApi.ExecuteVrOverlayFunction('notyClear', '');
         updateOpenVR();
+        if (!wristOverlaySettingsStore.steamVrDashboard) {
+            await (
+                await import('../services/vrWorkspace')
+            ).handleVrWorkspaceCommand({ type: 'close' });
+        }
     }
 
     function updateVrNowPlaying() {
@@ -138,10 +165,12 @@ export const useVrStore = defineStore('Vr', () => {
          * @property {string} appLanguage
          * @property {number} notificationOpacity
          * @property {boolean} isWristDisabled
+         * @property {boolean} dashboardEnabled
          */
 
         /** @type {VrConfigVarsPayload} */
         const VRConfigVars = {
+            dashboardEnabled: wristOverlaySettingsStore.steamVrDashboard,
             overlayNotifications:
                 notificationsSettingsStore.overlayNotifications,
             hideDevicesFromFeed: wristOverlaySettingsStore.hideDevicesFromFeed,
@@ -174,14 +203,14 @@ export const useVrStore = defineStore('Vr', () => {
             menuButton: false,
             overlayHand: 0
         };
-        if (
-            notificationsSettingsStore.openVR &&
-            gameStore.isSteamVRRunning
-        ) {
-            const showGameOverlays = (gameStore.isGameRunning && !gameStore.isGameNoVR) || wristOverlaySettingsStore.openVRAlways;
+        if (notificationsSettingsStore.openVR && gameStore.isSteamVRRunning) {
+            const showGameOverlays =
+                (gameStore.isGameRunning && !gameStore.isGameNoVR) ||
+                wristOverlaySettingsStore.openVRAlways;
             let hmdOverlay = false;
             if (
-                showGameOverlays && !notificationsSettingsStore.vSleepMode &&
+                showGameOverlays &&
+                !notificationsSettingsStore.vSleepMode &&
                 (notificationsSettingsStore.overlayNotifications ||
                     advancedSettingsStore.progressPie ||
                     photonStore.photonEventOverlay ||
@@ -190,9 +219,14 @@ export const useVrStore = defineStore('Vr', () => {
                 hmdOverlay = true;
             }
             newState = {
-                active: true,
+                active:
+                    wristOverlaySettingsStore.steamVrDashboard ||
+                    hmdOverlay ||
+                    (showGameOverlays &&
+                        wristOverlaySettingsStore.overlayWrist),
                 hmdOverlay,
-                wristOverlay: showGameOverlays && wristOverlaySettingsStore.overlayWrist,
+                wristOverlay:
+                    showGameOverlays && wristOverlaySettingsStore.overlayWrist,
                 menuButton: wristOverlaySettingsStore.overlaybutton,
                 overlayHand: parseInt(wristOverlaySettingsStore.overlayHand, 10)
             };

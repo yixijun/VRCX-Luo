@@ -1000,7 +1000,9 @@
             },
             "vr": {
                 "vr_core": {
-                    "header": "VR Core"
+                    "header": "VR Core",
+                    "dashboard": "SteamVR dashboard panel",
+                    "dashboard_description": "Show VRCX-Luo in the SteamVR bottom menu. Turning this off closes the VR workspace; wrist HUD and notifications keep their own settings."
                 },
                 "vr_notifications": {
                     "header": "VR Notifications"

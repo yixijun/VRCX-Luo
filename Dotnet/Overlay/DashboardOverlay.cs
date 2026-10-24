@@ -16,6 +16,21 @@ internal sealed class DashboardOverlay
     private bool _pressed;
     private bool _visible;
     private int _keyboardRequested;
+    private volatile bool _enabled = true;
+
+    // Config arrives on the bridge thread. Overlay handles remain owned by Update.
+    internal void ApplyConfiguration(string json)
+    {
+        try
+        {
+            using var data = JsonDocument.Parse(json);
+            if (data.RootElement.ValueKind == JsonValueKind.Object &&
+                data.RootElement.TryGetProperty("dashboardEnabled", out var value) &&
+                (value.ValueKind == JsonValueKind.True || value.ValueKind == JsonValueKind.False))
+                _enabled = value.GetBoolean();
+        }
+        catch (JsonException) { }
+    }
     internal void RequestKeyboard(string json = "")
     {
         var flags = 1;
@@ -43,6 +58,19 @@ internal sealed class DashboardOverlay
     public EVROverlayError Update(CVROverlay overlay, string baseDirectory,
         Action<ulong> draw, Action<string, string> publish)
     {
+        if (!_enabled)
+        {
+            if (_handle != 0)
+            {
+                if (_visible) overlay.HideKeyboard();
+                overlay.HideOverlay(_handle);
+                overlay.DestroyOverlay(_handle);
+                if (_thumbnail != 0) overlay.DestroyOverlay(_thumbnail);
+                Reset();
+                publish("dashboardVisibility", "false");
+            }
+            return EVROverlayError.None;
+        }
         if (_handle == 0)
         {
             var error = overlay.CreateDashboardOverlay(Key, "VRCX-Luo", ref _handle, ref _thumbnail);

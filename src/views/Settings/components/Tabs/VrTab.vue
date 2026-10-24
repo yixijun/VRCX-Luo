@@ -13,6 +13,16 @@
                     " />
             </SettingsItem>
 
+            <SettingsItem
+                item-id="steamvr-dashboard"
+                :label="t('view.settings.vr.vr_core.dashboard')"
+                :description="t('view.settings.vr.vr_core.dashboard_description')">
+                <Switch
+                    :model-value="steamVrDashboard"
+                    :disabled="!openVR"
+                    @update:modelValue="handleSteamVrDashboard" />
+            </SettingsItem>
+
             <SettingsItem :label="t('view.settings.wrist_overlay.steamvr_wrist_overlay.start_overlay_with')">
                 <Select
                     :model-value="openVRAlways ? 'true' : 'false'"
@@ -260,7 +270,7 @@
 
     const { notificationOpacity } = storeToRefs(advancedSettingsStore);
 
-    const { openVRAlways } = storeToRefs(wristOverlaySettingsStore);
+    const { openVRAlways, steamVrDashboard } = storeToRefs(wristOverlaySettingsStore);
     const { setOpenVRAlways } = wristOverlaySettingsStore;
 
     const { progressPie, progressPieFilter } = storeToRefs(advancedSettingsStore);
@@ -318,6 +328,11 @@
             setOpenVRAlways();
             saveOpenVROption();
         }
+    }
+
+    async function handleSteamVrDashboard(value) {
+        await wristOverlaySettingsStore.setSteamVrDashboard(value);
+        await saveOpenVROption();
     }
 
     /**

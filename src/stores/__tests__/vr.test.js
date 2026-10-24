@@ -1,5 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { createPinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    createPinia,
+    disposePinia,
+    getActivePinia,
+    setActivePinia
+} from 'pinia';
 
 const mocks = vi.hoisted(() => ({
     notifications: {
@@ -15,6 +20,7 @@ const mocks = vi.hoisted(() => ({
         notificationOpacity: 80
     },
     wrist: {
+        steamVrDashboard: true,
         openVRAlways: false,
         overlayWrist: true,
         overlaybutton: false,
@@ -27,7 +33,12 @@ const mocks = vi.hoisted(() => ({
         isGameNoVR: false,
         setIsHmdAfk: vi.fn()
     },
-    setVR: vi.fn()
+    setVR: vi.fn(),
+    workspaceCommand: vi.fn(async () => {})
+}));
+
+vi.mock('../../services/vrWorkspace', () => ({
+    handleVrWorkspaceCommand: mocks.workspaceCommand
 }));
 
 vi.mock('../../shared/utils', () => ({
@@ -119,6 +130,11 @@ globalThis.LINUX = false;
 import { useVrStore } from '../vr';
 
 describe('useVrStore', () => {
+    afterEach(() => {
+        disposePinia(getActivePinia());
+        delete AppApi.GetDashboardActions;
+        vi.useRealTimers();
+    });
     beforeEach(() => {
         setActivePinia(createPinia());
         vi.clearAllMocks();
@@ -126,6 +142,7 @@ describe('useVrStore', () => {
         mocks.notifications.vSleepMode = false;
         mocks.notifications.overlayNotifications = true;
         mocks.wrist.overlayWrist = true;
+        mocks.wrist.steamVrDashboard = true;
         mocks.game.isSteamVRRunning = true;
         mocks.game.isGameRunning = true;
         mocks.game.isGameNoVR = false;
@@ -165,5 +182,53 @@ describe('useVrStore', () => {
         mocks.notifications.openVR = false;
         useVrStore().updateOpenVR();
         expect(mocks.setVR).toHaveBeenCalledWith(false, false, false, false, 0);
+    });
+
+    it('disables only the dashboard and closes capture while wrist and notifications remain enabled', async () => {
+        mocks.wrist.steamVrDashboard = false;
+        await useVrStore().saveOpenVROption();
+        expect(mocks.setVR).toHaveBeenCalledWith(true, true, true, false, 1);
+        expect(mocks.workspaceCommand).toHaveBeenCalledWith({ type: 'close' });
+        const config = AppApi.ExecuteVrOverlayFunction.mock.calls.find(
+            ([name]) => name === 'configUpdate'
+        );
+        expect(JSON.parse(config[1]).dashboardEnabled).toBe(false);
+    });
+
+    it('stops the overlay runtime when the dashboard and both overlays are off', () => {
+        mocks.wrist.steamVrDashboard = false;
+        mocks.wrist.overlayWrist = false;
+        mocks.notifications.overlayNotifications = false;
+        useVrStore().updateOpenVR();
+        expect(mocks.setVR).toHaveBeenCalledWith(false, false, false, false, 1);
+    });
+
+    it('re-enables the dashboard without enabling wrist or notification overlays', async () => {
+        mocks.wrist.overlayWrist = false;
+        mocks.notifications.overlayNotifications = false;
+        await useVrStore().saveOpenVROption();
+        expect(mocks.setVR).toHaveBeenCalledWith(true, false, false, false, 1);
+        expect(mocks.workspaceCommand).not.toHaveBeenCalled();
+        const config = AppApi.ExecuteVrOverlayFunction.mock.calls.find(
+            ([name]) => name === 'configUpdate'
+        );
+        expect(JSON.parse(config[1]).dashboardEnabled).toBe(true);
+    });
+
+    it('ignores queued workspace opens and heartbeats after disabling but allows cleanup', async () => {
+        vi.useFakeTimers();
+        mocks.wrist.steamVrDashboard = false;
+        AppApi.GetDashboardActions = vi.fn(async () =>
+            ['open', 'ping', 'input', 'close'].map((type) =>
+                JSON.stringify({ action: 'workspace', type })
+            )
+        );
+        useVrStore();
+        await vi.advanceTimersByTimeAsync(50);
+        expect(mocks.workspaceCommand).toHaveBeenCalledTimes(1);
+        expect(mocks.workspaceCommand).toHaveBeenCalledWith({
+            action: 'workspace',
+            type: 'close'
+        });
     });
 });
