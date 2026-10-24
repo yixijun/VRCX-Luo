@@ -388,6 +388,19 @@
                 "header": "World",
                 "category": "Search by category",
                 "community_lab": "Include community labs",
+                "tags_label": "World tags",
+                "tags_placeholder": "e.g. game, chill",
+                "search_tags": "Search by tags",
+                "common_tags": "Common tags",
+                "tags_hint": "Combine with keywords above. Separate tags with commas; any matching tag is included. Tag searches reset the category.",
+                "tag_presets": {
+                    "social": "Social",
+                    "game": "Games",
+                    "chill": "Chill",
+                    "sleep": "Sleep",
+                    "avatar": "Avatars",
+                    "music": "Music"
+                },
                 "categories": {
                     "hot": "Hot",
                     "spotlight_pc": "Spotlight - PC",

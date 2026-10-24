@@ -101,15 +101,14 @@
             </TabsContent>
             <TabsContent value="world" class="flex flex-col min-h-0 flex-1">
                 <div class="flex flex-col min-h-0" style="flex: 9">
-                    <div class="inline-flex justify-end mb-4 w-full shrink-0 gap-2">
+                    <div class="inline-flex flex-wrap items-center justify-end mb-3 w-full shrink-0 gap-2">
                         <label class="inline-flex items-center gap-2">
                             <Checkbox v-model="searchWorldLabs" />
                             <span>{{ t('view.search.world.community_lab') }}</span>
                         </label>
                         <Select
                             :model-value="searchWorldCategoryIndex"
-                            @update:modelValue="handleSearchWorldCategorySelect"
-                            style="margin-bottom: 16px">
+                            @update:modelValue="handleSearchWorldCategorySelect">
                             <SelectTrigger size="sm">
                                 <SelectValue :placeholder="t('view.search.world.category')" />
                             </SelectTrigger>
@@ -125,6 +124,7 @@
                             </SelectContent>
                         </Select>
                     </div>
+                    <WorldTagFilter v-model="searchWorldTags" @search="applyWorldTagSearch" />
                     <div
                         ref="worldResultsScrollContainer"
                         class="flex-1 overflow-y-auto min-h-0">
@@ -335,6 +335,7 @@
     import { Spinner } from '@/components/ui/spinner';
     import AvatarProviderDialog from '../Settings/dialogs/AvatarProviderDialog.vue';
     import SearchPagination from './components/SearchPagination.vue';
+    import WorldTagFilter from './components/WorldTagFilter.vue';
     import {
         Item,
         ItemContent,
@@ -456,6 +457,8 @@
 
     const {
         searchWorldLabs,
+        searchWorldTags,
+        applyWorldTagSearch,
         searchWorldParams,
         searchWorldCategoryIndex,
         searchWorldResults,

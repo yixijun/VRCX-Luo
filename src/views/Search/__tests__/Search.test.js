@@ -49,10 +49,15 @@ mocks.useSearchAvatarApi = {
 
 mocks.useSearchWorldApi = {
     searchWorldLabs: ref(false),
+    searchWorldTags: ref(''),
+    applyWorldTagSearch: vi.fn(),
     searchWorldParams: ref({ offset: 0 }),
     searchWorldCategoryIndex: ref(null),
     searchWorldResults: ref([]),
     isSearchWorldLoading: ref(false),
+    hasMoreWorldResults: ref(false),
+    searchWorldError: ref(false),
+    retryWorldSearch: vi.fn(),
     searchWorld: vi.fn(),
     moreSearchWorld: vi.fn(),
     handleSearchWorldCategorySelect: vi.fn(),
@@ -120,6 +125,12 @@ vi.mock('../../../stores', () => ({
         cachedConfig: mocks.cachedConfig
     })
 }));
+vi.mock('../../../composables/useUserDisplay', () => ({
+    useUserDisplay: () => ({userImage: () => ''})
+}));
+vi.mock('../../../components/UserIdentityInline.vue', () => ({
+    default: {props:['user'],template:'<span>{{ user.displayName }}</span>'}
+}));
 
 vi.mock('../composables/useSearchUser', () => ({
     useSearchUser: () => mocks.useSearchUserApi
@@ -166,6 +177,7 @@ vi.mock('@/components/ui/tabs', () => ({
         template:
             '<div data-testid="tabs">' +
             '<button data-testid="set-tab-user" @click="$emit(\'update:modelValue\', \'user\')" />' +
+            '<button data-testid="set-tab-world" @click="$emit(\'update:modelValue\', \'world\')" />' +
             '<button data-testid="set-tab-avatar" @click="$emit(\'update:modelValue\', \'avatar\')" />' +
             '<button data-testid="set-tab-group" @click="$emit(\'update:modelValue\', \'group\')" />' +
             '<slot />' +
@@ -294,6 +306,8 @@ describe('Search.vue', () => {
         mocks.useSearchAvatarApi.isSearchAvatarLoading.value = false;
 
         mocks.useSearchWorldApi.searchWorldParams.value = { offset: 0 };
+        mocks.useSearchWorldApi.searchWorldTags.value = '';
+        mocks.useSearchWorldApi.applyWorldTagSearch.mockReset();
         mocks.useSearchWorldApi.searchWorldResults.value = [];
         mocks.useSearchWorldApi.isSearchWorldLoading.value = false;
 
@@ -343,6 +357,17 @@ describe('Search.vue', () => {
 
         expect(mocks.useSearchUserApi.searchUser).toHaveBeenCalledTimes(1);
         expect(mocks.useSearchAvatarApi.searchAvatar).not.toHaveBeenCalled();
+    });
+
+    it('connects the tag controls to world search without changing user search', async () => {
+        const wrapper = mountSearch();
+        await wrapper.get('[data-testid="set-tab-world"]').trigger('click');
+        const world = wrapper.get('[data-testid="content-world"]');
+        const preset = world.findAll('button').find(button => button.text() === 'view.search.world.tag_presets.game');
+        await preset.trigger('click');
+        expect(mocks.useSearchWorldApi.searchWorldTags.value).toBe('game');
+        expect(mocks.useSearchWorldApi.applyWorldTagSearch).toHaveBeenCalledTimes(1);
+        expect(mocks.useSearchUserApi.searchUser).not.toHaveBeenCalled();
     });
 
     it('shows avatar minimum length warning and skips avatar search', async () => {

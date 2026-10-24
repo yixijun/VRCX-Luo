@@ -19,6 +19,8 @@ export type GetWorlds = (
         n: number;
         offset: number;
         search?: string;
+        tag?: string;
+        notag?: string;
         userId?: string;
         user?: 'me' | 'friend';
         sort?:

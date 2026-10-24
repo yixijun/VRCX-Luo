@@ -16,7 +16,10 @@ export function useSearchWorld() {
 
     const searchWorldOption = ref('');
     const searchWorldLabs = ref(false);
-    const searchWorldParams = ref({});
+    const searchWorldTags = ref('');
+    const searchWorldParams = ref(
+        /** @type {{ n?: number, offset?: number, [key: string]: any }} */ ({})
+    );
     const searchWorldCategoryIndex = ref(null);
     const searchWorldResults = ref([]);
     const isSearchWorldLoading = ref(false);
@@ -27,9 +30,9 @@ export function useSearchWorld() {
 
     /**
      *
-     * @param ref
+     * @param {{ index?: number, sortHeading?: string, sortOrder?: string, sortOwnership?: string, tag?: string }} [ref]
      */
-    function searchWorld(ref) {
+    function searchWorld(ref = {}) {
         searchGeneration += 1;
         searchWorldOption.value = '';
         searchWorldCategoryIndex.value = ref?.index ?? null;
@@ -87,15 +90,28 @@ export function useSearchWorld() {
             params.user = 'me';
             params.releaseStatus = 'all';
         }
-        if (ref.tag) {
-            params.tag = ref.tag;
-        }
-        if (!searchWorldLabs.value) {
-            if (params.tag) {
-                params.tag += ',system_approved';
-            } else {
-                params.tag = 'system_approved';
-            }
+        const customTags = [
+            ...new Set(
+                searchWorldTags.value
+                    .split(/[,，、;；\n]+/)
+                    .map((tag) => tag.trim().toLowerCase())
+                    .filter(Boolean)
+                    .map((tag) =>
+                        /^(author_tag_|system_|admin_|content_)/.test(tag)
+                            ? tag
+                            : `author_tag_${tag}`
+                    )
+                    .filter((tag) => tag !== 'author_tag_')
+            )
+        ];
+        const tag = customTags.length ? customTags.join(',') : ref.tag;
+        if (tag) {
+            params.tag = tag;
+            // The API matches ANY included tag. Adding system_approved here
+            // would return approved worlds that do not match the chosen tags.
+            if (!searchWorldLabs.value) params.notag = 'system_labs';
+        } else if (!searchWorldLabs.value) {
+            params.tag = 'system_approved';
         }
         // TODO: option.platform
         searchWorldParams.value = params;
@@ -107,14 +123,23 @@ export function useSearchWorld() {
      * @param index
      */
     function handleSearchWorldCategorySelect(index) {
+        searchWorldTags.value = '';
         searchWorldCategoryIndex.value = index;
-        const config = /** @type {{ dynamicWorldRows?: Array<{ index?: number, sortHeading?: string, sortOrder?: string, tag?: string }> }} */ (
-            cachedConfig.value
-        );
-        const row = config.dynamicWorldRows?.find(
-            (r) => r.index === index
-        );
+        const config =
+            /** @type {{ dynamicWorldRows?: Array<{ index?: number, sortHeading?: string, sortOrder?: string, tag?: string }> }} */ (
+                cachedConfig.value
+            );
+        const row = config.dynamicWorldRows?.find((r) => r.index === index);
+        if (
+            row?.sortHeading === 'labs' ||
+            row?.tag?.split(',').includes('system_labs')
+        )
+            searchWorldLabs.value = true;
         searchWorld(row || {});
+    }
+
+    function applyWorldTagSearch() {
+        return searchWorld({});
     }
 
     /**
@@ -124,16 +149,20 @@ export function useSearchWorld() {
      */
     async function moreSearchWorld(go = 0, appendResults = go > 0) {
         const currentGeneration = searchGeneration;
-        if (!searchWorldParams.value.n || activeRequestGeneration === currentGeneration) {
+        if (
+            !searchWorldParams.value.n ||
+            activeRequestGeneration === currentGeneration
+        ) {
             return;
         }
         if (go > 0 && !hasMoreWorldResults.value) {
             return;
         }
 
-        const params = /** @type {{ n: number, offset: number, [key: string]: any }} */ (
-            { ...searchWorldParams.value }
-        );
+        const params =
+            /** @type {{ n: number, offset: number, [key: string]: any }} */ ({
+                ...searchWorldParams.value
+            });
         if (go) {
             params.offset += params.n * go;
             if (params.offset < 0) {
@@ -146,13 +175,18 @@ export function useSearchWorld() {
         isSearchWorldLoading.value = true;
 
         try {
-            const args = await worldRequest.getWorlds(params, searchWorldOption.value);
+            const args = await worldRequest.getWorlds(
+                params,
+                searchWorldOption.value
+            );
             if (currentGeneration !== searchGeneration) {
                 return;
             }
 
             const map = new Map(
-                appendResults ? searchWorldResults.value.map((world) => [world.id, world]) : []
+                appendResults
+                    ? searchWorldResults.value.map((world) => [world.id, world])
+                    : []
             );
             for (const json of args.json) {
                 const world = cachedWorlds.get(json.id);
@@ -191,6 +225,8 @@ export function useSearchWorld() {
         searchGeneration += 1;
         activeRequestGeneration = null;
         searchWorldParams.value = {};
+        searchWorldTags.value = '';
+        searchWorldCategoryIndex.value = null;
         searchWorldResults.value = [];
         hasMoreWorldResults.value = false;
         searchWorldError.value = false;
@@ -200,6 +236,8 @@ export function useSearchWorld() {
     return {
         searchWorldOption,
         searchWorldLabs,
+        searchWorldTags,
+        applyWorldTagSearch,
         searchWorldParams,
         searchWorldCategoryIndex,
         searchWorldResults,

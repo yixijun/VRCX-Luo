@@ -17,6 +17,7 @@
 - [数据刷新机制](./DATA_REFRESH.md)：日志、WebSocket、轮询和好友同步的数据刷新链路。
 - [VR 手背交互说明](./VR_WRIST_INTERACTION.md)：手背指针、扳机点击、页面切换及 CEF/Electron 数据流契约。
 - [SteamVR 工作区](./STEAMVR_WORKSPACE.md)：VR 专用导航、完整功能入口、手柄输入、文件选择与共享会话机制。
+- [世界标签搜索](./WORLD_TAG_SEARCH.md)：标签输入、快捷标签、分类切换和滚动加载规则。
 - [数据库架构预览](./DATABASE_SCHEMA.md)：核心表和关系说明。
 - [数据库模型文件](./vrcx_erd.dbml)、[ER 图 Mermaid](./vrcx_erd.mmd)、[MCD/DDL 文件](./vrcx_mcd_ddl.sql)。
 - MCD/SR 图形文件：`vrcx_mcd.*`、`vrcx_sr.*` 及对应的 `.svg`、`.json`、`.md`、`.gv` 文件。

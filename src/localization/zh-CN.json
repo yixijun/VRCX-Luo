@@ -395,6 +395,19 @@
                 "header": "世界",
                 "category": "按类别搜索",
                 "community_lab": "包含位于社区实验室的世界",
+                "tags_label": "世界标签",
+                "tags_placeholder": "例如 game、chill，多个标签用逗号分隔",
+                "search_tags": "按标签搜索",
+                "common_tags": "常用标签",
+                "tags_hint": "可与上方关键词一起搜索，多个标签匹配任意一个；按标签搜索会重置当前分类。",
+                "tag_presets": {
+                    "social": "社交",
+                    "game": "游戏",
+                    "chill": "休闲",
+                    "sleep": "睡眠",
+                    "avatar": "模型",
+                    "music": "音乐"
+                },
                 "categories": {
                     "hot": "热门",
                     "spotlight_pc": "PC 精选",
