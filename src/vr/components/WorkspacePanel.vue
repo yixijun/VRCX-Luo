@@ -6,13 +6,17 @@
                 ><span>{{ error || (image ? '扳机选择 · 摇杆滚动 · 按住扳机拖动' : '正在载入 VR 工作区…') }}</span>
             </div>
             <button data-workspace-button @click="command('keyboard')">键盘</button
-            ><button data-workspace-button @click="key('SelectAll')">全选</button
-            ><button data-workspace-button @click="key('Backspace')">退格</button
-            ><button data-workspace-button @click="key('Enter')">回车</button
             ><button data-workspace-button @click="rightClick">右键</button
             ><button data-workspace-button @click="key('Escape')">关闭弹窗</button
+            ><button data-workspace-button :aria-expanded="inputTools" @click="inputTools = !inputTools">
+                输入工具</button
             ><button data-workspace-button @click="$emit('close')">快捷控制</button>
         </header>
+        <div v-if="inputTools" class="workspace-input-tools">
+            <span>输入辅助</span><button data-workspace-button @click="key('SelectAll')">全选</button
+            ><button data-workspace-button @click="key('Backspace')">退格</button
+            ><button data-workspace-button @click="key('Enter')">回车</button>
+        </div>
         <div ref="imageArea" class="workspace-image">
             <img v-if="image" :src="image" alt="VRCX-Luo VR 工作区" draggable="false" />
             <div v-else class="workspace-loading">
@@ -37,6 +41,7 @@
     const imageArea = ref(null);
     const image = ref('');
     const error = ref('');
+    const inputTools = ref(false);
     const pointer = ref({ x: 0.5, y: 0.5, visible: false });
     let heartbeat, timeout;
     let pressed = false;
@@ -208,6 +213,20 @@
         min-height: 0;
         position: relative;
         overflow: hidden;
+    }
+    .workspace-input-tools {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        border-bottom: 1px solid var(--vr-border-strong);
+        flex-shrink: 0;
+        background: var(--vr-bg-surface);
+    }
+    .workspace-input-tools > span {
+        color: var(--vr-text-secondary);
+        font-size: 18px;
+        margin-right: auto;
     }
     img {
         display: block;

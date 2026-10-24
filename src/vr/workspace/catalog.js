@@ -23,6 +23,41 @@ const sections = {
     settings: ['工具与设置', '全部设置', 'ri-settings-3-line']
 };
 
+const sectionMetadata = {
+    动态与房间: {
+        icon: 'ri-pulse-line',
+        description: '看看好友在哪里，回顾最近的活动。'
+    },
+    发现: {
+        icon: 'ri-compass-3-line',
+        description: '找到新的世界、好友、模型与群组。'
+    },
+    社交与收藏: {
+        icon: 'ri-heart-3-line',
+        description: '好友、通知，以及你收藏的每一个去处。'
+    },
+    图表与记录: {
+        icon: 'ri-bar-chart-box-line',
+        description: '从活动数据中回顾你与好友的时光。'
+    },
+    工具与设置: {
+        icon: 'ri-settings-3-line',
+        description: '管理照片、使用工具，调整应用设置。'
+    },
+    自定义面板: {
+        icon: 'ri-layout-grid-line',
+        description: '打开你保存的个人面板。'
+    }
+};
+export function workspaceSectionMeta(section) {
+    return (
+        sectionMetadata[section] || {
+            icon: 'ri-apps-line',
+            description: '浏览此分类下的全部功能。'
+        }
+    );
+}
+
 /** Derive entries from the actual router so future pages cannot silently disappear in VR. */
 export function buildVrWorkspaceCatalog(routes, dashboards = []) {
     const entries = [];

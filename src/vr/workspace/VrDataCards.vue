@@ -41,7 +41,10 @@
                             v-for="cell in row.getVisibleCells().filter((item) => !isSpacer(item.column))"
                             :key="cell.id"
                             class="vr-record-field"
-                            :class="{ 'vr-record-wide': isWide(cell.column) }">
+                            :class="{
+                                'vr-record-wide': isWide(cell.column),
+                                'vr-record-actions': cell.column.id === 'actions'
+                            }">
                             <span v-if="cell.column.columnDef.meta?.label" class="vr-record-label">{{
                                 resolveHeaderLabel(cell.column)
                             }}</span>
@@ -205,10 +208,10 @@
         flex-shrink: 0;
         display: grid;
         grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-        gap: 20px 28px;
-        padding: 24px;
+        gap: 14px 24px;
+        padding: 20px 22px;
         border: 1px solid var(--border);
-        border-radius: 18px;
+        border-radius: 16px;
         background: var(--card);
     }
     .vr-record-card:focus-within {
@@ -224,11 +227,11 @@
     .vr-record-label {
         display: block;
         color: var(--muted-foreground);
-        font-size: 16px;
-        margin-bottom: 8px;
+        font-size: 15px;
+        margin-bottom: 5px;
     }
     .vr-record-value {
-        font-size: 22px;
+        font-size: 20px;
         overflow-wrap: anywhere;
     }
     .vr-record-value :deep(.truncate) {
@@ -251,6 +254,13 @@
     .vr-record-expanded {
         border-top: 1px solid var(--border);
         padding-top: 20px;
+    }
+    .vr-record-actions {
+        padding-top: 14px;
+        border-top: 1px solid var(--border);
+    }
+    .vr-record-actions .vr-record-label {
+        display: none;
     }
     .vr-record-more {
         flex-shrink: 0;

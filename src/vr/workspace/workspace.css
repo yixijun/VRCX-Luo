@@ -1,6 +1,9 @@
-/* Applied only for the dedicated VR workspace; desktop density preferences are untouched. */
+/* Workspace presentation is scoped to the active VR session. */
 body.vr-workspace-active {
-    --vr-hit: 48px;
+    --vr-hit: 52px;
+    --vr-nav-width: 208px;
+    --vr-header-height: 92px;
+    --vr-workspace-accent: var(--status-joinme, #00b8ff);
 }
 .vr-workspace-active #x-app {
     position: relative;
@@ -41,23 +44,8 @@ body.vr-workspace-active {
     z-index: 20;
     color: var(--foreground);
 }
-.vr-workspace-chrome button,
-.vr-workspace-chrome main,
-.vr-workspace-chrome section,
-.vr-workspace-chrome aside {
+.vr-workspace-chrome :is(button, main, section, aside) {
     pointer-events: auto;
-}
-.vr-workspace-header {
-    position: absolute;
-    inset: 0 0 auto;
-    height: 88px;
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 16px 24px;
-    box-sizing: border-box;
-    border-bottom: 1px solid var(--border);
-    background: var(--background);
 }
 .vr-workspace-chrome button {
     min-height: 52px;
@@ -70,140 +58,409 @@ body.vr-workspace-active {
     background: var(--card);
     color: var(--foreground);
     font-size: 20px;
+    line-height: 1.35;
     text-align: left;
     cursor: pointer;
 }
-.vr-workspace-chrome button:hover,
-.vr-workspace-chrome button.selected {
+.vr-workspace-chrome button:hover {
     background: var(--accent);
-    border-color: var(--primary);
+    border-color: color-mix(
+        in oklab,
+        var(--vr-workspace-accent) 55%,
+        var(--border)
+    );
 }
 .vr-workspace-chrome button:active {
-    transform: scale(0.98);
+    transform: scale(0.985);
 }
 .vr-workspace-chrome button:focus-visible {
-    outline: 3px solid var(--ring);
+    outline: 3px solid var(--vr-workspace-accent);
     outline-offset: 2px;
 }
+.vr-workspace-header {
+    position: absolute;
+    inset: 0 0 auto;
+    height: var(--vr-header-height);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    padding: 16px 24px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--border);
+    background: var(--background);
+}
 .vr-workspace-chrome .vr-brand {
+    flex-shrink: 0;
+    width: 160px;
     padding: 0;
     border: 0;
     background: transparent;
-    font-size: 24px;
-    min-width: 220px;
+    font-size: 22px;
+    font-weight: 650;
+    gap: 12px;
 }
 .vr-brand > i {
-    font-size: 32px;
-    color: var(--primary);
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    color: var(--vr-workspace-accent);
+    background: color-mix(
+        in oklab,
+        var(--vr-workspace-accent) 12%,
+        var(--card)
+    );
+    font-size: 28px;
 }
 .vr-brand small {
     display: block;
+    margin-top: 3px;
+    font-size: 14px;
+    font-weight: 400;
     color: var(--muted-foreground);
-    font-size: 16px;
 }
 .vr-workspace-location {
     flex: 1;
     min-width: 0;
+    padding-left: 4px;
 }
 .vr-workspace-location strong {
     display: block;
     font-size: 23px;
+    font-weight: 600;
 }
 .vr-workspace-location span {
     display: block;
+    margin-top: 3px;
     color: var(--muted-foreground);
-    font-size: 17px;
+    font-size: 16px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
+.vr-header-tools {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.vr-workspace-chrome .vr-header-tools button {
+    background: transparent;
+    font-size: 18px;
+    padding: 10px 14px;
+}
+.vr-workspace-chrome .vr-icon-button {
+    justify-content: center;
+    width: 52px;
+    padding: 10px;
+    font-size: 24px;
+}
+.vr-workspace-chrome .vr-back-button {
+    font-size: 18px;
+    border-color: transparent;
+    background: transparent;
+    padding: 10px 12px;
+}
 .vr-workspace-nav {
     position: absolute;
     left: 0;
-    top: 88px;
+    top: var(--vr-header-height);
     bottom: 0;
-    width: 240px;
-    padding: 20px 16px;
+    width: var(--vr-nav-width);
+    padding: 20px 12px 14px;
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    overflow-y: auto;
+    gap: 6px;
     border-right: 1px solid var(--border);
     background: var(--background);
 }
-.vr-nav-rule {
-    height: 1px;
-    background: var(--border);
-    margin: 4px 0;
+.vr-workspace-chrome .vr-workspace-nav button {
     flex-shrink: 0;
+    min-height: 52px;
+    width: 100%;
+    border-color: transparent;
+    background: transparent;
+    padding: 12px;
+    font-size: 18px;
+    gap: 12px;
+}
+.vr-workspace-nav button > i {
+    font-size: 23px;
+    color: var(--muted-foreground);
+}
+.vr-workspace-chrome .vr-workspace-nav button:hover {
+    background: var(--accent);
+}
+.vr-workspace-chrome .vr-workspace-nav button.selected {
+    background: color-mix(
+        in oklab,
+        var(--vr-workspace-accent) 12%,
+        var(--background)
+    );
+    color: var(--vr-workspace-accent);
+}
+.vr-workspace-nav button.selected > i {
+    color: inherit;
+}
+.vr-nav-caption {
+    padding: 18px 12px 8px;
+    font-size: 14px;
+    color: var(--muted-foreground);
+}
+.vr-nav-sections {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.vr-nav-bottom {
+    border-top: 1px solid var(--border);
+    margin-top: 12px;
+    padding-top: 12px;
+}
+.vr-workspace-chrome .vr-profile-button {
+    margin-top: 10px;
+}
+.vr-profile-mark {
+    display: grid;
+    place-items: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+    border-radius: 50%;
+    background: var(--muted);
+    font-size: 20px;
+}
+.vr-profile-button > span:last-child {
+    min-width: 0;
+}
+.vr-profile-button strong {
+    display: block;
+    font-size: 17px;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.vr-profile-button small {
+    display: block;
+    font-size: 14px;
+    color: var(--muted-foreground);
+    margin-top: 3px;
 }
 .vr-nav-account {
-    padding: 8px;
+    padding: 4px;
+}
+.vr-nav-account :is(button, [role='button']) {
+    max-width: 100%;
+    min-width: 0;
 }
 .vr-workspace-home,
 .vr-workspace-library,
 .vr-workspace-content {
     position: absolute !important;
-    left: 240px;
-    top: 88px;
+    left: var(--vr-nav-width);
+    top: var(--vr-header-height);
     right: 0;
     bottom: 0;
     background: var(--background);
     overflow: auto;
 }
 .vr-workspace-home {
-    padding: 28px;
+    padding: 28px 32px 20px;
 }
-.vr-home-intro > span {
-    font-size: 16px;
-    color: var(--primary);
+.vr-home-hero {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 28px;
+    padding: 26px 28px;
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    background: color-mix(in oklab, var(--vr-workspace-accent) 4%, var(--card));
 }
-.vr-home-intro h1 {
-    font-size: 30px;
-    font-weight: 650;
-    margin: 8px 0;
+.vr-hero-copy {
+    min-width: 0;
 }
-.vr-home-intro p {
+.vr-eyebrow {
     color: var(--muted-foreground);
+    font-size: 14px;
+    letter-spacing: 0.04em;
+}
+.vr-home-hero h1,
+.vr-page-intro h1 {
+    margin: 8px 0;
+    font-size: 32px;
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+}
+.vr-home-hero p {
+    margin-top: 6px;
+    color: var(--muted-foreground);
+    font-size: 18px;
+}
+.vr-room-summary {
+    margin-top: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     font-size: 17px;
-    margin-bottom: 24px;
+}
+.vr-room-summary i {
+    color: var(--vr-workspace-accent);
+}
+.vr-room-summary span {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.vr-hero-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex-shrink: 0;
+}
+.vr-hero-actions button {
+    justify-content: center;
+    min-width: 210px;
+}
+.vr-workspace-chrome .vr-primary-action {
+    background: var(--vr-workspace-accent);
+    color: #071a24;
+    border-color: transparent;
+    font-weight: 650;
+}
+.vr-workspace-chrome .vr-primary-action:hover {
+    background: color-mix(in oklab, var(--vr-workspace-accent) 85%, white);
+}
+.vr-home-section {
+    margin-top: 26px;
+}
+.vr-section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+.vr-section-heading h2 {
+    font-size: 21px;
+    font-weight: 600;
+}
+.vr-section-heading > span {
+    font-size: 15px;
+    color: var(--muted-foreground);
+}
+.vr-quick-grid,
+.vr-category-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+}
+.vr-workspace-chrome .vr-quick-card {
+    min-height: 88px;
+    padding: 16px;
+    gap: 14px;
+}
+.vr-quick-card > span {
+    min-width: 0;
+    font-size: 19px;
+    font-weight: 500;
+}
+.vr-tile-icon {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: 12px;
+    font-size: 25px;
+    color: var(--vr-workspace-accent);
+    background: color-mix(
+        in oklab,
+        var(--vr-workspace-accent) 10%,
+        var(--card)
+    );
+}
+.vr-card-arrow {
+    margin-left: auto;
+    color: var(--muted-foreground);
+    font-size: 20px;
+    flex-shrink: 0;
+}
+.vr-workspace-chrome .vr-category-card {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) 20px;
+    column-gap: 12px;
+    row-gap: 5px;
+    padding: 18px;
+    min-height: 100px;
+}
+.vr-category-icon {
+    grid-row: 1/3;
+    font-size: 26px;
+    color: var(--muted-foreground);
+}
+.vr-category-card strong {
+    font-size: 19px;
+    font-weight: 550;
+}
+.vr-category-card > span {
+    grid-column: 2;
+    font-size: 15px;
+    color: var(--muted-foreground);
+}
+.vr-category-card .vr-card-arrow {
+    grid-column: 3;
+    grid-row: 1/3;
+}
+.vr-page-intro {
+    margin-bottom: 26px;
+    padding-top: 6px;
+}
+.vr-page-intro p {
+    color: var(--muted-foreground);
+    font-size: 18px;
+    margin-top: 12px;
 }
 .vr-module-grid {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 18px;
-    padding-bottom: 24px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
 }
 .vr-workspace-chrome .vr-module-card {
-    position: relative;
-    min-height: 154px;
+    min-height: 116px;
     padding: 24px;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
-}
-.vr-module-card > i:first-child {
-    font-size: 28px;
-    color: var(--primary);
+    gap: 18px;
 }
 .vr-module-card > span {
+    min-width: 0;
     font-size: 22px;
-    font-weight: 600;
+    font-weight: 550;
 }
-.vr-module-card small {
-    font-size: 16px;
+.vr-workspace-hints {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 22px;
+    margin-top: 24px;
+    padding: 16px 0 0;
+    border-top: 1px solid var(--border);
     color: var(--muted-foreground);
+    font-size: 14px;
 }
-.vr-module-card .vr-card-arrow {
-    position: absolute;
-    top: 22px;
-    right: 20px;
-    color: var(--muted-foreground);
+.vr-workspace-hints span {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 .vr-workspace-library {
     z-index: 25;
-    padding: 16px 24px;
+    padding: 20px 24px;
 }
 .vr-workspace-content {
     display: flex;
@@ -212,10 +469,11 @@ body.vr-workspace-active {
 }
 .vr-workspace-content > .x-container {
     height: 100%;
-    padding: 20px;
+    padding: 24px;
     margin: 0;
     width: 100%;
 }
+
 .vr-workspace-active
     :is(
         button,
