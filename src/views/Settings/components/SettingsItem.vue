@@ -5,7 +5,9 @@
         :tabindex="itemId ? -1 : undefined"
         class="settings-item min-h-9 min-w-0 py-1">
         <div class="flex flex-col gap-0.5 min-w-0 flex-1">
-            <span class="text-sm leading-snug font-medium text-foreground">{{ label }}</span>
+            <span class="text-sm leading-snug font-medium text-foreground"
+                >{{ label }}<slot name="label-suffix"
+            /></span>
             <span v-if="description" class="text-xs leading-relaxed text-muted-foreground">{{ description }}</span>
         </div>
         <div

@@ -17,6 +17,16 @@
                 item-id="steamvr-dashboard"
                 :label="t('view.settings.vr.vr_core.dashboard')"
                 :description="t('view.settings.vr.vr_core.dashboard_description')">
+                <template #label-suffix>
+                    <TooltipWrapper :content="t('view.settings.vr.vr_core.dashboard_test_hint')" side="top">
+                        <button
+                            type="button"
+                            class="ml-1.5 inline-flex size-5 items-center justify-center rounded-sm align-middle text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            :aria-label="t('view.settings.vr.vr_core.dashboard_test_hint')">
+                            <Info class="size-3.5" aria-hidden="true" />
+                        </button>
+                    </TooltipWrapper>
+                </template>
                 <Switch
                     :model-value="steamVrDashboard"
                     :disabled="!openVR"
@@ -221,6 +231,7 @@
 
 <script setup>
     import { computed, ref } from 'vue';
+    import { Info } from 'lucide-vue-next';
     import {
         NumberField,
         NumberFieldContent,
@@ -230,6 +241,7 @@
     } from '@/components/ui/number-field';
     import { Button } from '@/components/ui/button';
     import { Switch } from '@/components/ui/switch';
+    import { TooltipWrapper } from '@/components/ui/tooltip';
     import { Slider } from '@/components/ui/slider';
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
