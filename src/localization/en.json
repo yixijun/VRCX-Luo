@@ -1893,7 +1893,32 @@
                 },
                 "preparing_data": "Preparing activity data...",
                 "preparing_data_hint": "This may take a moment on first load.",
-                "data_ready": "Activity data is ready"
+                "data_ready": "Activity data is ready",
+                "room_activity": {
+                    "header": "Room activity",
+                    "view_all": "View all",
+                    "back": "Back",
+                    "page_title": "Room activity · {name}",
+                    "page_hint": "Recorded from local activity data. Unknown intervals are not inferred as room time.",
+                    "empty": "No room activity recorded",
+                    "unknown_room": "Unknown location",
+                    "private_room": "Private location",
+                    "traveling": "Traveling",
+                    "offline": "Offline",
+                    "unknown_access": "Unknown access",
+                    "confirmed": "Observed",
+                    "unknown": "Unknown / incomplete",
+                    "suspected_private": "Possibly private",
+                    "status_restricted": "Location restricted",
+                    "in_progress": "In progress",
+                    "show_unknown": "Show unknown intervals",
+                    "show_suspected_private": "Show possibly private",
+                    "new_records": "New records available · jump to top",
+                    "loading_more": "Loading...",
+                    "toggle_instance_id": "Show or hide instance ID",
+                    "copy_instance_id": "Copy ID",
+                    "instance_id_copied": "Instance ID copied"
+                }
             },
             "note_memo": {
                 "header": "Edit Note And Memo",

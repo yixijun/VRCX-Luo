@@ -593,7 +593,11 @@ async function ensureSnapshot(
 
     const job = (async () => {
         const snapshot = await hydrateSnapshot(userId, isSelf);
-        if (forceRefresh || !snapshot.sync.updatedAt) {
+        if (
+            forceRefresh ||
+            !snapshot.sync.updatedAt ||
+            !snapshot.sync.sourceLastCreatedAt
+        ) {
             await fullRefresh(snapshot, rangeDays);
         } else {
             await incrementalRefresh(snapshot);

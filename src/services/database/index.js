@@ -2,6 +2,7 @@ import { activityV2 } from './activityV2.js';
 import { avatarFavorites } from './avatarFavorites.js';
 import { avatarTags } from './avatarTags.js';
 import { feed } from './feed.js';
+import { friendActivity } from './friendActivity.js';
 import { friendFavorites } from './friendFavorites.js';
 import { friendLogCurrent } from './friendLogCurrent.js';
 import { friendLogHistory } from './friendLogHistory.js';
@@ -29,6 +30,7 @@ const dbVars = {
 
 const database = {
     ...feed,
+    ...friendActivity,
     ...activityV2,
     ...gameLog,
     ...notifications,
@@ -80,6 +82,12 @@ const database = {
         );
         await sqliteService.executeNonQuery(
             `CREATE INDEX IF NOT EXISTS ${dbVars.userPrefix}_feed_online_offline_user_created_idx ON ${dbVars.userPrefix}_feed_online_offline (user_id, created_at)`
+        );
+        await sqliteService.executeNonQuery(
+            `CREATE INDEX IF NOT EXISTS ${dbVars.userPrefix}_feed_gps_user_created_idx ON ${dbVars.userPrefix}_feed_gps (user_id, created_at)`
+        );
+        await sqliteService.executeNonQuery(
+            `CREATE INDEX IF NOT EXISTS ${dbVars.userPrefix}_feed_status_user_created_idx ON ${dbVars.userPrefix}_feed_status (user_id, created_at)`
         );
         await sqliteService.executeNonQuery(
             `CREATE TABLE IF NOT EXISTS ${dbVars.userPrefix}_activity_sync_state_v2 (

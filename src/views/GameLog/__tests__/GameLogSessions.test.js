@@ -175,6 +175,8 @@ function clickButtonByText(wrapper, text) {
 
 describe('GameLogSessions.vue', () => {
     beforeEach(() => {
+        sessionsSegments.value = [];
+        sessionsHasMore.value = false;
         sessionsSearch.value = '';
         sessionsDateFrom.value = '';
         sessionsDateTo.value = '';
@@ -199,6 +201,14 @@ describe('GameLogSessions.vue', () => {
         expect(mocks.handleSessionsEventFilterChange).toHaveBeenCalledWith([
             'OnPlayerJoined'
         ]);
+    });
+
+    test('allows loading older history without relying on a scroll event', async () => {
+        sessionsSegments.value = [{ id: 'short-page' }];
+        sessionsHasMore.value = true;
+        const wrapper = mount(GameLogSessions);
+        await clickButtonByText(wrapper, 'common.load_more');
+        expect(mocks.loadMoreSessionsSegments).toHaveBeenCalled();
     });
 
     test('applies sessions search on change', async () => {

@@ -77,6 +77,58 @@
         <div v-if="!isSelf" class="mt-4 border-t border-border pt-3">
             <div class="flex items-center justify-between mb-2">
                 <div class="flex items-center gap-2">
+                    <span class="text-sm font-medium">{{ t('dialog.user.activity.room_activity.header') }}</span>
+                    <Spinner v-if="friendActivityPreviewLoading" class="h-3.5 w-3.5" />
+                </div>
+                <Button variant="ghost" size="sm" class="h-7 px-2" @click="openFriendActivityDialog">
+                    {{ t('dialog.user.activity.room_activity.view_all') }}
+                    <ArrowRight class="ml-1 size-3.5" />
+                </Button>
+            </div>
+            <div v-if="friendActivityPreview.length" class="flex flex-col gap-0.5">
+                <button
+                    v-for="record in friendActivityPreview"
+                    :key="record.id"
+                    type="button"
+                    class="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs transition-colors"
+                    :class="record.isKnownLocation ? 'cursor-pointer hover:bg-accent' : 'cursor-default'"
+                    :disabled="!record.isKnownLocation"
+                    @click="openFriendActivityRecord(record)">
+                    <span class="w-24 shrink-0 tabular-nums text-muted-foreground">
+                        {{ formatFriendActivityTime(record.startAt) }}
+                    </span>
+                    <span class="min-w-0 flex-1 truncate font-medium">
+                        {{ getFriendActivityRoomName(record) }}
+                    </span>
+                    <span class="shrink-0 text-muted-foreground tabular-nums">
+                        {{ formatFriendActivityDuration(record) }}
+                    </span>
+                    <span
+                        v-if="record.privacyState === 'suspected-private'"
+                        class="shrink-0 rounded bg-amber-500/12 px-1.5 py-0.5 text-[10px] text-amber-700 dark:text-amber-300">
+                        {{ t('dialog.user.activity.room_activity.suspected_private') }}
+                    </span>
+                    <span
+                        v-else-if="record.privacyState === 'unknown'"
+                        class="shrink-0 rounded bg-muted px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                        {{ t('dialog.user.activity.room_activity.unknown') }}
+                    </span>
+                </button>
+            </div>
+            <div v-else-if="!friendActivityPreviewLoading" class="py-2 text-sm text-muted-foreground">
+                {{ t('dialog.user.activity.room_activity.empty') }}
+            </div>
+        </div>
+
+        <FriendActivityDialog
+            v-model:open="friendActivityDialogOpen"
+            :user-id="userDialog.id"
+            :friend-name="userDialog.ref?.displayName || userDialog.id"
+            :initial-period="selectedPeriod === '0' ? 'all' : selectedPeriod" />
+
+        <div v-if="!isSelf" class="mt-4 border-t border-border pt-3">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
                     <span class="text-sm font-medium">{{ t('dialog.user.activity.overlap.header') }}</span>
                     <Spinner v-if="isOverlapLoadingVisible" class="h-3.5 w-3.5" />
                 </div>
@@ -118,9 +170,9 @@
                     </span>
                     <div class="flex-1 h-2 rounded-full bg-muted overflow-hidden">
                         <div
-                            class="h-full rounded-full transition-all duration-500"
+                            class="h-full w-full origin-left rounded-full transition-transform duration-[var(--motion-fast)] ease-out"
                             :style="{
-                                width: `${overlapPercent}%`,
+                                transform: `scaleX(${overlapPercent / 100})`,
                                 backgroundColor: isDarkMode ? 'hsl(260, 60%, 55%)' : 'hsl(260, 55%, 50%)'
                             }" />
                     </div>
@@ -233,12 +285,12 @@
                             class="mt-1 h-1.5 w-full overflow-hidden rounded-full"
                             :class="isDarkMode ? 'bg-white/8' : 'bg-black/6'">
                             <div
-                                class="h-full rounded-full transition-all duration-500"
+                                class="h-full w-full origin-left rounded-full transition-transform duration-[var(--motion-fast)] ease-out"
                                 :class="isDarkMode ? 'bg-white/45' : 'bg-black/25'"
                                 :style="{
-                                    width: getTopWorldBarWidth(
+                                    transform: `scaleX(${getTopWorldBarScale(
                                         topWorldsSortBy === 'time' ? world.totalTime : world.visitCount
-                                    )
+                                    )})`
                                 }" />
                         </div>
                     </div>
@@ -252,10 +304,9 @@
     import { computed, h, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import { Button } from '@/components/ui/button';
-    import { DataTableEmpty } from '@/components/ui/data-table';
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { Switch } from '@/components/ui/switch';
-    import { Image as ImageIcon, RefreshCw, Sprout, Tractor } from 'lucide-vue-next';
+    import { ArrowRight, Image as ImageIcon, RefreshCw, Sprout, Tractor } from 'lucide-vue-next';
     import { Spinner } from '@/components/ui/spinner';
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
@@ -267,10 +318,13 @@
     import { worldRequest } from '../../../api';
     import { showWorldDialog } from '../../../coordinators/worldCoordinator';
     import { parseLocation, timeToText } from '../../../shared/utils';
+    import { prefersReducedMotion } from '../../../shared/utils/motion';
+    import { getFriendActivityCurrentState, loadFriendActivityPreview } from '../../../services/friendActivity';
     import { useActivityStore, useAppearanceSettingsStore, useUserStore } from '../../../stores';
     import { useWorldStore } from '../../../stores/world';
     import { buildHeatmapOption, toHeatmapSeriesData } from './activity/buildHeatmapOption';
     import DailyPlaytime from './activity/DailyPlaytime.vue';
+    import FriendActivityDialog from '../../../views/FriendActivity/FriendActivityDialog.vue';
 
     const { t, locale } = useI18n();
     const { userDialog, currentUser } = storeToRefs(useUserStore());
@@ -308,6 +362,9 @@
         normalizedBuckets: []
     });
     const isRestoringSettings = ref(false);
+    const friendActivityPreview = ref([]);
+    const friendActivityPreviewLoading = ref(false);
+    const friendActivityDialogOpen = ref(false);
 
     let activeRequestId = 0;
     let activeOverlapRequestId = 0;
@@ -383,6 +440,9 @@
         topWorldsLoading.value = false;
         topWorldsLoadingVisible.value = false;
         topWorlds.value = [];
+        friendActivityPreview.value = [];
+        friendActivityPreviewLoading.value = false;
+        friendActivityDialogOpen.value = false;
         isOverlapLoading.value = false;
         isOverlapLoadingVisible.value = false;
         mainHeatmapView.value = { rawBuckets: [], normalizedBuckets: [] };
@@ -576,6 +636,8 @@
                 return;
             }
 
+            void loadFriendActivityPreviewData(userId, rangeDays);
+
             beginOverlapLoading(overlapRequestId);
             const overlapView = await activityStore.loadOverlapView({
                 currentUserId: currentUser.value.id,
@@ -605,6 +667,85 @@
                 isLoading.value = false;
             }
             finishOverlapLoading(overlapRequestId);
+        }
+    }
+
+    function getFriendActivityCurrentSession() {
+        const ref = userDialog.value.ref;
+        const location = ref?.location || '';
+        const worldId = parseLocation(location).worldId;
+        const worldName = worldStore.cachedWorlds.get(worldId)?.name || '';
+        return getFriendActivityCurrentState(ref, worldName, '', Date.now());
+    }
+
+    async function loadFriendActivityPreviewData(userId = userDialog.value.id, rangeDays = 30) {
+        if (!userId || isSelf.value) {
+            friendActivityPreview.value = [];
+            return;
+        }
+        friendActivityPreviewLoading.value = true;
+        try {
+            const currentState = getFriendActivityCurrentSession();
+            const records = await loadFriendActivityPreview({
+                userId,
+                rangeDays,
+                ...currentState
+            });
+            if (userDialog.value.id === userId && !isSelf.value) {
+                friendActivityPreview.value = records;
+            }
+        } catch (error) {
+            console.error('Failed to load friend room activity preview', error);
+            if (userDialog.value.id === userId) {
+                friendActivityPreview.value = [];
+            }
+        } finally {
+            if (userDialog.value.id === userId) {
+                friendActivityPreviewLoading.value = false;
+            }
+        }
+    }
+
+    function formatFriendActivityTime(timestamp) {
+        if (!timestamp) {
+            return '-';
+        }
+        return new Intl.DateTimeFormat(locale.value, {
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+        }).format(new Date(timestamp));
+    }
+
+    function formatFriendActivityDuration(record) {
+        const duration = record.isOpenTail ? Date.now() - record.startAt : record.durationMs;
+        return timeToText(Math.max(0, duration));
+    }
+
+    function getFriendActivityRoomName(record) {
+        const parsed = parseLocation(record.location);
+        if (record.privacyState === 'unknown' || record.privacyState === 'suspected-private') {
+            return t('dialog.user.activity.room_activity.unknown_room');
+        }
+        if (parsed.isPrivate) {
+            return t('dialog.user.activity.room_activity.private_room');
+        }
+        if (parsed.isTraveling) {
+            return t('dialog.user.activity.room_activity.traveling');
+        }
+        return record.worldName || parsed.worldId || t('dialog.user.activity.room_activity.unknown_room');
+    }
+
+    function openFriendActivityRecord(record) {
+        if (record.isKnownLocation && record.location) {
+            openWorld(record.location);
+        }
+    }
+
+    function openFriendActivityDialog() {
+        if (userDialog.value.id) {
+            friendActivityDialogOpen.value = true;
         }
     }
 
@@ -728,16 +869,16 @@
         return timeToText(ms);
     }
 
-    function getTopWorldBarWidth(value) {
+    function getTopWorldBarScale(value) {
         if (sortedTopWorlds.value.length === 0) {
-            return '0%';
+            return 0;
         }
         const key = topWorldsSortBy.value === 'count' ? 'visitCount' : 'totalTime';
         const maxVal = Math.max(...sortedTopWorlds.value.map((world) => world[key] || 0), 0);
         if (maxVal <= 0) {
-            return '0%';
+            return 0;
         }
-        return `${Math.max((value / maxVal) * 100, 8)}%`;
+        return Math.max(value / maxVal, 0.08);
     }
 
     const activityChartRef = ref(null);
@@ -815,7 +956,8 @@
                           'hsl(142, 65%, 40%)',
                           'hsl(142, 76%, 30%)'
                       ],
-                unitLabel: t('dialog.user.activity.minutes_online')
+                unitLabel: t('dialog.user.activity.minutes_online'),
+                reducedMotion: prefersReducedMotion()
             }),
             { replaceMerge: ['series'] }
         );
@@ -855,7 +997,8 @@
                           'hsl(260, 55%, 48%)',
                           'hsl(260, 60%, 38%)'
                       ],
-                unitLabel: t('dialog.user.activity.overlap.minutes_overlap')
+                unitLabel: t('dialog.user.activity.overlap.minutes_overlap'),
+                reducedMotion: prefersReducedMotion()
             }),
             { replaceMerge: ['series'] }
         );
@@ -964,6 +1107,21 @@
         (activeTab) => {
             if (activeTab === 'Activity' && userDialog.value.visible) {
                 void loadForVisibleTab();
+            }
+        }
+    );
+    watch(
+        () => [
+            userDialog.value.ref?.location,
+            userDialog.value.ref?.status,
+            userDialog.value.ref?.state,
+            userDialog.value.ref?.$location_at
+        ],
+        () => {
+            if (userDialog.value.visible && userDialog.value.activeTab === 'Activity' && !isSelf.value) {
+                const rangeDays =
+                    parseInt(selectedPeriod.value, 10) === 0 ? 3650 : parseInt(selectedPeriod.value, 10) || 30;
+                void loadFriendActivityPreviewData(userDialog.value.id, rangeDays);
             }
         }
     );

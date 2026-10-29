@@ -113,6 +113,9 @@
                     <template v-else-if="!sessionsHasMore">
                         <span>{{ t('common.no_more') }}</span>
                     </template>
+                    <Button v-else variant="outline" size="sm" @click="gameLogStore.loadMoreSessionsSegments()">
+                        {{ t('common.load_more') }}
+                    </Button>
                 </div>
             </template>
         </div>
@@ -162,9 +165,7 @@
 
     const segments = computed(() => sessionsSegments.value);
     const hasDateFilter = computed(() => !!sessionsDateFrom.value || !!sessionsDateTo.value);
-    const shouldAutoFillSearchResults = computed(
-        () => !!String(sessionsSearch.value ?? '').trim() && !hasDateFilter.value
-    );
+    const shouldAutoFillSearchResults = computed(() => !hasDateFilter.value);
 
     const scrollContainerRef = ref(null);
     const sentinelRef = ref(null);

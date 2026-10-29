@@ -1915,7 +1915,32 @@
                 },
                 "preparing_data": "正在准备活动数据...",
                 "preparing_data_hint": "首次加载时可能需要一些时间。",
-                "data_ready": "已准备好活动数据"
+                "data_ready": "已准备好活动数据",
+                "room_activity": {
+                    "header": "房间活动记录",
+                    "view_all": "查看全部",
+                    "back": "返回",
+                    "page_title": "房间活动 · {name}",
+                    "page_hint": "来自本地活动数据；未知时间段不会被推算为房间停留时间。",
+                    "empty": "暂无房间活动记录",
+                    "unknown_room": "未知位置",
+                    "private_room": "私人位置",
+                    "traveling": "移动中",
+                    "offline": "离线",
+                    "unknown_access": "未知房间类型",
+                    "confirmed": "已观测",
+                    "unknown": "未知/未闭合",
+                    "suspected_private": "疑似私人房间",
+                    "status_restricted": "位置受限",
+                    "in_progress": "进行中",
+                    "show_unknown": "显示未知时间段",
+                    "show_suspected_private": "显示疑似私人房间",
+                    "new_records": "有新记录 · 跳转到顶部",
+                    "loading_more": "加载中...",
+                    "toggle_instance_id": "显示或隐藏实例 ID",
+                    "copy_instance_id": "复制 ID",
+                    "instance_id_copied": "实例 ID 已复制"
+                }
             },
             "note_memo": {
                 "header": "编辑线上备注和本地备注",
