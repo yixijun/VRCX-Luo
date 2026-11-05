@@ -34,8 +34,6 @@
             auto-height
             :page-sizes="pageSizes"
             :total-items="totalItems"
-            :on-page-change="handlePageChange"
-            :on-sort-change="handleSortChange"
             :on-page-size-change="handlePageSizeChange">
             <template #toolbar>
                 <div class="mt-0 mx-0 mb-2" style="display: flex; align-items: center">
@@ -102,20 +100,6 @@
                             {{ t('view.feed.filters.' + type) }}
                         </ToggleGroupItem>
                     </ToggleGroup>
-                    <TooltipWrapper side="bottom" :content="t('view.feed.live_updates_tooltip')">
-                        <Toggle
-                            v-model="followLatest"
-                            variant="outline"
-                            size="sm"
-                            class="ml-2 shrink-0 gap-1.5"
-                            data-testid="feed-live-updates">
-                            <span
-                                class="size-1.5 rounded-full"
-                                :class="followLatest ? 'bg-green-500' : 'bg-muted-foreground'"
-                                aria-hidden="true" />
-                            {{ t('view.feed.live_updates') }}
-                        </Toggle>
-                    </TooltipWrapper>
                     <InputGroupField
                         class="ml-2"
                         v-model="feedTable.search"
@@ -275,7 +259,6 @@
 
     const feedRef = ref(null);
     const feedLayoutRef = ref(null);
-    const followLatest = ref(true);
 
     const pageSizes = computed(() => appearanceSettingsStore.tablePageSizes);
 
@@ -296,7 +279,7 @@
         return `${type}:${createdAt}:${userId}:${location}:${message}`;
     }
 
-    const { table, pagination } = useVrcxVueTable({
+    const { table, pagination, sorting } = useVrcxVueTable({
         get data() {
             return feedTableData.value;
         },
@@ -324,13 +307,16 @@
         feedLayoutRef.value?.scrollToTop();
     }
 
-    watch(
-        followLatest,
-        (enabled) => {
-            if (enabled) void showLatest();
-        },
-        { immediate: true }
+    // Keep live data flowing while preserving the user's position in older activity.
+    const followLatest = computed(
+        () =>
+            pagination.value.pageIndex === 0 &&
+            sorting.value.length === 1 &&
+            sorting.value[0].id === 'created_at' &&
+            sorting.value[0].desc
     );
+
+    void showLatest();
 
     watch(
         () => feedTableData.value[0],
@@ -340,16 +326,6 @@
             }
         }
     );
-
-    function handlePageChange(page) {
-        if (page > 1) followLatest.value = false;
-    }
-
-    function handleSortChange(sorting) {
-        if (sorting.length !== 1 || sorting[0].id !== 'created_at' || !sorting[0].desc) {
-            followLatest.value = false;
-        }
-    }
 
     const totalItems = computed(() => {
         const length = table.getFilteredRowModel().rows.length;
