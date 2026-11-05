@@ -305,10 +305,18 @@ describe('PlayerList.vue', () => {
             wrapper.find('[data-testid="player-list-resize-handle"]').exists()
         ).toBe(false);
         expect(wrapper.find('.current-instance-table').exists()).toBe(true);
+        expect(
+            wrapper.find('[data-testid="toggle-player-events"]').exists()
+        ).toBe(false);
+        expect(wrapper.find('.player-list__table-toolbar').exists()).toBe(
+            false
+        );
     });
 
     test('renders the activity control as an icon in the summary action slot', () => {
         mocks.currentInstanceWorld.value.ref.id = 'wrld_123';
+        mocks.currentInstanceLocation.value = { tag: 'wrld_123:instance_1' };
+        mocks.lastLocation.value.location = 'wrld_123:instance_1';
         const wrapper = mount(PlayerList);
 
         const popover = wrapper.get(
@@ -319,7 +327,7 @@ describe('PlayerList.vue', () => {
         expect(wrapper.get('.player-list__summary-action').classes()).toContain(
             'justify-end'
         );
-        expect(popover.attributes('data-location')).toBe('');
+        expect(popover.attributes('data-location')).toBe('wrld_123:instance_1');
         expect(wrapper.find('.player-list__table-toolbar').exists()).toBe(
             false
         );
@@ -327,6 +335,7 @@ describe('PlayerList.vue', () => {
 
     test('keeps the player table mounted while the activity popover is available', () => {
         mocks.currentInstanceLocation.value = { tag: 'wrld_123:instance_1' };
+        mocks.lastLocation.value.location = 'wrld_123:instance_1';
         const wrapper = mount(PlayerList);
 
         expect(
@@ -355,7 +364,11 @@ describe('PlayerList.vue', () => {
 
     test('falls back to the cached instance join time when the live location time is unavailable', () => {
         mocks.currentInstanceLocation.value = { tag: 'wrld_123:instance_1' };
-        mocks.instanceJoinHistory.value.set('wrld_123:instance_1', 1_757_058_120_000);
+        mocks.lastLocation.value.location = 'wrld_123:instance_1';
+        mocks.instanceJoinHistory.value.set(
+            'wrld_123:instance_1',
+            1_757_058_120_000
+        );
 
         const wrapper = mount(PlayerList);
 

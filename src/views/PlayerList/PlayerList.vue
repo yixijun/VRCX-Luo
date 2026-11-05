@@ -117,10 +117,10 @@
                                 </Badge>
                             </div>
                             <div class="mt-1.5">
-                        <LocationWorld
-                            :locationobject="currentInstanceLocation"
-                            :currentuserid="currentUser.id"
-                            class="w-fit" />
+                                <LocationWorld
+                                    :locationobject="currentInstanceLocation"
+                                    :currentuserid="currentUser.id"
+                                    class="w-fit" />
                                 <span class="ml-1.5" v-if="lastLocation.playerList.size > 0">
                                     {{ lastLocation.playerList.size }}
                                     <template v-if="lastLocation.friendList.size > 0"
@@ -137,6 +137,7 @@
                             </div>
                         </div>
                         <div
+                            v-if="hasJoinedInstance"
                             class="player-list__summary-action ml-5 flex w-28 shrink-0 items-start justify-end pr-1 pt-1">
                             <InstancePlayerEventsPopover
                                 :location="currentInstanceTag"
@@ -181,7 +182,7 @@
                         </div>
                     </div>
 
-                    <div v-if="!currentInstanceWorld.ref.id" class="mb-2 flex justify-end">
+                    <div v-if="hasJoinedInstance && !currentInstanceWorld.ref.id" class="mb-2 flex justify-end">
                         <InstancePlayerEventsPopover
                             :location="currentInstanceTag"
                             :instance-start-time="currentInstanceStartTime" />
@@ -248,7 +249,9 @@
         </ResizablePanelGroup>
 
         <div v-else class="current-instance-table flex h-full min-h-0 min-w-0 flex-col">
-            <div class="player-list__table-toolbar flex shrink-0 items-center border-b border-border px-1 py-1">
+            <div
+                v-if="hasJoinedInstance"
+                class="player-list__table-toolbar flex shrink-0 items-center border-b border-border px-1 py-1">
                 <div class="ml-auto flex shrink-0">
                     <InstancePlayerEventsPopover
                         :location="currentInstanceTag"
@@ -276,9 +279,7 @@
                                 <Copy class="size-4" />
                                 {{ t('dialog.user.info.copy_display_name') }}
                             </ContextMenuItem>
-                            <ContextMenuItem
-                                v-if="row.original.ref.id"
-                                @click="copyToClipboard(row.original.ref.id)">
+                            <ContextMenuItem v-if="row.original.ref.id" @click="copyToClipboard(row.original.ref.id)">
                                 <IdCard class="size-4" />
                                 {{ t('dialog.user.info.copy_id') }}
                             </ContextMenuItem>
@@ -345,12 +346,8 @@
     const { saveChatboxUserBlacklist } = photonStore;
 
     const { lastLocation, lastLocationDestination, lastLocationDestinationTime } = storeToRefs(useLocationStore());
-    const {
-        currentInstanceLocation,
-        currentInstanceWorld,
-        currentInstanceUsersData,
-        instanceJoinHistory
-    } = storeToRefs(useInstanceStore());
+    const { currentInstanceLocation, currentInstanceWorld, currentInstanceUsersData, instanceJoinHistory } =
+        storeToRefs(useInstanceStore());
 
     const worldImageError = ref(false);
 
@@ -385,6 +382,9 @@
         () => Boolean(currentInstanceWorld.value?.ref?.id) || Boolean(photonLoggingEnabled.value)
     );
     const currentInstanceTag = computed(() => currentInstanceLocation.value?.tag || '');
+    const hasJoinedInstance = computed(
+        () => Boolean(currentInstanceTag.value) && lastLocation.value.location === currentInstanceTag.value
+    );
     const currentInstanceStartTime = computed(() => {
         const instanceTag = currentInstanceTag.value;
         if (!instanceTag) {
