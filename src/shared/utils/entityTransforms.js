@@ -1,5 +1,4 @@
 import { replaceBioSymbols } from './base/string';
-
 /**
  * Sanitize arbitrary entity JSON fields via replaceBioSymbols.
  * @param {object} json - Raw API response

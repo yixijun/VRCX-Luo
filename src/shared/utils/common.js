@@ -7,7 +7,6 @@ import { escapeTag, replaceBioSymbols } from './base/string';
 import { getFaviconUrl, replaceVrcPackageUrl } from './urlUtils';
 import { AppDebug } from '../../services/appConfig.js';
 import { getAvailablePlatforms } from './platformUtils';
-
 /**
  *
  * @param {string} url
@@ -20,7 +19,7 @@ function convertFileUrlToImageUrl(
     resolution = 128,
     endpointDomain = AppDebug.endpointDomain
 ) {
-    if (!url) {
+    if (!url || typeof url !== 'string') {
         return '';
     }
     /**
@@ -29,9 +28,11 @@ function convertFileUrlToImageUrl(
      * /file/file_fileId/version/
      * /file/file_fileId/version/file
      * /file/file_fileId/version/file/
+     * /image/file_fileId/version/resolution
      */
+    const imagePattern = /image\/file_([a-f0-9-]+)\/(\d+)\/(\d+)\/?$/;
     const pattern = /file\/file_([a-f0-9-]+)\/(\d+)(\/file)?\/?$/;
-    const match = url.match(pattern);
+    const match = url.match(imagePattern) || url.match(pattern);
 
     if (match) {
         const fileId = match[1];

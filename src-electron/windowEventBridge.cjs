@@ -34,16 +34,12 @@ function bindWindowEventBridge({ window, initialZoomLevel, setStorageValue }) {
     webContents.setVisualZoomLevelLimits(1, 5);
 
     window.on('resize', () => {
-        const [width, height] = window
-            .getSize()
-            .map((size) => size.toString());
+        const [width, height] = window.getSize().map((size) => size.toString());
         webContents.send('setWindowSize', { width, height });
     });
 
     window.on('move', () => {
-        const [x, y] = window
-            .getPosition()
-            .map((coord) => coord.toString());
+        const [x, y] = window.getPosition().map((coord) => coord.toString());
         webContents.send('setWindowPosition', { x, y });
     });
 
@@ -65,6 +61,9 @@ function bindWindowEventBridge({ window, initialZoomLevel, setStorageValue }) {
 
     window.on('focus', () => {
         webContents.send('onBrowserFocus');
+    });
+    window.on('blur', () => {
+        webContents.send('onBrowserBlur');
     });
 }
 

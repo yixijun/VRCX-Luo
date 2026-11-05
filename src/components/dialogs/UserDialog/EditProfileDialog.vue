@@ -689,7 +689,6 @@
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
     import { Bookmark, Check, ChevronDown, History, Trash2, X } from 'lucide-vue-next';
-
     import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import { Button } from '@/components/ui/button';
     import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -706,10 +705,8 @@
         DropdownMenuItem,
         DropdownMenuTrigger
     } from '@/components/ui/dropdown-menu';
-
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '../../ui/select';
     import { Badge } from '../../ui/badge';
-
     import { userRequest } from '../../../api';
     import { languageClass, getFaviconUrl, arraysMatch, debounce } from '../../../shared/utils';
     import { useUserStore, useAuthStore, useGalleryStore, useModalStore } from '../../../stores';
@@ -717,7 +714,6 @@
     import GallerySelectDialog from '../GroupDialog/GallerySelectDialog.vue';
     import { updateUserDialogProfile } from '@/coordinators/userCoordinator';
     import { profileBackgrounds } from '@/shared/constants/backgrounds';
-
     const { t } = useI18n();
     const { currentUser, isLocalUserVrcPlusSupporter } = storeToRefs(useUserStore());
     const authStore = useAuthStore();
@@ -1083,13 +1079,14 @@
 
     function deleteTheme() {
         const D = props.editProfileDialog;
+        const deletedThemeId = D.themeId;
         userRequest
-            .deleteProfileTheme({ id: D.themeId })
+            .deleteProfileTheme({ id: deletedThemeId })
             .then(() => {
-                const index = D.themes.findIndex((option) => option.id === D.themeId);
+                const index = D.themes.findIndex((option) => option.id === deletedThemeId);
                 if (index !== -1) {
                     D.themes.splice(index, 1);
-                    if (D.themeId === payload.themeId) {
+                    if (D.themeId === deletedThemeId) {
                         D.themeId = '';
                         D.themeName = '';
                         D.themeButtonColor = '';
@@ -1207,7 +1204,6 @@
             return;
         }
 
-        /** @type {Partial<import('../../../types/api/user').GetCurrentUserResponse>} */
         const userPayload = {};
         if (D.status !== currentUser.value.status) {
             userPayload.status = D.status;
@@ -1219,7 +1215,6 @@
             userPayload.pronouns = D.pronouns;
         }
 
-        /** @type {Partial<import('../../../types/api/profile').selfProfile>} */
         const profilePayload = {};
         if (D.bio !== D.selfProfileRef.bio) {
             profilePayload.bio = D.bio;

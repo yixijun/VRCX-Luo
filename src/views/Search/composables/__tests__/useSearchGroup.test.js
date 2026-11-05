@@ -47,7 +47,7 @@ describe('useSearchGroup', () => {
 
         expect(mocks.replaceBioSymbols).toHaveBeenCalledWith('group+name');
         expect(mocks.groupSearch).toHaveBeenCalledWith({
-            n: 10,
+            n: 60,
             offset: 0,
             query: 'group name'
         });

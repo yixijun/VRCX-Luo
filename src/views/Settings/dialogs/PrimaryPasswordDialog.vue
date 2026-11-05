@@ -38,9 +38,7 @@
     import { InputGroupField } from '@/components/ui/input-group';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { useAuthStore } from '../../../stores';
-
     const { t } = useI18n();
 
     const authStore = useAuthStore();
@@ -51,7 +49,7 @@
      *
      */
     function handleSetPrimaryPassword() {
-        setPrimaryPassword(enablePrimaryPasswordDialog.value.password);
+        setPrimaryPassword();
         enablePrimaryPasswordDialog.value.visible = false;
     }
 </script>

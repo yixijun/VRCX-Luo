@@ -29,6 +29,7 @@ const mocks = vi.hoisted(() => ({
         setNextDiscordUpdate: vi.fn()
     },
     gameLogStore: {
+        resetNowPlayingProducers: vi.fn(),
         clearNowPlaying: vi.fn(),
         addGameLog: vi.fn()
     },
@@ -297,7 +298,7 @@ describe('runCheckIfGameCrashedFlow', () => {
             8000
         );
         const restart = mocks.workerTimers.setTimeout.mock.calls.at(-1)[0];
-        restart();
+        await restart();
         expect(mocks.launchStore.launchGame).toHaveBeenCalledWith(
             'wrld_test:instance_1',
             '',

@@ -10,6 +10,7 @@ declare global {
 
     interface Window {
         $pinia: any;
+        $bridge: any;
         $vr: any;
         $debug: AppDebug;
         __VRCX_WRIST_POINTER_DESKTOP_TEST__?: boolean;
@@ -43,6 +44,9 @@ declare global {
             setVrWorkspaceCapture: (enabled: boolean) => Promise<boolean>;
             sendVrWorkspaceInput: (input: any) => Promise<boolean>;
             getArch: () => Promise<string>;
+            setThemeSource: (source: 'system' | 'dark' | 'light') => Promise<void>;
+            onSystemThemeChanged: (callback: (event: any, isDark: boolean) => void) => () => void;
+            onBrowserBlur: (callback: (event: any) => void) => () => void;
             getClipboardText: () => Promise<string>;
             getNoUpdater: () => Promise<boolean>;
             setTrayIconNotification: (notify: boolean) => Promise<void>;
@@ -156,6 +160,7 @@ declare global {
         Execute: (sql: string, args: string) => Promise<any[]>;
         ExecuteJson: (sql: string, args: string) => Promise<string>;
         ExecuteNonQuery: (sql: string, args: string) => Promise<Number>;
+        ExecuteInsert: (sql: string, args?: object) => Promise<number>;
     };
 
     const LogWatcher: {
@@ -189,6 +194,8 @@ declare global {
     };
 
     const AppApi: {
+        GetGameProcessStartTime(): Promise<number>;
+        OpenSteamStorePage(appId: number): Promise<void>;
         // Basic App Functions
         ShowDevTools(): Promise<void>;
         SetVR(

@@ -11,6 +11,7 @@ const NOW_PLAYING_TICK_MS = 1000;
  * @param {Function} deps.updateView
  * @param {Function} deps.schedule
  * @param {Function} [deps.now]
+ * @param {Function} [deps.onTick]
  * @returns {{ updateNowPlaying: Function }}
  */
 export function createNowPlayingTicker({
@@ -19,30 +20,42 @@ export function createNowPlayingTicker({
     formatSeconds,
     updateView,
     schedule,
-    now = () => Date.now()
+    now = () => Date.now(),
+    onTick = () => {}
 }) {
     function updateNowPlaying() {
+        onTick();
         const nowPlaying = getNowPlaying();
         if (!nowPlaying.playing) {
             return;
         }
 
         const nowSeconds = now() / 1000;
-        nowPlaying.elapsed =
-            Math.round((nowSeconds - nowPlaying.startTime) * 10) / 10;
+        if (!nowPlaying.paused) {
+            nowPlaying.elapsed =
+                Math.round(
+                    (nowSeconds - nowPlaying.startTime) *
+                        (nowPlaying.speed ?? 1) *
+                        10
+                ) / 10;
+        }
         if (nowPlaying.elapsed >= nowPlaying.length) {
-            clearNowPlaying();
-            return;
+            if (!nowPlaying.spec) {
+                clearNowPlaying();
+                return;
+            }
+            nowPlaying.elapsed = nowPlaying.length;
         }
         nowPlaying.remainingText = formatSeconds(
             nowPlaying.length - nowPlaying.elapsed
         );
         nowPlaying.percentage =
-            Math.round(
-                ((nowPlaying.elapsed * 100) / nowPlaying.length) * 10
-            ) / 10;
+            Math.round(((nowPlaying.elapsed * 100) / nowPlaying.length) * 10) /
+            10;
         updateView();
-        schedule(updateNowPlaying, NOW_PLAYING_TICK_MS);
+        if (!nowPlaying.paused && nowPlaying.elapsed < nowPlaying.length) {
+            schedule(updateNowPlaying, NOW_PLAYING_TICK_MS);
+        }
     }
 
     return { updateNowPlaying };

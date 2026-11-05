@@ -19,7 +19,7 @@
                     class="friend-card__status-dot absolute rounded-full pointer-events-none"
                     :class="statusDotClass"></span>
                 <div
-                    class="friend-card__name font-semibold overflow-hidden text-ellipsis whitespace-nowrap"
+                    class="friend-card__name relative font-semibold overflow-hidden text-ellipsis whitespace-nowrap"
                     :title="friend.name">
                     {{ friend.name }}
                 </div>
@@ -55,14 +55,11 @@
     import ProfileEffect from '@/components/ProfileEffect.vue';
     import { Pencil, User } from 'lucide-vue-next';
     import { computed } from 'vue';
-
     import { useUserDisplay } from '../../../composables/useUserDisplay';
-
     import Location from '../../../components/Location.vue';
     import UserContextMenu from '../../../components/UserContextMenu.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
     import { setDialogMotionOrigin } from '../../../services/dialogMotionOrigin';
-
     const { userImage, userStatusClass } = useUserDisplay();
 
     const props = defineProps({

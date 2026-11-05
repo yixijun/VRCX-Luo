@@ -1,7 +1,6 @@
 import { i18n } from '../plugins/i18n';
 import { openExternalLink } from '../shared/utils';
 import { useModalStore } from '../stores';
-
 // requires binding of SQLite
 class SQLiteService {
     handleSQLiteError(e) {
@@ -76,6 +75,17 @@ class SQLiteService {
                 args = new Map(Object.entries(args));
             }
             return await SQLite.ExecuteNonQuery(sql, args);
+        } catch (e) {
+            this.handleSQLiteError(e);
+        }
+    }
+
+    async executeInsert(sql, args = null) {
+        try {
+            if (LINUX && args) {
+                args = new Map(Object.entries(args));
+            }
+            return await SQLite.ExecuteInsert(sql, args);
         } catch (e) {
             this.handleSQLiteError(e);
         }

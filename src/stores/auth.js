@@ -2,7 +2,6 @@ import { computed, reactive, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
-
 import {
     runLoginSuccessFlow,
     runLogoutFlow
@@ -25,14 +24,11 @@ import { useUpdateLoopStore } from './updateLoop';
 import { useUserStore } from './user';
 import { useVrcxStore } from './vrcx';
 import { watchState } from '../services/watchState';
-
 import configRepository from '../services/config';
 import security from '../services/security';
 import webApiService from '../services/webapi';
-
 import * as workerTimers from 'worker-timers';
 import { useActivityStore } from './activity';
-
 export const useAuthStore = defineStore('Auth', () => {
     const advancedSettingsStore = useAdvancedSettingsStore();
     const generalSettingsStore = useGeneralSettingsStore();
@@ -75,6 +71,15 @@ export const useAuthStore = defineStore('Auth', () => {
 
     const cachedConfig = ref({});
 
+    // fallback defaults
+    const cachedPermissions = ref({
+        maxUserStickers: 18,
+        maxUserEmoji: 18,
+        maxUserGallery: 64,
+        maxUserIcons: 18,
+        maxUserPrints: 64
+    });
+
     const enableCustomEndpoint = ref(false);
 
     const attemptingAutoLogin = ref(false);
@@ -88,7 +93,9 @@ export const useAuthStore = defineStore('Auth', () => {
     const loginNetworkIssueHintThreshold = 3;
 
     const twoFactorAccountLabel = computed(() => {
-        return loginForm.value.username || loginForm.value.lastUserLoggedIn || '';
+        return (
+            loginForm.value.username || loginForm.value.lastUserLoggedIn || ''
+        );
     });
 
     watch(
@@ -98,7 +105,11 @@ export const useAuthStore = defineStore('Auth', () => {
             if (isLoggedIn) {
                 // Ignore watcher if we are in a hot-swapped secondary account context.
                 const { accountHub } = require('../services/accountHub.js');
-                if (accountHub.primaryId && currentUser.id && currentUser.id !== accountHub.primaryId) {
+                if (
+                    accountHub.primaryId &&
+                    currentUser.id &&
+                    currentUser.id !== accountHub.primaryId
+                ) {
                     return;
                 }
 
@@ -417,6 +428,8 @@ export const useAuthStore = defineStore('Auth', () => {
                         )
                     );
                     for (const userId in savedCredentials) {
+                        if (!savedCredentials[userId].loginParams.password)
+                            continue;
                         security
                             .decrypt(
                                 savedCredentials[userId].loginParams.password,
@@ -469,6 +482,7 @@ export const useAuthStore = defineStore('Auth', () => {
             const key = enablePrimaryPasswordDialog.value.password;
             const savedCredentials = await getAllSavedCredentials();
             for (const userId in savedCredentials) {
+                if (!savedCredentials[userId].loginParams.password) continue;
                 security
                     .encrypt(savedCredentials[userId].loginParams.password, key)
                     .then((ct) => {
@@ -497,6 +511,7 @@ export const useAuthStore = defineStore('Auth', () => {
                     password: '',
                     endpoint: '',
                     websocket: '',
+                    ...savedCredentials[user.id]?.loginParams,
                     ...credentialsToSave.value
                 }
             };
@@ -518,6 +533,12 @@ export const useAuthStore = defineStore('Auth', () => {
     /**
      *
      */
+    function queueSaveCredentials() {
+        if (loginForm.value.saveCredentials) {
+            credentialsToSave.value = {};
+        }
+    }
+
     async function migrateStoredUsers() {
         const savedCredentials = await getAllSavedCredentials();
         for (const name in savedCredentials) {
@@ -621,8 +642,14 @@ export const useAuthStore = defineStore('Auth', () => {
             await webApiService.setCookies(user.cookies);
             try {
                 const checkUser = await request('auth/user');
-                if (checkUser && !checkUser.error && checkUser.id !== user.user.id) {
-                    console.warn(`[auth] Corrupted cookie for ${user.user.id}, clearing.`);
+                if (
+                    checkUser &&
+                    !checkUser.error &&
+                    checkUser.id !== user.user.id
+                ) {
+                    console.warn(
+                        `[auth] Corrupted cookie for ${user.user.id}, clearing.`
+                    );
                     await webApiService.clearCookies();
                 }
             } catch (e) {
@@ -649,7 +676,7 @@ export const useAuthStore = defineStore('Auth', () => {
                     websocket: loginParams.websocket
                 });
             }
-            if (advancedSettingsStore.enablePrimaryPassword) {
+            if (advancedSettingsStore.enablePrimaryPassword && password) {
                 try {
                     password = await checkPrimaryPassword(loginParams);
                 } catch (err) {
@@ -660,12 +687,22 @@ export const useAuthStore = defineStore('Auth', () => {
 
             await authRequest.getConfig();
             try {
-                await authLogin({
-                    username: loginParams.username,
-                    password,
-                    endpoint: loginParams.endpoint,
-                    websocket: loginParams.websocket
-                });
+                if (password) {
+                    await authLogin({
+                        username: loginParams.username,
+                        password,
+                        endpoint: loginParams.endpoint,
+                        websocket: loginParams.websocket
+                    });
+                } else {
+                    // stops the 401 from starting a second auto login
+                    attemptingAutoLogin.value = true;
+                    try {
+                        await getCurrentUser();
+                    } finally {
+                        attemptingAutoLogin.value = false;
+                    }
+                }
             } catch (err) {
                 if (
                     shouldTrackLoginNetworkIssueHint &&
@@ -673,11 +710,18 @@ export const useAuthStore = defineStore('Auth', () => {
                 ) {
                     maybeShowLoginNetworkIssueHint();
                 }
+                if (err.message.includes('Check your email')) {
+                    toast.error(t('message.auth.check_your_email'));
+                }
                 await handleLogoutEvent();
                 throw err;
             }
         } catch (err) {
-            if (err.message.includes('Invalid Username/Email or Password')) {
+            const sessionExpired = !loginParams.password && err.status === 401;
+            if (
+                sessionExpired ||
+                err.message.includes('Invalid Username/Email or Password')
+            ) {
                 toast.error(t('message.auth.saved_credentials_invalid'));
                 await deleteSavedLogin(user.user.id);
             }
@@ -750,14 +794,17 @@ export const useAuthStore = defineStore('Auth', () => {
                                     'savedCredentials'
                                 )
                             );
-                            const saveCredential =
-                                savedCredentials[
-                                    Object.keys(savedCredentials)[0]
-                                ];
-                            await security.decrypt(
-                                saveCredential.loginParams.password,
-                                value
+                            const saveCredential = Object.values(
+                                savedCredentials
+                            ).find(
+                                (credential) => credential.loginParams.password
                             );
+                            if (saveCredential) {
+                                await security.decrypt(
+                                    saveCredential.loginParams.password,
+                                    value
+                                );
+                            }
                             const pwd = await security.encrypt(
                                 loginForm.value.password,
                                 value
@@ -796,6 +843,9 @@ export const useAuthStore = defineStore('Auth', () => {
                     } catch (err) {
                         if (shouldCountLoginFailureForNetworkHint(err)) {
                             maybeShowLoginNetworkIssueHint();
+                        }
+                        if (err.message.includes('Check your email')) {
+                            toast.error(t('message.auth.check_your_email'));
                         }
                         throw err;
                     }
@@ -1073,6 +1123,32 @@ export const useAuthStore = defineStore('Auth', () => {
         attemptingAutoLogin.value = value;
     }
 
+    async function getPermissions() {
+        const accountId = userStore.currentUser.id;
+        const { json: permissions } = await authRequest.getPermissions();
+        if (userStore.currentUser.id !== accountId) return;
+        if (permissions['permission-user-stickers']?.max) {
+            cachedPermissions.value.maxUserStickers =
+                permissions['permission-user-stickers'].max;
+        }
+        if (permissions['permission-user-emoji']?.max) {
+            cachedPermissions.value.maxUserEmoji =
+                permissions['permission-user-emoji'].max;
+        }
+        if (permissions['permission-user-gallery']?.max) {
+            cachedPermissions.value.maxUserGallery =
+                permissions['permission-user-gallery'].max;
+        }
+        if (permissions['permission-user-icons']?.max) {
+            cachedPermissions.value.maxUserIcons =
+                permissions['permission-user-icons'].max;
+        }
+        if (permissions['permission-user-prints']?.max) {
+            cachedPermissions.value.maxUserPrints =
+                permissions['permission-user-prints'].max;
+        }
+    }
+
     return {
         state,
 
@@ -1081,6 +1157,7 @@ export const useAuthStore = defineStore('Auth', () => {
         credentialsToSave,
         twoFactorAuthDialogVisible,
         cachedConfig,
+        cachedPermissions,
         enableCustomEndpoint,
         attemptingAutoLogin,
 
@@ -1089,6 +1166,7 @@ export const useAuthStore = defineStore('Auth', () => {
         enablePrimaryPasswordChange,
         setPrimaryPassword,
         updateStoredUser,
+        queueSaveCredentials,
         migrateStoredUsers,
         checkPrimaryPassword,
         autoLoginAfterMounted,
@@ -1104,6 +1182,7 @@ export const useAuthStore = defineStore('Auth', () => {
         getAllSavedCredentials,
         getSavedCredentials,
         setCachedConfig,
-        setAttemptingAutoLogin
+        setAttemptingAutoLogin,
+        getPermissions
     };
 });

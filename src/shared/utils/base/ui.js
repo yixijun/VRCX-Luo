@@ -1,6 +1,5 @@
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
-
 import {
     APP_CJK_FONT_PACK_CONFIG,
     APP_CJK_FONT_PACK_DEFAULT_KEY,
@@ -12,9 +11,7 @@ import {
 import { i18n } from '../../../plugins/i18n';
 import { router } from '../../../plugins/router';
 import { textToHex } from './string';
-
 import configRepository from '../../../services/config.js';
-
 const THEME_COLOR_STORAGE_KEY = 'VRCX_themeColor';
 const THEME_COLOR_STYLE_ID = 'app-theme-color-style';
 const THEME_MODE_STYLE_ID = 'app-theme-mode-style';
@@ -57,7 +54,7 @@ function applyThemeColorStyle(theme) {
     if (!styleEl) {
         styleEl = document.createElement('link');
         styleEl.id = THEME_COLOR_STYLE_ID;
-        styleEl.rel = 'stylesheet';
+        styleEl.setAttribute('rel', 'stylesheet');
         document.head.appendChild(styleEl);
     }
 
@@ -106,8 +103,17 @@ function useThemeColor() {
  *
  * @returns {boolean}
  */
+let electronSystemIsDark = null;
+
 function systemIsDarkMode() {
+    if (electronSystemIsDark !== null) {
+        return electronSystemIsDark;
+    }
     return window.matchMedia('(prefers-color-scheme: dark)').matches;
+}
+
+function setSystemIsDarkMode(isDark) {
+    electronSystemIsDark = isDark;
 }
 
 function applyThemeFonts(themeKey, fontLinks = []) {
@@ -153,7 +159,7 @@ function applyThemeModeStyle(themeMode) {
     if (!styleEl) {
         styleEl = document.createElement('link');
         styleEl.id = THEME_MODE_STYLE_ID;
-        styleEl.rel = 'stylesheet';
+        styleEl.setAttribute('rel', 'stylesheet');
         document.head.appendChild(styleEl);
     }
 
@@ -263,7 +269,8 @@ function applyAppCjkFontPack(packKey) {
 }
 
 function changeAppThemeStyle(themeMode) {
-    if (themeMode === 'system') {
+    let isSystemMode = themeMode === 'system';
+    if (isSystemMode) {
         themeMode = systemIsDarkMode() ? 'dark' : 'light';
     }
 
@@ -272,6 +279,7 @@ function changeAppThemeStyle(themeMode) {
         // fallback to system
         console.error('Invalid theme mode:', themeMode);
         configRepository.setString('VRCX_ThemeMode', 'system');
+        isSystemMode = true;
         themeMode = systemIsDarkMode() ? 'dark' : 'light';
         themeConfig = THEME_CONFIG[themeMode];
     }
@@ -293,6 +301,12 @@ function changeAppThemeStyle(themeMode) {
         AppApi.ChangeTheme(1);
     } else {
         AppApi.ChangeTheme(0);
+    }
+
+    if (LINUX) {
+        window.electron?.setThemeSource(
+            isSystemMode ? 'system' : themeConfig.isDark ? 'dark' : 'light'
+        );
     }
 
     return { isDark: themeConfig.isDark };
@@ -521,5 +535,6 @@ export {
     formatJsonVars,
     changeHtmlLangAttribute,
     getThemeMode,
+    setSystemIsDarkMode,
     redirectToToolsTab
 };

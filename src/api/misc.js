@@ -1,7 +1,7 @@
-import { queryCache, queryKeys } from '../queries';
+import { queryClient, queryCache, queryKeys } from '../queries';
 import { request } from '../services/request';
 import { useUserStore } from '../stores';
-
+import marketplaceReq from './marketplace';
 /**
  *
  */
@@ -85,14 +85,7 @@ const miscReq = {
     },
 
     getVRChatCredits() {
-        return request(`user/${getCurrentUserId()}/balance`, {
-            method: 'GET'
-        }).then((json) => {
-            const args = {
-                json
-            };
-            return args;
-        });
+        return marketplaceReq.getVRChatCredits();
     },
 
     /**
@@ -216,6 +209,34 @@ const miscReq = {
                 emojiId: params.emojiId
                 // inventoryItemId
             }
+        }).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            return args;
+        });
+    },
+    getStore(params) {
+        return request('economy/store', {
+            method: 'GET',
+            params
+        }).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            return args;
+        });
+    },
+    getInfoPush(params) {
+        const query = {
+            require: params.require,
+            include: params.include
+        };
+        return request('infoPush', {
+            method: 'GET',
+            params: query
         }).then((json) => {
             const args = {
                 json,

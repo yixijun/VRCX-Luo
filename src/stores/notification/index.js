@@ -1,10 +1,8 @@
-import { computed, ref, watch } from "vue";
-import { defineStore } from "pinia";
-import { toast } from "vue-sonner";
-import { useI18n } from "vue-i18n";
-
-import dayjs from "dayjs";
-
+import { computed, ref, watch } from 'vue';
+import { defineStore } from 'pinia';
+import { toast } from 'vue-sonner';
+import { useI18n } from 'vue-i18n';
+import dayjs from 'dayjs';
 import {
     applyBoopLegacyHandling,
     checkCanInvite,
@@ -18,77 +16,79 @@ import {
     removeFromArray,
     sanitizeNotificationJson,
     userImage,
-} from "../../shared/utils";
-import { getUserMemo } from "../../coordinators/memoCoordinator";
+    replaceBioSymbols
+} from '../../shared/utils';
+import { getUserMemo } from '../../coordinators/memoCoordinator';
 import {
     friendRequest,
     instanceRequest,
     miscRequest,
+    inventoryRequest,
+    marketplaceRequest,
     notificationRequest,
-    queryRequest,
-} from "../../api";
+    queryRequest
+} from '../../api';
+import { VRCHAT_STORE_IDS } from '../../shared/constants';
 import {
     getNotificationMessage,
     getUserIdFromNoty as getUserIdFromNotyBase,
-    toNotificationText,
-} from "../../shared/utils/notificationMessage";
-import { database, dbVars } from "../../services/database";
-import { getNotificationCategory } from "../../shared/utils/notificationCategory";
-import { AppDebug } from "../../services/appConfig";
-import { createOverlayDispatch } from "./overlayDispatch";
+    toNotificationText
+} from '../../shared/utils/notificationMessage';
+import { database, dbVars } from '../../services/database';
+import { getNotificationCategory } from '../../shared/utils/notificationCategory';
+import { AppDebug } from '../../services/appConfig';
+import { createOverlayDispatch } from './overlayDispatch';
 import {
     buildTrayNotificationSnapshot,
     createTrayNotificationActionHandler,
-    getTrayNotificationTheme,
-} from "./trayNotificationBridge";
+    getTrayNotificationTheme
+} from './trayNotificationBridge';
 import {
     filterNotificationsByCategory,
     filterRecentNotifications,
-    filterUnseenNotifications,
-} from "./notificationViewProjection";
+    filterUnseenNotifications
+} from './notificationViewProjection';
 import {
     applyNotificationToCollection,
-    applyNotificationV2ToCollection,
-} from "./notificationEntityProjection";
-import { createNotificationPreferences } from "./notificationPreferences";
-import { createNotificationSeenQueue } from "./notificationSeenQueue";
-import { appendPendingNotification } from "./notificationPendingEntry";
-import { resolveNotificationPlayback } from "./notificationPlayback";
-import { useAdvancedSettingsStore } from "../settings/advanced";
-import { useAppearanceSettingsStore } from "../settings/appearance";
-import { useFavoriteStore } from "../favorite";
-import { useFriendStore } from "../friend";
-import { handleFriendAdd } from "../../coordinators/friendRelationshipCoordinator";
-import { useGameStore } from "../game";
-import { useGeneralSettingsStore } from "../settings/general";
-import { useGroupStore } from "../group";
-import { showGroupDialog } from "../../coordinators/groupCoordinator";
-import { showUserDialog } from "../../coordinators/userCoordinator";
-import { showWorldDialog } from "../../coordinators/worldCoordinator";
-import { router } from "../../plugins/router";
-import { useInstanceStore } from "../instance";
-import { useInviteStore } from "../invite";
-import { useLocationStore } from "../location";
-import { useModalStore } from "../modal";
-import { useNotificationsSettingsStore } from "../settings/notifications";
-import { useSharedFeedStore } from "../sharedFeed";
-import { useUiStore } from "../ui";
-import { useUserStore } from "../user";
-import { useWristOverlaySettingsStore } from "../settings/wristOverlay";
-import { watchState } from "../../services/watchState";
-import { useLaunchStore } from "../launch";
-
-import configRepository from "../../services/config";
-
-export const useNotificationStore = defineStore("Notification", () => {
+    applyNotificationV2ToCollection
+} from './notificationEntityProjection';
+import { createNotificationPreferences } from './notificationPreferences';
+import { createNotificationSeenQueue } from './notificationSeenQueue';
+import { appendPendingNotification } from './notificationPendingEntry';
+import { resolveNotificationPlayback } from './notificationPlayback';
+import { useAdvancedSettingsStore } from '../settings/advanced';
+import { useAppearanceSettingsStore } from '../settings/appearance';
+import { useFavoriteStore } from '../favorite';
+import { useFriendStore } from '../friend';
+import { handleFriendAdd } from '../../coordinators/friendRelationshipCoordinator';
+import { useGameStore } from '../game';
+import { useGeneralSettingsStore } from '../settings/general';
+import { useGroupStore } from '../group';
+import { showGroupDialog } from '../../coordinators/groupCoordinator';
+import { showUserDialog } from '../../coordinators/userCoordinator';
+import { showWorldDialog } from '../../coordinators/worldCoordinator';
+import { router } from '../../plugins/router';
+import { useInstanceStore } from '../instance';
+import { useInviteStore } from '../invite';
+import { useLocationStore } from '../location';
+import { useModalStore } from '../modal';
+import { useNotificationsSettingsStore } from '../settings/notifications';
+import { useSharedFeedStore } from '../sharedFeed';
+import { useUiStore } from '../ui';
+import { useUserStore } from '../user';
+import { useWristOverlaySettingsStore } from '../settings/wristOverlay';
+import { watchState } from '../../services/watchState';
+import { useLaunchStore } from '../launch';
+import configRepository from '../../services/config';
+export const useNotificationStore = defineStore('Notification', () => {
     const { t } = useI18n();
+    const appearanceSettingsStore = useAppearanceSettingsStore();
     const generalSettingsStore = useGeneralSettingsStore();
     const locationStore = useLocationStore();
     const favoriteStore = useFavoriteStore();
     const friendStore = useFriendStore();
     const notificationsSettingsStore = useNotificationsSettingsStore();
     const advancedSettingsStore = useAdvancedSettingsStore();
-    const appearanceSettingsStore = useAppearanceSettingsStore();
     const userStore = useUserStore();
     const wristOverlaySettingsStore = useWristOverlaySettingsStore();
     const uiStore = useUiStore();
@@ -99,7 +99,7 @@ export const useNotificationStore = defineStore("Notification", () => {
     const modalStore = useModalStore();
     const launchStore = useLaunchStore();
     const notificationPreferences = createNotificationPreferences({
-        configRepository,
+        configRepository
     });
 
     const notificationInitStatus = ref(false);
@@ -107,38 +107,52 @@ export const useNotificationStore = defineStore("Notification", () => {
         data: [],
         filters: [
             {
-                prop: "type",
-                value: [],
+                prop: 'type',
+                value: []
             },
             {
-                prop: ["senderUsername", "message"],
-                value: "",
-            },
+                prop: ['senderUsername', 'message'],
+                value: ''
+            }
         ],
         pageSize: 20,
         pageSizeLinked: true,
         paginationProps: {
-            layout: "sizes,prev,pager,next,total",
-        },
+            layout: 'sizes,prev,pager,next,total'
+        }
     });
     const unseenNotifications = ref([]);
     const isNotificationsLoading = ref(false);
     const isNotificationCenterOpen = ref(false);
     const notificationCenterHiddenIds = ref([]);
     const acceptingInviteIds = new Set();
+    const inventoryBundleDialog = ref({
+        visible: false,
+        bundles: []
+    });
+    const shownBundleIds = new Set();
+    // Thanks for this buggy unredeemable bundle...
+    const ignoredBundleTemplateIds = new Set([
+        'invt_08e50f24-8807-4ec2-a0f9-9e008371280b' // October Open Beta Content Drop
+    ]);
+    const freeStoreItemDialog = ref({
+        visible: false,
+        listings: []
+    });
+    const shownFreeListingIds = new Set();
 
     const friendNotifications = computed(() =>
-        filterNotificationsByCategory(notificationTable.value.data, "friend"),
+        filterNotificationsByCategory(notificationTable.value.data, 'friend')
     );
     const groupNotifications = computed(() =>
-        filterNotificationsByCategory(notificationTable.value.data, "group"),
+        filterNotificationsByCategory(notificationTable.value.data, 'group')
     );
     const otherNotifications = computed(() =>
-        filterNotificationsByCategory(notificationTable.value.data, "other"),
+        filterNotificationsByCategory(notificationTable.value.data, 'other')
     );
     const unseenSet = computed(() => new Set(unseenNotifications.value));
     const notificationCenterHiddenSet = computed(
-        () => new Set(notificationCenterHiddenIds.value),
+        () => new Set(notificationCenterHiddenIds.value)
     );
     const trayNotificationSnapshot = ref({ total: 0, items: [] });
     const trayAdditionalNotifications = ref([]);
@@ -147,50 +161,50 @@ export const useNotificationStore = defineStore("Notification", () => {
         filterUnseenNotifications(
             friendNotifications.value,
             unseenSet.value,
-            notificationCenterHiddenSet.value,
-        ),
+            notificationCenterHiddenSet.value
+        )
     );
     const unseenGroupNotifications = computed(() =>
         filterUnseenNotifications(
             groupNotifications.value,
             unseenSet.value,
-            notificationCenterHiddenSet.value,
-        ),
+            notificationCenterHiddenSet.value
+        )
     );
     const unseenOtherNotifications = computed(() =>
         filterUnseenNotifications(
             otherNotifications.value,
             unseenSet.value,
-            notificationCenterHiddenSet.value,
-        ),
+            notificationCenterHiddenSet.value
+        )
     );
-    const recentCutoff = computed(() => dayjs().subtract(24, "hour").valueOf());
+    const recentCutoff = computed(() => dayjs().subtract(24, 'hour').valueOf());
     const recentFriendNotifications = computed(() =>
         filterRecentNotifications(
             friendNotifications.value,
             unseenSet.value,
             notificationCenterHiddenSet.value,
-            recentCutoff.value,
-        ),
+            recentCutoff.value
+        )
     );
     const recentGroupNotifications = computed(() =>
         filterRecentNotifications(
             groupNotifications.value,
             unseenSet.value,
             notificationCenterHiddenSet.value,
-            recentCutoff.value,
-        ),
+            recentCutoff.value
+        )
     );
     const recentOtherNotifications = computed(() =>
         filterRecentNotifications(
             otherNotifications.value,
             unseenSet.value,
             notificationCenterHiddenSet.value,
-            recentCutoff.value,
-        ),
+            recentCutoff.value
+        )
     );
     const hasUnseenNotifications = computed(
-        () => unseenNotifications.value.length > 0,
+        () => unseenNotifications.value.length > 0
     );
 
     const notyMap = {};
@@ -200,7 +214,7 @@ export const useNotificationStore = defineStore("Notification", () => {
      */
     function saveNotificationCenterHiddenIds() {
         const ids = notificationPreferences.normalizeHiddenIds(
-            notificationCenterHiddenIds.value,
+            notificationCenterHiddenIds.value
         );
         notificationCenterHiddenIds.value = ids;
         notificationPreferences.saveHiddenIds(ids);
@@ -212,28 +226,51 @@ export const useNotificationStore = defineStore("Notification", () => {
             isNotificationsLoading.value = false;
             notificationTable.value.data = [];
             clearTrayAdditionalNotifications();
+            inventoryBundleDialog.value.visible = false;
+            freeStoreItemDialog.value.visible = false;
             if (isLoggedIn) {
                 initNotifications();
             }
         },
-        { flush: "sync" },
+        { flush: 'sync' }
     );
 
     watch(
         () => router.currentRoute.value?.name,
         (routeName) => {
-            if (routeName === "friend-log") {
+            if (routeName === 'friend-log') {
                 clearTrayAdditionalNotifications();
             }
-        },
+        }
     );
 
     /**
      *
      */
+    watch(
+        () => notificationsSettingsStore.inventoryBundleNotifications,
+        (enabled) => {
+            if (!enabled) {
+                inventoryBundleDialog.value.visible = false;
+            } else if (watchState.isLoggedIn) {
+                checkInventoryBundles();
+            }
+        }
+    );
+
+    watch(
+        () => notificationsSettingsStore.freeStoreItemNotifications,
+        (enabled) => {
+            if (!enabled) {
+                freeStoreItemDialog.value.visible = false;
+            } else if (watchState.isLoggedIn) {
+                checkFreeStoreItems();
+            }
+        }
+    );
+
     async function init() {
-        const { filterTypes, hiddenIds } =
-            await notificationPreferences.load();
+        const { filterTypes, hiddenIds } = await notificationPreferences.load();
         notificationTable.value.filters[0].value = filterTypes;
         notificationCenterHiddenIds.value = hiddenIds;
     }
@@ -241,11 +278,11 @@ export const useNotificationStore = defineStore("Notification", () => {
     const initPromise = init();
 
     function getNotificationMessageText(notification) {
-        let message = notification.message || "";
+        let message = notification.message || '';
         for (const key of [
-            "inviteMessage",
-            "requestMessage",
-            "responseMessage",
+            'inviteMessage',
+            'requestMessage',
+            'responseMessage'
         ]) {
             if (notification.details?.[key]) {
                 message = `, ${notification.details[key]}`;
@@ -254,7 +291,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         try {
             return getNotificationMessage(notification, message) || null;
         } catch (error) {
-            console.warn("Failed to format tray notification:", error);
+            console.warn('Failed to format tray notification:', error);
             return null;
         }
     }
@@ -263,22 +300,26 @@ export const useNotificationStore = defineStore("Notification", () => {
 
     function getTrayNotificationAvatarUrl(notification) {
         const senderId = getUserIdFromNotyBase(notification);
-        if (senderId?.startsWith("grp_")) {
-            return notification.details?.imageUrl || notification.imageUrl || "";
+        if (senderId?.startsWith('grp_')) {
+            return (
+                notification.details?.imageUrl || notification.imageUrl || ''
+            );
         }
 
-        const cachedUser = senderId ? userStore.cachedUsers.get(senderId) : null;
+        const cachedUser = senderId
+            ? userStore.cachedUsers.get(senderId)
+            : null;
         return (
             userImage(
                 cachedUser,
                 true,
-                "64",
+                '64',
                 false,
-                appearanceSettingsStore.displayVRCPlusIconsAsAvatar,
+                appearanceSettingsStore.displayVRCPlusIconsAsAvatar
             ) ||
             notification.senderUserIcon ||
             notification.thumbnailImageUrl ||
-            ""
+            ''
         );
     }
 
@@ -292,11 +333,11 @@ export const useNotificationStore = defineStore("Notification", () => {
     }
 
     function appendTrayNotificationEntry(entry) {
-        if (router.currentRoute.value?.name === "friend-log") return null;
+        if (router.currentRoute.value?.name === 'friend-log') return null;
         return appendPendingNotification({
             collection: trayAdditionalNotifications.value,
             unseenIds: trayAdditionalUnseenIds.value,
-            entry,
+            entry
         });
     }
 
@@ -308,21 +349,26 @@ export const useNotificationStore = defineStore("Notification", () => {
     async function resolveTrayAvatarPath(notification, avatarUrl) {
         let resolvedUrl = avatarUrl;
         const senderId = getUserIdFromNotyBase(notification);
-        if (!resolvedUrl && senderId?.startsWith("usr_")) {
+        if (!resolvedUrl && senderId?.startsWith('usr_')) {
             try {
-                const args = await queryRequest.fetch("user", { userId: senderId });
+                const args = await queryRequest.fetch('user', {
+                    userId: senderId
+                });
                 resolvedUrl = userImage(
                     args.ref || args.json,
                     true,
-                    "64",
+                    '64',
                     false,
-                    appearanceSettingsStore.displayVRCPlusIconsAsAvatar,
+                    appearanceSettingsStore.displayVRCPlusIconsAsAvatar
                 );
             } catch (error) {
-                console.warn("Failed to resolve tray notification avatar:", error);
+                console.warn(
+                    'Failed to resolve tray notification avatar:',
+                    error
+                );
             }
         }
-        if (!resolvedUrl) return "";
+        if (!resolvedUrl) return '';
         return notySaveImage({ thumbnailImageUrl: resolvedUrl });
     }
 
@@ -336,7 +382,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             hiddenIds: notificationCenterHiddenIds.value,
             formatMessage: getNotificationMessageText,
             getAvatarUrl: getTrayNotificationAvatarUrl,
-            theme: getTrayNotificationTheme(),
+            theme: getTrayNotificationTheme()
         });
         publishTrayNotificationSnapshot(snapshot);
         if (!WINDOWS || snapshot.items.length === 0) return;
@@ -344,13 +390,16 @@ export const useNotificationStore = defineStore("Notification", () => {
         const notificationsById = new Map(
             [
                 ...notificationTable.value.data,
-                ...trayAdditionalNotifications.value,
-            ].map((notification) => [notification.id, notification]),
+                ...trayAdditionalNotifications.value
+            ].map((notification) => [notification.id, notification])
         );
         Promise.all(
             snapshot.items.map((item) =>
-                resolveTrayAvatarPath(notificationsById.get(item.id), item.avatarUrl),
-            ),
+                resolveTrayAvatarPath(
+                    notificationsById.get(item.id),
+                    item.avatarUrl
+                )
+            )
         )
             .then((avatarPaths) => {
                 if (syncToken !== trayNotificationSyncToken) return;
@@ -358,12 +407,15 @@ export const useNotificationStore = defineStore("Notification", () => {
                     ...snapshot,
                     items: snapshot.items.map((item, index) => ({
                         ...item,
-                        avatarPath: avatarPaths[index] || "",
-                    })),
+                        avatarPath: avatarPaths[index] || ''
+                    }))
                 });
             })
             .catch((error) => {
-                console.warn("Failed to cache tray notification avatars:", error);
+                console.warn(
+                    'Failed to cache tray notification avatars:',
+                    error
+                );
             });
     }
 
@@ -374,10 +426,10 @@ export const useNotificationStore = defineStore("Notification", () => {
             unseenNotifications,
             trayAdditionalUnseenIds,
             notificationCenterHiddenIds,
-            () => appearanceSettingsStore.$state,
+            () => appearanceSettingsStore.$state
         ],
         syncTrayNotifications,
-        { deep: true, flush: "post" },
+        { deep: true, flush: 'post' }
     );
 
     /**
@@ -402,9 +454,9 @@ export const useNotificationStore = defineStore("Notification", () => {
         }
         if (ref.senderUserId !== userStore.currentUser.id) {
             const isExcludedType =
-                ref.type === "friendRequest" ||
-                ref.type === "ignoredFriendRequest" ||
-                ref.type.includes(".");
+                ref.type === 'friendRequest' ||
+                ref.type === 'ignoredFriendRequest' ||
+                ref.type.includes('.');
             const isNotificationInitReady =
                 !notificationInitStatus.value || !isNotificationsLoading.value;
             const matchesNotificationTypeFilter =
@@ -424,22 +476,26 @@ export const useNotificationStore = defineStore("Notification", () => {
                     if (L.isRealInstance) {
                         instanceRequest.getInstance({
                             worldId: L.worldId,
-                            instanceId: L.instanceId,
+                            instanceId: L.instanceId
                         });
                     }
                 }
                 queueNotificationNoty(ref);
                 sharedFeedStore.addEntry(ref);
             }
-            if (isNotificationInitReady && matchesNotificationTypeFilter && !isExcludedType) {
-                uiStore.notifyMenu("notification");
+            if (
+                isNotificationInitReady &&
+                matchesNotificationTypeFilter &&
+                !isExcludedType
+            ) {
+                uiStore.notifyMenu('notification');
             }
         }
         notificationTable.value.data.push(ref);
         const D = userStore.userDialog;
         if (
             D.visible === false ||
-            ref.type !== "friendRequest" ||
+            ref.type !== 'friendRequest' ||
             ref.senderUserId !== D.id
         ) {
             return;
@@ -453,15 +509,15 @@ export const useNotificationStore = defineStore("Notification", () => {
      */
     function handleNotificationHide(notificationId) {
         const ref = notificationTable.value.data.find(
-            (n) => n.id === notificationId,
+            (n) => n.id === notificationId
         );
-        if (typeof ref === "undefined") {
+        if (typeof ref === 'undefined') {
             return;
         }
         if (
-            ref.type === "friendRequest" ||
-            ref.type === "ignoredFriendRequest" ||
-            ref.type.includes(".")
+            ref.type === 'friendRequest' ||
+            ref.type === 'ignoredFriendRequest' ||
+            ref.type.includes('.')
         ) {
             removeFromArray(notificationTable.value.data, ref);
         } else {
@@ -471,8 +527,8 @@ export const useNotificationStore = defineStore("Notification", () => {
         handleNotificationExpire({
             ref,
             params: {
-                notificationId: ref.id,
-            },
+                notificationId: ref.id
+            }
         });
     }
 
@@ -483,20 +539,27 @@ export const useNotificationStore = defineStore("Notification", () => {
     function handlePipelineNotification(args) {
         const ref = args.json;
         if (
-            ref.type === "friendRequest" &&
+            ref.type === 'friendRequest' &&
             generalSettingsStore.autoDeclineFriendRequests
         ) {
             handleAutoDeclineFriendRequest(ref);
         }
         if (
-            ref.type !== "requestInvite" ||
-            generalSettingsStore.autoAcceptInviteRequests === "Off"
+            ref.type !== 'requestInvite' ||
+            generalSettingsStore.autoAcceptInviteRequests === 'Off'
+        ) {
+            return;
+        }
+        const allowedStatuses = generalSettingsStore.autoAcceptInviteStatuses;
+        if (
+            allowedStatuses.length &&
+            !allowedStatuses.includes(userStore.currentUser.status)
         ) {
             return;
         }
 
         let currentLocation = locationStore.lastLocation.location;
-        if (locationStore.lastLocation.location === "traveling") {
+        if (locationStore.lastLocation.location === 'traveling') {
             currentLocation = locationStore.lastLocationDestination;
         }
         if (!currentLocation) {
@@ -510,9 +573,9 @@ export const useNotificationStore = defineStore("Notification", () => {
             return;
         }
         if (
-            generalSettingsStore.autoAcceptInviteRequests === "All Favorites" &&
+            generalSettingsStore.autoAcceptInviteRequests === 'All Favorites' &&
             !favoriteStore.state.favoriteFriends_.some(
-                (x) => x.id === ref.senderUserId,
+                (x) => x.id === ref.senderUserId
             ) &&
             !favoriteStore.isInAnyLocalFriendGroup(ref.senderUserId)
         ) {
@@ -520,7 +583,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         }
         if (
             generalSettingsStore.autoAcceptInviteRequests ===
-            "Selected Favorites"
+            'Selected Favorites'
         ) {
             const groups = generalSettingsStore.autoAcceptInviteGroups;
             if (groups.length === 0) {
@@ -528,7 +591,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             } else {
                 let found = false;
                 for (const groupKey of groups) {
-                    if (groupKey.startsWith("local:")) {
+                    if (groupKey.startsWith('local:')) {
                         const localGroup = groupKey.slice(6);
                         const localFavs =
                             favoriteStore.localFriendFavorites[localGroup];
@@ -542,7 +605,7 @@ export const useNotificationStore = defineStore("Notification", () => {
                         if (
                             remoteFavs &&
                             remoteFavs.some(
-                                (f) => f.favoriteId === ref.senderUserId,
+                                (f) => f.favoriteId === ref.senderUserId
                             )
                         ) {
                             found = true;
@@ -559,7 +622,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             !checkCanInvite(currentLocation, {
                 currentUserId: userStore.currentUser.id,
                 lastLocationStr: locationStore.lastLocation.location,
-                cachedInstances: instanceStore.cachedInstances,
+                cachedInstances: instanceStore.cachedInstances
             })
         ) {
             return;
@@ -567,8 +630,8 @@ export const useNotificationStore = defineStore("Notification", () => {
 
         const L = parseLocation(currentLocation);
         queryRequest
-            .fetch("world", {
-                worldId: L.worldId,
+            .fetch('world', {
+                worldId: L.worldId
             })
             .then((args1) => {
                 notificationRequest
@@ -577,9 +640,9 @@ export const useNotificationStore = defineStore("Notification", () => {
                             instanceId: L.tag,
                             worldId: L.tag,
                             worldName: args1.ref.name,
-                            rsvp: true,
+                            rsvp: true
                         },
-                        ref.senderUserId,
+                        ref.senderUserId
                     )
                     .then((_args) => {
                         const text = `Auto invite sent to ${ref.senderUsername}`;
@@ -590,7 +653,7 @@ export const useNotificationStore = defineStore("Notification", () => {
                         console.log(text);
                         notificationRequest
                             .hideNotification({
-                                notificationId: ref.id,
+                                notificationId: ref.id
                             })
                             .then(() => {
                                 handleNotificationHide(ref.id);
@@ -611,7 +674,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             collection: notificationTable.value.data,
             unseenIds: unseenNotifications.value,
             hiddenIds: notificationCenterHiddenIds.value,
-            entry,
+            entry
         });
     }
 
@@ -636,10 +699,10 @@ export const useNotificationStore = defineStore("Notification", () => {
     function handleNotificationSee(notificationId) {
         removeFromArray(unseenNotifications.value, notificationId);
         if (unseenNotifications.value.length === 0) {
-            uiStore.removeNotify("notification");
+            uiStore.removeNotify('notification');
         }
         const ref = notificationTable.value.data.find(
-            (n) => n.id === notificationId,
+            (n) => n.id === notificationId
         );
         if (ref) {
             ref.seen = true;
@@ -651,10 +714,11 @@ export const useNotificationStore = defineStore("Notification", () => {
         executeWithBackoff,
         seeNotificationV2: (params) =>
             notificationRequest.seeNotificationV2(params),
-        seeNotification: (params) => notificationRequest.seeNotification(params),
+        seeNotification: (params) =>
+            notificationRequest.seeNotification(params),
         onV2Seen: handleNotificationV2Update,
         onLegacySeen: handleNotificationSee,
-        onV2Failure: handleNotificationV2Hide,
+        onV2Failure: handleNotificationV2Hide
     });
 
     /**
@@ -677,7 +741,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             queueMarkAsSeen(id, version);
         }
         unseenNotifications.value = [];
-        uiStore.removeNotify("notification");
+        uiStore.removeNotify('notification');
     }
 
     /**
@@ -690,7 +754,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             ...unseenOtherNotifications.value,
             ...recentFriendNotifications.value,
             ...recentGroupNotifications.value,
-            ...recentOtherNotifications.value,
+            ...recentOtherNotifications.value
         ];
         if (visibleNotifications.length === 0) {
             return;
@@ -704,7 +768,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         notificationCenterHiddenIds.value = [...ids];
         saveNotificationCenterHiddenIds();
         if (unseenNotifications.value.length === 0) {
-            uiStore.removeNotify("notification");
+            uiStore.removeNotify('notification');
         }
     }
 
@@ -712,17 +776,17 @@ export const useNotificationStore = defineStore("Notification", () => {
         try {
             const joinInfo = await database.getJoinCount({
                 id: ref.senderUserId,
-                displayName: ref.senderUsername,
+                displayName: ref.senderUsername
             });
             if (Number(joinInfo.joinCount) !== 0) {
                 return;
             }
             await notificationRequest.hideNotification({
-                notificationId: ref.id,
+                notificationId: ref.id
             });
             handleNotificationHide(ref.id);
         } catch (error) {
-            console.warn("Failed to auto-decline friend request:", error);
+            console.warn('Failed to auto-decline friend request:', error);
         }
     }
 
@@ -739,7 +803,7 @@ export const useNotificationStore = defineStore("Notification", () => {
                 break;
             }
         }
-        if (typeof ref === "undefined") {
+        if (typeof ref === 'undefined') {
             return;
         }
         ref.$isExpired = true;
@@ -747,19 +811,19 @@ export const useNotificationStore = defineStore("Notification", () => {
         handleNotificationExpire({
             ref,
             params: {
-                notificationId: ref.id,
-            },
+                notificationId: ref.id
+            }
         });
         handleFriendAdd({
             params: {
-                userId: ref.senderUserId,
-            },
+                userId: ref.senderUserId
+            }
         });
 
         const D = userStore.userDialog;
         if (
-            typeof args.ref === "undefined" ||
-            args.ref.type !== "friendRequest" ||
+            typeof args.ref === 'undefined' ||
+            args.ref.type !== 'friendRequest' ||
             args.ref.senderUserId !== D.id
         ) {
             return;
@@ -775,7 +839,7 @@ export const useNotificationStore = defineStore("Notification", () => {
     function handleNotificationExpire(args) {
         const { ref } = args;
         const D = userStore.userDialog;
-        if (ref.type !== "friendRequest" || ref.senderUserId !== D.id) {
+        if (ref.type !== 'friendRequest' || ref.senderUserId !== D.id) {
             return;
         }
         D.incomingRequest = false;
@@ -792,7 +856,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             payload: data,
             sanitizeNotificationJson,
             createDefaultNotificationRef,
-            parseNotificationDetails,
+            parseNotificationDetails
         });
     }
 
@@ -807,7 +871,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             sanitizeNotificationJson,
             createDefaultNotificationV2Ref,
             applyBoopLegacyHandling,
-            endpointDomain: AppDebug.endpointDomain,
+            endpointDomain: AppDebug.endpointDomain
         });
     }
 
@@ -823,7 +887,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             unseenNotifications.value.push(ref.id);
         }
         const existingNotification = notificationTable.value.data.find(
-            (n) => n.id === ref.id,
+            (n) => n.id === ref.id
         );
         if (existingNotification) {
             Object.assign(existingNotification, ref);
@@ -837,7 +901,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             notificationTable.value.filters[0].value.length === 0 ||
             notificationTable.value.filters[0].value.includes(ref.type);
         if (isNotificationInitReady && matchesNotificationTypeFilter) {
-            uiStore.notifyMenu("notification");
+            uiStore.notifyMenu('notification');
         }
         database.addNotificationV2ToDatabase(ref);
         notificationTable.value.data.push(ref);
@@ -859,8 +923,8 @@ export const useNotificationStore = defineStore("Notification", () => {
         handleNotificationV2({
             json,
             params: {
-                notificationId,
-            },
+                notificationId
+            }
         });
         if (json.seen) {
             handleNotificationSee(notificationId);
@@ -875,10 +939,10 @@ export const useNotificationStore = defineStore("Notification", () => {
         database.expireNotificationV2(notificationId);
         removeFromArray(unseenNotifications.value, notificationId);
         if (unseenNotifications.value.length === 0) {
-            uiStore.removeNotify("notification");
+            uiStore.removeNotify('notification');
         }
         const ref = notificationTable.value.data.find(
-            (n) => n.id === notificationId,
+            (n) => n.id === notificationId
         );
         if (ref) {
             ref.expiresAt = new Date().toJSON();
@@ -893,8 +957,8 @@ export const useNotificationStore = defineStore("Notification", () => {
         const array = notificationTable.value.data;
         for (let i = array.length - 1; i >= 0; i--) {
             if (
-                array[i].type === "friendRequest" ||
-                array[i].type === "ignoredFriendRequest"
+                array[i].type === 'friendRequest' ||
+                array[i].type === 'ignoredFriendRequest'
             ) {
                 array.splice(i, 1);
             }
@@ -914,7 +978,7 @@ export const useNotificationStore = defineStore("Notification", () => {
                 break;
             }
         }
-        if (typeof ref === "undefined") {
+        if (typeof ref === 'undefined') {
             return;
         }
         ref.$isExpired = true;
@@ -922,8 +986,8 @@ export const useNotificationStore = defineStore("Notification", () => {
         handleNotificationExpire({
             ref,
             params: {
-                notificationId: ref.id,
-            },
+                notificationId: ref.id
+            }
         });
     }
 
@@ -939,7 +1003,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             expireFriendRequestNotifications();
             params = {
                 n: 100,
-                offset: 0,
+                offset: 0
             };
             count = 50; // 5000 max
             for (let i = 0; i < count; i++) {
@@ -948,8 +1012,8 @@ export const useNotificationStore = defineStore("Notification", () => {
                     handleNotification({
                         json,
                         params: {
-                            notificationId: json.id,
-                        },
+                            notificationId: json.id
+                        }
                     });
                 }
                 params.offset += 100;
@@ -959,7 +1023,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             }
             params = {
                 n: 100,
-                offset: 0,
+                offset: 0
             };
             count = 50; // 5000 max
             for (let i = 0; i < count; i++) {
@@ -969,8 +1033,8 @@ export const useNotificationStore = defineStore("Notification", () => {
                     handleNotificationV2({
                         json,
                         params: {
-                            notificationId: json.id,
-                        },
+                            notificationId: json.id
+                        }
                     });
                 }
                 params.offset += 100;
@@ -980,19 +1044,18 @@ export const useNotificationStore = defineStore("Notification", () => {
             }
             params = {
                 n: 100,
-                offset: 0,
+                offset: 0
             };
             count = 50; // 5000 max
             for (let i = 0; i < count; i++) {
                 const args =
                     await notificationRequest.getHiddenFriendRequests(params);
                 for (const json of args.json) {
-                    json.type = "ignoredFriendRequest";
                     handleNotification({
-                        json,
+                        json: { ...json, type: 'ignoredFriendRequest' },
                         params: {
-                            notificationId: json.id,
-                        },
+                            notificationId: json.id
+                        }
                     });
                 }
                 params.offset += 100;
@@ -1015,14 +1078,14 @@ export const useNotificationStore = defineStore("Notification", () => {
     function queueNotificationNoty(noty) {
         noty.isFriend = friendStore.friends.has(noty.senderUserId);
         noty.isFavorite = friendStore.localFavoriteFriends.has(
-            noty.senderUserId,
+            noty.senderUserId
         );
         const notyFilter = notificationsSettingsStore.sharedFeedFilters.noty;
         if (
             notyFilter[noty.type] &&
-            (notyFilter[noty.type] === "On" ||
-                notyFilter[noty.type] === "Friends" ||
-                (notyFilter[noty.type] === "VIP" && noty.isFavorite))
+            (notyFilter[noty.type] === 'On' ||
+                notyFilter[noty.type] === 'Friends' ||
+                (notyFilter[noty.type] === 'VIP' && noty.isFavorite))
         ) {
             playNoty(noty);
         }
@@ -1034,13 +1097,13 @@ export const useNotificationStore = defineStore("Notification", () => {
      */
     function playNoty(noty, { forceDisplay = false } = {}) {
         if (
-            userStore.currentUser.status === "busy" ||
+            userStore.currentUser.status === 'busy' ||
             !watchState.isFriendsLoaded
         ) {
             return;
         }
-        let displayName = "";
-        if (noty.type === "DisplayName" && noty.previousDisplayName) {
+        let displayName = '';
+        if (noty.type === 'DisplayName' && noty.previousDisplayName) {
             displayName = noty.previousDisplayName;
         } else if (noty.displayName) {
             displayName = noty.displayName;
@@ -1074,28 +1137,28 @@ export const useNotificationStore = defineStore("Notification", () => {
             playOverlayNotification,
             playXSNotification,
             playOvrtHudNotifications,
-            playOvrtWristNotifications,
+            playOvrtWristNotifications
         } = resolveNotificationPlayback({
             notificationsSettingsStore,
             gameStore,
-            forceDisplay,
+            forceDisplay
         });
 
-        let message = "";
+        let message = '';
         if (noty.title) {
             message = `${noty.title}, ${noty.message}`;
         } else if (noty.message) {
             message = noty.message;
         }
         const messageList = [
-            "inviteMessage",
-            "requestMessage",
-            "responseMessage",
+            'inviteMessage',
+            'requestMessage',
+            'responseMessage'
         ];
         for (let k = 0; k < messageList.length; k++) {
             if (
-                typeof noty.details !== "undefined" &&
-                typeof noty.details[messageList[k]] !== "undefined"
+                typeof noty.details !== 'undefined' &&
+                typeof noty.details[messageList[k]] !== 'undefined'
             ) {
                 message = `, ${noty.details[messageList[k]]}`;
             }
@@ -1124,7 +1187,7 @@ export const useNotificationStore = defineStore("Notification", () => {
                             playOvrtWristNotifications,
                             noty,
                             message,
-                            image,
+                            image
                         );
                     }
                     if (playDesktopToast) {
@@ -1136,7 +1199,7 @@ export const useNotificationStore = defineStore("Notification", () => {
                 });
             } else {
                 if (playXSNotification) {
-                    displayXSNotification(noty, message, "");
+                    displayXSNotification(noty, message, '');
                 }
                 if (playOvrtHudNotifications || playOvrtWristNotifications) {
                     displayOvrtNotification(
@@ -1144,14 +1207,14 @@ export const useNotificationStore = defineStore("Notification", () => {
                         playOvrtWristNotifications,
                         noty,
                         message,
-                        "",
+                        ''
                     );
                 }
                 if (playDesktopToast) {
-                    displayDesktopToast(noty, message, "");
+                    displayDesktopToast(noty, message, '');
                 }
                 if (playOverlayNotification) {
-                    displayOverlayNotification(noty, message, "");
+                    displayOverlayNotification(noty, message, '');
                 }
             }
         }
@@ -1168,7 +1231,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             const userId = getUserIdFromNoty(noty);
             const memo = await getUserMemo(userId);
             if (memo.memo) {
-                const array = memo.memo.split("\n");
+                const array = memo.memo.split('\n');
                 const nickName = array[0];
                 displayName = nickName;
             }
@@ -1176,7 +1239,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         const msg = getNotificationMessage(noty, message, displayName);
         if (msg) {
             notificationsSettingsStore.speak(
-                toNotificationText(msg.title, msg.body, noty.type),
+                toNotificationText(msg.title, msg.body, noty.type)
             );
         }
     }
@@ -1186,13 +1249,13 @@ export const useNotificationStore = defineStore("Notification", () => {
         displayDesktopToast,
         displayOverlayNotification,
         displayXSNotification,
-        displayOvrtNotification,
+        displayOvrtNotification
     } = createOverlayDispatch({
         getUserIdFromNoty,
         queryRequest,
         notificationsSettingsStore,
         advancedSettingsStore,
-        appearanceSettingsStore,
+        appearanceSettingsStore
     });
 
     // Overlay dispatch functions (notySaveImage, displayDesktopToast, etc.)
@@ -1211,11 +1274,11 @@ export const useNotificationStore = defineStore("Notification", () => {
                 findUserByDisplayName(
                     userStore.cachedUsers,
                     noty.displayName,
-                    userStore.cachedUserIdsByDisplayName,
-                )?.id ?? ""
+                    userStore.cachedUserIdsByDisplayName
+                )?.id ?? ''
             );
         }
-        return "";
+        return '';
     }
 
     /**
@@ -1227,7 +1290,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         let bias;
         // remove join/leave notifications when switching worlds
         if (
-            noty.type === "OnPlayerJoined"
+            noty.type === 'OnPlayerJoined'
             // noty.type === 'BlockedOnPlayerJoined' ||
             // noty.type === 'MutedOnPlayerJoined'
         ) {
@@ -1237,9 +1300,9 @@ export const useNotificationStore = defineStore("Notification", () => {
             }
         }
         if (
-            noty.type === "OnPlayerLeft" ||
-            noty.type === "BlockedOnPlayerLeft" ||
-            noty.type === "MutedOnPlayerLeft"
+            noty.type === 'OnPlayerLeft' ||
+            noty.type === 'BlockedOnPlayerLeft' ||
+            noty.type === 'MutedOnPlayerLeft'
         ) {
             bias = locationStore.lastLocationDestinationTime + 5 * 1000; // 5 secs
             if (Date.parse(noty.created_at) <= bias) {
@@ -1247,13 +1310,13 @@ export const useNotificationStore = defineStore("Notification", () => {
             }
         }
         if (
-            noty.type === "Notification" ||
-            noty.type === "LocationDestination"
+            noty.type === 'Notification' ||
+            noty.type === 'LocationDestination'
             // skip unused entries
         ) {
             return;
         }
-        if (noty.type === "VideoPlay") {
+        if (noty.type === 'VideoPlay') {
             if (!noty.videoName) {
                 // skip video without name
                 return;
@@ -1265,7 +1328,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             }
         }
         if (
-            noty.type !== "VideoPlay" &&
+            noty.type !== 'VideoPlay' &&
             noty.displayName === userStore.currentUser.displayName
         ) {
             // remove current user
@@ -1280,7 +1343,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             const ref = findUserByDisplayName(
                 userStore.cachedUsers,
                 noty.displayName,
-                userStore.cachedUserIdsByDisplayName,
+                userStore.cachedUserIdsByDisplayName
             );
             if (ref) {
                 noty.isFriend = friendStore.friends.has(ref.id);
@@ -1290,10 +1353,10 @@ export const useNotificationStore = defineStore("Notification", () => {
         const notyFilter = notificationsSettingsStore.sharedFeedFilters.noty;
         if (
             notyFilter[noty.type] &&
-            (notyFilter[noty.type] === "On" ||
-                notyFilter[noty.type] === "Everyone" ||
-                (notyFilter[noty.type] === "Friends" && noty.isFriend) ||
-                (notyFilter[noty.type] === "VIP" && noty.isFavorite))
+            (notyFilter[noty.type] === 'On' ||
+                notyFilter[noty.type] === 'Everyone' ||
+                (notyFilter[noty.type] === 'Friends' && noty.isFriend) ||
+                (notyFilter[noty.type] === 'VIP' && noty.isFavorite))
         ) {
             playNoty(noty);
         }
@@ -1305,14 +1368,14 @@ export const useNotificationStore = defineStore("Notification", () => {
      */
     function queueFeedNoty(feed) {
         const noty = { ...feed };
-        if (noty.type === "Avatar") {
+        if (noty.type === 'Avatar') {
             return;
         }
         // hide private worlds from feed
         if (
             wristOverlaySettingsStore.hidePrivateFromFeed &&
-            noty.type === "GPS" &&
-            noty.location === "private"
+            noty.type === 'GPS' &&
+            noty.location === 'private'
         ) {
             return;
         }
@@ -1321,9 +1384,9 @@ export const useNotificationStore = defineStore("Notification", () => {
         const notyFilter = notificationsSettingsStore.sharedFeedFilters.noty;
         if (
             notyFilter[noty.type] &&
-            (notyFilter[noty.type] === "Everyone" ||
-                (notyFilter[noty.type] === "Friends" && noty.isFriend) ||
-                (notyFilter[noty.type] === "VIP" && noty.isFavorite))
+            (notyFilter[noty.type] === 'Everyone' ||
+                (notyFilter[noty.type] === 'Friends' && noty.isFriend) ||
+                (notyFilter[noty.type] === 'VIP' && noty.isFavorite))
         ) {
             playNoty(noty);
         }
@@ -1334,7 +1397,7 @@ export const useNotificationStore = defineStore("Notification", () => {
      * @param noty
      */
     function queueFriendLogNoty(noty) {
-        if (noty.type === "FriendRequest") {
+        if (noty.type === 'FriendRequest') {
             return;
         }
         noty.isFriend = friendStore.friends.has(noty.userId);
@@ -1342,9 +1405,9 @@ export const useNotificationStore = defineStore("Notification", () => {
         const notyFilter = notificationsSettingsStore.sharedFeedFilters.noty;
         if (
             notyFilter[noty.type] &&
-            (notyFilter[noty.type] === "On" ||
-                notyFilter[noty.type] === "Friends" ||
-                (notyFilter[noty.type] === "VIP" && noty.isFavorite))
+            (notyFilter[noty.type] === 'On' ||
+                notyFilter[noty.type] === 'Friends' ||
+                (notyFilter[noty.type] === 'VIP' && noty.isFavorite))
         ) {
             playNoty(noty);
         }
@@ -1362,7 +1425,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             noty.isFavorite = friendStore.localFavoriteFriends.has(noty.userId);
         }
         const notyFilter = notificationsSettingsStore.sharedFeedFilters.noty;
-        if (notyFilter[noty.type] && notyFilter[noty.type] === "On") {
+        if (notyFilter[noty.type] && notyFilter[noty.type] === 'On') {
             playNoty(noty);
         }
     }
@@ -1376,10 +1439,10 @@ export const useNotificationStore = defineStore("Notification", () => {
         let tableData = await database.getNotificationsV2();
         let notifications = await database.getNotifications();
         tableData = tableData.concat(
-            notifications.filter((n) => !tableData.some((t) => t.id === n.id)),
+            notifications.filter((n) => !tableData.some((t) => t.id === n.id))
         );
         tableData.sort(
-            (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at),
+            (a, b) => Date.parse(b.created_at) - Date.parse(a.created_at)
         );
         tableData.splice(dbVars.maxTableSize);
         notificationTable.value.data = tableData;
@@ -1389,12 +1452,170 @@ export const useNotificationStore = defineStore("Notification", () => {
     /**
      *
      */
+    async function checkInventoryBundles() {
+        const currentUserId = userStore.currentUser.id;
+        if (
+            !watchState.isLoggedIn ||
+            !notificationsSettingsStore.inventoryBundleNotifications
+        ) {
+            return;
+        }
+        let bundles;
+        try {
+            const args = await inventoryRequest.getInventoryItems({
+                n: 100,
+                offset: 0,
+                types: 'bundle',
+                order: 'newest'
+            });
+            bundles = args.json.data;
+        } catch (err) {
+            console.error('Failed to check inventory bundles:', err);
+            return;
+        }
+        if (
+            !watchState.isLoggedIn ||
+            currentUserId !== userStore.currentUser.id ||
+            !notificationsSettingsStore.inventoryBundleNotifications
+        )
+            return;
+        const newBundles = bundles.filter(
+            (item) =>
+                !shownBundleIds.has(item.id) &&
+                !ignoredBundleTemplateIds.has(item.templateId)
+        );
+        if (newBundles.length === 0) {
+            return;
+        }
+        for (const item of newBundles) {
+            shownBundleIds.add(item.id);
+        }
+        const dialog = inventoryBundleDialog.value;
+        if (dialog.visible) {
+            dialog.bundles.push(...newBundles);
+        } else {
+            dialog.bundles = newBundles;
+        }
+        dialog.visible = true;
+    }
+
+    function getEffectiveListingPrice(listing) {
+        if (
+            userStore.isLocalUserVrcPlusSupporter &&
+            listing.vrcPlusDiscountPrice != null
+        ) {
+            return listing.vrcPlusDiscountPrice;
+        }
+        return listing.priceTokens;
+    }
+
+    function isListingOwned(listing) {
+        if (userStore.ownedListingIds.has(listing.id)) {
+            return true;
+        }
+        const productIds = listing.productIds ?? [];
+        return (
+            productIds.length > 0 &&
+            productIds.every((id) => userStore.ownedProductIds.has(id))
+        );
+    }
+
+    function isListingInBundle(listing, listings) {
+        const productIds = listing.productIds ?? [];
+        if (productIds.length === 0) {
+            return false;
+        }
+        for (const other of listings.values()) {
+            const bundleProductIds = other.productIds ?? [];
+            if (
+                other.id !== listing.id &&
+                bundleProductIds.length > productIds.length &&
+                productIds.every((id) => bundleProductIds.includes(id))
+            ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    async function checkFreeStoreItems() {
+        const currentUserId = userStore.currentUser.id;
+        if (
+            !watchState.isLoggedIn ||
+            !notificationsSettingsStore.freeStoreItemNotifications
+        ) {
+            return;
+        }
+        let shelves;
+        try {
+            const [results] = await Promise.all([
+                Promise.all(
+                    VRCHAT_STORE_IDS.map((storeId) =>
+                        marketplaceRequest.getStoreShelves({
+                            storeId,
+                            fetch: 'public',
+                            hydrateListings: true
+                        })
+                    )
+                ),
+                userStore.getAllProductPurchases()
+            ]);
+            shelves = results.flatMap((args) => args.json ?? []);
+        } catch (err) {
+            console.error('Failed to check free store items:', err);
+            return;
+        }
+        if (
+            !watchState.isLoggedIn ||
+            currentUserId !== userStore.currentUser.id ||
+            !notificationsSettingsStore.freeStoreItemNotifications
+        )
+            return;
+        const freeListings = new Map();
+        for (const shelf of shelves) {
+            for (const listing of shelf.listings ?? []) {
+                if (
+                    listing.active &&
+                    !getEffectiveListingPrice(listing) &&
+                    !isListingOwned(listing) &&
+                    !shownFreeListingIds.has(listing.id)
+                ) {
+                    freeListings.set(listing.id, {
+                        ...listing,
+                        displayName: replaceBioSymbols(listing.displayName)
+                    });
+                }
+            }
+        }
+        for (const listing of freeListings.values()) {
+            shownFreeListingIds.add(listing.id);
+        }
+        const newListings = Array.from(freeListings.values()).filter(
+            (listing) => !isListingInBundle(listing, freeListings)
+        );
+        if (newListings.length === 0) {
+            return;
+        }
+        const dialog = freeStoreItemDialog.value;
+        if (dialog.visible) {
+            dialog.listings.push(...newListings);
+        } else {
+            dialog.listings = newListings;
+        }
+        dialog.visible = true;
+    }
+
     function testNotification() {
-        playNoty({
-            type: "Event",
-            created_at: new Date().toJSON(),
-            data: t("view.settings.notifications.notifications.test_message"),
-        }, { forceDisplay: true });
+        playNoty(
+            {
+                type: 'Event',
+                created_at: new Date().toJSON(),
+                data: t(
+                    'view.settings.notifications.notifications.test_message'
+                )
+            },
+            { forceDisplay: true }
+        );
     }
 
     /**
@@ -1404,20 +1625,20 @@ export const useNotificationStore = defineStore("Notification", () => {
     function acceptFriendRequestNotification(row) {
         modalStore
             .confirm({
-                description: t("confirm.accept_friend_request"),
-                title: t("confirm.title"),
+                description: t('confirm.accept_friend_request'),
+                title: t('confirm.title')
             })
             .then(({ ok }) => {
                 if (!ok) return;
                 notificationRequest
                     .acceptFriendRequestNotification({
-                        notificationId: row.id,
+                        notificationId: row.id
                     })
                     .then((args) => {
                         handleNotificationAccept(args);
                     })
                     .catch((err) => {
-                        if (err && err.message && err.message.includes("404")) {
+                        if (err && err.message && err.message.includes('404')) {
                             handleNotificationHide(row.id);
                         }
                     });
@@ -1430,16 +1651,16 @@ export const useNotificationStore = defineStore("Notification", () => {
      * @param row
      */
     async function hideNotification(row) {
-        if (row.type === "ignoredFriendRequest") {
+        if (row.type === 'ignoredFriendRequest') {
             await friendRequest.deleteHiddenFriendRequest(
                 { notificationId: row.id },
-                row.senderUserId,
+                row.senderUserId
             );
             handleNotificationHide(row.id);
         } else {
             notificationRequest
                 .hideNotification({
-                    notificationId: row.id,
+                    notificationId: row.id
                 })
                 .then(() => {
                     handleNotificationHide(row.id);
@@ -1454,8 +1675,8 @@ export const useNotificationStore = defineStore("Notification", () => {
     function hideNotificationPrompt(row) {
         modalStore
             .confirm({
-                description: t("confirm.decline_type", { type: row.type }),
-                title: t("confirm.title"),
+                description: t('confirm.decline_type', { type: row.type }),
+                title: t('confirm.title')
             })
             .then(({ ok }) => {
                 if (ok) hideNotification(row);
@@ -1470,13 +1691,13 @@ export const useNotificationStore = defineStore("Notification", () => {
     function acceptRequestInvite(row) {
         modalStore
             .confirm({
-                description: t("confirm.send_invite"),
-                title: t("confirm.title"),
+                description: t('confirm.send_invite'),
+                title: t('confirm.title')
             })
             .then(({ ok }) => {
                 if (!ok) return;
                 let currentLocation = locationStore.lastLocation.location;
-                if (locationStore.lastLocation.location === "traveling") {
+                if (locationStore.lastLocation.location === 'traveling') {
                     currentLocation = locationStore.lastLocationDestination;
                 }
                 if (!currentLocation) {
@@ -1484,7 +1705,7 @@ export const useNotificationStore = defineStore("Notification", () => {
                 }
                 const L = parseLocation(currentLocation);
                 queryRequest
-                    .fetch("world", { worldId: L.worldId })
+                    .fetch('world', { worldId: L.worldId })
                     .then((args) => {
                         notificationRequest
                             .sendInvite(
@@ -1492,15 +1713,15 @@ export const useNotificationStore = defineStore("Notification", () => {
                                     instanceId: L.tag,
                                     worldId: L.tag,
                                     worldName: args.ref.name,
-                                    rsvp: true,
+                                    rsvp: true
                                 },
-                                row.senderUserId,
+                                row.senderUserId
                             )
                             .then((_args) => {
-                                toast(t("message.invite.sent"));
+                                toast(t('message.invite.sent'));
                                 notificationRequest
                                     .hideNotification({
-                                        notificationId: row.id,
+                                        notificationId: row.id
                                     })
                                     .then(() => {
                                         handleNotificationHide(row.id);
@@ -1519,11 +1740,11 @@ export const useNotificationStore = defineStore("Notification", () => {
      */
     async function getQuickInviteResponseParams(rsvp) {
         if (!inviteStore.inviteResponseMessageTable?.data?.length) {
-            await inviteStore.refreshInviteMessageTableData("response");
+            await inviteStore.refreshInviteMessageTableData('response');
         }
         return createInviteResponseParams(
             rsvp,
-            inviteStore.inviteResponseMessageTable?.data,
+            inviteStore.inviteResponseMessageTable?.data
         );
     }
 
@@ -1535,7 +1756,7 @@ export const useNotificationStore = defineStore("Notification", () => {
     async function acceptInviteAndLaunch(row, options = {}) {
         if (
             !row?.id ||
-            row.type !== "invite" ||
+            row.type !== 'invite' ||
             acceptingInviteIds.has(row.id)
         ) {
             return false;
@@ -1543,16 +1764,17 @@ export const useNotificationStore = defineStore("Notification", () => {
 
         const location = getInviteLocation(row);
         if (!location) {
-            toast.error(t("message.invite.location_unavailable"));
+            toast.error(t('message.invite.location_unavailable'));
             return false;
         }
 
-        const { ok } = options.dashboardConfirmed === true
-            ? { ok: ['current', 'vr', 'desktop'].includes(options.mode) }
-            : await modalStore.confirm({
-            description: t("confirm.accept_invite_and_launch"),
-            title: t("confirm.title"),
-        });
+        const { ok } =
+            options.dashboardConfirmed === true
+                ? { ok: ['current', 'vr', 'desktop'].includes(options.mode) }
+                : await modalStore.confirm({
+                      description: t('confirm.accept_invite_and_launch'),
+                      title: t('confirm.title')
+                  });
         if (!ok) {
             return false;
         }
@@ -1562,45 +1784,63 @@ export const useNotificationStore = defineStore("Notification", () => {
             if (row.version >= 2 || Array.isArray(row.responses)) {
                 const response = row.responses?.find(
                     (item) =>
-                        item?.type === "accept" ||
-                        item?.type === "join" ||
-                        item?.icon === "check",
+                        item?.type === 'accept' ||
+                        item?.type === 'join' ||
+                        item?.icon === 'check'
                 );
                 if (response) {
                     await notificationRequest.sendNotificationResponse({
                         notificationId: row.id,
                         responseType: response.type,
-                        responseData: response.data || "",
+                        responseData: response.data || ''
                     });
                 }
                 handleNotificationV2Hide(row.id);
             } else {
                 await notificationRequest.sendInviteResponse(
                     await getQuickInviteResponseParams(true),
-                    row.id,
+                    row.id
                 );
                 await notificationRequest.hideNotification({
-                    notificationId: row.id,
+                    notificationId: row.id
                 });
                 handleNotificationHide(row.id);
             }
 
-            const shortName = row.shortName || row.details?.shortName || row.data?.shortName || null;
+            const shortName =
+                row.shortName ||
+                row.details?.shortName ||
+                row.data?.shortName ||
+                null;
             if (options.dashboardConfirmed === true) {
-                if (options.expectedAccountId && options.expectedAccountId !== userStore.currentUser.id) return false;
-                if (options.mode === 'current') await launchStore.tryOpenInstanceInVrc(location, shortName);
-                else await launchStore.launchGame(location, shortName, options.mode === 'desktop');
-            } else await launchStore.showLaunchDialog(
-                location,
-                row.shortName || row.details?.shortName || row.data?.shortName || null,
-            );
+                if (
+                    options.expectedAccountId &&
+                    options.expectedAccountId !== userStore.currentUser.id
+                )
+                    return false;
+                if (options.mode === 'current')
+                    await launchStore.tryOpenInstanceInVrc(location, shortName);
+                else
+                    await launchStore.launchGame(
+                        location,
+                        shortName,
+                        options.mode === 'desktop'
+                    );
+            } else
+                await launchStore.showLaunchDialog(
+                    location,
+                    row.shortName ||
+                        row.details?.shortName ||
+                        row.data?.shortName ||
+                        null
+                );
             return true;
         } catch (error) {
             console.error(
-                "Failed to accept invite and launch instance:",
-                error,
+                'Failed to accept invite and launch instance:',
+                error
             );
-            toast.error(t("message.invite.accept_launch_failed"));
+            toast.error(t('message.invite.accept_launch_failed'));
             return false;
         } finally {
             acceptingInviteIds.delete(row.id);
@@ -1612,62 +1852,63 @@ export const useNotificationStore = defineStore("Notification", () => {
             if (row.version >= 2 || Array.isArray(row.responses)) {
                 const response = row.responses?.find(
                     (item) =>
-                        item?.type === "decline" ||
-                        item?.type === "reject" ||
-                        item?.icon === "cancel",
+                        item?.type === 'decline' ||
+                        item?.type === 'reject' ||
+                        item?.icon === 'cancel'
                 );
                 if (!response) {
-                    throw new Error("No decline response is available");
+                    throw new Error('No decline response is available');
                 }
                 await notificationRequest.sendNotificationResponse({
                     notificationId: row.id,
                     responseType: response.type,
-                    responseData: response.data || "",
+                    responseData: response.data || ''
                 });
                 handleNotificationV2Hide(row.id);
             } else {
                 await notificationRequest.sendInviteResponse(
                     await getQuickInviteResponseParams(false),
-                    row.id,
+                    row.id
                 );
                 await notificationRequest.hideNotification({
-                    notificationId: row.id,
+                    notificationId: row.id
                 });
                 handleNotificationHide(row.id);
             }
-            toast.success("已拒绝邀请");
+            toast.success('已拒绝邀请');
         } catch (error) {
-            console.error("Failed to decline tray invite:", error);
-            toast.error("拒绝邀请失败");
+            console.error('Failed to decline tray invite:', error);
+            toast.error('拒绝邀请失败');
             throw error;
         }
     }
 
     async function replyTrayBoop(row) {
-        const userId = row.senderUserId || row.link?.replace(/^user:/, "");
+        const userId = row.senderUserId || row.link?.replace(/^user:/, '');
         if (!userId) {
-            toast.error("无法找到戳一戳发送者");
-            throw new Error("Missing boop sender");
+            toast.error('无法找到戳一戳发送者');
+            throw new Error('Missing boop sender');
         }
         try {
             userStore.showSendBoopDialog(userId);
         } catch (error) {
-            console.error("Failed to open tray boop reply:", error);
-            toast.error("无法打开戳一戳回复");
+            console.error('Failed to open tray boop reply:', error);
+            toast.error('无法打开戳一戳回复');
             throw error;
         }
     }
 
     async function acceptTrayFriendRequest(row) {
         try {
-            const args = await notificationRequest.acceptFriendRequestNotification({
-                notificationId: row.id,
-            });
+            const args =
+                await notificationRequest.acceptFriendRequestNotification({
+                    notificationId: row.id
+                });
             handleNotificationAccept(args);
-            toast.success("已接受好友申请");
+            toast.success('已接受好友申请');
         } catch (error) {
-            console.error("Failed to accept tray friend request:", error);
-            toast.error("接受好友申请失败");
+            console.error('Failed to accept tray friend request:', error);
+            toast.error('接受好友申请失败');
             throw error;
         }
     }
@@ -1675,39 +1916,43 @@ export const useNotificationStore = defineStore("Notification", () => {
     async function declineTrayFriendRequest(row) {
         try {
             await notificationRequest.hideNotification({
-                notificationId: row.id,
+                notificationId: row.id
             });
             handleNotificationHide(row.id);
-            toast.success("已拒绝好友申请");
+            toast.success('已拒绝好友申请');
         } catch (error) {
-            console.error("Failed to decline tray friend request:", error);
-            toast.error("拒绝好友申请失败");
+            console.error('Failed to decline tray friend request:', error);
+            toast.error('拒绝好友申请失败');
             throw error;
         }
     }
 
     function openTrayNotification(row) {
-        if (row?.traySource === "friend-log") {
-            router.push({ name: "friend-log" });
+        if (row?.traySource === 'friend-log') {
+            router.push({ name: 'friend-log' });
             return;
         }
 
-        const senderId = typeof row.senderUserId === "string" ? row.senderUserId : "";
-        const groupId = senderId.startsWith("grp_")
+        const senderId =
+            typeof row.senderUserId === 'string' ? row.senderUserId : '';
+        const groupId = senderId.startsWith('grp_')
             ? senderId
-            : row.data?.groupId || row.details?.groupId || "";
-        if (groupId && (row.type?.startsWith("group.") || row.type === "groupChange")) {
+            : row.data?.groupId || row.details?.groupId || '';
+        if (
+            groupId &&
+            (row.type?.startsWith('group.') || row.type === 'groupChange')
+        ) {
             showGroupDialog(groupId);
             return;
         }
 
-        if (senderId.startsWith("usr_")) {
+        if (senderId.startsWith('usr_')) {
             showUserDialog(senderId);
             return;
         }
 
         if (
-            typeof row.link === "string" &&
+            typeof row.link === 'string' &&
             /^(group|user|event):/.test(row.link)
         ) {
             openNotificationLink(row.link);
@@ -1719,21 +1964,21 @@ export const useNotificationStore = defineStore("Notification", () => {
             row.details?.worldId ||
             row.data?.location ||
             row.data?.worldId ||
-            "";
-        if (location.startsWith("wrld_")) {
+            '';
+        if (location.startsWith('wrld_')) {
             showWorldDialog(location);
             return;
         }
 
-        router.push({ name: "notification" });
+        router.push({ name: 'notification' });
     }
 
     async function respondToTrayNotification(row, response) {
-        if (response.type === "link") {
+        if (response.type === 'link') {
             openNotificationLink(response.data);
             return;
         }
-        if (response.icon === "reply" && row.type === "boop") {
+        if (response.icon === 'reply' && row.type === 'boop') {
             userStore.showSendBoopDialog(row.senderUserId);
             return;
         }
@@ -1742,13 +1987,13 @@ export const useNotificationStore = defineStore("Notification", () => {
             const args = await notificationRequest.sendNotificationResponse({
                 notificationId: row.id,
                 responseType: response.type,
-                responseData: response.data || "",
+                responseData: response.data || ''
             });
             handleNotificationV2Hide(row.id);
-            toast.success(args.json || "操作成功");
+            toast.success(args.json || '操作成功');
         } catch (error) {
-            console.error("Failed to respond to tray notification:", error);
-            toast.error("操作失败");
+            console.error('Failed to respond to tray notification:', error);
+            toast.error('操作失败');
             throw error;
         }
     }
@@ -1762,7 +2007,7 @@ export const useNotificationStore = defineStore("Notification", () => {
             if (additionalIds.has(id)) {
                 removeFromArray(trayAdditionalUnseenIds.value, id);
                 const entry = trayAdditionalNotifications.value.find(
-                    (item) => item.id === id,
+                    (item) => item.id === id
                 );
                 if (entry) {
                     removeFromArray(trayAdditionalNotifications.value, entry);
@@ -1780,13 +2025,13 @@ export const useNotificationStore = defineStore("Notification", () => {
             saveNotificationCenterHiddenIds();
         }
         if (unseenNotifications.value.length === 0) {
-            uiStore.removeNotify("notification");
+            uiStore.removeNotify('notification');
         }
         if (trayAdditionalUnseenIds.value.length === 0) {
-            uiStore.removeNotify("friend-log");
+            uiStore.removeNotify('friend-log');
         }
         toast.success(
-            ids.length === 1 ? "已忽略通知" : `已忽略 ${ids.length} 条通知`,
+            ids.length === 1 ? '已忽略通知' : `已忽略 ${ids.length} 条通知`
         );
     }
 
@@ -1808,22 +2053,23 @@ export const useNotificationStore = defineStore("Notification", () => {
         replyBoop: replyTrayBoop,
         ignoreNotifications: ignoreTrayNotifications,
         getPreviewIds: () =>
-            trayNotificationSnapshot.value.items.map((item) => item.id),
+            trayNotificationSnapshot.value.items.map((item) => item.id)
     });
 
-    window.addEventListener("vrcx-tray-notification-action", (event) => {
-        const customEvent = /** @type {CustomEvent<{action?: string, notificationId?: string}>} */ (
-            event
-        );
+    window.addEventListener('vrcx-tray-notification-action', (event) => {
+        const customEvent =
+            /** @type {CustomEvent<{action?: string, notificationId?: string}>} */ (
+                event
+            );
         const { action, notificationId } = customEvent.detail || {};
         handleTrayNotificationAction(action, notificationId).catch((error) => {
-            console.error("Failed to handle tray notification action:", error);
+            console.error('Failed to handle tray notification action:', error);
         });
     });
     window.electron?.onTrayNotificationAction?.((payload) => {
         const { action, notificationId } = payload || {};
         handleTrayNotificationAction(action, notificationId).catch((error) => {
-            console.error("Failed to handle tray notification action:", error);
+            console.error('Failed to handle tray notification action:', error);
         });
     });
 
@@ -1832,12 +2078,12 @@ export const useNotificationStore = defineStore("Notification", () => {
         const data = row.data || {};
         const directLocation =
             details.worldId || data.location || data.worldId || row.location;
-        if (directLocation?.includes(":")) {
+        if (directLocation?.includes(':')) {
             return directLocation;
         }
         const worldId = directLocation || data.worldId;
         const instanceId = details.instanceId || data.instanceId;
-        return worldId && instanceId ? `${worldId}:${instanceId}` : "";
+        return worldId && instanceId ? `${worldId}:${instanceId}` : '';
     }
 
     /**
@@ -1848,7 +2094,7 @@ export const useNotificationStore = defineStore("Notification", () => {
      */
     function sendNotificationResponse(notificationId, responses, responseType) {
         if (!Array.isArray(responses) || responses.length === 0) return;
-        let responseData = "";
+        let responseData = '';
         for (let i = 0; i < responses.length; i++) {
             if (responses[i].type === responseType) {
                 responseData = responses[i].data;
@@ -1859,7 +2105,7 @@ export const useNotificationStore = defineStore("Notification", () => {
         notificationRequest
             .sendNotificationResponse(params)
             .then((args) => {
-                console.log("Notification response", args);
+                console.log('Notification response', args);
                 if (!args.json) return;
                 handleNotificationV2Hide(notificationId);
                 toast.success(args.json);
@@ -1876,14 +2122,14 @@ export const useNotificationStore = defineStore("Notification", () => {
      */
     function deleteNotificationLog(row) {
         const idx = notificationTable.value.data.findIndex(
-            (e) => e.id === row.id,
+            (e) => e.id === row.id
         );
         if (idx !== -1) {
             notificationTable.value.data.splice(idx, 1);
         }
         if (
-            row.type !== "friendRequest" &&
-            row.type !== "ignoredFriendRequest"
+            row.type !== 'friendRequest' &&
+            row.type !== 'ignoredFriendRequest'
         ) {
             if (!row.version || row.version < 2) {
                 database.deleteNotification(row.id);
@@ -1901,8 +2147,8 @@ export const useNotificationStore = defineStore("Notification", () => {
         modalStore
             .confirm({
                 // TODO: type translation
-                description: t("confirm.delete_type", { type: row.type }),
-                title: t("confirm.title"),
+                description: t('confirm.delete_type', { type: row.type }),
+                title: t('confirm.title')
             })
             .then(({ ok }) => {
                 if (ok) deleteNotificationLog(row);
@@ -1933,30 +2179,31 @@ export const useNotificationStore = defineStore("Notification", () => {
         if (!link) {
             return;
         }
-        const data = link.split(":");
+        const data = link.split(':');
         if (!data.length) {
             return;
         }
         switch (data[0]) {
-            case "group":
+            case 'group':
                 showGroupDialog(data[1]);
                 break;
-            case "user":
+            case 'user':
                 showUserDialog(data[1]);
                 break;
-            case "event":
-                const ids = data[1].split(",");
+            case 'event':
+                const ids = data[1].split(',');
                 if (ids.length < 2) {
-                    console.error("Invalid event notification link:", data[1]);
+                    console.error('Invalid event notification link:', data[1]);
                     return;
                 }
 
                 showGroupDialog(ids[0]);
                 // ids[1] cal_ is the event id
                 break;
-            case "openNotificationLink":
+            case 'openNotificationLink':
+            case 'OpenSafetyCenter':
             default:
-                toast.error("Unsupported notification link type");
+                toast.error(`Unsupported notification link type: "${link}"`);
                 break;
         }
     }
@@ -1966,10 +2213,14 @@ export const useNotificationStore = defineStore("Notification", () => {
         notificationTable,
         unseenNotifications,
         isNotificationsLoading,
+        inventoryBundleDialog,
+        freeStoreItemDialog,
 
         initNotifications,
         expireNotification,
         refreshNotifications,
+        checkInventoryBundles,
+        checkFreeStoreItems,
         queueNotificationNoty,
         playNoty,
         queueGameLogNoty,
@@ -2018,6 +2269,6 @@ export const useNotificationStore = defineStore("Notification", () => {
         appendNotificationTableEntry,
         appendTrayNotificationEntry,
         setNotificationInitStatus,
-        clearUnseenNotifications,
+        clearUnseenNotifications
     };
 });

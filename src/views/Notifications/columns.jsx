@@ -28,7 +28,6 @@ import {
     X
 } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
-
 import { formatDateFilter } from '../../shared/utils';
 import { checkCanInvite } from '../../shared/utils/invite';
 import { i18n } from '../../plugins';
@@ -43,9 +42,7 @@ import {
 import { showUserDialog } from '../../coordinators/userCoordinator';
 import { showWorldDialog } from '../../coordinators/worldCoordinator';
 import { showGroupDialog } from '../../coordinators/groupCoordinator';
-
 import Emoji from '../../components/Emoji.vue';
-
 const { t, te } = i18n.global;
 
 const isGroupId = (id) => typeof id === 'string' && id.startsWith('grp_');

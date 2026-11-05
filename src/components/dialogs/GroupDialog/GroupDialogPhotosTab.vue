@@ -1,5 +1,17 @@
 <template>
     <input ref="uploadInputRef" class="hidden" type="file" accept="image/*" @change="uploadToCurrentGallery" />
+    <div v-if="canManageGroupGalleries()" class="mb-2 flex justify-end">
+        <Button variant="outline" size="sm" @click="startCreateGallery"
+            ><Plus class="size-4" />{{ t('dialog.group.gallery.create') }}</Button
+        >
+    </div>
+    <GroupGalleryForm
+        v-if="isCreatingGallery"
+        :form="galleryForm"
+        :saving="isSavingGallery"
+        :submit-label="t('dialog.group.gallery.create')"
+        @save="saveGallery"
+        @cancel="closeGalleryForm" />
     <TabsUnderline
         v-model="groupDialogGalleryCurrentName"
         :items="groupGalleryTabs"
@@ -28,6 +40,30 @@
                             v-text="gallery.description || '-'" />
                     </div>
                     <div class="group-gallery-content-actions">
+                        <Button
+                            v-if="canSubmitToGallery(gallery)"
+                            variant="outline"
+                            size="icon-sm"
+                            :title="t('dialog.group.gallery.add_image_tooltip')"
+                            @click="showAddImageDialog(gallery)"
+                            ><ImagePlus
+                        /></Button>
+                        <Button
+                            v-if="canManageGallery(gallery)"
+                            variant="outline"
+                            size="icon-sm"
+                            :title="t('dialog.group.gallery.edit_tooltip')"
+                            @click="startEditGallery(gallery)"
+                            ><Pencil
+                        /></Button>
+                        <Button
+                            v-if="canManageGallery(gallery)"
+                            variant="outline"
+                            size="icon-sm"
+                            :title="t('dialog.group.gallery.delete_tooltip')"
+                            @click="deleteGallery(gallery)"
+                            ><Trash2
+                        /></Button>
                         <TooltipWrapper :content="t('dialog.group.gallery.refresh')" side="top">
                             <Button
                                 class="group-gallery-refresh rounded-full"
@@ -55,27 +91,43 @@
                         </TooltipWrapper>
                     </div>
                 </div>
+                <GroupGalleryForm
+                    v-if="editingGalleryId === gallery.id"
+                    :form="galleryForm"
+                    :saving="isSavingGallery"
+                    :submit-label="t('common.actions.save')"
+                    @save="saveGallery"
+                    @cancel="closeGalleryForm" />
                 <div class="group-gallery-grid">
-                    <button
-                        v-for="image in groupDialog.galleries[gallery.id]"
-                        :key="image.id"
-                        type="button"
-                        class="group-gallery-image"
-                        @click="showFullscreenImageDialog(image.imageUrl)">
-                        <div class="size-full">
-                            <img
-                                :src="image.imageUrl"
-                                class="size-full object-cover"
-                                @error="
-                                    $event.target.style.display = 'none';
-                                    $event.target.nextElementSibling.style.display = 'flex';
-                                "
-                                loading="lazy" />
-                            <div class="hidden size-full items-center justify-center bg-muted">
-                                <Image class="size-8 text-muted-foreground" />
+                    <div v-for="image in groupDialog.galleries[gallery.id]" :key="image.id" class="relative">
+                        <button
+                            type="button"
+                            class="group-gallery-image"
+                            @click="showFullscreenImageDialog(image.imageUrl)">
+                            <div class="size-full">
+                                <img
+                                    :src="image.imageUrl"
+                                    class="size-full object-cover"
+                                    @error="
+                                        $event.target.style.display = 'none';
+                                        $event.target.nextElementSibling.style.display = 'flex';
+                                    "
+                                    loading="lazy" />
+                                <div class="hidden size-full items-center justify-center bg-muted">
+                                    <Image class="size-8 text-muted-foreground" />
+                                </div>
                             </div>
-                        </div>
-                    </button>
+                        </button>
+                        <Button
+                            v-if="canDeleteImage(gallery, image)"
+                            variant="outline"
+                            size="icon-sm"
+                            class="absolute right-1 top-1"
+                            :title="t('dialog.group.gallery.delete_image_tooltip')"
+                            @click="deleteGalleryImage(image)"
+                            ><Trash2
+                        /></Button>
+                    </div>
                     <div
                         v-if="!groupDialog.galleries[gallery.id]?.length"
                         class="group-content-block__empty group-gallery-empty">
@@ -85,11 +137,13 @@
             </section>
         </template>
     </TabsUnderline>
+    <GallerySelectDialog :gallery-select-dialog="gallerySelectDialog" @select-image="handleGalleryImageSelect" />
 </template>
 
 <script setup>
+    import { Image, ImagePlus, Pencil, Plus, RefreshCw, Trash2, Upload } from 'lucide-vue-next';
     import { Button } from '@/components/ui/button';
-    import { Image, RefreshCw, Upload } from 'lucide-vue-next';
+    import { Card } from '@/components/ui/card';
     import { Spinner } from '@/components/ui/spinner';
     import { TabsUnderline } from '@/components/ui/tabs';
     import { TooltipWrapper } from '@/components/ui/tooltip';
@@ -97,14 +151,15 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { groupRequest, vrcPlusImageRequest } from '../../../api';
-    import { useGalleryStore, useGroupStore } from '../../../stores';
+    import { useGalleryStore, useGroupStore, useModalStore, useUserStore } from '../../../stores';
     import { hasGroupPermission } from '../../../shared/utils';
     import { useGroupGalleries } from './useGroupGalleries';
-
+    import GallerySelectDialog from './GallerySelectDialog.vue';
+    import GroupGalleryForm from './GroupGalleryForm.vue';
     const { t } = useI18n();
     const { groupDialog } = storeToRefs(useGroupStore());
+    const { currentUser } = storeToRefs(useUserStore());
     const { showFullscreenImageDialog } = useGalleryStore();
     const uploadInputRef = ref(null);
     const isUploading = ref(false);
@@ -114,8 +169,107 @@
         groupDialogGalleryCurrentName,
         groupGalleryTabs,
         groupGalleryStatus,
-        getGroupGalleries
-    } = useGroupGalleries(groupDialog);
+        getGroupGalleries,
+        canManageGroupGalleries,
+        canManageGallery,
+        canSubmitToGallery,
+        canDeleteImage,
+        createGallery,
+        deleteGallery,
+        updateGallery,
+        addGalleryImage,
+        deleteGalleryImage
+    } = useGroupGalleries(groupDialog, { t, modalStore: useModalStore(), currentUser });
+
+    const isCreatingGallery = ref(false);
+    const editingGalleryId = ref('');
+    const isSavingGallery = ref(false);
+    const galleryForm = ref({ name: '', description: '', membersOnly: false });
+
+    let addImageGalleryId = '';
+    const gallerySelectDialog = ref({
+        visible: false,
+        selectedFileId: '',
+        selectedImageUrl: '',
+        isIconGallerySelectDialog: false
+    });
+
+    function groupGalleryStatusText(gallery) {
+        if (!gallery.membersOnly) {
+            return t('dialog.group.gallery.visibility_public');
+        }
+        if (!gallery.roleIdsToView) {
+            return t('dialog.group.gallery.visibility_members');
+        }
+        return t('dialog.group.gallery.visibility_roles');
+    }
+
+    function startCreateGallery() {
+        editingGalleryId.value = '';
+        isCreatingGallery.value = true;
+        galleryForm.value = { name: '', description: '', membersOnly: false };
+    }
+
+    function startEditGallery(gallery) {
+        isCreatingGallery.value = false;
+        editingGalleryId.value = gallery.id;
+        galleryForm.value = {
+            name: gallery.name ?? '',
+            description: gallery.description ?? '',
+            membersOnly: Boolean(gallery.membersOnly)
+        };
+    }
+
+    function closeGalleryForm() {
+        isCreatingGallery.value = false;
+        editingGalleryId.value = '';
+    }
+
+    async function saveGallery() {
+        const form = galleryForm.value;
+        const fields = {
+            name: form.name.trim(),
+            description: form.description.trim(),
+            membersOnly: form.membersOnly
+        };
+        isSavingGallery.value = true;
+        try {
+            const saved = isCreatingGallery.value
+                ? await createGallery(fields)
+                : await updateGallery(editingGalleryId.value, fields);
+            if (saved) {
+                closeGalleryForm();
+            }
+        } finally {
+            isSavingGallery.value = false;
+        }
+    }
+
+    function showAddImageDialog(gallery) {
+        addImageGalleryId = gallery.id;
+        gallerySelectDialog.value = {
+            visible: true,
+            selectedFileId: '',
+            selectedImageUrl: '',
+            isIconGallerySelectDialog: false
+        };
+    }
+
+    function handleGalleryImageSelect({ fileId }) {
+        if (!fileId || !addImageGalleryId) {
+            return;
+        }
+        addGalleryImage(addImageGalleryId, fileId);
+    }
+
+    /**
+     * @param {Event} event
+     */
+    function onImageError(event) {
+        const img = event.target;
+        img.style.display = 'none';
+        img.nextElementSibling.style.display = 'flex';
+    }
 
     const currentGallery = computed(
         () => groupDialog.value.ref.galleries?.[Number(groupDialogGalleryCurrentName.value)] ?? null

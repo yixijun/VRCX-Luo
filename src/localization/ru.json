@@ -13,7 +13,8 @@
         "friend_list": "Список друзей",
         "charts": "Диаграммы",
         "tools": "Инструменты",
-        "settings": "Настройки"
+        "settings": "Настройки",
+        "friends_locations": "Инстансы друзей"
     },
     "side_panel": {
         "search_placeholder": "Поиск",
@@ -69,7 +70,7 @@
             "search_placeholder": "Поиск",
             "filters": {
                 "Location": "Местоположение",
-                "OnPlayerJoined": "Игрог подключился",
+                "OnPlayerJoined": "Игрок подключился",
                 "OnPlayerLeft": "Игрок отключился",
                 "PortalSpawn": "Спавн портала",
                 "VideoPlay": "Проигрованние видео",
@@ -158,9 +159,9 @@
                 "Friend": "Новый друг",
                 "Unfriend": "Удалён из друзей",
                 "FriendRequest": "Запрос в друзья",
-                "CancelFriendRequest": "Отменйнные запросы в друзья",
-                "DisplayName": "Выводное имя",
-                "TrustLevel": "Уровнь доверия"
+                "CancelFriendRequest": "Отменённые запросы в друзья",
+                "DisplayName": "Отоброжаемое имя",
+                "TrustLevel": "Уровень доверия"
             }
         },
         "moderation": {
@@ -770,7 +771,8 @@
                 "platform": "Платформа",
                 "last_visited": "Последний визит",
                 "visit_count": "Количество посещений",
-                "time_spent": "Проведенное время"
+                "time_spent": "Проведенное время",
+                "created": "Дата и время создания"
             },
             "json": {
                 "header": "JSON"
@@ -896,7 +898,8 @@
                 "role_updated_at": "Обновлена:",
                 "role_created_at": "Создана:",
                 "role_permissions": "Права доступа:",
-                "last_visited": "Последний визит"
+                "last_visited": "Последний визит",
+                "created": "Дата и время создания"
             },
             "posts": {
                 "header": "Объявления",

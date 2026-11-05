@@ -140,7 +140,7 @@
                         </div>
                         <div class="flex flex-col gap-2">
                             <div class="flex items-center justify-between font-semibold text-sm mb-[9px]">
-                                <span>{{ t('view.favorite.avatars.local_favorites') }}</span>
+                                <span>{{ t('view.favorite.worlds.local_favorites') }}</span>
                                 <template v-if="!refreshingLocalFavorites">
                                     <Button
                                         class="rounded-full"
@@ -207,13 +207,11 @@
                                 </div>
                                 <TooltipWrapper
                                     v-if="!isCreatingLocalGroup"
-                                    :disabled="isLocalUserVrcPlusSupporter"
-                                    :content="t('view.favorite.avatars.local_favorites')">
+                                    :content="t('view.favorite.worlds.local_favorites')">
                                     <div
                                         :class="[
                                             'group-item x-hover-card hover:shadow-sm',
-                                            'border-dashed flex items-center justify-center gap-2 text-sm',
-                                            { 'opacity-50 cursor-not-allowed': !isLocalUserVrcPlusSupporter }
+                                            'border-dashed flex items-center justify-center gap-2 text-sm'
                                         ]"
                                         @click="startLocalGroupCreation">
                                         <Plus />
@@ -446,15 +444,7 @@
 
 <script setup>
     import { computed, markRaw, nextTick, onBeforeUnmount, reactive, ref, watch } from 'vue';
-    import {
-        Ellipsis,
-        Loader,
-        MoreHorizontal,
-        Plus,
-        RefreshCcw,
-        RefreshCw,
-        ScanSearch
-    } from 'lucide-vue-next';
+    import { Ellipsis, Loader, MoreHorizontal, Plus, RefreshCcw, RefreshCw, ScanSearch } from 'lucide-vue-next';
     import { Button } from '@/components/ui/button';
     import { DataTableEmpty } from '@/components/ui/data-table';
     import { InputGroupField } from '@/components/ui/input-group';
@@ -463,7 +453,6 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import {
         DropdownMenu,
         DropdownMenuCheckboxItem,
@@ -475,13 +464,7 @@
         DropdownMenuSubTrigger,
         DropdownMenuTrigger
     } from '../../components/ui/dropdown-menu';
-    import {
-        useAppearanceSettingsStore,
-        useAvatarStore,
-        useFavoriteStore,
-        useModalStore,
-        useUserStore
-    } from '../../stores';
+    import { useAppearanceSettingsStore, useAvatarStore, useFavoriteStore, useModalStore } from '../../stores';
     import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable';
     import { avatarRequest, favoriteRequest } from '../../api';
     import { debounce } from '../../shared/utils';
@@ -499,16 +482,14 @@
         removeInvalidLocalAvatars,
         checkInvalidRemoteFavoriteAvatars
     } from '../../coordinators/favoriteCoordinator';
-
     import AvatarExportDialog from './dialogs/AvatarExportDialog.vue';
     import FavoritesAvatarItem from './components/FavoritesAvatarItem.vue';
     import FavoritesAvatarLocalHistoryItem from './components/FavoritesAvatarLocalHistoryItem.vue';
     import FavoritesContentHeader from './components/FavoritesContentHeader.vue';
     import FavoritesToolbar from './components/FavoritesToolbar.vue';
     import InvalidAvatarsProgressToast from './components/InvalidAvatarsProgressToast.jsx';
-
     import * as workerTimers from 'worker-timers';
-
+    import { promptClearAvatarHistory, showAvatarDialog, applyAvatar } from '../../coordinators/avatarCoordinator';
     const AVATAR_GROUP_PLACEHOLDERS = Array.from({ length: 5 }, (_, index) => ({
         key: `avatar:avatars${index + 1}`,
         displayName: `Group ${index + 1}`
@@ -542,8 +523,7 @@
     const { showAvatarImportDialog, localAvatarFavGroupLength, localAvatarFavoritesList, handleFavoriteGroup } =
         favoriteStore;
     const { avatarHistory } = storeToRefs(useAvatarStore());
-    import { promptClearAvatarHistory, showAvatarDialog, applyAvatar } from '../../coordinators/avatarCoordinator';
-    const { isLocalUserVrcPlusSupporter } = storeToRefs(useUserStore());
+
     const { t } = useI18n();
 
     const {
@@ -786,8 +766,7 @@
         handleLocalGroupCreationConfirm
     } = useFavoritesLocalGroups({
         createGroup: newLocalAvatarFavoriteGroup,
-        selectGroup,
-        canCreate: () => isLocalUserVrcPlusSupporter.value
+        selectGroup
     });
 
     /**
@@ -992,13 +971,10 @@
         remoteAvatarCheckProgress.total = favoritesToCheck.length;
 
         try {
-            const result = await checkInvalidRemoteFavoriteAvatars(
-                favoritesToCheck,
-                (current, total) => {
-                    remoteAvatarCheckProgress.current = current;
-                    remoteAvatarCheckProgress.total = total;
-                }
-            );
+            const result = await checkInvalidRemoteFavoriteAvatars(favoritesToCheck, (current, total) => {
+                remoteAvatarCheckProgress.current = current;
+                remoteAvatarCheckProgress.total = total;
+            });
 
             const invalidIds = new Set(result.invalidIds);
             if (invalidIds.size) {

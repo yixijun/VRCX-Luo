@@ -50,7 +50,7 @@
                     }
                 ">
                 <SelectTrigger style="flex: 1">
-                    <SelectValue placeholder="Filter" />
+                    <SelectValue :placeholder="t('view.settings.advanced.photon.event_hud.type_filter_placeholder')" />
                 </SelectTrigger>
                 <SelectContent>
                     <SelectItem v-for="type in photonEventTableTypeFilterList" :key="type" :value="type">{{
@@ -103,14 +103,11 @@
     import { Button } from '@/components/ui/button';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
     import { ToggleGroup, ToggleGroupItem } from '../../../components/ui/toggle-group';
     import { useNotificationsSettingsStore, usePhotonStore } from '../../../stores';
     import { photonEventTableTypeFilterList } from '../../../shared/constants/photon';
-
     import SimpleSwitch from './SimpleSwitch.vue';
-
     const { t } = useI18n();
 
     const {

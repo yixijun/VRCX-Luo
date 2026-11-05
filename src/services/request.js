@@ -1,5 +1,4 @@
 import { toast } from 'vue-sonner';
-
 import {
     useAuthStore,
     useModalStore,
@@ -12,22 +11,25 @@ import { AppDebug, isApiLogSuppressed, logWebRequest } from './appConfig.js';
 import { i18n } from '../plugins/i18n';
 import { statusCodes } from '../shared/constants/api.js';
 import { watchState } from './watchState';
-
 import webApiService from './webapi.js';
-
 const pendingGetRequests = new Map();
 export let failedGetRequests = new Map();
 
 const t = i18n.global.t;
 
 function isLoggedOutRequestAllowed(endpoint) {
-    return endpoint === 'config' || endpoint === 'auth/user' || endpoint.startsWith('auth/');
+    return (
+        endpoint === 'config' ||
+        endpoint === 'auth/user' ||
+        endpoint.startsWith('auth/')
+    );
 }
 
 function createLoggedOutRequestError(endpoint) {
-    const err = /** @type {Error & { status: number, endpoint?: string, loggedOut?: boolean }} */ (
-        new Error(`API request blocked while logged out: ${endpoint}`)
-    );
+    const err =
+        /** @type {Error & { status: number, endpoint?: string, loggedOut?: boolean }} */ (
+            new Error(`API request blocked while logged out: ${endpoint}`)
+        );
     err.status = -1;
     err.endpoint = endpoint;
     err.loggedOut = true;
@@ -312,9 +314,7 @@ export function shouldIgnoreError(code, endpoint) {
     if (
         (code === 404 || code === 429 || code === -1) &&
         typeof endpoint === 'string' &&
-        /^(auth\/user\/notifications|notifications)\/[^/]+\/see$/.test(
-            endpoint
-        )
+        /^(auth\/user\/notifications|notifications)\/[^/]+\/see$/.test(endpoint)
     ) {
         return true;
     }
@@ -344,7 +344,10 @@ export function shouldIgnoreError(code, endpoint) {
     ) {
         return true;
     }
-    if (endpoint?.startsWith('analysis/')) {
+    if (
+        endpoint?.startsWith('analysis/') ||
+        endpoint?.startsWith('auth/device/')
+    ) {
         return true;
     }
     if (endpoint?.endsWith('/mutuals') && (code === 403 || code === -1)) {

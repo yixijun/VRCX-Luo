@@ -24,33 +24,33 @@
             <template #label-gallery>
                 <span>
                     {{ t('dialog.gallery_icons.gallery') }}
-                    <span class="text-xs ml-[5px]"> {{ galleryTable.length }}/64 </span>
+                    <span class="text-xs ml-[5px]"> {{ galleryTable.length }}/{{ cachedPermissions.maxUserGallery }} </span>
                 </span>
             </template>
             <template #label-icons>
                 <span>
                     {{ t('dialog.gallery_icons.icons') }}
-                    <span class="text-xs ml-[5px]"> {{ VRCPlusIconsTable.length }}/64 </span>
+                    <span class="text-xs ml-[5px]"> {{ VRCPlusIconsTable.length }}/{{ cachedPermissions.maxUserIcons }} </span>
                 </span>
             </template>
             <template #label-emojis>
                 <span>
                     {{ t('dialog.gallery_icons.emojis') }}
-                    <span class="text-xs ml-[5px]"> {{ emojiTable.length }}/{{ cachedConfigTyped.maxUserEmoji }} </span>
+                    <span class="text-xs ml-[5px]"> {{ emojiTable.length }}/{{ cachedPermissions.maxUserEmoji }} </span>
                 </span>
             </template>
             <template #label-stickers>
                 <span>
                     {{ t('dialog.gallery_icons.stickers') }}
                     <span class="text-xs ml-[5px]">
-                        {{ stickerTable.length }}/{{ cachedConfigTyped.maxUserStickers }}
+                        {{ stickerTable.length }}/{{ cachedPermissions.maxUserStickers }}
                     </span>
                 </span>
             </template>
             <template #label-prints>
                 <span>
                     {{ t('dialog.gallery_icons.prints') }}
-                    <span class="text-xs ml-[5px]"> {{ printTable.length }}/64 </span>
+                    <span class="text-xs ml-[5px]"> {{ printTable.length }}/{{ cachedPermissions.maxUserPrints }} </span>
                 </span>
             </template>
             <template #label-inventory>
@@ -92,7 +92,9 @@
                                 {{ t('dialog.gallery_icons.clear') }}
                             </Button>
                         </ButtonGroup>
-                        <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{ t('dialog.gallery_icons.drop_to_upload_hint') }}</span>
+                        <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{
+                            t('dialog.gallery_icons.drop_to_upload_hint')
+                        }}</span>
                     </div>
                     <ItemGroup
                         class="grid gap-3 mt-3"
@@ -169,13 +171,17 @@
                             <Button
                                 variant="outline"
                                 size="sm"
-                                :disabled="!currentUser.iconUrl || currentUser.iconUrl === currentUser.currentAvatarImageUrl"
+                                :disabled="
+                                    !currentUser.iconUrl || currentUser.iconUrl === currentUser.currentAvatarImageUrl
+                                "
                                 @click="setVRCPlusIcon('')">
                                 <X />
                                 {{ t('dialog.gallery_icons.clear') }}
                             </Button>
                         </ButtonGroup>
-                        <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{ t('dialog.gallery_icons.drop_to_upload_hint') }}</span>
+                        <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{
+                            t('dialog.gallery_icons.drop_to_upload_hint')
+                        }}</span>
                     </div>
                     <ItemGroup
                         class="grid gap-3 mt-3"
@@ -277,7 +283,9 @@
                                 <Checkbox v-model="emojiAnimType" />
                                 <span>{{ t('dialog.gallery_icons.emoji_animation_type') }}</span>
                             </label>
-                            <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{ t('dialog.gallery_icons.drop_to_upload_hint') }}</span>
+                            <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{
+                                t('dialog.gallery_icons.drop_to_upload_hint')
+                            }}</span>
                         </div>
                         <div v-if="emojiAnimType" class="flex items-center gap-2">
                             <Button size="sm" variant="outline" @click="openExternalLink('https://vrcemoji.com')">
@@ -397,7 +405,9 @@
                                 {{ t('dialog.gallery_icons.upload') }}
                             </Button>
                         </ButtonGroup>
-                        <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{ t('dialog.gallery_icons.drop_to_upload_hint') }}</span>
+                        <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{
+                            t('dialog.gallery_icons.drop_to_upload_hint')
+                        }}</span>
                     </div>
                     <ItemGroup
                         class="grid gap-3 mt-3"
@@ -475,7 +485,9 @@
                             <Checkbox v-model="printCropBorder" />
                             <span>{{ t('dialog.gallery_icons.crop_print_border') }}</span>
                         </label>
-                        <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{ t('dialog.gallery_icons.drop_to_upload_hint') }}</span>
+                        <span class="text-xs text-muted-foreground ml-auto whitespace-nowrap">{{
+                            t('dialog.gallery_icons.drop_to_upload_hint')
+                        }}</span>
                     </div>
                     <ItemGroup
                         class="grid gap-3 mt-3"
@@ -539,9 +551,11 @@
                                         "
                                         @click="toggleFavoritePrint(image.id)">
                                         <Star
-                                            :class="favoritePrintIds.has(image.id)
-                                                ? 'text-yellow-500 fill-yellow-500'
-                                                : 'hover:text-yellow-500'" />
+                                            :class="
+                                                favoritePrintIds.has(image.id)
+                                                    ? 'text-yellow-500 fill-yellow-500'
+                                                    : 'hover:text-yellow-500'
+                                            " />
                                     </Button>
                                 </ItemFooter>
                             </div>
@@ -659,8 +673,7 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-    import { useRouter } from 'vue-router';
-
+    import { useRoute, useRouter } from 'vue-router';
     import {
         extractFileId,
         formatDateFilter,
@@ -675,12 +688,21 @@
     import { handleImageUploadInput } from '../../coordinators/imageUploadCoordinator';
     import { emojiAnimationStyleList, emojiAnimationStyleUrl } from '../../shared/constants';
     import { AppDebug } from '../../services/appConfig';
-
     import Emoji from '../../components/Emoji.vue';
     import ImageCropDialog from '../../components/dialogs/ImageCropDialog.vue';
-
     const { t } = useI18n();
     const router = useRouter();
+    const route = useRoute();
+    const activeTab = ref(String(route.query.tab || 'gallery'));
+
+    watch(
+        () => route.query.tab,
+        (tab) => {
+            if (tab) {
+                activeTab.value = String(tab);
+            }
+        }
+    );
     const modalStore = useModalStore();
 
     const {
@@ -712,10 +734,7 @@
     const { currentUserInventory } = storeToRefs(useAdvancedSettingsStore());
     const { showFullscreenImageDialog } = useGalleryStore();
     const { currentUser, isLocalUserVrcPlusSupporter } = storeToRefs(useUserStore());
-    const { cachedConfig } = storeToRefs(useAuthStore());
-    const cachedConfigTyped = computed(
-        () => /** @type {{ maxUserEmoji?: number, maxUserStickers?: number }} */ (cachedConfig.value ?? {})
-    );
+    const { cachedPermissions } = storeToRefs(useAuthStore());
     const galleryTabs = computed(() => [
         { value: 'gallery', label: t('dialog.gallery_icons.gallery') },
         { value: 'icons', label: t('dialog.gallery_icons.icons') },
@@ -785,21 +804,25 @@
 
     // Process pending drop from Feed page drag-and-drop
     // Using watch instead of onMounted so it also works when already on the Gallery page
-    watch(pendingDrop, (drop) => {
-        if (!drop) return;
-        const { file, tab } = drop;
-        pendingDrop.value = null;
-        currentTab.value = tab;
-        nextTick(() => {
-            const handler = tabUploadHandlers[tab];
-            if (handler) {
-                const syntheticEvent = {
-                    dataTransfer: { files: [file] }
-                };
-                handler(syntheticEvent);
-            }
-        });
-    }, { immediate: true });
+    watch(
+        pendingDrop,
+        (drop) => {
+            if (!drop) return;
+            const { file, tab } = drop;
+            pendingDrop.value = null;
+            currentTab.value = tab;
+            nextTick(() => {
+                const handler = tabUploadHandlers[tab];
+                if (handler) {
+                    const syntheticEvent = {
+                        dataTransfer: { files: [file] }
+                    };
+                    handler(syntheticEvent);
+                }
+            });
+        },
+        { immediate: true }
+    );
 
     onBeforeUnmount(() => {
         galleryDialogVisible.value = false;
@@ -1053,7 +1076,7 @@
      *
      * @param fileId
      */
-    function setVRCPlusIcon(fileId) {
+    function setUserIcon(fileId) {
         if (!isLocalUserVrcPlusSupporter.value) {
             toast.error(t('message.vrcplus.required'));
             return;
@@ -1072,9 +1095,9 @@
             .then((args) => {
                 currentUser.value.iconUrl = args?.json?.iconUrl || userIcon;
                 toast.success(t('message.gallery.profile_icon_changed'));
-                return args;
             });
     }
+    const setVRCPlusIcon = setUserIcon;
 
     /**
      *

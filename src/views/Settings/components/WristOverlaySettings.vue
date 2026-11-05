@@ -150,12 +150,9 @@
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { useNotificationsSettingsStore, useVrStore, useWristOverlaySettingsStore } from '@/stores';
-
     import SettingsGroup from './SettingsGroup.vue';
     import SettingsItem from './SettingsItem.vue';
-
     const emit = defineEmits(['open-feed-filters']);
     const { t } = useI18n();
 

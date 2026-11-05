@@ -1558,7 +1558,8 @@
                 "platform": "Plataforma",
                 "last_visited": "Última Visita",
                 "visit_count": "Contagem de Visitas",
-                "time_spent": "Tempo Gasto"
+                "time_spent": "Tempo Gasto",
+                "created": "Criado em"
             },
             "json": {
                 "header": "JSON"
@@ -1696,7 +1697,8 @@
                 "role_permissions": "Permissões:",
                 "last_visited": "Última Visita",
                 "past_events": "Eventos Passados",
-                "upcoming_events": "Próximos Eventos"
+                "upcoming_events": "Próximos Eventos",
+                "created": "Criado em"
             },
             "posts": {
                 "header": "Postagens",

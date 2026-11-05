@@ -11,7 +11,6 @@ import { useNotificationStore } from '../stores/notification';
 import { useSharedFeedStore } from '../stores/sharedFeed';
 import { useUserStore } from '../stores/user';
 import { useWorldStore } from '../stores/world';
-
 /**
  * Handles user diff events and applies cross-store side effects.
  * @param {object} ref Updated user reference.

@@ -1,5 +1,4 @@
 import sqliteService from './sqlite.js';
-
 /**
  *
  * @param key

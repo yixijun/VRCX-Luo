@@ -3,14 +3,12 @@ import { defineStore } from 'pinia';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-
 import { createRateLimiter, executeWithBackoff } from '../shared/utils';
 import { database } from '../services/database';
 import { useFriendStore } from './friend';
 import { useUserStore } from './user';
 import { useTrackedNonFriendsStore } from './trackedNonFriends';
 import { userRequest } from '../api';
-
 function createDefaultFetchState() {
     return {
         processedFriends: 0,
@@ -260,16 +258,22 @@ export const useChartsStore = defineStore('Charts', () => {
         mutualGraphStatus.needsRefetch = false;
         mutualGraphStatus.cancelRequested = false;
         mutualGraphStatus.hasFetched = false;
-        Object.assign(mutualGraphFetchState, { processedFriends: 0, processedTrackedNonFriends: 0, totalTrackedNonFriends: 0 });
+        Object.assign(mutualGraphFetchState, {
+            processedFriends: 0,
+            processedTrackedNonFriends: 0,
+            totalTrackedNonFriends: 0
+        });
 
         const friendSnapshot = Array.from(friendStore.friends.values());
         const mutualMap = new Map();
         const metaEntries = new Map();
 
         // Pre-calculate tracked non-friends total to show combined progress from the start
-        const trackedIdsSnapshot = Array.from(trackedNonFriendsStore.trackedSet)
-            .filter((id) => !friendStore.friends.has(id));
-        mutualGraphFetchState.totalTrackedNonFriends = trackedIdsSnapshot.length;
+        const trackedIdsSnapshot = Array.from(
+            trackedNonFriendsStore.trackedSet
+        ).filter((id) => !friendStore.friends.has(id));
+        mutualGraphFetchState.totalTrackedNonFriends =
+            trackedIdsSnapshot.length;
         mutualGraphFetchState.processedTrackedNonFriends = 0;
 
         let cancelled = false;
@@ -328,27 +332,36 @@ export const useChartsStore = defineStore('Charts', () => {
                         cancelled = true;
                         break;
                     }
-                    
-                    const trackedEntry = trackedNonFriendsStore.trackedList.find(item => item.userId === trackedId);
+
+                    const trackedEntry =
+                        trackedNonFriendsStore.trackedList.find(
+                            (item) => item.userId === trackedId
+                        );
                     const trackedName = trackedEntry?.displayName || trackedId;
 
                     try {
                         if (rateLimiter) await rateLimiter.wait();
-                        const mutuals = await fetchMutualFriendsForUser(trackedId, {
-                            rateLimiter,
-                            isCancelled
-                        });
+                        const mutuals = await fetchMutualFriendsForUser(
+                            trackedId,
+                            {
+                                rateLimiter,
+                                isCancelled
+                            }
+                        );
                         if (isCancelled()) {
                             cancelled = true;
                             break;
                         }
-                        mutualMap.set(trackedId, { 
-                            friend: { id: trackedId, displayName: trackedName }, 
-                            mutuals 
+                        mutualMap.set(trackedId, {
+                            friend: { id: trackedId, displayName: trackedName },
+                            mutuals
                         });
                         metaEntries.set(trackedId, { optedOut: false });
                     } catch (err) {
-                        if ((err?.message || '') === 'cancelled' || isCancelled()) {
+                        if (
+                            (err?.message || '') === 'cancelled' ||
+                            isCancelled()
+                        ) {
                             cancelled = true;
                             break;
                         }
@@ -410,7 +423,9 @@ export const useChartsStore = defineStore('Charts', () => {
                 await database.saveMutualGraphSnapshot(entries);
                 await database.mergeMutualLinksToOld(entries);
                 const fetchedFriendIds = Array.from(entries.keys());
-                await database.bulkUpdateFriendFetchTimesInOld(fetchedFriendIds);
+                await database.bulkUpdateFriendFetchTimesInOld(
+                    fetchedFriendIds
+                );
             } catch (persistErr) {
                 console.error(
                     '[MutualNetworkGraph] Failed to cache data',

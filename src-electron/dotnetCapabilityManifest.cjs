@@ -42,6 +42,7 @@ const DOTNET_CAPABILITIES = Object.freeze({
         'GetImage',
         'GetLastScreenshot',
         'GetLaunchCommand',
+        'GetGameProcessStartTime',
         'GetMemoryCleanupSnapshot',
         'GetDashboardActions',
         'SetVrWorkspaceCapture',
@@ -80,6 +81,7 @@ const DOTNET_CAPABILITIES = Object.freeze({
         'OpenShortcutFolder',
         'OpenUGCPhotosFolder',
         'OpenVrcAppDataFolder',
+        'OpenSteamStorePage',
         'OpenVrcPhotosFolder',
         'OpenVrcScreenshotsFolder',
         'OpenVrcxAppDataFolder',
@@ -165,6 +167,7 @@ const DOTNET_CAPABILITIES = Object.freeze({
         'Execute',
         'ExecuteJson',
         'ExecuteNonQuery',
+        'ExecuteInsert',
         'Exit',
         'Init'
     ]),
@@ -264,6 +267,8 @@ const {
 } = ARGUMENT_TYPES;
 
 defineSchemas('AppApiElectron', {
+    GetGameProcessStartTime: exact(),
+    OpenSteamStorePage: exact(integer),
     SetVrWorkspaceCapture: exact(boolean),
     SendVrWorkspaceInput: exact(string),
     ListVrWorkspaceDirectory: exact(string, integer),
@@ -386,7 +391,8 @@ defineSchemas('VRCXStorage', {
 defineSchemas('SQLite', {
     Execute: range(1, 2, [string, optional(object)]),
     ExecuteJson: range(1, 2, [string, optional(object)]),
-    ExecuteNonQuery: range(1, 2, [string, optional(object)])
+    ExecuteNonQuery: range(1, 2, [string, optional(object)]),
+    ExecuteInsert: range(1, 2, [string, optional(object)])
 });
 
 defineSchemas('LogWatcher', {

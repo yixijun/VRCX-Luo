@@ -120,7 +120,6 @@
     import { TabsUnderline } from '@/components/ui/tabs';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { useAppearanceSettingsStore, useGalleryStore, useGroupStore, useUserStore } from '../../../stores';
     import {
         applyGroupMember,
@@ -135,7 +134,6 @@
     import { useGroupBatchOperations } from './useGroupBatchOperations';
     import { useGroupModerationData } from './useGroupModerationData';
     import { useGroupModerationSelection } from './useGroupModerationSelection';
-
     import GroupMemberModerationBanExportDialog from './GroupMemberModerationBanExportDialog.vue';
     import GroupMemberModerationBanImportDialog from './GroupMemberModerationBanImportDialog.vue';
     import GroupMemberModerationExportDialog from './GroupMemberModerationExportDialog.vue';
@@ -145,7 +143,6 @@
     import GroupModerationLogsTab from './GroupModerationLogsTab.vue';
     import GroupModerationMembersTab from './GroupModerationMembersTab.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
-
     // ── Stores ───────────────────────────────────────────────────
     const { userImage, userImageFull } = useUserDisplay();
     const appearanceSettingsStore = useAppearanceSettingsStore();

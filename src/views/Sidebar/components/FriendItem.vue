@@ -12,9 +12,7 @@
                 </Avatar>
                 <IconFrame :enabled="sidebarCosmetics" :icon-frame="friend.ref.iconFrame" />
                 <!-- Account badges: shown in multi-account merged view -->
-                <div
-                    v-if="hasAccountBadge"
-                    class="absolute -top-1 -left-1 flex gap-px">
+                <div v-if="hasAccountBadge" class="absolute -top-1 -left-1 flex gap-px">
                     <span
                         v-for="accountId in friend.$accountIds"
                         :key="accountId"
@@ -33,8 +31,7 @@
                     v-else
                     class="block truncate font-medium leading-[18px]"
                     :style="{ color: friend.ref.$userColour }"
-                    >{{ friend.ref.displayName
-                    }}{{ isGroupByInstance && allFavoriteFriendIds.has(friend.id) ? ' ⭐' : '' }}</span
+                    >{{ friend.ref.displayName }}{{ isGroupByInstance && isFavorite ? ' ⭐' : '' }}</span
                 >
 
                 <span v-if="isFriendActiveOrOffline" class="block truncate text-xs">{{
@@ -79,6 +76,7 @@
 </template>
 
 <script setup>
+    import '@/styles/status-icon.css';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import IconFrame from '@/components/IconFrame.vue';
     import { Trash2, User } from 'lucide-vue-next';
@@ -87,31 +85,30 @@
     import { computed } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import Location from '@/components/Location.vue';
     import Timer from '@/components/Timer.vue';
-
     import { useAppearanceSettingsStore, useFriendStore } from '../../../stores';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
     import { accountHub } from '../../../services/accountHub.js';
-
-    import '@/styles/status-icon.css';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
     import { confirmDeleteFriend } from '../../../coordinators/friendRelationshipCoordinator';
-
     const props = defineProps({
         friend: { type: Object, required: true },
-        isGroupByInstance: Boolean
+        isGroupByInstance: Boolean,
+        isFavorite: Boolean
     });
 
     const { hideNicknames, sidebarCosmetics } = storeToRefs(useAppearanceSettingsStore());
-    const { isRefreshFriendsLoading, allFavoriteFriendIds } = storeToRefs(useFriendStore());
+    const { isRefreshFriendsLoading } = storeToRefs(useFriendStore());
     const { userImage, userStatusClass } = useUserDisplay();
 
     const { t } = useI18n();
 
     const hasAccountBadge = computed(
-        () => accountHub.hasSecondarySessions && Array.isArray(props.friend.$accountIds) && props.friend.$accountIds.length > 0
+        () =>
+            accountHub.hasSecondarySessions &&
+            Array.isArray(props.friend.$accountIds) &&
+            props.friend.$accountIds.length > 0
     );
 
     function getAccountColor(userId) {

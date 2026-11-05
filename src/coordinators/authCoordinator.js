@@ -1,5 +1,4 @@
 import { i18n } from '../plugins/i18n';
-
 import { closeWebSocket, initWebsocket } from '../services/websocket';
 import { redirectToLogin } from '../services/routerAdapter';
 import { showLogoutGreeting } from '../services/logoutNotification';
@@ -11,10 +10,8 @@ import { useUserStore } from '../stores/user';
 import { applyCurrentUser } from './userCoordinator';
 import { watchState } from '../services/watchState';
 import { accountHub } from '../services/accountHub';
-
 import configRepository from '../services/config';
 import webApiService from '../services/webapi';
-
 /**
  * Runs the shared logout side effects (including goodbye notification).
  */
@@ -55,8 +52,10 @@ export async function runLogoutFlow() {
  */
 export function runLoginSuccessFlow(json) {
     const updateLoopStore = useUpdateLoopStore();
+    const authStore = useAuthStore();
 
     updateLoopStore.setNextCurrentUserRefresh(420); // 7mins
     applyCurrentUser(json);
     initWebsocket();
+    void authStore.getPermissions();
 }

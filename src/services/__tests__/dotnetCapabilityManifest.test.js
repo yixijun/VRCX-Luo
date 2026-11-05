@@ -12,6 +12,12 @@ const {
 } = manifest;
 
 describe('dotnet capability manifest', () => {
+    it('validates inserted-row SQL and Steam store capabilities', () => {
+        expect(() => assertAllowedDotNetCall('SQLite', 'ExecuteInsert', ['INSERT INTO test VALUES (@id)', { '@id': 1 }])).not.toThrow();
+        expect(() => assertAllowedDotNetCall('SQLite', 'ExecuteInsert', [null])).toThrow();
+        expect(() => assertAllowedDotNetCall('AppApiElectron', 'OpenSteamStorePage', [438100])).not.toThrow();
+        expect(() => assertAllowedDotNetCall('AppApiElectron', 'OpenSteamStorePage', ['438100'])).toThrow();
+    });
     it('contains every renderer-facing Electron host class', () => {
         expect(isAllowedDotNetClass('AppApiElectron')).toBe(true);
         expect(isAllowedDotNetClass('AppApiVrElectron')).toBe(true);

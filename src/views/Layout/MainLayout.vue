@@ -18,11 +18,11 @@
                     :style="{ left: 'var(--sidebar-width)' }"
                     @pointerdown.prevent="startNavResize" />
 
-                <SidebarInset
-                    class="min-w-0 bg-[var(--surface-canvas)] !m-0 !rounded-none !shadow-none">
+                <SidebarInset class="min-w-0 bg-[var(--surface-canvas)] !m-0 !rounded-none !shadow-none">
                     <ResizablePanelGroup
                         direction="horizontal"
                         auto-save-id="vrcx-main-layout-right-sidebar"
+                        :storage="asideLayoutStorage"
                         :class="[
                             'group/main-layout flex-1 h-full min-w-0',
                             { 'aside-collapsed': isAsideCollapsedStatic }
@@ -57,6 +57,16 @@
                             </ResizablePanel>
                         </template>
                     </ResizablePanelGroup>
+                    <TooltipWrapper v-if="showAsideExpandButton" side="left" :content="t('nav_tooltip.expand_sidebar')">
+                        <Button
+                            variant="outline"
+                            size="icon-sm"
+                            class="absolute right-0 top-1/2 z-30 -translate-y-1/2 rounded-r-none"
+                            :aria-label="t('nav_tooltip.expand_sidebar')"
+                            @click="asidePanelRef?.expand()">
+                            <ChevronLeft />
+                        </Button>
+                    </TooltipWrapper>
                 </SidebarInset>
             </SidebarProvider>
             <StatusBar />
@@ -96,6 +106,9 @@
         <AutoFollowDialog v-model:open="isAutoFollowDialogOpen"></AutoFollowDialog>
 
         <GlobalToolsDialogs></GlobalToolsDialogs>
+        <InventoryBundleDialog />
+        <FreeStoreItemDialog />
+        <ModerationReportDialog />
 
         <ChangelogDialog></ChangelogDialog>
 
@@ -109,28 +122,32 @@
     import { computed, nextTick, onUnmounted, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useRouter } from 'vue-router';
-
+    import { useI18n } from 'vue-i18n';
+    import { ChevronLeft } from 'lucide-vue-next';
+    import { Button } from '../../components/ui/button';
     import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '../../components/ui/resizable';
     import { SidebarInset, SidebarProvider } from '../../components/ui/sidebar';
     import { useAppearanceSettingsStore } from '../../stores';
     import { useMainLayoutResizable } from '../../composables/useMainLayoutResizable';
     import { watchState } from '../../services/watchState';
     import { vrWorkspace } from '../../services/vrWorkspace';
-
     import AvatarImportDialog from '../Favorites/dialogs/AvatarImportDialog.vue';
     import ChangelogDialog from '../Settings/dialogs/ChangelogDialog.vue';
     import AutoFollowDialog from '../../components/dialogs/AutoFollowDialog.vue';
     import ChooseFavoriteGroupDialog from '../../components/dialogs/ChooseFavoriteGroupDialog.vue';
+    import FreeStoreItemDialog from '../../components/dialogs/FreeStoreItemDialog.vue';
     import FriendImportDialog from '../Favorites/dialogs/FriendImportDialog.vue';
     import FullscreenImagePreview from '../../components/FullscreenImagePreview.vue';
     import GlobalToolsDialogs from '../Tools/components/GlobalToolsDialogs.vue';
     import GroupMemberModerationDialog from '../../components/dialogs/GroupDialog/GroupMemberModerationDialog.vue';
     import GroupEditDialog from '../../components/dialogs/GroupDialog/GroupEditDialog.vue';
     import GroupEventEditDialog from '../../components/dialogs/GroupDialog/GroupEventEditDialog.vue';
+    import InventoryBundleDialog from '../../components/dialogs/InventoryBundleDialog.vue';
     import InviteGroupDialog from '../../components/dialogs/InviteGroupDialog.vue';
     import LaunchDialog from '../../components/dialogs/LaunchDialog.vue';
     import LaunchOptionsDialog from '../Settings/dialogs/LaunchOptionsDialog.vue';
     import MainDialogContainer from '../../components/dialogs/MainDialogContainer.vue';
+    import ModerationReportDialog from '../../components/dialogs/ModerationReportDialog.vue';
     import NavMenu from '../../components/nav-menu/NavMenu.vue';
     import PrimaryPasswordDialog from '../Settings/dialogs/PrimaryPasswordDialog.vue';
     import SendBoopDialog from '../../components/dialogs/SendBoopDialog.vue';
@@ -140,10 +157,9 @@
     import WorldImportDialog from '../Favorites/dialogs/WorldImportDialog.vue';
     import WhatsNewDialog from '../../components/onboarding/WhatsNewDialog.vue';
     import SpotlightDialog from '../../components/onboarding/SpotlightDialog.vue';
-
     import { isAutoFollowDialogOpen } from '../../coordinators/autoFollowCoordinator';
-
     const router = useRouter();
+    const { t } = useI18n();
 
     const appearanceSettingsStore = useAppearanceSettingsStore();
     const { navWidth, isNavCollapsed } = storeToRefs(appearanceSettingsStore);
@@ -200,21 +216,35 @@
         asideMaxPx,
         mainDefaultSize,
         handleLayout,
-        isAsideCollapsed,
         isAsideCollapsedStatic,
         isSideBarTabShow
     } = useMainLayoutResizable();
 
     const asidePanelRef = ref(null);
-
-    watch(isSideBarTabShow, async (show) => {
-        await nextTick();
-        if (show) {
-            asidePanelRef.value?.expand();
-        } else {
-            asidePanelRef.value?.collapse();
+    const showAsideExpandButton = computed(() => isSideBarTabShow.value && isAsideCollapsedStatic.value);
+    const asideLayoutStorage = {
+        getItem: (name) => localStorage.getItem(name),
+        setItem: (name, value) => {
+            if (isSideBarTabShow.value) localStorage.setItem(name, value);
         }
-    }, { immediate: true });
+    };
+    function isAsideCollapsed(layout) {
+        return Array.isArray(layout) ? layout[1] === 0 : isAsideCollapsedStatic.value;
+    }
+    let restoreAsideAfterHiddenRoute = false;
+
+    watch(
+        isSideBarTabShow,
+        async (show) => {
+            await nextTick();
+            if (show) {
+                asidePanelRef.value?.expand();
+            } else {
+                asidePanelRef.value?.collapse();
+            }
+        },
+        { immediate: true }
+    );
 
     watch(
         () => watchState.isLoggedIn,

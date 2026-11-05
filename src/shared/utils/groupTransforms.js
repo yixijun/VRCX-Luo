@@ -28,6 +28,16 @@ export function createDefaultGroupRef(json) {
         privacy: '',
         rules: null,
         tags: [],
+        ageVerificationBetaCode: '',
+        ageVerificationBetaSlots: 0,
+        ageVerificationSlotsAvailable: false,
+        allowGroupJoinPrompt: false,
+        badges: [],
+        lastPostCreatedAt: '',
+        nameplateId: null,
+        nameplateUrl: null,
+        storeId: '',
+        transferTargetId: '',
         // in group
         initialRoleIds: [],
         myMember: {

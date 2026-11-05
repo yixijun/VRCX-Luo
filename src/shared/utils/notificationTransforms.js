@@ -1,5 +1,4 @@
 import { replaceBioSymbols } from './base/string';
-
 /**
  * Remove null/undefined keys from a notification JSON object
  * and sanitize message/title fields with replaceBioSymbols.
@@ -55,6 +54,7 @@ export function createDefaultNotificationRef(json) {
         id: '',
         senderUserId: '',
         senderUsername: '',
+        receiverUserId: '',
         type: '',
         message: '',
         details: {},
@@ -90,10 +90,22 @@ export function createDefaultNotificationV2Ref(json) {
         seen: false,
         senderUserId: '',
         senderUsername: '',
+        receiverUserId: '',
         data: {},
         responses: [],
         details: {},
         version: 2,
+        canDelete: false,
+        category: '',
+        displayData: null,
+        expiryAfterSeen: 0,
+        ignoreDND: false,
+        isSystem: false,
+        linkTextKey: '',
+        messageKey: '',
+        relatedNotificationsId: '',
+        requireSeen: false,
+        titleKey: '',
         ...json
     };
 }

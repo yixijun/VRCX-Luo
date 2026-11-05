@@ -1,9 +1,13 @@
 import { defineStore } from 'pinia';
 import { reactive, toRefs } from 'vue';
-
 const initialDialogState = () => ({
     groupCalendar: false,
     batchAddFriends: false,
+    blockedGroups: false,
+    groupInvites: false,
+    moderationReports: false,
+    purchaseHistory: false,
+    infoPush: false,
     noteExport: false,
     exportDiscordNames: false,
     exportFriendsList: false,

@@ -19,11 +19,13 @@
                     :model-value="avatarExportFavoriteGroupSelection"
                     @update:modelValue="handleAvatarExportFavoriteGroupSelect">
                     <SelectTrigger size="sm">
-                        <SelectValue placeholder="All Favorites" />
+                        <SelectValue :placeholder="t('dialog.avatar_export.all_favorites')" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectItem :value="AVATAR_EXPORT_ALL_VALUE">All Favorites</SelectItem>
+                            <SelectItem :value="AVATAR_EXPORT_ALL_VALUE">{{
+                                t('dialog.avatar_export.all_favorites')
+                            }}</SelectItem>
                             <SelectItem
                                 v-for="groupAPI in favoriteAvatarGroups"
                                 :key="groupAPI.name"
@@ -39,11 +41,13 @@
                     :model-value="avatarExportLocalFavoriteGroupSelection"
                     @update:modelValue="handleAvatarExportLocalFavoriteGroupSelect">
                     <SelectTrigger size="sm">
-                        <SelectValue placeholder="Select Group" />
+                        <SelectValue :placeholder="t('dialog.avatar_export.select_group')" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectItem :value="AVATAR_EXPORT_NONE_VALUE">None</SelectItem>
+                            <SelectItem :value="AVATAR_EXPORT_NONE_VALUE">{{
+                                t('dialog.gallery_select.none')
+                            }}</SelectItem>
                             <SelectItem v-for="group in localAvatarFavoriteGroups" :key="group" :value="group">
                                 {{ group }} ({{ localAvatarFavGroupLength(group) }})
                             </SelectItem>
@@ -71,10 +75,8 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { formatCsvField, formatCsvRow } from '../../../shared/utils';
     import { useAvatarStore, useFavoriteStore } from '../../../stores';
-
     const { t } = useI18n();
 
     const props = defineProps({

@@ -9,7 +9,6 @@ import {
     Monitor,
     Smartphone
 } from 'lucide-vue-next';
-
 import {
     getFaviconUrl,
     languageClass,
@@ -17,7 +16,6 @@ import {
     statusClass
 } from '../../shared/utils';
 import { i18n } from '../../plugins';
-
 const { t } = i18n.global;
 
 const sortButton = ({ column, label, descFirst = false }) => {
@@ -377,7 +375,7 @@ export const createColumns = ({
             meta: { label: () => t('table.playerList.bioLink') },
             cell: ({ row }) => {
                 const links =
-                    row.original?.ref?.bioLinks?.filter(Boolean) ?? [];
+                    (row.original?.profileRef?.bioLinks ?? row.original?.ref?.bioLinks)?.filter(Boolean) ?? [];
                 return (
                     <div class="flex items-center">
                         {links.map((link, index) => (
@@ -420,6 +418,26 @@ export const createColumns = ({
                 const text =
                     typeof note === 'string' || typeof note === 'number'
                         ? String(note)
+                        : '';
+                return <span>{text}</span>;
+            }
+        },
+        {
+            id: 'memo',
+            accessorFn: (row) => row?.ref?.$memo,
+            header: () => t('table.playerList.memo'),
+            size: 150,
+            minSize: 20,
+            meta: {
+                stretch: true,
+                label: () => t('table.playerList.memo')
+            },
+            enableSorting: false,
+            cell: ({ row }) => {
+                const memo = row.original?.ref?.$memo;
+                const text =
+                    typeof memo === 'string' || typeof memo === 'number'
+                        ? String(memo)
                         : '';
                 return <span>{text}</span>;
             }

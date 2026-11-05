@@ -198,7 +198,7 @@ describe('GroupModerationBulkActions.vue', () => {
         });
 
         test('add/remove roles enabled when roles are selected', () => {
-            const wrapper = mountComponent({ selectedRoles: ['role_1'] });
+            const wrapper = mountComponent({ selectedRoles: ['role_1'], selectedUsersArray: [{id:'usr_1'}] });
             const addBtn = wrapper
                 .findAll('button')
                 .find((b) =>
@@ -327,7 +327,7 @@ describe('GroupModerationBulkActions.vue', () => {
         });
 
         test('emits ban on ban button click', async () => {
-            const wrapper = mountComponent();
+            const wrapper = mountComponent({ selectedUsersArray: [{id:"usr_1"}] });
             const banBtn = wrapper
                 .findAll('button')
                 .find((b) =>

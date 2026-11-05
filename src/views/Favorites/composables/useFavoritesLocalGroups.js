@@ -1,5 +1,4 @@
 import { nextTick, ref } from 'vue';
-
 /**
  * @param {object} options
  * @param {Function} options.createGroup - store function to create a new local group
@@ -7,9 +6,7 @@ import { nextTick, ref } from 'vue';
  * @param {Function} [options.canCreate] - optional creation guard
  * @returns {object}
  */
-export function useFavoritesLocalGroups(
-    options = /** @type {any} */ ({})
-) {
+export function useFavoritesLocalGroups(options = /** @type {any} */ ({})) {
     const { createGroup, selectGroup, canCreate = () => true } = options;
 
     const isCreatingLocalGroup = ref(false);
@@ -20,7 +17,7 @@ export function useFavoritesLocalGroups(
      * @returns {void}
      */
     function startLocalGroupCreation() {
-        if (!canCreate() || isCreatingLocalGroup.value) {
+        if (isCreatingLocalGroup.value) {
             return;
         }
         isCreatingLocalGroup.value = true;
@@ -49,7 +46,7 @@ export function useFavoritesLocalGroups(
             cancelLocalGroupCreation();
             return;
         }
-        createGroup(name);
+        createGroup?.(name);
         cancelLocalGroupCreation();
         nextTick(() => {
             selectGroup('local', name, { userInitiated: true });

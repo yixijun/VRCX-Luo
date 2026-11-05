@@ -69,6 +69,22 @@ export function createDefaultInstanceRef(json) {
         instancePersistenceEnabled: null,
         playerPersistenceEnabled: null,
         ageGate: null,
+        calendarEntryId: null, // only present when instance is linked to a group event
+        friends: '', // part of instance tag
+        creatorId: null,
+        categoryId: null,
+        description: null,
+        displayVibeId: null,
+        vibeIds: [],
+        dominantLanguage: '',
+        languages: [],
+        languagesIso639: [],
+        languageRatio: {},
+        creationLanguages: [],
+        disabledPropAbilities: [],
+        minimumAvatarPerformance: null,
+        userIcons: [],
+        hypeTrain: null,
         // VRCX
         $fetchedAt: '',
         $disabledContentSettings: [],

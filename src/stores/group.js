@@ -1,12 +1,10 @@
 import { reactive, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
-
 import { hasGroupPermission, replaceBioSymbols } from '../shared/utils';
 import { groupRequest, queryRequest } from '../api';
 import { initUserGroups } from '../coordinators/groupCoordinator';
 import { watchState } from '../services/watchState';
-
 export const useGroupStore = defineStore('Group', () => {
     const { t } = useI18n();
 
@@ -42,7 +40,8 @@ export const useGroupStore = defineStore('Group', () => {
             value: 'joinedAt:desc'
         },
         postsSearch: '',
-        galleries: {}
+        galleries: {},
+        listings: []
     });
 
     const groupEditDialog = ref({
@@ -55,7 +54,7 @@ export const useGroupStore = defineStore('Group', () => {
         shortCode: '',
         description: '',
         joinState: 'open',
-        privacy: 'public',
+        privacy: 'default',
         roleTemplate: 'default',
         roleTemplates: [],
         languages: [],
@@ -130,6 +129,16 @@ export const useGroupStore = defineStore('Group', () => {
         openWithUserId: ''
     });
 
+    const groupRolesDialog = ref({
+        visible: false,
+        loading: false,
+        id: '',
+        groupRef: {},
+        roles: [],
+        permissions: [],
+        selectedRoleId: ''
+    });
+
     const inGameGroupOrder = ref([]);
 
     const groupInstances = ref([]);
@@ -145,6 +154,7 @@ export const useGroupStore = defineStore('Group', () => {
             inviteGroupDialog.value.visible = false;
             moderateGroupDialog.value.visible = false;
             groupMemberModeration.value.visible = false;
+            groupRolesDialog.value.visible = false;
             currentUserGroupsInit.value = false;
             cachedGroups.clear();
             currentUserGroups.clear();
@@ -296,6 +306,58 @@ export const useGroupStore = defineStore('Group', () => {
         groupInstances.value = [];
     }
 
+    /**
+     * @param {boolean} value
+     */
+    function setGroupDialogVisible(value) {
+        groupDialog.value.visible = value;
+    }
+
+    /**
+     * @param userId
+     */
+    function showModerateGroupDialog(userId) {
+        const D = moderateGroupDialog.value;
+        D.userId = userId;
+        D.userObject = {};
+        D.visible = true;
+    }
+
+    /**
+     * @param {boolean} value
+     */
+    function setGroupMemberModerationVisible(value) {
+        groupMemberModeration.value.visible = value;
+    }
+
+    /**
+     * @param {boolean} value
+     */
+    function setGroupRolesDialogVisible(value) {
+        groupRolesDialog.value.visible = value;
+    }
+
+    /**
+     * @param {boolean} value
+     */
+    function setCurrentUserGroupsInit(value) {
+        currentUserGroupsInit.value = value;
+    }
+
+    /**
+     * @param {Array} value
+     */
+    function setInGameGroupOrder(value) {
+        inGameGroupOrder.value = value;
+    }
+
+    /**
+     * @param {Array} value
+     */
+    function setGroupInstances(value) {
+        groupInstances.value = value;
+    }
+
     function resetGroupEditDialog() {
         groupEditDialog.value = {
             visible: false,
@@ -307,7 +369,7 @@ export const useGroupStore = defineStore('Group', () => {
             shortCode: '',
             description: '',
             joinState: 'open',
-            privacy: 'public',
+            privacy: 'default',
             roleTemplate: 'default',
             roleTemplates: [],
             languages: [],
@@ -332,7 +394,9 @@ export const useGroupStore = defineStore('Group', () => {
                 ? args.json
                 : Object.entries(args.json ?? {}).map(([value, template]) => ({
                       value,
-                      ...(typeof template === 'object' && template !== null ? template : {})
+                      ...(typeof template === 'object' && template !== null
+                          ? template
+                          : {})
                   }));
         } finally {
             dialog.roleTemplatesLoading = false;
@@ -350,10 +414,14 @@ export const useGroupStore = defineStore('Group', () => {
             shortCode: group.shortCode ?? '',
             description: group.description ?? '',
             joinState: group.joinState ?? 'open',
-            privacy: group.privacy ?? 'public',
+            privacy: group.privacy ?? 'default',
             roleTemplate: group.roleTemplate ?? 'default',
-            roleTemplates: Array.isArray(group.roleTemplates) ? [...group.roleTemplates] : [],
-            languages: Array.isArray(group.languages) ? [...group.languages] : [],
+            roleTemplates: Array.isArray(group.roleTemplates)
+                ? [...group.roleTemplates]
+                : [],
+            languages: Array.isArray(group.languages)
+                ? [...group.languages]
+                : [],
             rules: group.rules ?? '',
             links: Array.isArray(group.links) ? [...group.links] : [],
             bannerId: group.bannerId ?? '',
@@ -429,11 +497,16 @@ export const useGroupStore = defineStore('Group', () => {
             imageId: event.imageId ?? '',
             imageUrl: event.imageUrl ?? '',
             roleIds: Array.isArray(event.roleIds) ? [...event.roleIds] : [],
-            platforms: Array.isArray(event.platforms) ? [...event.platforms] : [],
-            languages: Array.isArray(event.languages) ? [...event.languages] : [],
+            platforms: Array.isArray(event.platforms)
+                ? [...event.platforms]
+                : [],
+            languages: Array.isArray(event.languages)
+                ? [...event.languages]
+                : [],
             hostEarlyJoinMinutes: event.hostEarlyJoinMinutes ?? 60,
             guestEarlyJoinMinutes: event.guestEarlyJoinMinutes ?? 5,
-            closeInstanceAfterEndMinutes: event.closeInstanceAfterEndMinutes ?? 5,
+            closeInstanceAfterEndMinutes:
+                event.closeInstanceAfterEndMinutes ?? 5,
             seriesId: event.seriesId ?? null,
             recurrence: event.recurrence ?? null
         };
@@ -441,24 +514,6 @@ export const useGroupStore = defineStore('Group', () => {
 
     function markGroupEventMutation() {
         groupEventRevision.value += 1;
-    }
-
-    /**
-     * @param {boolean} value
-     */
-    function setGroupDialogVisible(value) {
-        groupDialog.value.visible = value;
-    }
-
-    /**
-     *
-     * @param userId
-     */
-    function showModerateGroupDialog(userId) {
-        const D = moderateGroupDialog.value;
-        D.userId = userId;
-        D.userObject = {};
-        D.visible = true;
     }
 
     /**
@@ -487,27 +542,6 @@ export const useGroupStore = defineStore('Group', () => {
         D.visible = true;
     }
 
-    /**
-     * @param {boolean} value
-     */
-    function setCurrentUserGroupsInit(value) {
-        currentUserGroupsInit.value = value;
-    }
-
-    /**
-     * @param {Array} value
-     */
-    function setInGameGroupOrder(value) {
-        inGameGroupOrder.value = value;
-    }
-
-    /**
-     * @param {Array} value
-     */
-    function setGroupInstances(value) {
-        groupInstances.value = value;
-    }
-
     return {
         groupDialog,
         groupEditDialog,
@@ -517,6 +551,7 @@ export const useGroupStore = defineStore('Group', () => {
         inviteGroupDialog,
         moderateGroupDialog,
         groupMemberModeration,
+        groupRolesDialog,
         cachedGroups,
         inGameGroupOrder,
         groupInstances,
@@ -527,16 +562,18 @@ export const useGroupStore = defineStore('Group', () => {
         updateGroupPostSearch,
         handleGroupPost,
         clearGroupInstances,
+        setGroupDialogVisible,
+        showModerateGroupDialog,
+        setGroupMemberModerationVisible,
+        setGroupRolesDialogVisible,
+        setCurrentUserGroupsInit,
+        setInGameGroupOrder,
+        setGroupInstances,
         showCreateGroupDialog,
         showEditGroupDialog,
         showCreateGroupEventDialog,
         showEditGroupEventDialog,
         markGroupEventMutation,
-        setGroupDialogVisible,
-        showModerateGroupDialog,
-        showGroupMemberModerationDialog,
-        setCurrentUserGroupsInit,
-        setInGameGroupOrder,
-        setGroupInstances
+        showGroupMemberModerationDialog
     };
 });

@@ -364,7 +364,6 @@
     import { TabsUnderline } from '@/components/ui/tabs';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import {
         useAppearanceSettingsStore,
         useFavoriteStore,
@@ -377,7 +376,6 @@
     import { normalizeFavoriteGroupsChange, resolveFavoriteGroups } from './sidebarSettingsUtils';
     import { useQuickSearchStore } from '../../stores/quickSearch';
     import { useTrackedNonFriendsStore } from '../../stores/trackedNonFriends';
-
     import AccountViewSwitcher from '../../components/AccountViewSwitcher.vue';
     import FriendsSidebar from './components/FriendsSidebar.vue';
     import QuickSearchDialog from '../../components/QuickSearchDialog.vue';
@@ -386,7 +384,6 @@
     import NotificationCenterSheet from './components/NotificationCenterSheet.vue';
     import TrackedNonFriendsSidebar from './components/TrackedNonFriendsSidebar.vue';
     import InactiveFriendsSidebar from './components/InactiveFriendsSidebar.vue';
-
     const { friends, inactiveFriends, isRefreshFriendsLoading, onlineFriendCount } = storeToRefs(useFriendStore());
     const { groupInstances } = storeToRefs(useGroupStore());
     const notificationStore = useNotificationStore();

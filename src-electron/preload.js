@@ -45,9 +45,15 @@ contextBridge.exposeInMainWorld('interopApi', {
 const validChannels = ['launch-command'];
 
 contextBridge.exposeInMainWorld('electron', {
-    setVrWorkspaceCapture: (enabled) => ipcRenderer.invoke('app:setVrWorkspaceCapture', enabled),
-    sendVrWorkspaceInput: (input) => ipcRenderer.invoke('app:sendVrWorkspaceInput', input),
+    setVrWorkspaceCapture: (enabled) =>
+        ipcRenderer.invoke('app:setVrWorkspaceCapture', enabled),
+    sendVrWorkspaceInput: (input) =>
+        ipcRenderer.invoke('app:sendVrWorkspaceInput', input),
     getArch: () => ipcRenderer.invoke('app:getArch'),
+    setThemeSource: (source) =>
+        ipcRenderer.invoke('app:setThemeSource', source),
+    onSystemThemeChanged: (callback) =>
+        registerManagedListener('systemThemeChanged', callback),
     getClipboardText: () => ipcRenderer.invoke('app:getClipboardText'),
     getNoUpdater: () => ipcRenderer.invoke('app:getNoUpdater'),
     setTrayIconNotification: (notify) =>
@@ -89,6 +95,8 @@ contextBridge.exposeInMainWorld('electron', {
         registerManagedListener('setZoomLevel', callback),
     onBrowserFocus: (callback) =>
         registerManagedListener('onBrowserFocus', callback),
+    onBrowserBlur: (callback) =>
+        registerManagedListener('onBrowserBlur', callback),
     desktopNotification: (title, body, icon, silent) =>
         ipcRenderer.invoke(
             'notification:showNotification',

@@ -1,11 +1,11 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-
 /**
  * @typedef {object} ConfirmResult
  * @property {boolean} ok
  * @property {'ok' | 'cancel' | 'dismiss' | 'replaced'} reason
+ * @property {boolean} checked
  */
 
 /**
@@ -14,6 +14,7 @@ import { useI18n } from 'vue-i18n';
  * @property {string} description
  * @property {string=} confirmText
  * @property {string=} cancelText
+ * @property {string=} checkboxLabel
  * @property {boolean=} dismissible  // true: allow esc/outside, false: block
  * @property {boolean=} destructive  // true: use destructive variant for confirm button
  */
@@ -68,6 +69,8 @@ export const useModalStore = defineStore('Modal', () => {
     const alertCancelText = ref('');
     const alertDismissible = ref(true);
     const alertDestructive = ref(false);
+    const alertCheckboxLabel = ref('');
+    const alertChecked = ref(false);
 
     const promptOpen = ref(false);
     const promptTitle = ref('');
@@ -110,7 +113,12 @@ export const useModalStore = defineStore('Modal', () => {
         const resolve = pending?.resolve;
         pending = null;
         closeDialog();
-        if (resolve) resolve({ ok: reason === 'ok', reason });
+        if (resolve)
+            resolve({
+                ok: reason === 'ok',
+                reason,
+                checked: alertChecked.value
+            });
     }
 
     /**
@@ -119,7 +127,12 @@ export const useModalStore = defineStore('Modal', () => {
     function finishWithoutClosing(reason) {
         const resolve = pending?.resolve;
         pending = null;
-        if (resolve) resolve({ ok: reason === 'ok', reason });
+        if (resolve)
+            resolve({
+                ok: reason === 'ok',
+                reason,
+                checked: alertChecked.value
+            });
     }
 
     /**
@@ -159,6 +172,8 @@ export const useModalStore = defineStore('Modal', () => {
         alertDescription.value = options.description;
         alertDismissible.value = options.dismissible !== false;
         alertDestructive.value = options.destructive === true;
+        alertCheckboxLabel.value = options.checkboxLabel || '';
+        alertChecked.value = false;
 
         if (mode === 'alert') {
             alertOkText.value =
@@ -386,6 +401,8 @@ export const useModalStore = defineStore('Modal', () => {
         alertCancelText,
         alertDismissible,
         alertDestructive,
+        alertCheckboxLabel,
+        alertChecked,
         promptOpen,
         promptTitle,
         promptDescription,

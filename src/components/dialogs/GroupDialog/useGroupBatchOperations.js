@@ -1,6 +1,5 @@
 import { ref } from 'vue';
 import { toast } from 'vue-sonner';
-
 /**
  * Composable for batch moderation operations with progress tracking.
  * @param {object} deps

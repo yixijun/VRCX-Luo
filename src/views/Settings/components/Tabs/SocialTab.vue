@@ -11,7 +11,8 @@
 
             <SettingsItem
                 :label="t('view.settings.appearance.user_dialog.recent_action_cooldown')"
-                :description="t('view.settings.appearance.user_dialog.recent_action_cooldown_description')">
+                :description="t('view.settings.appearance.user_dialog.recent_action_cooldown_description')"
+                toggle>
                 <Switch
                     :model-value="recentActionCooldownEnabled"
                     @update:modelValue="setRecentActionCooldownEnabled" />
@@ -40,7 +41,8 @@
         <SettingsGroup :title="t('view.settings.social.friend_requests.header')">
             <SettingsItem
                 :label="t('view.settings.general.friend_requests.header')"
-                :description="t('view.settings.general.friend_requests.header_tooltip')">
+                :description="t('view.settings.general.friend_requests.header_tooltip')"
+                toggle>
                 <Switch
                     :model-value="autoDeclineFriendRequests"
                     :ariaLabel="t('view.settings.general.friend_requests.header')"
@@ -85,7 +87,6 @@
 
 <script setup>
     import { Switch } from '@/components/ui/switch';
-
     import {
         NumberField,
         NumberFieldContent,
@@ -104,12 +105,9 @@
     } from '@/components/ui/select';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { useFavoriteStore, useGeneralSettingsStore } from '@/stores';
-
     import SettingsGroup from '../SettingsGroup.vue';
     import SettingsItem from '../SettingsItem.vue';
-
     const { t } = useI18n();
 
     const generalSettingsStore = useGeneralSettingsStore();

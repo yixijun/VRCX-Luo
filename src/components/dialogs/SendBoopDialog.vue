@@ -3,8 +3,8 @@
         <DialogContent>
             <DialogHeader>
                 <DialogTitle>{{ t('dialog.boop_dialog.header') }}</DialogTitle>
+                <DialogDescription>{{ displayName }}</DialogDescription>
             </DialogHeader>
-            <span>{{ displayName }}</span>
 
             <div v-if="sendBoopDialog.visible" class="mt-2">
                 <Popover v-model:open="emojiPickerOpen">
@@ -96,9 +96,7 @@
                         "
                         data-testid="custom-emoji-preview"
                         class="aspect-square w-full overflow-hidden rounded-[inherit]">
-                        <Emoji
-                            :imageUrl="image.versions[image.versions.length - 1].file.url"
-                            class="size-full"></Emoji>
+                        <Emoji :imageUrl="image.versions[image.versions.length - 1].file.url" class="size-full"></Emoji>
                     </div>
                     <span
                         v-if="image.id === fileId"
@@ -110,12 +108,10 @@
             </div>
 
             <DialogFooter>
-                <Button size="sm" variant="outline" class="mr-2" @click="showGalleryPage">{{
+                <Button size="sm" variant="outline" class="sm:mr-auto" @click="showGalleryPage('emojis')">{{
                     t('dialog.boop_dialog.emoji_manager')
                 }}</Button>
-                <Button size="sm" variant="secondary" class="mr-2" @click="closeDialog">{{
-                    t('dialog.boop_dialog.cancel')
-                }}</Button>
+                <Button size="sm" variant="secondary" @click="closeDialog">{{ t('dialog.boop_dialog.cancel') }}</Button>
                 <Button size="sm" :disabled="!sendBoopDialog.userId" @click="sendBoop">{{
                     t('dialog.boop_dialog.send')
                 }}</Button>
@@ -125,22 +121,26 @@
 </template>
 
 <script setup>
-    import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+    import {
+        Dialog,
+        DialogContent,
+        DialogDescription,
+        DialogFooter,
+        DialogHeader,
+        DialogTitle
+    } from '@/components/ui/dialog';
     import { computed, ref, watch } from 'vue';
     import { Button } from '@/components/ui/button';
     import { Input } from '@/components/ui/input';
     import { Check as CheckIcon, ChevronDown } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { miscRequest, notificationRequest, queryRequest } from '../../api';
     import { useGalleryStore, useNotificationStore, useUserStore } from '../../stores';
     import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
     import { photonEmojis } from '../../shared/constants/photon.js';
     import { getDefaultBoopEmoji, toDefaultBoopEmojiId } from '../../shared/constants/boopEmoji.js';
-
     import Emoji from '../Emoji.vue';
-
     const { t } = useI18n();
 
     const { sendBoopDialog } = storeToRefs(useUserStore());
@@ -166,7 +166,7 @@
                     displayName.value = user.ref.displayName;
                 });
             }
-            if (visible && isLocalUserVrcPlusSupporter && emojiTable.value.length === 0) {
+            if (visible && isLocalUserVrcPlusSupporter.value && emojiTable.value.length === 0) {
                 refreshEmojiTable();
             }
         }
@@ -199,9 +199,7 @@
         }))
     );
 
-    const selectedDefaultEmoji = computed(() =>
-        defaultEmojiItems.value.find((item) => item.value === fileId.value)
-    );
+    const selectedDefaultEmoji = computed(() => defaultEmojiItems.value.find((item) => item.value === fileId.value));
 
     const filteredDefaultEmojiItems = computed(() => {
         const search = emojiSearch.value.trim().toLowerCase();

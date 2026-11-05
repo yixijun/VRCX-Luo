@@ -97,19 +97,41 @@ describe('window event bridge', () => {
         window.emit('unmaximize');
         window.emit('restore');
         window.emit('focus');
+        window.emit('blur');
 
         expect(webContents.send).toHaveBeenNthCalledWith(1, 'setWindowSize', {
             width: '1280',
             height: '720'
         });
-        expect(webContents.send).toHaveBeenNthCalledWith(2, 'setWindowPosition', {
-            x: '12',
-            y: '-8'
-        });
-        expect(webContents.send).toHaveBeenNthCalledWith(3, 'setWindowState', '2');
-        expect(webContents.send).toHaveBeenNthCalledWith(4, 'setWindowState', '1');
-        expect(webContents.send).toHaveBeenNthCalledWith(5, 'setWindowState', '0');
-        expect(webContents.send).toHaveBeenNthCalledWith(6, 'setWindowState', '0');
+        expect(webContents.send).toHaveBeenNthCalledWith(
+            2,
+            'setWindowPosition',
+            {
+                x: '12',
+                y: '-8'
+            }
+        );
+        expect(webContents.send).toHaveBeenNthCalledWith(
+            3,
+            'setWindowState',
+            '2'
+        );
+        expect(webContents.send).toHaveBeenNthCalledWith(
+            4,
+            'setWindowState',
+            '1'
+        );
+        expect(webContents.send).toHaveBeenNthCalledWith(
+            5,
+            'setWindowState',
+            '0'
+        );
+        expect(webContents.send).toHaveBeenNthCalledWith(
+            6,
+            'setWindowState',
+            '0'
+        );
         expect(webContents.send).toHaveBeenNthCalledWith(7, 'onBrowserFocus');
+        expect(webContents.send).toHaveBeenNthCalledWith(8, 'onBrowserBlur');
     });
 });

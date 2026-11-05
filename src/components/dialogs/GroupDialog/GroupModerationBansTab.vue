@@ -1,5 +1,5 @@
 <template>
-    <div style="margin-top: 8px">
+    <div class="flex h-full min-h-0 flex-col gap-2">
         <div class="flex justify-between">
             <div class="flex gap-2 items-center">
                 <Button
@@ -38,7 +38,7 @@
         </div>
 
         <DataTableLayout
-            style="margin-top: 8px"
+            auto-height
             :table="tanstackTable"
             :loading="loading"
             :page-sizes="pageSizes"
@@ -57,7 +57,6 @@
     import { hasGroupPermission } from '@/shared/utils';
     import { createColumns } from './groupMemberModerationBansColumns.jsx';
     import { useVrcxVueTable } from '@/lib/table/useVrcxVueTable';
-
     const props = defineProps({
         loading: { type: Boolean, default: false },
         tableData: { type: Object, required: true },

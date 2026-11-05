@@ -7,9 +7,7 @@ import {
     ref,
     watch
 } from 'vue';
-
 import configRepository from '../../../services/config.js';
-
 /**
  * @param {object} options
  * @param {string} options.configKey

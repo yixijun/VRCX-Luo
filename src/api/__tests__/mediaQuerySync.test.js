@@ -3,6 +3,13 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 const mockRequest = vi.fn();
 const mockInvalidateActive = vi.fn().mockResolvedValue();
 const mockRemoveExact = vi.fn();
+const mockGetVRChatCredits = vi.fn();
+
+vi.mock('../marketplace', () => ({
+    default: {
+        getVRChatCredits: (...args) => mockGetVRChatCredits(...args)
+    }
+}));
 
 vi.mock('../../services/request', () => ({
     request: (...args) => mockRequest(...args)
@@ -54,5 +61,15 @@ describe('media and inventory query sync', () => {
 
         expect(mockInvalidateActive).toHaveBeenCalledWith(['gallery']);
         expect(mockRemoveExact).toHaveBeenCalledWith(['file', 'file_misc_1']);
+    });
+
+    test('legacy balance requests delegate to the guarded marketplace adapter', async () => {
+        const result = { json: { balance: 100 } };
+        mockGetVRChatCredits.mockResolvedValue(result);
+
+        await expect(miscRequest.getVRChatCredits()).resolves.toBe(result);
+
+        expect(mockGetVRChatCredits).toHaveBeenCalledOnce();
+        expect(mockRequest).not.toHaveBeenCalled();
     });
 });

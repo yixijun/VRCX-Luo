@@ -275,6 +275,18 @@
                                     {{ t('dialog.group.actions.share') }}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
+                                    v-if="groupDialog.inGroup"
+                                    @click="groupDialogCommand('Manage Roles')">
+                                    <ShieldCheck class="size-4" />
+                                    {{
+                                        t(
+                                            hasGroupPermission(groupDialog.ref, 'group-roles-manage')
+                                                ? 'dialog.group.actions.manage_roles'
+                                                : 'dialog.group.actions.view_roles'
+                                        )
+                                    }}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
                                     v-if="hasGroupPermission(groupDialog.ref, 'group-data-manage')"
                                     @click="groupDialogCommand('Edit Group')">
                                     <Pencil class="size-4" />
@@ -450,6 +462,9 @@
                     <template #Photos>
                         <GroupDialogPhotosTab ref="photosTabRef" />
                     </template>
+                    <template #Store>
+                        <GroupDialogStoreTab ref="storeTabRef" />
+                    </template>
                     <template #JSON>
                         <DialogJsonTab
                             :tree-data="treeData"
@@ -495,9 +510,12 @@
         RefreshCw,
         Settings,
         Share2,
+        ShieldCheck,
+        Ticket,
         Trash2,
         X,
-        XCircle
+        XCircle,
+        Info
     } from 'lucide-vue-next';
     import { computed, nextTick, onBeforeUnmount, onMounted, reactive, ref, watch } from 'vue';
     import { DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -506,7 +524,6 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import {
         DropdownMenu,
         DropdownMenuContent,
@@ -530,13 +547,14 @@
         leaveGroupPrompt,
         setGroupVisibility,
         setGroupSubscription,
-        setGroupEventAnnouncements
+        setGroupEventAnnouncements,
+        showGroupMemberModerationDialog,
+        showGroupRolesDialog
     } from '../../../coordinators/groupCoordinator';
     import { groupRequest, queryRequest } from '../../../api';
     import { queryKeys, refetchActiveEntityQuery } from '../../../queries';
     import { Badge } from '../../ui/badge';
     import { formatJsonVars } from '../../../shared/utils/base/ui';
-
     import DialogJsonTab from '../DialogJsonTab.vue';
     import GroupDialogInfoTab from './GroupDialogInfoTab.vue';
     import GroupDialogEventsTab from './GroupDialogEventsTab.vue';
@@ -547,11 +565,11 @@
     import GroupDialogMembersTab from './GroupDialogMembersTab.vue';
     import GroupDialogPhotosTab from './GroupDialogPhotosTab.vue';
     import GroupDialogPostsTab from './GroupDialogPostsTab.vue';
+    import GroupDialogStoreTab from './GroupDialogStoreTab.vue';
     import GroupPostEditDialog from './GroupPostEditDialog.vue';
     import GroupTransferDialog from './GroupTransferDialog.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
     import configRepository from '../../../services/config';
-
     const { t } = useI18n();
     const groupDialogTabs = computed(() => [
         { value: 'Info', label: t('dialog.group.info.header') },
@@ -560,6 +578,7 @@
         { value: 'Events', label: t('dialog.group.events.header') },
         { value: 'Members', label: t('dialog.group.members.header') },
         { value: 'Photos', label: t('dialog.group.gallery.header') },
+        ...(groupDialog.value.ref.storeId ? [{ value: 'Store', label: t('dialog.group.store.header') }] : []),
         { value: 'JSON', label: t('dialog.group.json.header') }
     ]);
 
@@ -567,7 +586,7 @@
 
     const { currentUser } = storeToRefs(useUserStore());
     const { groupDialog, inviteGroupDialog, groupEventRevision } = storeToRefs(useGroupStore());
-    const { updateGroupPostSearch, showGroupMemberModerationDialog, showEditGroupDialog } = useGroupStore();
+    const { updateGroupPostSearch, showEditGroupDialog } = useGroupStore();
 
     const { showFullscreenImageDialog } = useGalleryStore();
     const sidebarWidth = ref(288);
@@ -611,6 +630,7 @@
         setGroupSubscription,
         setGroupEventAnnouncements,
         showGroupMemberModerationDialog,
+        showGroupRolesDialog,
         showInviteGroupDialog: (groupId, userId) => {
             if (groupId) {
                 inviteGroupDialog.value.groupId = groupId;
@@ -627,6 +647,7 @@
     });
 
     const groupDialogTabCurrentName = ref('0');
+
     const treeData = ref({});
     const imageError = ref(false);
     const bannerError = ref(false);
@@ -646,6 +667,7 @@
     });
     const membersTabRef = ref(null);
     const photosTabRef = ref(null);
+    const storeTabRef = ref(null);
 
     const selectedGalleryFile = ref({
         selectedFileId: '',
@@ -823,7 +845,6 @@
                         ...groupDialog.value,
                         ref: { ...groupDialog.value.ref, isRepresenting: args.params.isRepresenting }
                     });
-                    getGroupDialogGroup(groupId);
                 }
                 refetchActiveEntityQuery(queryKeys.representedGroup(currentUser.value.id));
             });
@@ -961,6 +982,8 @@
             membersTabRef.value?.getGroupDialogGroupMembers();
         } else if (tabName === 'Photos') {
             photosTabRef.value?.getGroupGalleries();
+        } else if (tabName === 'Store') {
+            storeTabRef.value?.getGroupListings();
         } else if (tabName === 'JSON') {
             refreshGroupDialogTreeData();
         }
@@ -970,6 +993,11 @@
      *
      */
     function loadLastActiveTab() {
+        if (groupDialog.value.lastActiveTab === 'Store' && !groupDialog.value.ref.storeId) {
+            groupDialog.value.activeTab = 'Info';
+            groupDialogTabCurrentName.value = 'Info';
+            groupDialog.value.lastActiveTab = 'Info';
+        }
         handleGroupDialogTab(groupDialog.value.lastActiveTab);
     }
 

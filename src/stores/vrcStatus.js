@@ -1,14 +1,15 @@
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
-
+import { useVrcxStore } from './vrcx';
 import { openExternalLink } from '../shared/utils';
-
 import webApiService from '../services/webapi';
-
 import * as workerTimers from 'worker-timers';
-
 export const useVrcStatusStore = defineStore('VrcStatus', () => {
+    const vrcxStore = useVrcxStore();
+
     const vrcStatusApiUrl = 'https://status.vrchat.com/api/v2';
+    const fastPollingInterval = ref(2 * 60 * 1000); // 2 minutes
+    const slowPollingInterval = ref(15 * 60 * 1000); // 15 minutes
 
     const lastStatus = ref('');
     const lastStatusIndicator = ref('');
@@ -50,7 +51,7 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
         if (response.status !== 200) {
             console.error('Failed to fetch VRChat status', response);
             lastStatus.value = 'Failed to fetch VRC status';
-            pollingInterval.value = 2 * 60 * 1000; // 2 minutes
+            pollingInterval.value = fastPollingInterval.value; // 2 minutes
             return;
         }
         const data = JSON.parse(response.data);
@@ -58,12 +59,12 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
         if (data.status.description === 'All Systems Operational') {
             lastStatus.value = '';
             lastStatusIndicator.value = '';
-            pollingInterval.value = 15 * 60 * 1000; // 15 minutes
+            pollingInterval.value = slowPollingInterval.value; // 15 minutes
             return;
         }
         lastStatus.value = data.status.description;
         lastStatusIndicator.value = data.status.indicator || '';
-        pollingInterval.value = 2 * 60 * 1000; // 2 minutes
+        pollingInterval.value = fastPollingInterval.value; // 2 minutes
         getVrcStatusSummary();
     }
 
@@ -95,15 +96,16 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
         lastStatusSummary.value = summary;
     }
 
-    // ran from Cef and Electron when browser is focused
-    /**
-     * @returns {void}
-     */
-    function onBrowserFocus() {
-        if (Date.now() - lastTimeFetched.value > 60 * 1000) {
-            getVrcStatus();
+    watch(
+        () => vrcxStore.isBrowserFocused,
+        (newValue) => {
+            if (newValue) {
+                if (Date.now() - lastTimeFetched.value > 60 * 1000) {
+                    getVrcStatus();
+                }
+            }
         }
-    }
+    );
 
     /**
      * @returns {void}
@@ -111,10 +113,13 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
     function init() {
         getVrcStatus();
         workerTimers.setInterval(() => {
-            if (Date.now() - lastTimeFetched.value > pollingInterval.value) {
+            const interval = vrcxStore.isBrowserFocused
+                ? pollingInterval.value
+                : slowPollingInterval.value;
+            if (Date.now() - lastTimeFetched.value > interval) {
                 getVrcStatus();
             }
-        }, 60 * 1000);
+        }, fastPollingInterval.value);
     }
 
     init();
@@ -128,7 +133,6 @@ export const useVrcStatusStore = defineStore('VrcStatus', () => {
         hasIssue,
         isMajor,
         openStatusPage,
-        onBrowserFocus,
         getVrcStatus
     };
 });

@@ -19,11 +19,13 @@
                     :model-value="worldExportFavoriteGroupSelection"
                     @update:modelValue="handleWorldExportGroupSelect">
                     <SelectTrigger size="sm">
-                        <SelectValue placeholder="All Favorites" />
+                        <SelectValue :placeholder="t('dialog.world_export.all_favorites')" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectItem :value="WORLD_EXPORT_ALL_VALUE">None</SelectItem>
+                            <SelectItem :value="WORLD_EXPORT_ALL_VALUE">{{
+                                t('dialog.world_export.all_favorites')
+                            }}</SelectItem>
                             <SelectItem
                                 v-for="groupAPI in favoriteWorldGroups"
                                 :key="groupAPI.name"
@@ -39,11 +41,13 @@
                     :model-value="worldExportLocalFavoriteGroupSelection"
                     @update:modelValue="handleWorldExportLocalGroupSelect">
                     <SelectTrigger size="sm">
-                        <SelectValue placeholder="Select Group" />
+                        <SelectValue :placeholder="t('dialog.world_export.select_group')" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectGroup>
-                            <SelectItem :value="WORLD_EXPORT_NONE_VALUE">None</SelectItem>
+                            <SelectItem :value="WORLD_EXPORT_NONE_VALUE">{{
+                                t('dialog.gallery_select.none')
+                            }}</SelectItem>
                             <SelectItem v-for="group in localWorldFavoriteGroups" :key="group" :value="group">
                                 {{ group }} ({{ localWorldFavorites[group].length }})
                             </SelectItem>
@@ -73,10 +77,8 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { useFavoriteStore, useWorldStore } from '../../../stores';
     import { formatCsvRow } from '../../../shared/utils';
-
     const props = defineProps({
         worldExportDialogVisible: {
             type: Boolean,
@@ -242,8 +244,8 @@
             favoriteWorlds.value.forEach((ref) => {
                 lines.push(formatCsvRow(ref.ref, propsForQuery));
             });
-            for (let i = 0; i < localWorldFavoritesList.length; ++i) {
-                const worldId = localWorldFavoritesList[i];
+            for (let i = 0; i < localWorldFavoritesList.value.length; ++i) {
+                const worldId = localWorldFavoritesList.value[i];
                 const ref = cachedWorlds.get(worldId);
                 if (typeof ref !== 'undefined') {
                     lines.push(formatCsvRow(ref, propsForQuery));

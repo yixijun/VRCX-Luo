@@ -84,16 +84,14 @@
 
 <script setup>
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-    import { computed, ref, watch } from 'vue';
+    import { computed, onMounted, ref, watch } from 'vue';
     import { Button } from '@/components/ui/button';
     import { InputGroupField } from '@/components/ui/input-group';
     import { RefreshCw } from 'lucide-vue-next';
     import { Spinner } from '@/components/ui/spinner';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import dayjs from 'dayjs';
-
     import {
         useAppearanceSettingsStore,
         useGalleryStore,
@@ -105,11 +103,9 @@
     import { convertFileUrlToImageUrl } from '../../shared/utils';
     import { createColumns } from './columns.jsx';
     import { useVrcxVueTable } from '../../lib/table/useVrcxVueTable';
-
     import SendInviteRequestResponseDialog from './dialogs/SendInviteRequestResponseDialog.vue';
     import SendInviteResponseDialog from './dialogs/SendInviteResponseDialog.vue';
     import configRepository from '../../services/config';
-
     const { refreshInviteMessageTableData } = useInviteStore();
     const { clearInviteImageUpload } = useGalleryStore();
     const { notificationTable, isNotificationsLoading } = storeToRefs(useNotificationStore());
@@ -123,7 +119,8 @@
         sendNotificationResponse,
         deleteNotificationLog,
         deleteNotificationLogPrompt,
-        openNotificationLink
+        openNotificationLink,
+        markAllAsSeen
     } = useNotificationStore();
     const { showFullscreenImageDialog } = useGalleryStore();
     const appearanceSettingsStore = useAppearanceSettingsStore();
@@ -316,4 +313,8 @@
         clearInviteImageUpload();
         sendInviteRequestResponseDialogVisible.value = true;
     }
+
+    onMounted(() => {
+        markAllAsSeen();
+    });
 </script>

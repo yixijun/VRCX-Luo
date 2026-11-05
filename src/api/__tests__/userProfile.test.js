@@ -17,6 +17,7 @@ vi.mock('../../stores', () => ({
     useUserStore: vi.fn(() => ({ currentUser: { id: 'usr_self' } }))
 }));
 vi.mock('../../coordinators/userCoordinator', () => ({
+    applyPublicProfile: vi.fn(() => ({ id: 'usr_friend' })),
     applyCurrentUser: vi.fn(),
     applyUser: vi.fn(() => ({}))
 }));
@@ -40,7 +41,8 @@ describe('user public profile request', () => {
             userRequest.getPublicProfile({ userId: 'usr_friend' })
         ).resolves.toEqual({
             json,
-            params: { userId: 'usr_friend' }
+            params: { userId: 'usr_friend' },
+            ref: { id: 'usr_friend' }
         });
 
         expect(requestMock).toHaveBeenCalledWith('profile/usr_friend', {

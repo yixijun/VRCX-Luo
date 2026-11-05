@@ -10,6 +10,7 @@ import favoriteRequest from './favorite';
 import friendRequest from './friend';
 import groupRequest from './group';
 import inventoryRequest from './inventory';
+import instanceRequest from './instance';
 import miscRequest from './misc';
 import userRequest from './user';
 import vrcPlusIconRequest from './vrcPlusIcon';
@@ -23,6 +24,7 @@ const registry = createQueryResourceRegistry({
         friendRequest,
         groupRequest,
         inventoryRequest,
+        instanceRequest,
         miscRequest,
         userRequest,
         vrcPlusIconRequest,

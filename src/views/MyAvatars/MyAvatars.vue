@@ -313,7 +313,6 @@
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
     import { useVirtualizer } from '@tanstack/vue-virtual';
-
     import { useAppearanceSettingsStore, useAvatarStore, useModalStore, useUserStore } from '../../stores';
     import { ContextMenuContent, ContextMenuItem, ContextMenuSeparator } from '../../components/ui/context-menu';
     import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '../../components/ui/dropdown-menu';
@@ -345,12 +344,10 @@
     import { processBulk } from '../../services/request';
     import { useAvatarCardGrid } from './composables/useAvatarCardGrid';
     import { useVrcxVueTable } from '../../lib/table/useVrcxVueTable';
-
     import ImageCropDialog from '../../components/dialogs/ImageCropDialog.vue';
     import ManageTagsDialog from './ManageTagsDialog.vue';
     import MyAvatarCard from './components/MyAvatarCard.vue';
     import configRepository from '../../services/config.js';
-
     const { t } = useI18n();
     const appearanceSettingsStore = useAppearanceSettingsStore();
     const avatarStore = useAvatarStore();

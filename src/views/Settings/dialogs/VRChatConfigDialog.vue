@@ -172,7 +172,15 @@
 
 <script setup>
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-    import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+    import {
+        Dialog,
+        DialogContent,
+        DialogDescription,
+        DialogFooter,
+        DialogHeader,
+        DialogTitle
+    } from '@/components/ui/dialog';
+    import { Field, FieldGroup, FieldLabel, FieldSeparator } from '@/components/ui/field';
     import { computed, ref, watch } from 'vue';
     import { FolderOpen, RefreshCw } from 'lucide-vue-next';
     import { Button } from '@/components/ui/button';
@@ -182,12 +190,10 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { useAdvancedSettingsStore, useGameStore, useModalStore } from '../../../stores';
     import { runSweepVRChatCacheFlow as sweepVRChatCache } from '../../../coordinators/gameCoordinator';
     import { VRChatCameraResolutions, VRChatScreenshotResolutions } from '../../../shared/constants';
     import { getVRChatResolution, openExternalLink } from '../../../shared/utils';
-
     const { VRChatUsedCacheSize, VRChatTotalCacheSize, VRChatCacheSizeLoading } = storeToRefs(useGameStore());
     const { getVRChatCacheSize } = useGameStore();
     const { folderSelectorDialog } = useAdvancedSettingsStore();

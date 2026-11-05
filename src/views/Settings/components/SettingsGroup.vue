@@ -16,7 +16,6 @@
 
 <script setup>
     import { Card, CardContent } from '@/components/ui/card';
-
     defineProps({
         title: { type: String, default: '' }
     });

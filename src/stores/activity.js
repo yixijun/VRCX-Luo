@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref, watch } from 'vue';
-
 import { database } from '../services/database';
 import { mergeSessions } from '../shared/utils/activityEngine.js';
 import { runActivityWorkerTask } from '../workers/activityWorkerRunner.js';
@@ -8,7 +7,6 @@ import { accountHub } from '../services/accountHub';
 import { watchState } from '../services/watchState';
 import { useGameStore } from './game';
 import { useLocationStore } from './location';
-
 const snapshotMap = new Map();
 
 watch(
@@ -326,6 +324,10 @@ export const useActivityStore = defineStore('Activity', () => {
      * @param {string} userId
      * @param {{rangeDays?: number, limit?: number, sortBy?: 'time' | 'count', excludeWorldId?: string, isSelf?: boolean}} options
      */
+    /**
+     * @param {string} userId
+     * @param {{ rangeDays?: number; limit?: number; sortBy?: 'time' | 'count'; excludeWorldId?: string }} options
+     */
     async function loadTopWorlds(
         userId,
         { rangeDays = 30, limit = 5, sortBy = 'time', excludeWorldId = '' }
@@ -394,6 +396,15 @@ export const useActivityStore = defineStore('Activity', () => {
     /**
      * @param {{userId: string, rangeDays?: number, limit?: number, sortBy?: 'time' | 'count', excludeWorldId?: string}} options
      */
+    /**
+     * @param {{
+     *     userId: string;
+     *     rangeDays?: number;
+     *     limit?: number;
+     *     sortBy?: 'time' | 'count';
+     *     excludeWorldId?: string;
+     * }} options
+     */
     async function loadTopWorldsView({
         userId,
         rangeDays = 30,
@@ -405,8 +416,7 @@ export const useActivityStore = defineStore('Activity', () => {
             rangeDays,
             limit,
             sortBy,
-            excludeWorldId,
-            isSelf: true
+            excludeWorldId
         });
     }
 

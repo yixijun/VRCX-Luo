@@ -844,7 +844,8 @@
                 "platform": "Plataforma",
                 "last_visited": "Última Visita",
                 "visit_count": "Cantidad de Visitas",
-                "time_spent": "Tiempo Pasado"
+                "time_spent": "Tiempo Pasado",
+                "created": "Creado el"
             },
             "json": {
                 "header": "JSON"
@@ -964,7 +965,8 @@
                 "role_updated_at": "Actualizado el:",
                 "role_created_at": "Creado el:",
                 "role_permissions": "Permisos:",
-                "last_visited": "Última visita"
+                "last_visited": "Última visita",
+                "created": "Creado el"
             },
             "posts": {
                 "header": "Publicaciones",

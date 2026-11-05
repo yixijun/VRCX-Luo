@@ -1,6 +1,5 @@
 import { computed, reactive, ref, shallowReactive, watch } from 'vue';
 import { defineStore } from 'pinia';
-
 import {
     compareByCreatedAt,
     compareByDisplayName,
@@ -12,9 +11,15 @@ import {
     replaceBioSymbols
 } from '../shared/utils';
 import { getAllUserMemos } from '../coordinators/memoCoordinator';
-import { cosmeticsRequest, instanceRequest, userRequest } from '../api';
+import {
+    cosmeticsRequest,
+    instanceRequest,
+    userRequest,
+    marketplaceRequest
+} from '../api';
 import { AppDebug } from '../services/appConfig';
 import { database } from '../services/database';
+import { processBulk } from '../services/request';
 import { runUpdateCurrentUserLocationFlow } from '../coordinators/locationCoordinator';
 import { getProfileEditorSeed } from '../shared/utils/profileEditor';
 import { useAppearanceSettingsStore } from './settings/appearance';
@@ -25,9 +30,11 @@ import { syncFriendSearchIndex } from '../coordinators/searchIndexCoordinator';
 import { useUiStore } from './ui';
 import { watchState } from '../services/watchState';
 import { accountHub } from '../services/accountHub';
-
+import {
+    captureMarketplaceAccount,
+    isPrimaryMarketplaceAccount
+} from '../services/marketplaceAccount';
 import * as workerTimers from 'worker-timers';
-
 export const useUserStore = defineStore('User', () => {
     const appearanceSettingsStore = useAppearanceSettingsStore();
     const friendStore = useFriendStore();
@@ -40,6 +47,7 @@ export const useUserStore = defineStore('User', () => {
         acceptedTOSVersion: 0,
         accountDeletionDate: null,
         accountDeletionLog: null,
+        accountStanding: '',
         activeFriends: [],
         ageVerificationStatus: '',
         ageVerified: false,
@@ -192,6 +200,7 @@ export const useUserStore = defineStore('User', () => {
         },
         worlds: [],
         avatars: [],
+        licensedAvatars: [],
         isWorldsLoading: false,
         isFavoriteWorldsLoading: false,
         isAvatarsLoading: false,
@@ -314,7 +323,9 @@ export const useUserStore = defineStore('User', () => {
         notes: new Map()
     });
 
+    const currentUserCredits = ref(null);
     const cachedUsers = shallowReactive(new Map());
+    const cachedProfiles = ref(new Map());
     const cachedUserIdsByDisplayName = shallowReactive(new Map());
     // Public profile cosmetics are optional on older/local API responses. Keep
     // the caches available so the upstream profile header can render safely
@@ -322,6 +333,32 @@ export const useUserStore = defineStore('User', () => {
     const cachedProfileEffects = shallowReactive(new Map());
     const cachedNameplateEffects = shallowReactive(new Map());
     const cachedIconFrames = shallowReactive(new Map());
+
+    const cachedPurchases = ref(new Map());
+    const activePurchases = computed(() =>
+        Array.from(cachedPurchases.value.values()).filter(
+            (purchase) =>
+                purchase.purchaseActive &&
+                purchase.buyerId === currentUser.value.id
+        )
+    );
+    const ownedListingIds = computed(
+        () =>
+            new Set(activePurchases.value.map((purchase) => purchase.listingId))
+    );
+    const ownedProductIds = computed(
+        () =>
+            new Set(
+                activePurchases.value.flatMap((purchase) =>
+                    (purchase.products ?? []).map((product) => product.id)
+                )
+            )
+    );
+
+    const currentUserClientConfig = ref({
+        accessReduceDecorAnim: false,
+        configString: ''
+    });
 
     function addCachedUserDisplayNameEntry(displayName, userId) {
         if (!displayName || !userId) {
@@ -382,9 +419,49 @@ export const useUserStore = defineStore('User', () => {
         return cachedUsers.delete(userId);
     }
 
+    function deleteCachedProfile(userId) {
+        const ref = cachedProfiles.value.get(userId);
+        if (!ref) {
+            return false;
+        }
+        return cachedProfiles.value.delete(userId);
+    }
+
     function clearCachedUsers() {
         cachedUsers.clear();
+        cachedProfiles.value.clear();
         cachedUserIdsByDisplayName.clear();
+        cachedPurchases.value.clear();
+        currentUserCredits.value = null;
+    }
+
+    function setCachedPurchases(purchases) {
+        for (const purchase of purchases) {
+            cachedPurchases.value.set(purchase.purchaseId, purchase);
+        }
+    }
+
+    async function getAllProductPurchases() {
+        if (!isPrimaryMarketplaceAccount(currentUser.value.id)) return;
+        const account = captureMarketplaceAccount(() => currentUser.value.id);
+        try {
+            await processBulk({
+                fn: (params) =>
+                    account.isCurrent()
+                        ? marketplaceRequest.getProductPurchases(params)
+                        : Promise.resolve({ json: [], params }),
+                N: 0,
+                params: {
+                    buyerId: account.userId,
+                    order: 'desc',
+                    sort: 'purchaseDate',
+                    n: 50,
+                    offset: 0
+                }
+            });
+        } finally {
+            account.dispose();
+        }
     }
 
     function rebuildCachedUserDisplayNameIndex() {
@@ -423,6 +500,15 @@ export const useUserStore = defineStore('User', () => {
                 initUserNotes();
             }
         }
+    );
+
+    watch(
+        [() => currentUser.value.id, () => accountHub.viewMode],
+        () => {
+            currentUserCredits.value = null;
+            cachedPurchases.value.clear();
+        },
+        { flush: 'sync' }
     );
 
     watch(
@@ -617,16 +703,25 @@ export const useUserStore = defineStore('User', () => {
     /**
      * @param array
      */
-    function sortUserDialogAvatars(array) {
-        const D = userDialog.value;
-        if (D.avatarSorting === 'update') {
-            array.sort(compareByUpdatedAt);
-        } else if (D.avatarSorting === 'createdAt') {
-            array.sort(compareByCreatedAt);
-        } else {
-            array.sort(compareByName);
+    function getUserDialogAvatarComparator() {
+        const { avatarSorting } = userDialog.value;
+        if (avatarSorting === 'update') {
+            return compareByUpdatedAt;
         }
-        D.avatars = array;
+        if (avatarSorting === 'createdAt') {
+            return compareByCreatedAt;
+        }
+        return compareByName;
+    }
+
+    function sortUserDialogAvatars(array) {
+        userDialog.value.avatars = array.sort(getUserDialogAvatarComparator());
+    }
+
+    function sortUserDialogLicensedAvatars(array) {
+        userDialog.value.licensedAvatars = array.sort(
+            getUserDialogAvatarComparator()
+        );
     }
 
     /**
@@ -822,6 +917,13 @@ export const useUserStore = defineStore('User', () => {
     }
 
     /**
+     * @param {number | null} value
+     */
+    function setCurrentUserCredits(value) {
+        currentUserCredits.value = value;
+    }
+
+    /**
      * @param {object} value
      */
     function setSubsetOfLanguages(value) {
@@ -836,7 +938,10 @@ export const useUserStore = defineStore('User', () => {
             no: index + 1,
             status
         }));
-        Object.assign(D, getProfileEditorSeed(currentUser.value, userDialog.value));
+        Object.assign(
+            D,
+            getProfileEditorSeed(currentUser.value, userDialog.value)
+        );
         D.loading = true;
         D.visible = true;
 
@@ -846,7 +951,8 @@ export const useUserStore = defineStore('User', () => {
                 const profile = json || {};
                 D.selfProfileRef = { ...D.selfProfileRef, ...profile };
                 D.status = profile.status ?? D.status;
-                D.statusDescription = profile.statusDescription ?? D.statusDescription;
+                D.statusDescription =
+                    profile.statusDescription ?? D.statusDescription;
                 D.pronouns = profile.pronouns ?? D.pronouns;
                 D.bio = profile.bio ?? D.bio;
                 if (Array.isArray(profile.bioLinks)) {
@@ -860,16 +966,32 @@ export const useUserStore = defineStore('User', () => {
                     D.themes = profile.themes;
                 }
                 D.themeId = profile.themeId ?? D.themeId;
-                const selectedTheme = D.themes.find((theme) => theme.id === D.themeId);
+                const selectedTheme = D.themes.find(
+                    (theme) => theme.id === D.themeId
+                );
                 D.themeName = selectedTheme?.name ?? D.themeName;
-                D.themeButtonColor = profile.themeButtonColor ?? selectedTheme?.buttonColor ?? D.themeButtonColor;
-                D.themeIconColor = profile.themeIconColor ?? selectedTheme?.iconColor ?? D.themeIconColor;
-                D.themeSubtextColor = profile.themeSubtextColor ?? selectedTheme?.subtextColor ?? D.themeSubtextColor;
+                D.themeButtonColor =
+                    profile.themeButtonColor ??
+                    selectedTheme?.buttonColor ??
+                    D.themeButtonColor;
+                D.themeIconColor =
+                    profile.themeIconColor ??
+                    selectedTheme?.iconColor ??
+                    D.themeIconColor;
+                D.themeSubtextColor =
+                    profile.themeSubtextColor ??
+                    selectedTheme?.subtextColor ??
+                    D.themeSubtextColor;
                 D.backgroundType = profile.backgroundType ?? D.backgroundType;
-                D.backgroundTextureId = profile.backgroundTextureId ?? D.backgroundTextureId;
-                D.backgroundGradientBottom = profile.backgroundGradientBottom ?? D.backgroundGradientBottom;
-                D.backgroundGradientTop = profile.backgroundGradientTop ?? D.backgroundGradientTop;
-                D.nameplateEffect = profile.nameplateEffect ?? D.nameplateEffect;
+                D.backgroundTextureId =
+                    profile.backgroundTextureId ?? D.backgroundTextureId;
+                D.backgroundGradientBottom =
+                    profile.backgroundGradientBottom ??
+                    D.backgroundGradientBottom;
+                D.backgroundGradientTop =
+                    profile.backgroundGradientTop ?? D.backgroundGradientTop;
+                D.nameplateEffect =
+                    profile.nameplateEffect ?? D.nameplateEffect;
                 D.profileEffect = profile.profileEffect ?? D.profileEffect;
                 D.iconFrame = profile.iconFrame ?? D.iconFrame;
             })
@@ -960,6 +1082,21 @@ export const useUserStore = defineStore('User', () => {
         });
     }
 
+    async function toggleReducedProfileAnimations() {
+        const accessReduceDecorAnim =
+            !currentUserClientConfig.value.accessReduceDecorAnim;
+        const { json } = await userRequest.saveClientConfig({
+            accessReduceDecorAnim
+        });
+        currentUserClientConfig.value = json;
+    }
+
+    function getClientConfig() {
+        userRequest.getClientConfig().then(({ json }) => {
+            currentUserClientConfig.value = json;
+        });
+    }
+
     function changePassword(currentPassword, password) {
         return userRequest.saveCurrentUser({
             currentPassword,
@@ -974,10 +1111,23 @@ export const useUserStore = defineStore('User', () => {
         });
     }
 
+    watch(
+        () => watchState.isLoggedIn,
+        (isLoggedIn) => {
+            if (isLoggedIn) {
+                getCosmetics();
+                getClientConfig();
+                getAllProductPurchases();
+            }
+        },
+        { flush: 'sync' }
+    );
+
     return {
         state,
 
         currentUser,
+        currentUserCredits,
         currentTravelers,
         userDialog,
         editProfileDialog,
@@ -987,20 +1137,29 @@ export const useUserStore = defineStore('User', () => {
         showUserDialogHistory,
         customUserTags,
         cachedUsers,
+        cachedProfiles,
         cachedUserIdsByDisplayName,
         cachedProfileEffects,
         cachedNameplateEffects,
         cachedIconFrames,
         isLocalUserVrcPlusSupporter,
+        cachedPurchases,
+        ownedListingIds,
+        ownedProductIds,
+        currentUserClientConfig,
         applyUserLanguage,
         applyPresenceLocation,
         applyUserDialogLocation,
         setCachedUser,
+        setCachedPurchases,
+        getAllProductPurchases,
         syncCachedUserDisplayName,
         deleteCachedUser,
+        deleteCachedProfile,
         clearCachedUsers,
         rebuildCachedUserDisplayNameIndex,
         sortUserDialogAvatars,
+        sortUserDialogLicensedAvatars,
         initUserNotes,
         showSendBoopDialog,
         showEditProfileDialog,
@@ -1014,13 +1173,15 @@ export const useUserStore = defineStore('User', () => {
         setCurrentUser,
         setSubsetOfLanguages,
         setLanguageDialogLanguages,
+        setCurrentUserCredits,
         markCurrentUserGameStarted,
         markCurrentUserGameStopped,
         checkNote,
         toggleSharedConnectionsOptOut,
         toggleDiscordFriendsOptOut,
-        toggleAvatarCopying,
         toggleAllowBooping,
+        toggleReducedProfileAnimations,
+        toggleAvatarCopying,
         changePassword,
         changeContentFilterSettings,
         getCosmetics

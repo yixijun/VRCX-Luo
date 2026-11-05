@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-
 import { sharedFeedFiltersDefaults } from '../../shared/constants';
 import {
     normalizeSilentUntil,
@@ -9,10 +8,8 @@ import {
 } from '../../shared/utils/temporaryMute';
 import { useModalStore } from '../modal';
 import { useVrStore } from '../vr';
-
 import configRepository from '../../services/config';
 import { openFileDialog } from '../../services/fileDialogAdapter';
-
 export const useNotificationsSettingsStore = defineStore(
     'NotificationsSettings',
     () => {
@@ -38,6 +35,8 @@ export const useNotificationsSettingsStore = defineStore(
         const customNotificationSoundPath = ref('');
         const notificationTTS = ref('Never');
         const notificationTTSNickName = ref(false);
+        const inventoryBundleNotifications = ref(true);
+        const freeStoreItemNotifications = ref(true);
         const sharedFeedFilters = ref({
             noty: {
                 Location: 'Off',
@@ -180,11 +179,12 @@ export const useNotificationsSettingsStore = defineStore(
                 customNotificationSoundPathConfig,
                 notificationTTSConfig,
                 notificationTTSNickNameConfig,
+                inventoryBundleNotificationsConfig,
+                freeStoreItemNotificationsConfig,
                 sharedFeedFiltersConfig,
                 notificationTTSVoiceConfig,
                 notificationPositionConfig,
-                notificationTimeoutConfig,
-                notificationLayoutConfig
+                notificationTimeoutConfig
             ] = await Promise.all([
                 configRepository.getString('VRCX_overlayToast', 'Game Running'),
                 configRepository.getBool('VRCX_overlayNotifications', true),
@@ -209,6 +209,14 @@ export const useNotificationsSettingsStore = defineStore(
                 ),
                 configRepository.getString('VRCX_notificationTTS', 'Never'),
                 configRepository.getBool('VRCX_notificationTTSNickName', false),
+                configRepository.getBool(
+                    'VRCX_inventoryBundleNotifications',
+                    true
+                ),
+                configRepository.getBool(
+                    'VRCX_freeStoreItemNotifications',
+                    true
+                ),
                 configRepository.getString(
                     'sharedFeedFilters',
                     JSON.stringify(sharedFeedFiltersDefaults)
@@ -218,11 +226,7 @@ export const useNotificationsSettingsStore = defineStore(
                     'VRCX_notificationPosition',
                     'topCenter'
                 ),
-                configRepository.getString('VRCX_notificationTimeout', '3000'),
-                configRepository.getString(
-                    'VRCX_notificationLayout',
-                    'notification-center'
-                )
+                configRepository.getString('VRCX_notificationTimeout', '3000')
             ]);
 
             overlayToast.value = overlayToastConfig;
@@ -262,12 +266,18 @@ export const useNotificationsSettingsStore = defineStore(
                 customNotificationSoundPathConfig || '';
             notificationTTS.value = notificationTTSConfig;
             notificationTTSNickName.value = notificationTTSNickNameConfig;
+            inventoryBundleNotifications.value =
+                inventoryBundleNotificationsConfig;
+            freeStoreItemNotifications.value = freeStoreItemNotificationsConfig;
             sharedFeedFilters.value = JSON.parse(sharedFeedFiltersConfig);
             notificationTTSVoice.value = Number(notificationTTSVoiceConfig);
             TTSvoices.value = speechSynthesis.getVoices();
             notificationPosition.value = notificationPositionConfig;
             notificationTimeout.value = Number(notificationTimeoutConfig);
-            notificationLayout.value = notificationLayoutConfig;
+            notificationLayout.value = await configRepository.getString(
+                'VRCX_notificationLayout',
+                'notification-center'
+            );
 
             initSharedFeedFilters();
 
@@ -581,6 +591,22 @@ export const useNotificationsSettingsStore = defineStore(
                 notificationTTSNickName.value
             );
         }
+        function setInventoryBundleNotifications() {
+            inventoryBundleNotifications.value =
+                !inventoryBundleNotifications.value;
+            configRepository.setBool(
+                'VRCX_inventoryBundleNotifications',
+                inventoryBundleNotifications.value
+            );
+        }
+        function setFreeStoreItemNotifications() {
+            freeStoreItemNotifications.value =
+                !freeStoreItemNotifications.value;
+            configRepository.setBool(
+                'VRCX_freeStoreItemNotifications',
+                freeStoreItemNotifications.value
+            );
+        }
         function initSharedFeedFilters() {
             if (!sharedFeedFilters.value.noty.Blocked) {
                 sharedFeedFilters.value.noty.Blocked = 'Off';
@@ -737,14 +763,6 @@ export const useNotificationsSettingsStore = defineStore(
             vrStore.updateVRConfigVars();
         }
 
-        /**
-         * @param {string} value
-         */
-        function setNotificationLayout(value) {
-            notificationLayout.value = value;
-            configRepository.setString('VRCX_notificationLayout', value);
-        }
-
         function promptNotificationTimeout() {
             modalStore
                 .prompt({
@@ -772,6 +790,11 @@ export const useNotificationsSettingsStore = defineStore(
                 .catch(() => {});
         }
 
+        function setNotificationLayout(value) {
+            notificationLayout.value = value;
+            configRepository.setString('VRCX_notificationLayout', value);
+        }
+
         return {
             overlayToast,
             openVR,
@@ -790,6 +813,8 @@ export const useNotificationsSettingsStore = defineStore(
             customNotificationSoundPath,
             notificationTTS,
             notificationTTSNickName,
+            inventoryBundleNotifications,
+            freeStoreItemNotifications,
             sharedFeedFilters,
             isTestTTSVisible,
             notificationTTSVoice,
@@ -798,6 +823,7 @@ export const useNotificationsSettingsStore = defineStore(
             notificationPosition,
             notificationTimeout,
             notificationLayout,
+            setNotificationLayout,
 
             setOverlayToast,
             setOpenVR,
@@ -820,13 +846,14 @@ export const useNotificationsSettingsStore = defineStore(
             playCustomNotificationSound,
             setNotificationTTS,
             setNotificationTTSNickName,
+            setInventoryBundleNotifications,
+            setFreeStoreItemNotifications,
             getTTSVoiceName,
             changeTTSVoice,
             saveNotificationTTS,
             testNotificationTTS,
             speak,
             changeNotificationPosition,
-            setNotificationLayout,
             setNotificationTimeout,
             promptNotificationTimeout
         };

@@ -133,7 +133,6 @@
     import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { useAppearanceSettingsStore, useGameLogStore, useModalStore, useVrcxStore } from '../../stores';
     import { DataTableLayout } from '../../components/ui/data-table';
     import { InputGroupField } from '../../components/ui/input-group';
@@ -142,7 +141,6 @@
     import { database } from '../../services/database';
     import { useVrcxVueTable } from '../../lib/table/useVrcxVueTable';
     import GameLogSessions from './components/GameLogSessions.vue';
-
     const { gameLogTableLookup, setSessionsViewMode } = useGameLogStore();
     const { gameLogTable, gameLogTableData, sessionsViewMode } = storeToRefs(useGameLogStore());
     const appearanceSettingsStore = useAppearanceSettingsStore();
@@ -221,7 +219,7 @@
      * @param row
      */
     function getGameLogRowId(row) {
-        if (row?.rowId != null) return `row:${row.rowId}`;
+        if (row?.rowId != null) return `row:${row.rowId}:${row.type}`;
 
         const type = row?.type ?? '';
         const createdAt = row?.created_at ?? row?.createdAt ?? row?.dt ?? '';

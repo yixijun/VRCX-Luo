@@ -1,6 +1,5 @@
 import { request } from '../services/request';
 import { handleConfig } from '../coordinators/userCoordinator';
-
 const loginReq = {
     /**
      * @param {{ code: string }} params One-time password
@@ -64,6 +63,51 @@ const loginReq = {
                 json
             };
             handleConfig(args);
+            return args;
+        });
+    },
+    getDeviceCode() {
+        return request('auth/device/code', {
+            method: 'POST'
+        }).then((json) => {
+            const args = {
+                json
+            };
+            return args;
+        });
+    },
+    getDeviceStatus(params) {
+        return request('auth/device/status', {
+            method: 'POST',
+            params
+        }).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            return args;
+        });
+    },
+    resetPassword(params) {
+        return request('auth/password', {
+            method: 'PUT',
+            params
+        }).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            return args;
+        });
+    },
+    getPermissions() {
+        return request('auth/permissions', {
+            method: 'GET',
+            params: { condensed: true }
+        }).then((json) => {
+            const args = {
+                json
+            };
             return args;
         });
     }

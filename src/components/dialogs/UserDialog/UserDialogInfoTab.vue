@@ -424,10 +424,24 @@
                                         t('view.profile.profile.vrchat_credits')
                                     }}</span>
                                     <span class="text-right text-muted-foreground">{{
-                                        vrchatCredit ?? t('view.profile.profile.refresh')
+                                        currentUserCredits ?? t('view.profile.profile.refresh')
                                     }}</span>
                                 </div>
                             </TooltipWrapper>
+                            <div
+                                class="flex justify-between items-center text-xs cursor-pointer hover:text-foreground"
+                                @click="toggleReducedProfileAnimations">
+                                <span class="text-muted-foreground">{{
+                                    t('dialog.user.info.reduced_profile_animations')
+                                }}</span>
+                                <span class="text-muted-foreground">{{
+                                    t(
+                                        currentUserClientConfig.accessReduceDecorAnim
+                                            ? 'dialog.user.info.avatar_cloning_allow'
+                                            : 'dialog.user.info.avatar_cloning_deny'
+                                    )
+                                }}</span>
+                            </div>
                         </template>
 
                         <div v-if="currentUser.id !== userDialog.id" class="flex justify-between items-center text-xs">
@@ -706,7 +720,6 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import {
         copyToClipboard,
         formatDateFilter,
@@ -714,6 +727,7 @@
         isFriendOnline,
         isRealInstance,
         openExternalLink,
+        replaceBioSymbols,
         timeToText,
         userOnlineForTimestamp,
         timeAgo
@@ -730,17 +744,17 @@
         useGalleryStore
     } from '../../../stores';
     import { showWorldDialog } from '../../../coordinators/worldCoordinator';
-    import { queryRequest, userRequest } from '../../../api';
+    import { marketplaceRequest, userRequest } from '../../../api';
     import { database } from '../../../services/database';
     import { formatBioArchiveDiff, formatLatestBioDiff } from '../../../shared/utils/bioArchiveDiff';
     import { formatDifference } from '../../../views/Feed/columns.jsx';
-
     import InstanceActionBar from '../../InstanceActionBar.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
-
     import EditNoteAndMemoDialog from './EditNoteAndMemoDialog.vue';
-
     const { t } = useI18n();
+    const { currentUserCredits } = storeToRefs(useUserStore());
+    const { currentUserClientConfig } = storeToRefs(useUserStore());
+    const { toggleReducedProfileAnimations } = useUserStore();
 
     const modalStore = useModalStore();
     const instanceStore = useInstanceStore();
@@ -761,15 +775,14 @@
     });
     const dialogBio = computed(() => {
         const publicBio = userDialog.value.publicProfileRef?.bio;
-        return publicBio || userDialog.value.ref?.bio || '';
+        return typeof publicBio === 'string' ? publicBio : userDialog.value.ref?.bio || '';
     });
     const dialogBioLinks = computed(() => {
         const publicLinks = userDialog.value.publicProfileRef?.bioLinks;
-        return publicLinks?.length ? publicLinks : userDialog.value.ref?.bioLinks || [];
+        return Array.isArray(publicLinks) ? publicLinks : userDialog.value.ref?.bioLinks || [];
     });
 
     const isEditNoteAndMemoDialogVisible = ref(false);
-    const vrchatCredit = ref(null);
     const translateLoading = ref(false);
     const bioDiffEnabled = ref(true);
     const bioDiffHtml = ref('');
@@ -930,7 +943,7 @@
     );
 
     function onTabActivated() {
-        if (currentUser.value.id === userDialog.value.id && vrchatCredit.value === null) {
+        if (currentUser.value.id === userDialog.value.id && currentUserCredits.value === null) {
             getVRChatCredits();
         }
     }
@@ -1030,7 +1043,7 @@
     }
 
     function getVRChatCredits() {
-        queryRequest.fetch('vrchatCredits').then((args) => (vrchatCredit.value = args.json?.balance));
+        return marketplaceRequest.getVRChatCredits().catch(console.error);
     }
 
     /**

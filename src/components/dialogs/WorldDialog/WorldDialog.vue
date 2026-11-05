@@ -321,6 +321,9 @@
                 <template #Info>
                     <WorldDialogInfoTab />
                 </template>
+                <template #Store>
+                    <WorldDialogStoreTab ref="storeTabRef" />
+                </template>
                 <template #JSON>
                     <DialogJsonTab
                         :tree-data="treeData"
@@ -390,7 +393,6 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import {
         useAdvancedSettingsStore,
         useFavoriteStore,
@@ -416,17 +418,15 @@
     import { formatJsonVars } from '../../../shared/utils/base/ui';
     import { runNewInstanceSelfInviteFlow as newInstanceSelfInvite } from '../../../coordinators/inviteCoordinator';
     import { useWorldDialogCommands } from './useWorldDialogCommands';
-
     import DialogJsonTab from '../DialogJsonTab.vue';
     import ImageCropDialog from '../ImageCropDialog.vue';
     import WorldDialogInfoTab from './WorldDialogInfoTab.vue';
     import WorldDialogInstancesTab from './WorldDialogInstancesTab.vue';
+    import WorldDialogStoreTab from './WorldDialogStoreTab.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
-
     import NewInstanceDialog from '../NewInstanceDialog/NewInstanceDialog.vue';
     import SetWorldTagsDialog from './SetWorldTagsDialog.vue';
     import WorldAllowedDomainsDialog from './WorldAllowedDomainsDialog.vue';
-
     const { currentUser, userDialog } = storeToRefs(useUserStore());
     const { worldDialog } = storeToRefs(useWorldStore());
     const { cachedWorlds } = useWorldStore();
@@ -482,12 +482,14 @@
     const worldDialogTabs = computed(() => [
         { value: 'Instances', label: t('dialog.world.instances.header') },
         { value: 'Info', label: t('dialog.world.info.header') },
+        ...(worldDialog.value.ref.storeId ? [{ value: 'Store', label: t('dialog.world.store.header') }] : []),
         { value: 'JSON', label: t('dialog.world.json.header') }
     ]);
 
     const treeData = ref({});
     const translatedDescription = ref('');
     const isTranslating = ref(false);
+    const storeTabRef = ref(null);
     const imageError = ref(false);
 
     watch(
@@ -522,7 +524,9 @@
      */
     function handleWorldDialogTab(tabName) {
         worldDialog.value.lastActiveTab = tabName;
-        if (tabName === 'JSON') {
+        if (tabName === 'Store') {
+            storeTabRef.value?.getWorldListings();
+        } else if (tabName === 'JSON') {
             refreshWorldDialogTreeData();
         }
     }
@@ -531,6 +535,10 @@
      *
      */
     function loadLastActiveTab() {
+        if (worldDialog.value.lastActiveTab === 'Store' && !worldDialog.value.ref.storeId) {
+            worldDialog.value.activeTab = 'Instances';
+            worldDialog.value.lastActiveTab = 'Instances';
+        }
         handleWorldDialogTab(worldDialog.value.lastActiveTab);
     }
 

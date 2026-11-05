@@ -4,7 +4,6 @@ import {
     isRpcWorld,
     replaceBioSymbols
 } from '../../shared/utils';
-
 /**
  * Creates the media parser functions for the GameLog store.
  * @param {object} deps
@@ -38,7 +37,7 @@ export function createMediaParsers({
             videoPos = gameLog.videoPos;
         }
         if (!isRpcWorld(location) || gameLog.videoId === 'YouTube') {
-            // skip PyPyDance and VRDancing videos
+            // skip videos in worlds with their own integration
             try {
                 url = new URL(videoUrl);
                 if (
@@ -86,6 +85,77 @@ export function createMediaParsers({
                 created_at: gameLog.dt,
                 type: 'VideoPlay',
                 videoUrl,
+                videoId: gameLog.mediaIdOverride || videoId,
+                videoName,
+                videoLength,
+                location,
+                displayName,
+                userId,
+                videoPos
+            };
+            await setNowPlaying(entry);
+        }
+    }
+
+    async function addGameLogVRDancing(gameLog, location) {
+        const data =
+            /VideoPlay\(VRDancing\) "(.+?)",([\d.]+),([\d.]+),(-?[\d.]+),"(.+?)","(.+?)"/g.exec(
+                gameLog.data
+            );
+        if (!data) {
+            console.error('failed to parse', gameLog.data);
+            return;
+        }
+        const videoUrl = data[1];
+        let videoPos = Number(data[2]);
+        const videoLength = Number(data[3]);
+        let videoId = data[4];
+        const displayName = data[5];
+        let videoName = data[6];
+        if (videoId === '-1') {
+            videoId = 'YouTube';
+        }
+        const videoNameIndex = videoName.indexOf(']</b> ');
+        if (videoNameIndex !== -1) {
+            videoName = videoName.substring(videoNameIndex + 6);
+        }
+        if (videoPos === videoLength) {
+            // ummm okay
+            videoPos = 0;
+        }
+        if (videoUrl === nowPlaying.value.url) {
+            const entry = {
+                updatedAt: gameLog.dt,
+                videoUrl,
+                videoLength,
+                videoPos
+            };
+            await setNowPlaying(entry);
+            return;
+        }
+        let userId = '';
+        if (displayName) {
+            userId =
+                findUserByDisplayName(
+                    userStore.cachedUsers,
+                    displayName,
+                    userStore.cachedUserIdsByDisplayName
+                )?.id ?? '';
+        }
+        if (videoId === 'YouTube') {
+            const entry1 = {
+                dt: gameLog.dt,
+                videoUrl,
+                displayName,
+                videoPos,
+                videoId
+            };
+            await addGameLogVideo(entry1, location, userId);
+        } else {
+            const entry2 = {
+                created_at: gameLog.dt,
+                type: 'VideoPlay',
+                videoUrl,
                 videoId,
                 videoName,
                 videoLength,
@@ -94,8 +164,118 @@ export function createMediaParsers({
                 userId,
                 videoPos
             };
-            setNowPlaying(entry);
+            await setNowPlaying(entry2);
         }
+    }
+
+    async function addGameLogLSMedia(gameLog, location) {
+        // [VRCX] LSMedia 0,4268.981,Natsumi-sama,,
+        // [VRCX] LSMedia 0,6298.292,Natsumi-sama,The Outfit (2022), 1080p
+        const data = /LSMedia ([\d.]+),([\d.]+),(.+?),(.+?),(?=[^,]*$)/g.exec(
+            gameLog.data
+        );
+        if (!data) {
+            return;
+        }
+        const videoPos = Number(data[1]);
+        const videoLength = Number(data[2]);
+        const displayName = data[3];
+        const videoName = replaceBioSymbols(data[4]);
+        const videoUrl = videoName;
+        const videoId = 'LSMedia';
+        if (videoUrl === nowPlaying.value.url) {
+            const entry = {
+                updatedAt: gameLog.dt,
+                videoUrl,
+                videoLength,
+                videoPos
+            };
+            await setNowPlaying(entry);
+            return;
+        }
+        let userId = '';
+        if (displayName) {
+            userId =
+                findUserByDisplayName(
+                    userStore.cachedUsers,
+                    displayName,
+                    userStore.cachedUserIdsByDisplayName
+                )?.id ?? '';
+        }
+        const entry1 = {
+            created_at: gameLog.dt,
+            type: 'VideoPlay',
+            videoUrl,
+            videoId,
+            videoName,
+            videoLength,
+            location,
+            displayName,
+            userId,
+            videoPos
+        };
+        await setNowPlaying(entry1);
+    }
+
+    async function addGameLogPopcornPalace(gameLog, location) {
+        // [VRCX] VideoPlay(PopcornPalace) {"videoName": "How to Train Your Dragon - 2025-06-06", "videoPos": 37.28777, "videoLength": 11474.05, "thumbnailUrl": "", "displayName": "miner28_3", "isPaused": false, "is3D": false, "looping": false}
+        let data = gameLog.data;
+        if (!data) {
+            return;
+        }
+        try {
+            const j = data.indexOf('{');
+            data = JSON.parse(data.substring(j));
+        } catch (err) {
+            console.error('Failed to parse PopcornPalace data:', err);
+            return;
+        }
+
+        const videoPos = Number(data.videoPos);
+        const videoLength = Number(data.videoLength);
+        const displayName = data.displayName || '';
+        const videoName = data.videoName || '';
+        const videoUrl = videoName;
+        const videoId = 'PopcornPalace';
+        const thumbnailUrl = data.thumbnailUrl || '';
+        if (!videoName) {
+            clearNowPlaying();
+            return;
+        }
+        if (videoUrl === nowPlaying.value.url) {
+            const entry = {
+                updatedAt: gameLog.dt,
+                videoUrl,
+                videoLength,
+                videoPos,
+                thumbnailUrl
+            };
+            await setNowPlaying(entry);
+            return;
+        }
+        let userId = '';
+        if (displayName) {
+            userId =
+                findUserByDisplayName(
+                    userStore.cachedUsers,
+                    displayName,
+                    userStore.cachedUserIdsByDisplayName
+                )?.id ?? '';
+        }
+        const entry1 = {
+            created_at: gameLog.dt,
+            type: 'VideoPlay',
+            videoUrl,
+            videoId,
+            videoName,
+            videoLength,
+            location,
+            displayName,
+            userId,
+            videoPos,
+            thumbnailUrl
+        };
+        await setNowPlaying(entry1);
     }
 
     function addGameLogPyPyDance(gameLog, location) {
@@ -125,77 +305,6 @@ export function createMediaParsers({
         const videoName = text2.slice(0, -1);
         if (displayName === 'Random') {
             displayName = '';
-        }
-        if (videoUrl === nowPlaying.value.url) {
-            const entry = {
-                updatedAt: gameLog.dt,
-                videoUrl,
-                videoLength,
-                videoPos
-            };
-            setNowPlaying(entry);
-            return;
-        }
-        let userId = '';
-        if (displayName) {
-            userId =
-                findUserByDisplayName(
-                    userStore.cachedUsers,
-                    displayName,
-                    userStore.cachedUserIdsByDisplayName
-                )?.id ?? '';
-        }
-        if (videoId === 'YouTube') {
-            const entry1 = {
-                dt: gameLog.dt,
-                videoUrl,
-                displayName,
-                videoPos,
-                videoId
-            };
-            addGameLogVideo(entry1, location, userId);
-        } else {
-            const entry2 = {
-                created_at: gameLog.dt,
-                type: 'VideoPlay',
-                videoUrl,
-                videoId,
-                videoName,
-                videoLength,
-                location,
-                displayName,
-                userId,
-                videoPos
-            };
-            setNowPlaying(entry2);
-        }
-    }
-
-    function addGameLogVRDancing(gameLog, location) {
-        const data =
-            /VideoPlay\(VRDancing\) "(.+?)",([\d.]+),([\d.]+),(-?[\d.]+),"(.+?)","(.+?)"/g.exec(
-                gameLog.data
-            );
-        if (!data) {
-            console.error('failed to parse', gameLog.data);
-            return;
-        }
-        const videoUrl = data[1];
-        let videoPos = Number(data[2]);
-        const videoLength = Number(data[3]);
-        let videoId = data[4];
-        const displayName = data[5];
-        let videoName = data[6];
-        if (videoId === '-1') {
-            videoId = 'YouTube';
-        }
-        const videoNameIndex = videoName.indexOf(']</b> ');
-        if (videoNameIndex !== -1) {
-            videoName = videoName.substring(videoNameIndex + 6);
-        }
-        if (videoPos === videoLength) {
-            // ummm okay
-            videoPos = 0;
         }
         if (videoUrl === nowPlaying.value.url) {
             const entry = {
@@ -308,121 +417,11 @@ export function createMediaParsers({
         }
     }
 
-    function addGameLogLSMedia(gameLog, location) {
-        // [VRCX] LSMedia 0,4268.981,Natsumi-sama,,
-        // [VRCX] LSMedia 0,6298.292,Natsumi-sama,The Outfit (2022), 1080p
-        const data = /LSMedia ([\d.]+),([\d.]+),(.+?),(.+?),(?=[^,]*$)/g.exec(
-            gameLog.data
-        );
-        if (!data) {
-            return;
-        }
-        const videoPos = Number(data[1]);
-        const videoLength = Number(data[2]);
-        const displayName = data[3];
-        const videoName = replaceBioSymbols(data[4]);
-        const videoUrl = videoName;
-        const videoId = 'LSMedia';
-        if (videoUrl === nowPlaying.value.url) {
-            const entry = {
-                updatedAt: gameLog.dt,
-                videoUrl,
-                videoLength,
-                videoPos
-            };
-            setNowPlaying(entry);
-            return;
-        }
-        let userId = '';
-        if (displayName) {
-            userId =
-                findUserByDisplayName(
-                    userStore.cachedUsers,
-                    displayName,
-                    userStore.cachedUserIdsByDisplayName
-                )?.id ?? '';
-        }
-        const entry1 = {
-            created_at: gameLog.dt,
-            type: 'VideoPlay',
-            videoUrl,
-            videoId,
-            videoName,
-            videoLength,
-            location,
-            displayName,
-            userId,
-            videoPos
-        };
-        setNowPlaying(entry1);
-    }
-
-    function addGameLogPopcornPalace(gameLog, location) {
-        // [VRCX] VideoPlay(PopcornPalace) {"videoName": "How to Train Your Dragon - 2025-06-06", "videoPos": 37.28777, "videoLength": 11474.05, "thumbnailUrl": "", "displayName": "miner28_3", "isPaused": false, "is3D": false, "looping": false}
-        let data = gameLog.data;
-        if (!data) {
-            return;
-        }
-        try {
-            const j = data.indexOf('{');
-            data = JSON.parse(data.substring(j));
-        } catch (err) {
-            console.error('Failed to parse PopcornPalace data:', err);
-            return;
-        }
-
-        const videoPos = Number(data.videoPos);
-        const videoLength = Number(data.videoLength);
-        const displayName = data.displayName || '';
-        const videoName = data.videoName || '';
-        const videoUrl = videoName;
-        const videoId = 'PopcornPalace';
-        const thumbnailUrl = data.thumbnailUrl || '';
-        if (!videoName) {
-            clearNowPlaying();
-            return;
-        }
-        if (videoUrl === nowPlaying.value.url) {
-            const entry = {
-                updatedAt: gameLog.dt,
-                videoUrl,
-                videoLength,
-                videoPos,
-                thumbnailUrl
-            };
-            setNowPlaying(entry);
-            return;
-        }
-        let userId = '';
-        if (displayName) {
-            userId =
-                findUserByDisplayName(
-                    userStore.cachedUsers,
-                    displayName,
-                    userStore.cachedUserIdsByDisplayName
-                )?.id ?? '';
-        }
-        const entry1 = {
-            created_at: gameLog.dt,
-            type: 'VideoPlay',
-            videoUrl,
-            videoId,
-            videoName,
-            videoLength,
-            location,
-            displayName,
-            userId,
-            videoPos,
-            thumbnailUrl
-        };
-        setNowPlaying(entry1);
-    }
-
     return {
         addGameLogVideo,
+        addGameLogZuwaZuwaDance,
         addGameLogPyPyDance,
         addGameLogVRDancing,
-        addGameLogZuwaZuwaDance,
         addGameLogLSMedia,
         addGameLogPopcornPalace
     };

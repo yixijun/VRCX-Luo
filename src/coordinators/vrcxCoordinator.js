@@ -10,7 +10,6 @@ import { useLocationStore } from '../stores/location';
 import { useUserStore } from '../stores/user';
 import { useWorldStore } from '../stores/world';
 import { failedGetRequests } from '../services/request';
-
 /**
  * Clears caches across multiple stores while preserving data that is
  * still needed (friends, current user, favorites, active instances).
@@ -35,6 +34,15 @@ export function clearVRCXCache() {
             id !== userStore.currentUser.id
         ) {
             userStore.deleteCachedUser(id);
+        }
+    });
+    userStore.cachedProfiles.forEach((ref, id) => {
+        if (
+            !friendStore.friends.has(id) &&
+            !locationStore.lastLocation.playerList.has(ref.id) &&
+            id !== userStore.currentUser.id
+        ) {
+            userStore.deleteCachedProfile(id);
         }
     });
     worldStore.cachedWorlds.forEach((ref, id) => {

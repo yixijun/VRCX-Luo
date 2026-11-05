@@ -670,7 +670,8 @@
                 "platform": "플랫폼",
                 "last_visited": "마지막 방문",
                 "visit_count": "방문 횟수",
-                "time_spent": "방문 시간"
+                "time_spent": "방문 시간",
+                "created": "최초 업로드"
             },
             "json": {
                 "header": "JSON"
@@ -788,7 +789,8 @@
                 "role_updated_at": "업데이트:",
                 "role_created_at": "생성일:",
                 "role_permissions": "권한:",
-                "last_visited": "마지막 방문"
+                "last_visited": "마지막 방문",
+                "created": "설립일"
             },
             "posts": {
                 "header": "Posts",

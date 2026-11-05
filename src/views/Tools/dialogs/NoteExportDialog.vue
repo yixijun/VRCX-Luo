@@ -58,17 +58,14 @@
     import { Spinner } from '@/components/ui/spinner';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { removeFromArray } from '../../../shared/utils';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
     import { useFriendStore, useGalleryStore, useUserStore } from '../../../stores';
     import { createColumns } from './noteExportColumns.jsx';
     import { miscRequest } from '../../../api';
     import { useVrcxVueTable } from '../../../lib/table/useVrcxVueTable';
-
     import * as workerTimers from 'worker-timers';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
-
     const { userImage, userImageFull } = useUserDisplay();
     const { t } = useI18n();
 
@@ -139,8 +136,9 @@
     function updateNoteExportDialog() {
         const data = [];
         friends.value.forEach((ctx) => {
-            const newMemo = ctx.memo.replace(/[\r\n]/g, ' ');
-            if (ctx.memo && ctx.ref && ctx.ref.note !== newMemo.slice(0, 256)) {
+            const memo = ctx.ref?.$memo || '';
+            const newMemo = memo.replace(/[\r\n]/g, ' ');
+            if (memo && ctx.ref.note !== newMemo.slice(0, 256)) {
                 data.push({
                     id: ctx.id,
                     name: ctx.name,

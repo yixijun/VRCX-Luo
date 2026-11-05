@@ -15,12 +15,18 @@ import {
     ChevronDown,
     ChevronRight
 } from 'lucide-vue-next';
-import { formatDateFilter, statusClass, timeToText } from '../../shared/utils';
+import {
+    formatDateFilter,
+    getFaviconUrl,
+    openExternalLink,
+    replaceBioSymbols,
+    statusClass,
+    timeToText
+} from '../../shared/utils';
 import { i18n } from '../../plugins/i18n';
 import { useGalleryStore, useFriendStore, useUserStore } from '../../stores';
 import { showUserDialog } from '../../coordinators/userCoordinator';
 import UserContextMenu from '../../components/UserContextMenu.vue';
-
 const { t } = i18n.global;
 let friendStore;
 let userStore;
@@ -200,15 +206,36 @@ const expandedRow = ({ row }) => {
     }
 
     if (type === 'Bio') {
+        const links = getBioLinksDifference(
+            original.previousBioLinks,
+            original.bioLinks
+        );
         return (
             <div class="pl-5 text-sm">
                 <pre
                     class="text-xs leading-5.5 whitespace-pre-wrap font-[inherit]"
                     innerHTML={formatDifference(
-                        original.previousBio,
-                        original.bio
+                        replaceBioSymbols(original.previousBio),
+                        replaceBioSymbols(original.bio)
                     )}
                 ></pre>
+                {links.length ? (
+                    <div class="mt-1 flex flex-col gap-0.5 text-xs">
+                        {links.map(({ link, className }) => (
+                            <span
+                                class="flex items-center gap-1 cursor-pointer"
+                                onClick={() => openExternalLink(link)}
+                            >
+                                <img
+                                    src={getFaviconUrl(link)}
+                                    class="size-4"
+                                    loading="lazy"
+                                />
+                                <span class={className}>{link}</span>
+                            </span>
+                        ))}
+                    </div>
+                ) : null}
             </div>
         );
     }
@@ -302,7 +329,10 @@ export const columns = [
         cell: ({ row }) => {
             const original = row.original;
             const friend = getFriendStore().friends.get(original.userId);
-            const userRef = getUserStore().cachedUsers.get(original.userId) || friend?.ref || null;
+            const userRef =
+                getUserStore().cachedUsers.get(original.userId) ||
+                friend?.ref ||
+                null;
             return (
                 <UserContextMenu
                     userId={original.userId}
@@ -423,7 +453,7 @@ export const columns = [
             if (type === 'Bio') {
                 return (
                     <span class="block w-full min-w-0 truncate">
-                        {original.bio}
+                        {replaceBioSymbols(original.bio)}
                     </span>
                 );
             }
@@ -462,7 +492,8 @@ export function formatDifference(
 
     // Unicode regex for individual CJK characters: covers Hiragana, Katakana,
     // CJK Unified Ideographs + Extension A, Hangul, CJK Compatibility Ideographs.
-    const CJK_CHAR_RE = /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7a3\uf900-\ufaff]/;
+    const CJK_CHAR_RE =
+        /[\u3040-\u30ff\u3400-\u9fff\uac00-\ud7a3\uf900-\ufaff]/;
 
     // Returns true when ch is a CJK character.  Handles undefined / empty strings.
     function isCJKChar(ch) {
@@ -477,7 +508,9 @@ export function formatDifference(
             .flatMap((chunk) => chunk.split(/(<br>)/))
             .flatMap((chunk) => {
                 if (!chunk || chunk === '<br>') return chunk ? [chunk] : [];
-                return chunk.split(new RegExp(`(${CJK_CHAR_RE.source})`)).filter(Boolean);
+                return chunk
+                    .split(new RegExp(`(${CJK_CHAR_RE.source})`))
+                    .filter(Boolean);
             });
     }
 
@@ -562,7 +595,9 @@ export function formatDifference(
 
             // Add the matched words
             result.push(
-                joinTokens(oldWords.slice(match.oldStart, match.oldStart + match.size))
+                joinTokens(
+                    oldWords.slice(match.oldStart, match.oldStart + match.size)
+                )
             );
 
             // Handle differences after the match
@@ -582,7 +617,9 @@ export function formatDifference(
         } else {
             function build(words, start, end, pattern) {
                 let r = [];
-                const slice = words.slice(start, end).filter((w) => w.length > 0);
+                const slice = words
+                    .slice(start, end)
+                    .filter((w) => w.length > 0);
                 // Split on <br> boundaries, then join each segment with CJK-aware spacing
                 const segments = [];
                 let current = [];
@@ -641,7 +678,8 @@ export function formatDifference(
         } else {
             const prevText = prev.replace(/<[^>]*>/g, '');
             const currText = curr.replace(/<[^>]*>/g, '');
-            const prevLastCh = prevText.length > 0 ? prevText[prevText.length - 1] : '';
+            const prevLastCh =
+                prevText.length > 0 ? prevText[prevText.length - 1] : '';
             const currFirstCh = currText.length > 0 ? currText[0] : '';
             if (isCJKChar(prevLastCh) || isCJKChar(currFirstCh)) {
                 output += curr;
@@ -653,4 +691,16 @@ export function formatDifference(
     return output
         .replace(/<br>[ ]+<br>/g, '<br><br>')
         .replace(/<br> /g, '<br>');
+}
+
+function getBioLinksDifference(previousLinks = [], links = []) {
+    return [
+        ...links.map((link) => ({
+            link,
+            className: previousLinks.includes(link) ? '' : 'x-text-added'
+        })),
+        ...previousLinks
+            .filter((link) => !links.includes(link))
+            .map((link) => ({ link, className: 'x-text-removed' }))
+    ];
 }

@@ -2,7 +2,6 @@ import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
 import { useRouter } from 'vue-router';
-
 import {
     APP_CJK_FONT_PACK_DEFAULT_KEY,
     APP_CJK_FONT_PACKS,
@@ -21,12 +20,12 @@ import {
     changeAppThemeStyle,
     changeHtmlLangAttribute,
     getThemeMode,
+    setSystemIsDarkMode,
     updateTrustColorClasses
 } from '../../shared/utils/base/ui';
 import { computeTrustLevel, getNameColour } from '../../shared/utils';
 import { createAppearanceDomAdapter } from '../../services/appearanceDomAdapter';
 import { database } from '../../services/database';
-
 import { loadLocalizedStrings } from '../../plugins';
 import { useFeedStore } from '../feed';
 import { useGameLogStore } from '../gameLog';
@@ -35,9 +34,7 @@ import { useUserStore } from '../user';
 import { useVrStore } from '../vr';
 import { useVrcxStore } from '../vrcx';
 import { watchState } from '../../services/watchState';
-
 import configRepository from '../../services/config';
-
 export const useAppearanceSettingsStore = defineStore(
     'AppearanceSettings',
 
@@ -73,6 +70,7 @@ export const useAppearanceSettingsStore = defineStore(
         const hideNicknames = ref(false);
         const showInstanceIdInLocation = ref(false);
         const isAgeGatedInstancesVisible = ref(false);
+        const isClosedInstancesVisible = ref(true);
         const sortFavorites = ref(true);
         const instanceUsersSortAlphabetical = ref(false);
         const tablePageSize = ref(15);
@@ -174,6 +172,7 @@ export const useAppearanceSettingsStore = defineStore(
                 hideNicknamesConfig,
                 showInstanceIdInLocationConfig,
                 isAgeGatedInstancesVisibleConfig,
+                isClosedInstancesVisibleConfig,
                 sortFavoritesConfig,
                 instanceUsersSortAlphabeticalConfig,
                 tablePageSizeConfig,
@@ -213,9 +212,15 @@ export const useAppearanceSettingsStore = defineStore(
                 configRepository.getString('VRCX_appLanguage'),
                 configRepository.getBool('displayVRCPlusIconsAsAvatar', true),
                 configRepository.getBool('VRCX_displayVRCProfileThemes', true),
-                configRepository.getBool('VRCX_displayVRCProfileBackgrounds', false),
+                configRepository.getBool(
+                    'VRCX_displayVRCProfileBackgrounds',
+                    false
+                ),
                 configRepository.getFloat('VRCX_profileBackgroundOpacity', 0.5),
-                configRepository.getBool('VRCX_displayVRCProfileCosmetics', false),
+                configRepository.getBool(
+                    'VRCX_displayVRCProfileCosmetics',
+                    false
+                ),
                 configRepository.getBool('VRCX_hideNicknames', false),
                 configRepository.getBool(
                     'VRCX_showInstanceIdInLocation',
@@ -225,6 +230,7 @@ export const useAppearanceSettingsStore = defineStore(
                     'VRCX_isAgeGatedInstancesVisible',
                     true
                 ),
+                configRepository.getBool('VRCX_isClosedInstancesVisible', true),
                 configRepository.getBool('VRCX_sortFavorites', true),
                 configRepository.getBool(
                     'VRCX_instanceUsersSortAlphabetical',
@@ -337,15 +343,21 @@ export const useAppearanceSettingsStore = defineStore(
             displayVRCPlusIconsAsAvatar.value =
                 displayVRCPlusIconsAsAvatarConfig;
             displayVRCProfileThemes.value = displayVRCProfileThemesConfig;
-            displayVRCProfileBackgrounds.value = displayVRCProfileBackgroundsConfig;
-            const configuredProfileBackgroundOpacity = Number(profileBackgroundOpacityConfig);
-            profileBackgroundOpacity.value = Number.isFinite(configuredProfileBackgroundOpacity)
+            displayVRCProfileBackgrounds.value =
+                displayVRCProfileBackgroundsConfig;
+            const configuredProfileBackgroundOpacity = Number(
+                profileBackgroundOpacityConfig
+            );
+            profileBackgroundOpacity.value = Number.isFinite(
+                configuredProfileBackgroundOpacity
+            )
                 ? Math.min(1, Math.max(0, configuredProfileBackgroundOpacity))
                 : 0.5;
             displayVRCProfileCosmetics.value = displayVRCProfileCosmeticsConfig;
             hideNicknames.value = hideNicknamesConfig;
             showInstanceIdInLocation.value = showInstanceIdInLocationConfig;
             isAgeGatedInstancesVisible.value = isAgeGatedInstancesVisibleConfig;
+            isClosedInstancesVisible.value = isClosedInstancesVisibleConfig;
             sortFavorites.value = sortFavoritesConfig;
             instanceUsersSortAlphabetical.value =
                 instanceUsersSortAlphabeticalConfig;
@@ -561,13 +573,25 @@ export const useAppearanceSettingsStore = defineStore(
             }
         }
 
-        window
-            .matchMedia('(prefers-color-scheme: dark)')
-            .addEventListener('change', async () => {
-                if (themeMode.value === 'system') {
+        if (LINUX) {
+            window.electron.onSystemThemeChanged((_event, isDark) => {
+                setSystemIsDarkMode(isDark);
+                if (
+                    themeMode.value === 'system' &&
+                    isDarkMode.value !== isDark
+                ) {
                     setThemeMode(themeMode.value);
                 }
             });
+        } else {
+            window
+                .matchMedia('(prefers-color-scheme: dark)')
+                .addEventListener('change', async () => {
+                    if (themeMode.value === 'system') {
+                        setThemeMode(themeMode.value);
+                    }
+                });
+        }
 
         /**
          * @param {string} mode
@@ -668,7 +692,8 @@ export const useAppearanceSettingsStore = defineStore(
         }
 
         function setDisplayVRCProfileBackgrounds() {
-            displayVRCProfileBackgrounds.value = !displayVRCProfileBackgrounds.value;
+            displayVRCProfileBackgrounds.value =
+                !displayVRCProfileBackgrounds.value;
             configRepository.setBool(
                 'VRCX_displayVRCProfileBackgrounds',
                 displayVRCProfileBackgrounds.value
@@ -678,11 +703,15 @@ export const useAppearanceSettingsStore = defineStore(
         function setProfileBackgroundOpacity(value) {
             const nextValue = Math.min(1, Math.max(0, Number(value) || 0.5));
             profileBackgroundOpacity.value = nextValue;
-            configRepository.setFloat('VRCX_profileBackgroundOpacity', nextValue);
+            configRepository.setFloat(
+                'VRCX_profileBackgroundOpacity',
+                nextValue
+            );
         }
 
         function setDisplayVRCProfileCosmetics() {
-            displayVRCProfileCosmetics.value = !displayVRCProfileCosmetics.value;
+            displayVRCProfileCosmetics.value =
+                !displayVRCProfileCosmetics.value;
             configRepository.setBool(
                 'VRCX_displayVRCProfileCosmetics',
                 displayVRCProfileCosmetics.value
@@ -730,6 +759,13 @@ export const useAppearanceSettingsStore = defineStore(
         /**
          *
          */
+        function setIsClosedInstancesVisible() {
+            isClosedInstancesVisible.value = !isClosedInstancesVisible.value;
+            configRepository.setBool(
+                'VRCX_isClosedInstancesVisible',
+                isClosedInstancesVisible.value
+            );
+        }
         function setSortFavorites() {
             sortFavorites.value = !sortFavorites.value;
             configRepository.setBool('VRCX_sortFavorites', sortFavorites.value);
@@ -946,7 +982,10 @@ export const useAppearanceSettingsStore = defineStore(
          */
         function setSidebarCosmetics() {
             sidebarCosmetics.value = !sidebarCosmetics.value;
-            configRepository.setBool('VRCX_sidebarCosmetics', sidebarCosmetics.value);
+            configRepository.setBool(
+                'VRCX_sidebarCosmetics',
+                sidebarCosmetics.value
+            );
         }
         /**
          * @param {number} value
@@ -1299,6 +1338,7 @@ export const useAppearanceSettingsStore = defineStore(
             hideNicknames,
             showInstanceIdInLocation,
             isAgeGatedInstancesVisible,
+            isClosedInstancesVisible,
             sortFavorites,
             instanceUsersSortAlphabetical,
             tablePageSize,
@@ -1349,6 +1389,7 @@ export const useAppearanceSettingsStore = defineStore(
             setHideNicknames,
             setShowInstanceIdInLocation,
             setIsAgeGatedInstancesVisible,
+            setIsClosedInstancesVisible,
             setSortFavorites,
             setInstanceUsersSortAlphabetical,
             setTablePageSize,

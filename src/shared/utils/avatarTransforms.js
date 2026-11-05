@@ -6,6 +6,10 @@
 export function createDefaultAvatarRef(json) {
     return {
         acknowledgements: '',
+        activeAssetReviewId: '',
+        assetUrl: '',
+        assetUrlObject: {},
+        attribution: null,
         authorId: '',
         authorName: '',
         created_at: '',

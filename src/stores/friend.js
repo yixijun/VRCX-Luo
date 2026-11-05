@@ -1,7 +1,6 @@
 import { computed, reactive, ref, shallowRef, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { useRouter } from 'vue-router';
-
 import { i18n } from '../plugins/i18n';
 import {
     compareByCreatedAtAscending,
@@ -18,7 +17,6 @@ import {
     runPendingOfflineTickFlow,
     runUpdateFriendFlow
 } from '../coordinators/friendPresenceCoordinator';
-import { syncFriendSearchIndex } from '../coordinators/searchIndexCoordinator';
 import {
     updateFriendship,
     runUpdateFriendshipsFlow
@@ -34,11 +32,8 @@ import { useLocationStore } from './location';
 import { useUserStore } from './user';
 import { watchState } from '../services/watchState';
 import { accountHub } from '../services/accountHub';
-
 import configRepository from '../services/config';
-
 import * as workerTimers from 'worker-timers';
-
 export const useFriendStore = defineStore('Friend', () => {
     const appearanceSettingsStore = useAppearanceSettingsStore();
     const generalSettingsStore = useGeneralSettingsStore();
@@ -122,17 +117,21 @@ export const useFriendStore = defineStore('Friend', () => {
 
     const allFavoriteFriendIds = computed(() => {
         const favoriteStore = useFavoriteStore();
+        const groups = generalSettingsStore.localFavoriteFriendsGroups;
         const set = new Set();
         for (const ref of favoriteStore.cachedFavorites.values()) {
-            if (ref.type === 'friend') {
+            if (
+                ref.type === 'friend' &&
+                (groups.length === 0 || groups.includes(ref.$groupKey))
+            ) {
                 set.add(ref.favoriteId);
             }
         }
-        const groups = generalSettingsStore.localFavoriteFriendsGroups;
         let localGroups = groups
             .filter((key) => key.startsWith('local:'))
             .map((key) => key.replace('local:', ''));
-        if (localGroups.length === 0) {
+        if (groups.length === 0) {
+            // Use all groups when no groups are selected
             localGroups = Object.keys(favoriteStore.localFriendFavorites);
         }
         for (const groupName of localGroups) {
@@ -638,22 +637,11 @@ export const useFriendStore = defineStore('Friend', () => {
             isVIP,
             ref,
             name,
-            memo: '',
             pendingOffline: false,
             $nickName: ''
         });
         if (watchState.isFriendsLoaded) {
-            getUserMemo(id).then((memo) => {
-                if (memo.userId === id) {
-                    ctx.memo = memo.memo;
-                    ctx.$nickName = '';
-                    if (memo.memo) {
-                        const array = memo.memo.split('\n');
-                        ctx.$nickName = array[0];
-                    }
-                    syncFriendSearchIndex(ctx);
-                }
-            });
+            getUserMemo(id);
         }
         if (typeof ref === 'undefined') {
             const friendLogRef = friendLog.get(id);
@@ -975,6 +963,19 @@ export const useFriendStore = defineStore('Friend', () => {
     /**
      *
      */
+    /**
+     * @param {string} userId
+     * @param {string} lastSeen
+     */
+    function updateFriendLastSeen(userId, lastSeen) {
+        const ctx = friends.get(userId);
+        if (!ctx?.ref || !lastSeen) {
+            return;
+        }
+        ctx.ref.$lastSeen = lastSeen;
+        reindexSortedFriend(ctx);
+    }
+
     async function getAllUserMutualCount() {
         if (!friends.size) {
             return;
@@ -1515,6 +1516,7 @@ export const useFriendStore = defineStore('Friend', () => {
         refreshFriends,
         updateOnlineFriendCounter,
         getAllUserStats,
+        updateFriendLastSeen,
         getAllUserMutualCount,
         getAllUserMutualOptedOut,
         initFriendLog,

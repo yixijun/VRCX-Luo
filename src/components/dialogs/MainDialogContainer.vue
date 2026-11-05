@@ -29,7 +29,6 @@
     import { TooltipWrapper } from '@/components/ui/tooltip';
     import { computed, onBeforeUnmount, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
-
     import AvatarDialog from './AvatarDialog/AvatarDialog.vue';
     import GroupDialog from './GroupDialog/GroupDialog.vue';
     import PreviousInstancesInfoDialog from './PreviousInstancesDialog/PreviousInstancesInfoDialog.vue';
@@ -38,7 +37,8 @@
     import WorldDialog from './WorldDialog/WorldDialog.vue';
     import { clearDialogMotionOrigin, dialogMotionOrigin } from '@/services/dialogMotionOrigin';
     import { profileBackgrounds } from '@/shared/constants/backgrounds';
-
+    import GroupMemberModerationDialog from './GroupDialog/GroupMemberModerationDialog.vue';
+    import GroupRolesDialog from './GroupDialog/GroupRolesDialog.vue';
     const avatarStore = useAvatarStore();
     const groupStore = useGroupStore();
     const instanceStore = useInstanceStore();
@@ -69,6 +69,9 @@
             }
             if (groupStore.groupDialog.visible) {
                 return 'group';
+            }
+            if (groupStore.groupRolesDialog.visible) {
+                return 'group-roles';
             }
             return null;
         })();
@@ -140,6 +143,10 @@
                 return PreviousInstancesListDialog;
             case 'previous-instances-group':
                 return PreviousInstancesListDialog;
+            case 'group-member-moderation':
+                return GroupMemberModerationDialog;
+            case 'group-roles':
+                return GroupRolesDialog;
             default:
                 return null;
         }
@@ -186,9 +193,7 @@
         }
         const profile = userStore.userDialog.publicProfileRef || {};
         const configuredOpacity = Number(appearanceSettingsStore.profileBackgroundOpacity);
-        const opacity = Number.isFinite(configuredOpacity)
-            ? Math.min(1, Math.max(0, configuredOpacity))
-            : 0.5;
+        const opacity = Number.isFinite(configuredOpacity) ? Math.min(1, Math.max(0, configuredOpacity)) : 0.5;
         const overlay = appearanceSettingsStore.isDarkMode
             ? `rgba(0, 0, 0, ${1 - opacity})`
             : `rgba(255, 255, 255, ${1 - opacity})`;
@@ -299,9 +304,11 @@
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        class="max-w-40 justify-start truncate text-left"
+                                        class="max-w-40 justify-start text-left"
                                         @click="handleBreadcrumbClick(0)">
-                                        {{ dialogCrumbs[0]?.label || dialogCrumbs[0]?.id }}
+                                        <span class="truncate">{{
+                                            dialogCrumbs[0]?.label || dialogCrumbs[0]?.id
+                                        }}</span>
                                     </Button>
                                 </BreadcrumbLink>
                             </TooltipWrapper>
@@ -335,47 +342,51 @@
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        class="max-w-40 justify-start truncate text-left"
+                                        class="max-w-40 justify-start text-left"
                                         @click="handleBreadcrumbClick(dialogCrumbs.length - 2)">
-                                        {{
+                                        <span class="truncate">{{
                                             dialogCrumbs[dialogCrumbs.length - 2]?.label ||
                                             dialogCrumbs[dialogCrumbs.length - 2]?.id
-                                        }}
+                                        }}</span>
                                     </Button>
                                 </BreadcrumbLink>
                             </TooltipWrapper>
                         </BreadcrumbItem>
                         <BreadcrumbSeparator />
                         <BreadcrumbItem>
-                            <BreadcrumbPage class="max-w-40 truncate">
-                                {{
+                            <TooltipWrapper
+                                :content="
                                     dialogCrumbs[dialogCrumbs.length - 1]?.label ||
                                     dialogCrumbs[dialogCrumbs.length - 1]?.id
-                                }}
-                            </BreadcrumbPage>
+                                "
+                                :delayDuration="500">
+                                <BreadcrumbPage class="max-w-40 truncate">
+                                    {{
+                                        dialogCrumbs[dialogCrumbs.length - 1]?.label ||
+                                        dialogCrumbs[dialogCrumbs.length - 1]?.id
+                                    }}
+                                </BreadcrumbPage>
+                            </TooltipWrapper>
                         </BreadcrumbItem>
                     </template>
                     <template v-else>
                         <template v-for="(crumb, index) in dialogCrumbs" :key="`${crumb.type}-${crumb.id}`">
                             <BreadcrumbItem>
-                                <TooltipWrapper
-                                    v-if="index < dialogCrumbs.length - 1"
-                                    :content="crumb.label || crumb.id"
-                                    :delayDuration="500">
-                                    <BreadcrumbLink as-child>
+                                <TooltipWrapper :content="crumb.label || crumb.id" :delayDuration="500">
+                                    <BreadcrumbLink v-if="index < dialogCrumbs.length - 1" as-child>
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="sm"
-                                            class="max-w-40 justify-start truncate text-left"
+                                            class="max-w-40 justify-start text-left"
                                             @click="handleBreadcrumbClick(index)">
-                                            {{ crumb.label || crumb.id }}
+                                            <span class="truncate">{{ crumb.label || crumb.id }}</span>
                                         </Button>
                                     </BreadcrumbLink>
+                                    <BreadcrumbPage v-else class="max-w-40 truncate">
+                                        {{ crumb.label || crumb.id }}
+                                    </BreadcrumbPage>
                                 </TooltipWrapper>
-                                <BreadcrumbPage v-else class="max-w-40 truncate">
-                                    {{ crumb.label || crumb.id }}
-                                </BreadcrumbPage>
                             </BreadcrumbItem>
                             <BreadcrumbSeparator v-if="index < dialogCrumbs.length - 1" />
                         </template>

@@ -120,10 +120,8 @@
     import { InputGroupField } from '@/components/ui/input-group';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { formatDateFilter, hasGroupPermission } from '../../../shared/utils';
     import { useGalleryStore, useGroupStore } from '../../../stores';
-
     defineProps({
         showGroupPostEditDialog: {
             type: Function,

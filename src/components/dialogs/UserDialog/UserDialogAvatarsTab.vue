@@ -8,7 +8,11 @@
                     size="icon-sm"
                     :disabled="userDialog.isAvatarsLoading"
                     :aria-label="t('common.actions.refresh')"
-                    @click="userDialog.ref.id === currentUser.id ? refreshUserDialogAvatars() : setUserDialogAvatarsRemote(userDialog.id)">
+                    @click="
+                        userDialog.ref.id === currentUser.id
+                            ? refreshUserDialogAvatars()
+                            : setUserDialogAvatarsRemote(userDialog.id)
+                    ">
                     <Spinner v-if="userDialog.isAvatarsLoading" />
                     <RefreshCw v-else />
                 </Button>
@@ -50,6 +54,7 @@
                             <SelectItem value="all">{{ t('dialog.user.avatars.all') }}</SelectItem>
                             <SelectItem value="public">{{ t('dialog.user.avatars.public') }}</SelectItem>
                             <SelectItem value="private">{{ t('dialog.user.avatars.private') }}</SelectItem>
+                            <SelectItem value="licensed">{{ t('dialog.user.avatars.purchased') }}</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -65,7 +70,11 @@
             <template #empty>
                 <Search v-if="avatarSearchQuery.trim()" class="size-5" aria-hidden="true" />
                 <span>{{
-                    t(avatarSearchQuery.trim() && userDialogAvatars.length ? 'common.no_matching_records' : 'common.no_data')
+                    t(
+                        avatarSearchQuery.trim() && userDialogAvatars.length
+                            ? 'common.no_matching_records'
+                            : 'common.no_data'
+                    )
                 }}</span>
             </template>
         </UserDialogResourceGrid>
@@ -76,32 +85,32 @@
     import { computed, ref, watch } from 'vue';
     import { useI18n } from 'vue-i18n';
     import { storeToRefs } from 'pinia';
-
     import { RefreshCw, Search, UserRound } from 'lucide-vue-next';
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
     import { Button } from '@/components/ui/button';
     import { Spinner } from '@/components/ui/spinner';
-
     import { refreshUserDialogAvatars } from '@/coordinators/userCoordinator';
-
     import { useAdvancedSettingsStore, useAvatarStore, useUserStore } from '../../../stores';
     import UserDialogResourceGrid from './UserDialogResourceGrid.vue';
     import UserDialogResourceSearch from './UserDialogResourceSearch.vue';
     import UserDialogResourceToolbar from './UserDialogResourceToolbar.vue';
-
+    import { showAvatarDialog, lookupAvatars } from '../../../coordinators/avatarCoordinator';
+    import { Avatar } from '@/components/ui/avatar';
     const { t } = useI18n();
 
     const userStore = useUserStore();
     const { userDialog, currentUser } = storeToRefs(userStore);
-    const { sortUserDialogAvatars } = userStore;
+    const { sortUserDialogAvatars, sortUserDialogLicensedAvatars } = userStore;
 
-    import { showAvatarDialog, lookupAvatars } from '../../../coordinators/avatarCoordinator';
     const { cachedAvatars } = useAvatarStore();
 
     const { avatarRemoteDatabase } = storeToRefs(useAdvancedSettingsStore());
 
     const userDialogAvatars = computed(() => {
-        const { avatars, avatarReleaseStatus } = userDialog.value;
+        const { avatars, licensedAvatars, avatarReleaseStatus } = userDialog.value;
+        if (userDialog.value.ref.id === currentUser.value.id && avatarReleaseStatus === 'licensed') {
+            return licensedAvatars || [];
+        }
         if (avatarReleaseStatus === 'public' || avatarReleaseStatus === 'private') {
             return avatars.filter((avatar) => avatar.releaseStatus === avatarReleaseStatus);
         }
@@ -179,6 +188,7 @@
         const D = userDialog.value;
         D.avatarSorting = sortOption;
         sortUserDialogAvatars(D.avatars);
+        sortUserDialogLicensedAvatars(D.licensedAvatars);
     }
 
     defineExpose({ setUserDialogAvatars, setUserDialogAvatarsRemote });

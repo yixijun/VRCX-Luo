@@ -2,6 +2,18 @@ const SECOND = 1000;
 const MINUTE = 60 * SECOND;
 
 export const entityQueryPolicies = Object.freeze({
+    profile: Object.freeze({
+        staleTime: 20 * SECOND,
+        gcTime: 90 * SECOND,
+        retry: 1,
+        refetchOnWindowFocus: false
+    }),
+    instanceCount: Object.freeze({
+        staleTime: 4 * MINUTE,
+        gcTime: 120 * MINUTE,
+        retry: 1,
+        refetchOnWindowFocus: false
+    }),
     user: Object.freeze({
         staleTime: 20 * SECOND,
         gcTime: 90 * SECOND,
@@ -81,7 +93,7 @@ export const entityQueryPolicies = Object.freeze({
         refetchOnWindowFocus: false
     }),
     visits: Object.freeze({
-        staleTime: 30 * MINUTE,
+        staleTime: 4 * MINUTE,
         gcTime: 120 * MINUTE,
         retry: 1,
         refetchOnWindowFocus: false

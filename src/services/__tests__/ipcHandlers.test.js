@@ -13,6 +13,7 @@ const handlerContracts = [
     ['app:getOverlayWindow', 'getOverlayWindow'],
     ['app:updateVr', 'updateVr'],
     ['app:getArch', 'getArch'],
+    ['app:setThemeSource', 'setThemeSource'],
     ['app:getClipboardText', 'getClipboardText'],
     ['app:getNoUpdater', 'getNoUpdater'],
     ['app:setTrayIconNotification', 'setTrayIconNotification'],

@@ -24,8 +24,9 @@
 </template>
 
 <script setup>
+    import './vr/workspace/workspace.css';
+    import '@/styles/globals.css';
     import { computed, onBeforeMount, onMounted } from 'vue';
-
     import { addGameLogEvent, getGameLogTable } from './coordinators/gameLogCoordinator';
     import {
         runCheckVRChatDebugLoggingFlow,
@@ -36,7 +37,6 @@
     import { TooltipProvider } from './components/ui/tooltip';
     import { createGlobalStores } from './stores';
     import { initNoty } from './plugins/noty';
-
     import AlertDialogModal from './components/ui/alert-dialog/AlertDialogModal.vue';
     import DatabaseUpgradeDialog from './components/dialogs/DatabaseUpgradeDialog.vue';
     import CloseBehaviorDialog from './components/dialogs/CloseBehaviorDialog.vue';
@@ -47,11 +47,7 @@
     import OpenExternalLinkDialog from './components/dialogs/OpenExternalLinkDialog.vue';
     import VrWorkspaceChrome from './vr/workspace/VrWorkspaceChrome.vue';
     import { vrWorkspace, setVrWorkspaceActive } from './services/vrWorkspace';
-    import './vr/workspace/workspace.css';
     import { chooseVrUploadFiles } from './services/vrWorkspaceFilePicker';
-
-    import '@/styles/globals.css';
-
     console.log(`isLinux: ${LINUX}`);
 
     const isMacOS = computed(() => navigator.platform.includes('Mac'));
@@ -69,6 +65,11 @@
         window.closeVrWorkspace = () => setVrWorkspaceActive(false);
         window.chooseVrUploadFiles = chooseVrUploadFiles;
         // Bridge: attach coordinator functions to store for C# IPC callbacks
+        window.$bridge = {
+            updateIsGameRunning: runUpdateIsGameRunningFlow,
+            updateIsHmdAfk: runUpdateIsHmdAfkFlow,
+            addGameLogEvent
+        };
         store.game.updateIsGameRunning = runUpdateIsGameRunningFlow;
         store.game.updateIsHmdAfk = runUpdateIsHmdAfkFlow;
         store.gameLog.addGameLogEvent = addGameLogEvent;

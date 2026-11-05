@@ -2,7 +2,6 @@ import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
-
 import { instanceRequest, userRequest } from '../api';
 import { groupRequest } from '../api/';
 import { useAppearanceSettingsStore } from './settings/appearance';
@@ -14,7 +13,6 @@ import { useModalStore } from './modal';
 import { useUserStore } from './user';
 import { watchState } from '../services/watchState';
 import { getClipboardText } from '../services/clipboardAdapter';
-
 export const useSearchStore = defineStore('Search', () => {
     const userStore = useUserStore();
     const appearanceSettingsStore = useAppearanceSettingsStore();
@@ -173,7 +171,7 @@ export const useSearchStore = defineStore('Search', () => {
         }
         if (input.length === 8) {
             return verifyShortName('', input);
-        } else if (input.startsWith('https://vrch.at/')) {
+        } else if (/^https:\/\/vrch\.at\/[A-Za-z0-9]{8}$/.test(input)) {
             shortName = input.substring(16, 24);
             return verifyShortName('', shortName);
         } else if (

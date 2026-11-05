@@ -90,6 +90,17 @@
                         saveDiscordOption();
                     " />
             </SettingsItem>
+            <SettingsItem
+                :label="t('view.settings.discord_presence.discord_presence.show_media_images')"
+                :description="t('view.settings.discord_presence.discord_presence.show_media_images_tooltip')">
+                <Switch
+                    :model-value="discordMediaImage"
+                    :disabled="!discordActive || discordHideImage"
+                    @update:modelValue="
+                        setDiscordMediaImage();
+                        saveDiscordOption();
+                    " />
+            </SettingsItem>
         </SettingsGroup>
 
         <!-- Translation API -->
@@ -155,20 +166,17 @@
     import { Switch } from '@/components/ui/switch';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import {
         useAdvancedSettingsStore,
         useAvatarProviderStore,
         useDiscordPresenceSettingsStore,
         useVrStore
     } from '@/stores';
-
     import AvatarProviderDialog from '../../dialogs/AvatarProviderDialog.vue';
     import TranslationApiDialog from '../../dialogs/TranslationApiDialog.vue';
     import YouTubeApiDialog from '../../dialogs/YouTubeApiDialog.vue';
     import SettingsGroup from '../SettingsGroup.vue';
     import SettingsItem from '../SettingsItem.vue';
-
     const { t } = useI18n();
 
     const advancedSettingsStore = useAdvancedSettingsStore();
@@ -183,6 +191,7 @@
         setDiscordShowPlatform,
         setDiscordWorldIntegration,
         setDiscordWorldNameAsDiscordStatus,
+        setDiscordMediaImage,
         saveDiscordOption
     } = useDiscordPresenceSettingsStore();
 
@@ -194,7 +203,8 @@
         discordHideImage,
         discordShowPlatform,
         discordWorldIntegration,
-        discordWorldNameAsDiscordStatus
+        discordWorldNameAsDiscordStatus,
+        discordMediaImage
     } = storeToRefs(useDiscordPresenceSettingsStore());
 
     const { showVRChatConfig } = advancedSettingsStore;

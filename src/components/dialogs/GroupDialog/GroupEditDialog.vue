@@ -77,10 +77,10 @@
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="public">
+                                            <SelectItem value="default">
                                                 {{ t('dialog.group.tags.public') }}
                                             </SelectItem>
-                                            <SelectItem value="default">
+                                            <SelectItem value="private">
                                                 {{ t('dialog.group.tags.private') }}
                                             </SelectItem>
                                         </SelectGroup>
@@ -303,20 +303,17 @@
     import { Trash2 } from 'lucide-vue-next';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { Button } from '@/components/ui/button';
     import { Checkbox } from '@/components/ui/checkbox';
     import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field';
     import { InputGroupAction, InputGroupField, InputGroupTextareaField } from '@/components/ui/input-group';
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
     import { groupRequest } from '../../../api';
     import { applyGroup, showGroupDialog } from '../../../coordinators/groupCoordinator';
     import { getFaviconUrl } from '../../../shared/utils';
     import { useGroupStore, useUserStore } from '../../../stores';
     import GallerySelectDialog from './GallerySelectDialog.vue';
-
     const { t } = useI18n();
     const { groupEditDialog } = storeToRefs(useGroupStore());
     const { subsetOfLanguages } = storeToRefs(useUserStore());
@@ -387,10 +384,10 @@
 
     /**
      * @param {string} value
-     * @returns {value is 'public' | 'default'}
+     * @returns {value is import('vrchat').GroupPrivacy}
      */
     function isPrivacy(value) {
-        return value === 'public' || value === 'default';
+        return value === 'default' || value === 'private';
     }
 
     /**

@@ -1,6 +1,11 @@
 <template>
     <div class="flex flex-col gap-10 py-2">
         <SettingsGroup :title="t('view.settings.notifications.notifications.header')">
+            <template #description>
+                <span :class="{ 'text-destructive': currentUser.status === 'busy' }">{{
+                    t('view.settings.notifications.notifications.busy_warning')
+                }}</span>
+            </template>
             <SettingsItem :label="t('view.settings.notifications.notifications.layout')">
                 <Select :model-value="notificationLayout" @update:modelValue="setNotificationLayout">
                     <SelectTrigger size="sm">
@@ -27,6 +32,35 @@
                 <Button size="sm" variant="outline" @click="testNotification"
                     ><Play />{{ t('view.settings.notifications.notifications.test_notification') }}</Button
                 >
+            </SettingsItem>
+        </SettingsGroup>
+
+        <SettingsGroup :title="t('view.settings.notifications.notifications.inventory_notifications.header')">
+            <SettingsItem
+                :label="
+                    t(
+                        'view.settings.notifications.notifications.inventory_notifications.inventory_bundle_notifications'
+                    )
+                "
+                :description="
+                    t(
+                        'view.settings.notifications.notifications.inventory_notifications.inventory_bundle_notifications_description'
+                    )
+                ">
+                <Switch
+                    :model-value="inventoryBundleNotifications"
+                    @update:model-value="setInventoryBundleNotifications" />
+            </SettingsItem>
+            <SettingsItem
+                :label="
+                    t('view.settings.notifications.notifications.inventory_notifications.free_store_item_notifications')
+                "
+                :description="
+                    t(
+                        'view.settings.notifications.notifications.inventory_notifications.free_store_item_notifications_description'
+                    )
+                ">
+                <Switch :model-value="freeStoreItemNotifications" @update:model-value="setFreeStoreItemNotifications" />
             </SettingsItem>
         </SettingsGroup>
 
@@ -228,7 +262,6 @@
 
 <script setup>
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-    import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
     import { Switch } from '@/components/ui/switch';
     import { computed, onMounted, ref } from 'vue';
     import { Button } from '@/components/ui/button';
@@ -236,14 +269,11 @@
     import { Play } from 'lucide-vue-next';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
-    import { useNotificationStore, useNotificationsSettingsStore } from '@/stores';
+    import { useNotificationStore, useNotificationsSettingsStore, useUserStore } from '@/stores';
     import { TEMPORARY_MUTE_DURATIONS } from '@/shared/utils/temporaryMute';
-
     import FeedFiltersDialog from '../../dialogs/FeedFiltersDialog.vue';
     import SettingsGroup from '../SettingsGroup.vue';
     import SettingsItem from '../SettingsItem.vue';
-
     const { t } = useI18n();
 
     const notificationsSettingsStore = useNotificationsSettingsStore();
@@ -258,10 +288,11 @@
         customNotificationSoundPath,
         notificationTTS,
         notificationTTSNickName,
+        inventoryBundleNotifications,
+        freeStoreItemNotifications,
         isTestTTSVisible,
         notificationTTSTest,
-        TTSvoices,
-        notificationLayout
+        TTSvoices
     } = storeToRefs(notificationsSettingsStore);
 
     const {
@@ -275,14 +306,19 @@
         clearCustomNotificationSound,
         playCustomNotificationSound,
         setNotificationTTSNickName,
+        setInventoryBundleNotifications,
+        setFreeStoreItemNotifications,
         getTTSVoiceName,
         changeTTSVoice,
         saveNotificationTTS,
-        testNotificationTTS,
-        setNotificationLayout
+        testNotificationTTS
     } = notificationsSettingsStore;
 
+    const { currentUser } = storeToRefs(useUserStore());
+
     const { testNotification, markAllAsSeen } = useNotificationStore();
+    const { notificationLayout } = storeToRefs(notificationsSettingsStore);
+    const { setNotificationLayout } = notificationsSettingsStore;
 
     onMounted(() => {
         markAllAsSeen();

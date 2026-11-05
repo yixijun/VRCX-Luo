@@ -1,8 +1,6 @@
 import { localeIncludes } from './base/string';
-import removeConfusables, {
-    removeWhitespace
-} from '../../services/confusables';
-
+import removeConfusables from '../../services/confusables';
+import { removeWhitespace } from '../../services/confusables';
 /**
  * Tests whether a name matches a query using locale-aware comparison.
  * Handles confusable-character normalization and whitespace stripping.
@@ -67,8 +65,9 @@ export function searchFriends(query, friends, comparer, limit = 10) {
         let match = matchName(ctx.name, query, comparer);
         let matchedField = match ? 'name' : null;
         // Include memo and note matching for friends (with raw query for spaces)
-        if (!match && ctx.memo && query.length >= 2) {
-            match = localeIncludes(ctx.memo, query, comparer);
+        const memo = ctx.ref.$memo ?? ctx.memo;
+        if (!match && memo && query.length >= 2) {
+            match = localeIncludes(memo, query, comparer);
             if (match) matchedField = 'memo';
         }
         if (!match && ctx.ref.note && query.length >= 2) {
@@ -81,7 +80,7 @@ export function searchFriends(query, friends, comparer, limit = 10) {
                 name: ctx.name,
                 type: 'friend',
                 imageUrl: ctx.ref.currentAvatarThumbnailImageUrl,
-                memo: ctx.memo || '',
+                memo: memo || '',
                 note: ctx.ref.note || '',
                 matchedField,
                 ref: ctx.ref

@@ -130,7 +130,6 @@
     import { computed, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import {
         compareByDisplayName,
         compareByFriendOrder,
@@ -145,7 +144,6 @@
     import { userDialogMutualFriendSortingOptions } from '../../../shared/constants';
     import { userRequest } from '../../../api';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
-
     const { t } = useI18n();
     const { userImage } = useUserDisplay();
 

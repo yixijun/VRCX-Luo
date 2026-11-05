@@ -1,21 +1,17 @@
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { useI18n } from 'vue-i18n';
-
 import { useFriendStore } from '../friend';
 import { useModalStore } from '../modal';
 import { useVRCXUpdaterStore } from '../vrcxUpdater';
 import { useVrcxStore } from '../vrcx';
-
 import configRepository from '../../services/config';
 import {
     CLOSE_BEHAVIOR,
     getCloseBehaviorSettings,
     resolveCloseBehavior
 } from '../../shared/utils/closeBehavior';
-
 import * as workerTimers from 'worker-timers';
-
 export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
     const vrcxStore = useVrcxStore();
     const VRCXUpdaterStore = useVRCXUpdaterStore();
@@ -49,6 +45,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
     const autoStateChangeGroups = ref([]);
     const autoAcceptInviteRequests = ref('Off');
     const autoAcceptInviteGroups = ref([]);
+    const autoAcceptInviteStatuses = ref([]);
     const recentActionCooldownEnabled = ref(false);
     const recentActionCooldownMinutes = ref(60);
     const relationshipSuggestionPromptsEnabled = ref(true);
@@ -81,6 +78,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
             autoStateChangeGroupsStrConfig,
             autoAcceptInviteRequestsConfig,
             autoAcceptInviteGroupsStrConfig,
+            autoAcceptInviteStatusesStrConfig,
             recentActionCooldownEnabledConfig,
             recentActionCooldownMinutesConfig,
             relationshipSuggestionPromptsEnabledConfig,
@@ -126,6 +124,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
             configRepository.getString('VRCX_autoStateChangeGroups', '[]'),
             configRepository.getString('VRCX_autoAcceptInviteRequests', 'Off'),
             configRepository.getString('VRCX_autoAcceptInviteGroups', '[]'),
+            configRepository.getString('VRCX_autoAcceptInviteStatuses', '[]'),
             configRepository.getBool('VRCX_recentActionCooldownEnabled', false),
             configRepository.getInt('VRCX_recentActionCooldownMinutes', 60),
             configRepository.getBool(
@@ -182,6 +181,9 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         autoAcceptInviteRequests.value = autoAcceptInviteRequestsConfig;
         autoAcceptInviteGroups.value = JSON.parse(
             autoAcceptInviteGroupsStrConfig
+        );
+        autoAcceptInviteStatuses.value = JSON.parse(
+            autoAcceptInviteStatusesStrConfig
         );
         recentActionCooldownEnabled.value = recentActionCooldownEnabledConfig;
         recentActionCooldownMinutes.value = recentActionCooldownMinutesConfig;
@@ -416,6 +418,17 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         );
     }
 
+    /**
+     * @param {string[]} value
+     */
+    function setAutoAcceptInviteStatuses(value) {
+        autoAcceptInviteStatuses.value = value;
+        configRepository.setString(
+            'VRCX_autoAcceptInviteStatuses',
+            JSON.stringify(autoAcceptInviteStatuses.value)
+        );
+    }
+
     function promptProxySettings() {
         // Element Plus: prompt(message, title, options)
         modalStore
@@ -469,7 +482,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
     }
 
     /**
-     * @param {number} value
+     * @param {any} value
      */
     function setRecentActionCooldownMinutes(value) {
         const parsed = parseInt(String(value), 10);
@@ -490,7 +503,9 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         );
     }
 
-    function setAutoDeclineFriendRequests(value = !autoDeclineFriendRequests.value) {
+    function setAutoDeclineFriendRequests(
+        value = !autoDeclineFriendRequests.value
+    ) {
         autoDeclineFriendRequests.value = Boolean(value);
         configRepository.setBool(
             'VRCX_autoDeclineFriendRequests',
@@ -522,6 +537,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         autoStateChangeGroups,
         autoAcceptInviteRequests,
         autoAcceptInviteGroups,
+        autoAcceptInviteStatuses,
         recentActionCooldownEnabled,
         recentActionCooldownMinutes,
         relationshipSuggestionPromptsEnabled,
@@ -551,6 +567,7 @@ export const useGeneralSettingsStore = defineStore('GeneralSettings', () => {
         setAutoStateChangeGroups,
         setAutoAcceptInviteRequests,
         setAutoAcceptInviteGroups,
+        setAutoAcceptInviteStatuses,
         promptProxySettings,
         setRecentActionCooldownEnabled,
         setRecentActionCooldownMinutes,

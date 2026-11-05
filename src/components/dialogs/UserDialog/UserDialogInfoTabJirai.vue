@@ -531,11 +531,11 @@
     // Keep the old fields as a compatibility fallback for cached responses.
     const dialogBio = computed(() => {
         const publicBio = userDialog.value.publicProfileRef?.bio;
-        return publicBio || userDialog.value.ref?.bio || '';
+        return typeof publicBio === 'string' ? publicBio : userDialog.value.ref?.bio || '';
     });
     const dialogBioLinks = computed(() => {
         const publicLinks = userDialog.value.publicProfileRef?.bioLinks;
-        return publicLinks?.length ? publicLinks : userDialog.value.ref?.bioLinks || [];
+        return Array.isArray(publicLinks) ? publicLinks : userDialog.value.ref?.bioLinks || [];
     });
 
     const isEditNoteAndMemoDialogVisible = ref(false);
@@ -561,11 +561,7 @@
             return;
         }
 
-        bioDiffHtml.value = formatLatestBioDiff(
-            records[0],
-            dialogBio.value,
-            formatDifference
-        );
+        bioDiffHtml.value = formatLatestBioDiff(records[0], dialogBio.value, formatDifference);
     }
 
     function toggleBioDiff() {

@@ -73,22 +73,14 @@
     import { useI18n } from 'vue-i18n';
     import { useSearchStore } from '@/stores';
     import { useVrcxVueTable } from '@/lib/table/useVrcxVueTable';
-
-    import {
-        useAvatarStore,
-        useGalleryStore,
-        useGroupStore,
-        usePhotonStore,
-        useUserStore,
-        useVrcxStore,
-        useWorldStore
-    } from '../../../stores';
+    import { useGalleryStore, usePhotonStore, useUserStore, useVrcxStore, useWorldStore } from '../../../stores';
+    import { showAvatarDialog } from '../../../coordinators/avatarCoordinator';
+    import { showGroupDialog } from '../../../coordinators/groupCoordinator';
     import { showWorldDialog } from '../../../coordinators/worldCoordinator';
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../components/ui/select';
     import { createColumns } from './photonEventColumns.jsx';
     import { photonEventTableTypeFilterList } from '../../../shared/constants/photon';
     import { lookupUser } from '../../../coordinators/userCoordinator';
-
     const emit = defineEmits(['show-chatbox-blacklist']);
     const { t } = useI18n();
 
@@ -108,9 +100,6 @@
 
     const { stringComparer } = storeToRefs(useSearchStore());
 
-    const { showAvatarDialog } = useAvatarStore();
-
-    const { showGroupDialog } = useGroupStore();
     const { showFullscreenImageDialog } = useGalleryStore();
     const { ipcEnabled } = storeToRefs(useVrcxStore());
 

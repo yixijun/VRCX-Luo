@@ -3,7 +3,7 @@
         <Tabs
             v-model="activeSearchTab"
             :unmount-on-hide="false"
-            aria-label="Search tabs"
+            :aria-label="t('view.search.tabs_label')"
             class="flex flex-col min-h-0 flex-1">
             <div class="mt-0 mx-0 mb-2 flex items-center gap-5">
                 <TabsList>
@@ -11,6 +11,8 @@
                     <TabsTrigger value="world">{{ t('view.search.world.header') }}</TabsTrigger>
                     <TabsTrigger value="avatar">{{ t('view.search.avatar.header') }}</TabsTrigger>
                     <TabsTrigger value="group">{{ t('view.search.group.header') }}</TabsTrigger>
+                    <TabsTrigger value="marketplace">{{ t('view.search.marketplace.header') }}</TabsTrigger>
+                    <TabsTrigger value="store">{{ t('view.search.store.header') }}</TabsTrigger>
                 </TabsList>
                 <div class="flex min-w-0 flex-1 items-center">
                     <InputGroupField
@@ -47,7 +49,8 @@
                             <Item
                                 v-for="user in searchUserResults"
                                 :key="user.id"
-                                class="cursor-pointer hover:bg-muted x-hover-list rounded-none"
+                                size="sm"
+                                class="cursor-pointer gap-2 px-3 py-2 hover:bg-muted x-hover-list rounded-none"
                                 @click="showUserDialog(user.id)">
                                 <ItemMedia variant="image">
                                     <Avatar>
@@ -84,7 +87,7 @@
                                             :title="item.value" />
                                     </ItemTitle>
                                     <ItemDescription v-if="user.bio" class="line-clamp-1 text-xs!">
-                                        {{ user.bio }}
+                                        {{ replaceBioSymbols(user.bio) }}
                                     </ItemDescription>
                                 </ItemContent>
                             </Item>
@@ -125,9 +128,7 @@
                         </Select>
                         <WorldTagFilter v-model="searchWorldTags" @search="applyWorldTagSearch" />
                     </div>
-                    <div
-                        ref="worldResultsScrollContainer"
-                        class="flex-1 overflow-y-auto min-h-0">
+                    <div ref="worldResultsScrollContainer" class="flex-1 overflow-y-auto min-h-0">
                         <div
                             v-if="isSearchWorldLoading && searchWorldResults.length === 0"
                             class="flex items-center justify-center h-full">
@@ -174,7 +175,8 @@
                                     </div>
                                 </Item>
                             </ItemGroup>
-                            <div class="flex min-h-14 items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
+                            <div
+                                class="flex min-h-14 items-center justify-center gap-2 py-3 text-sm text-muted-foreground">
                                 <template v-if="isSearchWorldLoading">
                                     <Spinner class="size-4" />
                                     <span>{{ t('view.search.world.loading_more') }}</span>
@@ -280,6 +282,144 @@
                     @prev="paginationConfig.onPrev"
                     @next="paginationConfig.onNext" />
             </TabsContent>
+            <TabsContent value="marketplace" class="flex flex-col min-h-0 flex-1">
+                <div class="flex-1 overflow-y-auto min-h-0" style="flex: 9">
+                    <div v-if="isSearchMarketplaceLoading" class="flex items-center justify-center h-full">
+                        <Spinner class="text-2xl" />
+                    </div>
+                    <template v-else-if="searchMarketplaceResults.length > 0">
+                        <ItemGroup
+                            class="grid gap-3"
+                            style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr))">
+                            <Item
+                                v-for="avatar in searchMarketplaceResults"
+                                :key="avatar.id"
+                                variant="outline"
+                                size="sm"
+                                class="cursor-pointer p-3"
+                                as-child>
+                                <div class="overflow-hidden" @click="showAvatarDialog(avatar.id)">
+                                    <ItemHeader>
+                                        <img
+                                            :src="avatar.thumbnailImageUrl || avatar.imageUrl"
+                                            :alt="avatar.name"
+                                            loading="lazy"
+                                            class="aspect-[16/10] w-full rounded-lg object-cover" />
+                                    </ItemHeader>
+                                    <ItemContent class="min-w-0">
+                                        <TooltipWrapper side="top" :content="avatar.name">
+                                            <ItemTitle class="truncate w-auto">{{ avatar.name }}</ItemTitle>
+                                        </TooltipWrapper>
+                                        <ItemDescription class="line-clamp-1 text-xs">
+                                            {{ avatar.authorName }}
+                                        </ItemDescription>
+                                        <ItemDescription class="line-clamp-1 text-xs">
+                                            {{ formatMarketplacePrice(avatar) }}
+                                        </ItemDescription>
+                                    </ItemContent>
+                                </div>
+                            </Item>
+                        </ItemGroup>
+                    </template>
+                    <DataTableEmpty v-else type="nodata" />
+                </div>
+                <SearchPagination
+                    :show="paginationConfig.show"
+                    :prev-disabled="paginationConfig.prevDisabled"
+                    :next-disabled="paginationConfig.nextDisabled"
+                    @prev="paginationConfig.onPrev"
+                    @next="paginationConfig.onNext" />
+            </TabsContent>
+            <TabsContent value="store" class="flex flex-col min-h-0 flex-1">
+                <p v-if="!isPrimaryAccount" class="mb-3 text-sm text-muted-foreground">
+                    {{ t('message.marketplace.primary_account_only') }}
+                </p>
+                <div class="shrink-0 mb-3 flex items-center justify-end gap-2">
+                    <span v-if="currentUserCredits !== null" class="text-sm text-muted-foreground">
+                        {{ t('view.search.store.credits', { credits: commaNumber(currentUserCredits) }) }}
+                    </span>
+                    <TooltipWrapper side="bottom" :content="t('view.search.store.refresh_tooltip')">
+                        <Button
+                            class="rounded-full"
+                            size="icon-sm"
+                            variant="ghost"
+                            :disabled="isStoreShelvesLoading"
+                            @click="getStoreShelves">
+                            <Spinner v-if="isStoreShelvesLoading" />
+                            <RefreshCw v-else />
+                        </Button>
+                    </TooltipWrapper>
+                </div>
+                <div class="flex-1 overflow-y-auto min-h-0">
+                    <div
+                        v-if="isStoreShelvesLoading && !filteredStoreShelves.length"
+                        class="flex items-center justify-center h-full">
+                        <Spinner class="text-2xl" />
+                    </div>
+                    <template v-else-if="filteredStoreShelves.length > 0">
+                        <div v-for="shelf in filteredStoreShelves" :key="shelf.id" class="mb-6">
+                            <img
+                                v-if="shelf.shelfClientBannerImageId"
+                                :src="getFileImageUrl(shelf.shelfClientBannerImageId)"
+                                loading="lazy"
+                                class="mb-3 w-full rounded-lg object-cover" />
+                            <div v-if="shelf.shelfTitle" class="mb-2 font-medium" v-text="shelf.shelfTitle" />
+                            <ItemGroup
+                                class="grid gap-3"
+                                style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr))">
+                                <Item
+                                    v-for="listing in shelf.listings"
+                                    :key="listing.id"
+                                    variant="outline"
+                                    size="sm"
+                                    class="p-3"
+                                    as-child>
+                                    <div class="overflow-hidden">
+                                        <ItemHeader>
+                                            <img
+                                                v-if="listing.imageUrl || listing.imageId"
+                                                :src="listing.imageUrl || getFileImageUrl(listing.imageId)"
+                                                :alt="listing.displayName"
+                                                loading="lazy"
+                                                class="aspect-square w-full cursor-pointer rounded-lg object-cover"
+                                                @click="
+                                                    showFullscreenImageDialog(
+                                                        listing.imageUrl || getFileImageUrl(listing.imageId)
+                                                    )
+                                                " />
+                                        </ItemHeader>
+                                        <ItemContent class="min-w-0">
+                                            <TooltipWrapper side="top" :content="listing.description">
+                                                <ItemTitle class="truncate w-auto">{{ listing.displayName }}</ItemTitle>
+                                            </TooltipWrapper>
+                                            <ItemDescription class="line-clamp-1 text-xs">
+                                                {{ listing.subtitle }}
+                                            </ItemDescription>
+                                            <ItemDescription class="line-clamp-1 text-xs">
+                                                {{ formatListingPrice(listing) }}
+                                            </ItemDescription>
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                class="mt-1 w-full"
+                                                :disabled="isListingOwned(listing) || !canPurchaseListing(listing)"
+                                                @click="purchaseListing(listing)">
+                                                <Spinner v-if="purchasingListingId === listing.id" />
+                                                {{
+                                                    isListingOwned(listing)
+                                                        ? t('view.search.store.owned')
+                                                        : t('view.search.store.buy')
+                                                }}
+                                            </Button>
+                                        </ItemContent>
+                                    </div>
+                                </Item>
+                            </ItemGroup>
+                        </div>
+                    </template>
+                    <DataTableEmpty v-else type="nodata" />
+                </div>
+            </TabsContent>
             <TabsContent value="group" class="flex flex-col min-h-0 flex-1">
                 <div class="flex-1 overflow-y-auto min-h-0" style="flex: 9">
                     <div v-if="isSearchGroupLoading" class="flex items-center justify-center h-full">
@@ -289,7 +429,8 @@
                         <Item
                             v-for="group in searchGroupResults"
                             :key="group.id"
-                            class="cursor-pointer hover:bg-muted x-hover-list rounded-none"
+                            size="sm"
+                            class="cursor-pointer gap-2 px-3 py-2 hover:bg-muted x-hover-list rounded-none"
                             @click="showGroupDialog(group.id)">
                             <ItemMedia variant="image">
                                 <Avatar class="rounded-sm">
@@ -329,7 +470,7 @@
 
 <script setup>
     import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-    import { Settings, Trash2, User, Users } from 'lucide-vue-next';
+    import { RefreshCw, Settings, Trash2, User, Users } from 'lucide-vue-next';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import { DataTableEmpty } from '@/components/ui/data-table';
     import { Spinner } from '@/components/ui/spinner';
@@ -345,20 +486,25 @@
         ItemMedia,
         ItemTitle
     } from '@/components/ui/item';
-
-    import { computed, onUnmounted, ref } from 'vue';
+    import { computed, onUnmounted, ref, onActivated, watch } from 'vue';
     import { useInfiniteScroll, useMagicKeys, whenever } from '@vueuse/core';
     import { toast } from 'vue-sonner';
     import { Button } from '@/components/ui/button';
     import { Checkbox } from '@/components/ui/checkbox';
     import { InputGroupField } from '@/components/ui/input-group';
-
     import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
-    import { useAppearanceSettingsStore, useAuthStore, useAvatarProviderStore, useSearchStore } from '../../stores';
-    import { convertFileUrlToImageUrl, languageClass } from '../../shared/utils';
+    import {
+        useAppearanceSettingsStore,
+        useAuthStore,
+        useAvatarProviderStore,
+        useGalleryStore,
+        useSearchStore,
+        useUserStore
+    } from '../../stores';
+    import { AppDebug } from '@/services/appConfig';
+    import { commaNumber, convertFileUrlToImageUrl, languageClass, replaceBioSymbols } from '../../shared/utils';
     import { useUserDisplay } from '../../composables/useUserDisplay';
     import UserIdentityInline from '../../components/UserIdentityInline.vue';
     import { showAvatarDialog } from '../../coordinators/avatarCoordinator';
@@ -369,15 +515,18 @@
     import { useSearchWorld } from './composables/useSearchWorld';
     import { useSearchUser } from './composables/useSearchUser';
     import { useSearchGroup } from './composables/useSearchGroup';
-
+    import { useSearchMarketplace } from './composables/useSearchMarketplace';
+    import { useSearchStoreShelves } from './composables/useSearchStoreShelves';
     const { randomUserColours } = storeToRefs(useAppearanceSettingsStore());
     const { avatarRemoteDatabaseProviderList, avatarRemoteDatabaseProvider, isAvatarProviderDialogVisible } =
         storeToRefs(useAvatarProviderStore());
     const { setAvatarProvider } = useAvatarProviderStore();
+    const { showFullscreenImageDialog } = useGalleryStore();
 
     const { searchText, searchUserResults } = storeToRefs(useSearchStore());
     const { clearSearch } = useSearchStore();
     const { cachedConfig } = storeToRefs(useAuthStore());
+    const { currentUserCredits } = storeToRefs(useUserStore());
 
     const { t } = useI18n();
     const { userImage } = useUserDisplay();
@@ -473,19 +622,15 @@
     } = useSearchWorld();
 
     const worldResultsScrollContainer = ref(null);
-    useInfiniteScroll(
-        worldResultsScrollContainer,
-        () => moreSearchWorld(1),
-        {
-            distance: 320,
-            canLoadMore: () =>
-                activeSearchTab.value === 'world' &&
-                Boolean(searchWorldParams.value.n) &&
-                hasMoreWorldResults.value &&
-                !isSearchWorldLoading.value &&
-                !searchWorldError.value
-        }
-    );
+    useInfiniteScroll(worldResultsScrollContainer, () => moreSearchWorld(1), {
+        distance: 320,
+        canLoadMore: () =>
+            activeSearchTab.value === 'world' &&
+            Boolean(searchWorldParams.value.n) &&
+            hasMoreWorldResults.value &&
+            !isSearchWorldLoading.value &&
+            !searchWorldError.value
+    });
 
     const {
         searchGroupParams,
@@ -496,13 +641,47 @@
         clearGroupSearch
     } = useSearchGroup();
 
+    const {
+        searchMarketplaceParams,
+        searchMarketplaceResults,
+        searchMarketplaceHasNext,
+        isSearchMarketplaceLoading,
+        searchMarketplace,
+        moreSearchMarketplace,
+        clearMarketplaceSearch
+    } = useSearchMarketplace();
+
+    const {
+        filteredStoreShelves,
+        isStoreShelvesLoading,
+        purchasingListingId,
+        isPrimaryAccount,
+        getStoreShelves,
+        isListingOwned,
+        canPurchaseListing,
+        purchaseListing
+    } = useSearchStoreShelves();
+
+    watch(activeSearchTab, (tab) => {
+        if (tab === 'store') {
+            getStoreShelves();
+        }
+    });
+
+    onActivated(() => {
+        if (activeSearchTab.value === 'store') {
+            getStoreShelves();
+        }
+    });
+
+    const pageSize = 60;
     const paginationConfig = computed(() => {
         switch (activeSearchTab.value) {
             case 'user':
                 return {
                     show: searchUserResults.value.length > 0 && !isSearchUserLoading.value,
                     prevDisabled: !searchUserParams.value.offset,
-                    nextDisabled: searchUserResults.value.length < 10,
+                    nextDisabled: searchUserResults.value.length < pageSize,
                     onPrev: () => handleMoreSearchUser(-1),
                     onNext: () => handleMoreSearchUser(1)
                 };
@@ -524,11 +703,19 @@
                     onPrev: () => moreSearchAvatar(-1),
                     onNext: () => moreSearchAvatar(1)
                 };
+            case 'marketplace':
+                return {
+                    show: searchMarketplaceResults.value.length > 0 && !isSearchMarketplaceLoading.value,
+                    prevDisabled: !searchMarketplaceParams.value.offset,
+                    nextDisabled: !searchMarketplaceHasNext.value,
+                    onPrev: () => moreSearchMarketplace(-1),
+                    onNext: () => moreSearchMarketplace(1)
+                };
             case 'group':
                 return {
                     show: searchGroupResults.value.length > 0 && !isSearchGroupLoading.value,
                     prevDisabled: !searchGroupParams.value.offset,
-                    nextDisabled: searchGroupResults.value.length < 10,
+                    nextDisabled: searchGroupResults.value.length < pageSize,
                     onPrev: () => moreSearchGroup(-1),
                     onNext: () => moreSearchGroup(1)
                 };
@@ -544,11 +731,45 @@
     /**
      *
      */
+    function formatMarketplacePrice(avatar) {
+        const prices = (avatar.publishedListings ?? [])
+            .map((listing) => listing.priceTokens)
+            .filter((price) => typeof price === 'number');
+        const lowestPrice = prices.length ? Math.min(...prices) : avatar.lowestPrice;
+        const highestPrice = prices.length ? Math.max(...prices) : avatar.highestPrice;
+        if (lowestPrice == null) {
+            return '';
+        }
+        if (highestPrice == null || highestPrice === lowestPrice) {
+            return `${commaNumber(lowestPrice)}V`;
+        }
+        return `${commaNumber(lowestPrice)}V – ${commaNumber(highestPrice)}V`;
+    }
+
+    function getFileImageUrl(fileId) {
+        return `${AppDebug.endpointDomain}/file/${fileId}/1/`;
+    }
+
+    function formatListingPrice(listing) {
+        if (!listing.priceTokens) {
+            return t('view.search.store.free');
+        }
+        const price = `${commaNumber(listing.priceTokens)}V`;
+        if (listing.vrcPlusDiscountPrice == null || listing.vrcPlusDiscountPrice === listing.priceTokens) {
+            return price;
+        }
+        const vrcPlusPrice = t('view.search.store.vrc_plus_price', {
+            price: `${commaNumber(listing.vrcPlusDiscountPrice)}V`
+        });
+        return `${price} · ${vrcPlusPrice}`;
+    }
+
     function handleClearSearch() {
         clearUserSearch();
         clearWorldSearch();
         clearAvatarSearch();
         clearGroupSearch();
+        clearMarketplaceSearch();
         clearSearch();
     }
 
@@ -577,6 +798,9 @@
                 break;
             case 'avatar':
                 searchAvatar();
+                break;
+            case 'marketplace':
+                searchMarketplace();
                 break;
             case 'group':
                 searchGroup();

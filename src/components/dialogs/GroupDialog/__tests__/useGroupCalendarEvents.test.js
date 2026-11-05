@@ -42,8 +42,8 @@ describe('useGroupCalendarEvents', () => {
             const { pastCalenderEvents } = useGroupCalendarEvents(groupDialog);
             expect(pastCalenderEvents.value).toHaveLength(2);
             expect(pastCalenderEvents.value.map((e) => e.id)).toEqual([
-                '1',
-                '3'
+                '3',
+                '1'
             ]);
         });
 
@@ -84,8 +84,8 @@ describe('useGroupCalendarEvents', () => {
                 useGroupCalendarEvents(groupDialog);
             expect(upcomingCalenderEvents.value).toHaveLength(2);
             expect(upcomingCalenderEvents.value.map((e) => e.id)).toEqual([
-                '2',
-                '3'
+                '3',
+                '2'
             ]);
         });
 

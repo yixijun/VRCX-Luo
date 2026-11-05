@@ -1,6 +1,5 @@
 import { escapeTag } from './string';
 import { i18n } from '../../../plugins/i18n';
-
 const TIME_UNIT_KEYS = {
     y: 'common.time_units.y',
     d: 'common.time_units.d',
@@ -69,7 +68,8 @@ function timeAgo(datetime) {
     if (!datetime) {
         return '—';
     }
-    const timestamp = typeof datetime === 'number' ? datetime : Date.parse(datetime);
+    const timestamp =
+        typeof datetime === 'number' ? datetime : Date.parse(datetime);
     if (!Number.isFinite(timestamp)) {
         return String(datetime);
     }
@@ -109,17 +109,17 @@ function convertYoutubeTime(duration) {
         duration.indexOf('H') === -1 &&
         duration.indexOf('S') === -1
     ) {
-        a = [0, a[0], 0];
+        a = ['0', a[0], '0'];
     }
     if (duration.indexOf('H') >= 0 && duration.indexOf('M') === -1) {
-        a = [a[0], 0, a[1]];
+        a = [a[0], '0', a[1]];
     }
     if (
         duration.indexOf('H') >= 0 &&
         duration.indexOf('M') === -1 &&
         duration.indexOf('S') === -1
     ) {
-        a = [a[0], 0, 0];
+        a = [a[0], '0', '0'];
     }
     let length = 0;
     if (a.length === 3) {

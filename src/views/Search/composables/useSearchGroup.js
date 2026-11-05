@@ -1,9 +1,15 @@
 import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
-
 import { useSearchStore } from '../../../stores';
 import { replaceBioSymbols } from '../../../shared/utils';
 import { groupRequest } from '../../../api';
+function createDefaultSearchGroupParams() {
+    return {
+        n: 60,
+        offset: 0,
+        query: ''
+    };
+}
 
 /**
  * @typedef {{ query: string, n: number, offset: number, order?: string, sortBy?: string }} ActiveSearchGroupParams
@@ -16,7 +22,7 @@ import { groupRequest } from '../../../api';
 export function useSearchGroup() {
     const { searchText } = storeToRefs(useSearchStore());
 
-    const searchGroupParams = ref({});
+    const searchGroupParams = ref(createDefaultSearchGroupParams());
     const searchGroupResults = ref([]);
     const isSearchGroupLoading = ref(false);
 
@@ -25,8 +31,7 @@ export function useSearchGroup() {
      */
     async function searchGroup() {
         searchGroupParams.value = {
-            n: 10,
-            offset: 0,
+            ...createDefaultSearchGroupParams(),
             query: replaceBioSymbols(searchText.value)
         };
         await moreSearchGroup();
@@ -66,7 +71,7 @@ export function useSearchGroup() {
      *
      */
     function clearGroupSearch() {
-        searchGroupParams.value = {};
+        searchGroupParams.value = createDefaultSearchGroupParams();
         searchGroupResults.value = [];
     }
 

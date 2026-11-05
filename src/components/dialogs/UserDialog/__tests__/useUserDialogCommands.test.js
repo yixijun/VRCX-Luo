@@ -104,6 +104,7 @@ function createMockDeps(overrides = {}) {
         showAvatarAuthorDialog: vi.fn(),
         showModerateGroupDialog: vi.fn(),
         showSendBoopDialog: vi.fn(),
+        showModerationReportDialog: vi.fn(),
         showGalleryPage: vi.fn(),
         getFriendRequest: vi.fn(() => ''),
         handleFriendDelete: vi.fn(),
@@ -391,20 +392,13 @@ describe('useUserDialogCommands', () => {
             });
         });
 
-        it('Report Hacking: should confirm then report', async () => {
-            const { userDialogCommand } = useUserDialogCommands(
-                userDialog,
-                deps
-            );
-            userDialogCommand('Report Hacking');
-            await vi.waitFor(() => {
-                expect(miscRequest.reportUser).toHaveBeenCalledWith({
-                    userId: 'usr_test123',
-                    contentType: 'user',
-                    reason: 'behavior-hacking',
-                    type: 'report'
-                });
+        it('Report User: opens the report form for review', () => {
+            const { userDialogCommand } = useUserDialogCommands(userDialog, deps);
+            userDialogCommand('Report User');
+            expect(deps.showModerationReportDialog).toHaveBeenCalledWith({
+                type: 'user', contentId: 'usr_test123', contentName: userDialog.value.ref.displayName
             });
+            expect(miscRequest.reportUser).not.toHaveBeenCalled();
         });
 
         it('Unfriend: should confirm then delete friend', async () => {

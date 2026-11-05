@@ -1,12 +1,10 @@
 import { ArrowUpDown, Info, LogIn, Trash2 } from 'lucide-vue-next';
-
 import DisplayName from '../../DisplayName.vue';
 import Location from '../../Location.vue';
 import LocationWorld from '../../LocationWorld.vue';
 import { Button } from '../../ui/button';
 import { i18n } from '../../../plugins';
 import { formatDateFilter } from '../../../shared/utils';
-
 const { t } = i18n.global;
 
 const sortButton = ({ column, label, descFirst = false }) => (
@@ -67,7 +65,7 @@ const actionsColumn = ({
     onShowInfo,
     onDelete,
     onDeletePrompt,
-    onLaunch
+    onLaunch = null
 }) => ({
     id: 'actions',
     enableSorting: false,

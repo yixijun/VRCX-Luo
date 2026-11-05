@@ -1,8 +1,11 @@
+import {
+    applyPublicProfile,
+    applyUser,
+    applyCurrentUser
+} from '../coordinators/userCoordinator';
 import { patchAndRefetchActiveQuery, queryKeys } from '../queries';
 import { request } from '../services/request';
 import { useUserStore } from '../stores';
-import { applyUser, applyCurrentUser } from '../coordinators/userCoordinator';
-
 /**
  * @returns {string}
  */
@@ -52,10 +55,10 @@ const userReq = {
         return request(`profile/${params.userId}`, {
             method: 'GET',
             ...(queryParams ? { params: queryParams } : {})
-        }).then((json) => ({
-            json,
-            params
-        }));
+        }).then((json) => {
+            json.$lastFetch = Date.now();
+            return { json, params, ref: applyPublicProfile(json) };
+        });
     },
 
     /**
@@ -269,6 +272,38 @@ const userReq = {
             const args = {
                 json,
                 params
+            };
+            return args;
+        });
+    },
+    getClientConfig() {
+        return request(`users/${getCurrentUserId()}/clientConfig`, {
+            method: 'GET'
+        }).then((json) => {
+            const args = {
+                json
+            };
+            return args;
+        });
+    },
+    saveClientConfig(params) {
+        return request(`users/${getCurrentUserId()}/clientConfig`, {
+            method: 'PUT',
+            params
+        }).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            return args;
+        });
+    },
+    getAccountStanding() {
+        return request('auth/user/accountStanding', {
+            method: 'GET'
+        }).then((json) => {
+            const args = {
+                json
             };
             return args;
         });

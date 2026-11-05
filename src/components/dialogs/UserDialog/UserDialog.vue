@@ -98,7 +98,6 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import {
         useFavoriteStore,
         useFriendStore,
@@ -117,7 +116,6 @@
     import { formatJsonVars } from '../../../shared/utils/base/ui';
     import { miscRequest } from '../../../api';
     import { useUserDialogCommands } from './useUserDialogCommands';
-
     import DialogJsonTab from '../DialogJsonTab.vue';
     import SendInviteDialog from '../InviteDialog/SendInviteDialog.vue';
     import UserDialogActivityTab from './UserDialogActivityTab.vue';
@@ -129,7 +127,6 @@
     import UserDialogStatusDistributionTab from './UserDialogStatusDistributionTab.vue';
     import UserDialogWorldsTab from './UserDialogWorldsTab.vue';
     import UserSummaryHeader from './UserSummaryHeader.vue';
-
     import BioDialog from './BioDialog.vue';
     import LanguageDialog from './LanguageDialog.vue';
     import ModerateGroupDialog from '../ModerateGroupDialog.vue';
@@ -137,7 +134,9 @@
     import SendInviteRequestDialog from './SendInviteRequestDialog.vue';
     import SocialStatusDialog from './SocialStatusDialog.vue';
     import EditProfileDialog from './EditProfileDialog.vue';
-
+    import { showAvatarDialog, showAvatarAuthorDialog } from '../../../coordinators/avatarCoordinator';
+    import { showUserDialog, refreshUserDialogAvatars } from '../../../coordinators/userCoordinator';
+    import { getFriendRequest, handleFriendDelete } from '../../../coordinators/friendRelationshipCoordinator';
     const { t } = useI18n();
     const userDialogTabs = computed(() => {
         const tabs = [
@@ -189,9 +188,6 @@
     });
     const { cachedUsers, showSendBoopDialog } = useUserStore();
     const { showFavoriteDialog } = useFavoriteStore();
-    import { showAvatarDialog, showAvatarAuthorDialog } from '../../../coordinators/avatarCoordinator';
-    import { showUserDialog, refreshUserDialogAvatars } from '../../../coordinators/userCoordinator';
-    import { getFriendRequest, handleFriendDelete } from '../../../coordinators/friendRelationshipCoordinator';
 
     const { showModerateGroupDialog } = useGroupStore();
     const { inviteGroupDialog } = storeToRefs(useGroupStore());
@@ -200,7 +196,7 @@
     const { friendLogTable } = storeToRefs(useFriendStore());
     const { clearInviteImageUpload, showGalleryPage } = useGalleryStore();
 
-    const { applyPlayerModeration, handlePlayerModerationDelete } = useModerationStore();
+    const { applyPlayerModeration, handlePlayerModerationDelete, showModerationReportDialog } = useModerationStore();
 
     const {
         sendInviteDialogVisible,
@@ -224,6 +220,7 @@
         showAvatarAuthorDialog,
         showModerateGroupDialog,
         showSendBoopDialog,
+        showModerationReportDialog,
         showGalleryPage,
         getFriendRequest,
         handleFriendDelete,

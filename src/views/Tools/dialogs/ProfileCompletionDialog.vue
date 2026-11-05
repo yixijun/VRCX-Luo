@@ -116,6 +116,12 @@
                 </div>
             </div>
 
+            <div class="border-t pt-3 space-y-2 text-xs">
+                <Button variant="outline" size="sm" :disabled="isRunning || scanningBio" @click="scanBioClearBurst">
+                    {{ t('view.tools.system_tools.bio_clear_scan') }}
+                </Button>
+                <p v-if="bioScanMessage" class="text-muted-foreground">{{ bioScanMessage }}</p>
+            </div>
             <DialogFooter class="flex flex-row justify-between items-center sm:justify-between w-full border-t pt-4">
                 <div class="flex gap-2">
                     <Button
@@ -155,7 +161,7 @@
         DialogTitle
     } from '@/components/ui/dialog';
     import { Progress } from '@/components/ui/progress';
-    import { computed, watch } from 'vue';
+    import { computed, ref, watch } from 'vue';
     import { useI18n } from 'vue-i18n';
 
     import {
@@ -166,6 +172,9 @@
         retryFailedInfoFetch
     } from '../../../coordinators/infoFetchCoordinator';
     import { useManualRelationsStore } from '../../../stores/manualRelations';
+    import { useModalStore } from '../../../stores/modal';
+    import { database, dbVars } from '../../../services/database';
+    import { findSuspiciousBioClearBurst } from '../../../shared/utils/bioClearBurst';
 
     const props = defineProps({
         visible: {
@@ -176,6 +185,53 @@
     const emit = defineEmits(['close']);
 
     const { t } = useI18n();
+    const modalStore = useModalStore();
+    const scanningBio = ref(false);
+    const bioScanMessage = ref('');
+
+    async function scanBioClearBurst() {
+        if (scanningBio.value || isRunning.value) return;
+        scanningBio.value = true;
+        bioScanMessage.value = '';
+        const accountPrefix = dbVars.userPrefix;
+        try {
+            const records = await database.getRecentBioClearChanges(5000);
+            if (dbVars.userPrefix !== accountPrefix) return;
+            const burst = findSuspiciousBioClearBurst(records);
+            if (!burst) {
+                bioScanMessage.value = t('view.tools.system_tools.bio_clear_none');
+                return;
+            }
+            const { ok } = await modalStore.confirm({
+                title: t('view.tools.system_tools.bio_clear_scan'),
+                description: t('view.tools.system_tools.bio_clear_confirm', {
+                    count: burst.rows.length,
+                    start: burst.start.createdAt,
+                    end: burst.end.createdAt
+                }),
+                destructive: true,
+                confirmText: t('common.actions.delete'),
+                cancelText: t('common.actions.cancel')
+            });
+            if (!ok || dbVars.userPrefix !== accountPrefix) return;
+            const byUser = new Map();
+            for (const row of burst.rows) {
+                if (!byUser.has(row.userId)) byUser.set(row.userId, []);
+                byUser.get(row.userId).push(row.id);
+            }
+            let deleted = 0;
+            for (const [userId, ids] of byUser) {
+                if (dbVars.userPrefix !== accountPrefix) return;
+                deleted += await database.deleteBioArchiveRecords(userId, ids);
+            }
+            bioScanMessage.value = t('dialog.user.info.bio_archive_deleted', { count: deleted });
+        } catch (error) {
+            console.error(error);
+            bioScanMessage.value = t('view.tools.system_tools.bio_clear_failed');
+        } finally {
+            scanningBio.value = false;
+        }
+    }
 
     const state = infoFetchState;
 

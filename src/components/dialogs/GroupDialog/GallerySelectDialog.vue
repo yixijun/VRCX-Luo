@@ -7,7 +7,7 @@
 
             <div>
                 <span>{{ t('dialog.gallery_select.gallery') }}</span>
-                <span class="ml-1.5 text-muted-foreground text-xs">{{ galleryTable.length }}/64</span>
+                <span class="ml-1.5 text-muted-foreground text-xs">{{ imageTable.length }}/{{ imageLimit }}</span>
                 <br />
                 <input
                     id="GalleryUploadButton"
@@ -34,10 +34,7 @@
                     </Button>
                 </ButtonGroup>
                 <br />
-                <div
-                    v-for="image in galleryTable"
-                    :key="image.id"
-                    class="box-border inline-block mt-2.5 cursor-default">
+                <div v-for="image in imageTable" :key="image.id" class="box-border inline-block mt-2.5 cursor-default">
                     <template v-if="image.versions && image.versions.length > 0">
                         <div
                             v-if="image.versions[image.versions.length - 1].file.url"
@@ -69,15 +66,15 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
-    import { useGalleryStore, useUserStore } from '../../../stores';
-    import { vrcPlusImageRequest } from '../../../api';
-
+    import { useGalleryStore, useUserStore, useAuthStore } from '../../../stores';
+    import { vrcPlusImageRequest, vrcPlusIconRequest } from '../../../api';
+    import { computed, watch } from 'vue';
     const { t } = useI18n();
 
-    const { galleryTable } = storeToRefs(useGalleryStore());
-    const { refreshGalleryTable, handleGalleryImageAdd } = useGalleryStore();
+    const { galleryTable, VRCPlusIconsTable } = storeToRefs(useGalleryStore());
+    const { refreshGalleryTable, refreshVRCPlusIconsTable, handleGalleryImageAdd } = useGalleryStore();
     const { isLocalUserVrcPlusSupporter } = storeToRefs(useUserStore());
+    const { cachedPermissions } = storeToRefs(useAuthStore());
 
     const props = defineProps({
         gallerySelectDialog: {
@@ -86,6 +83,35 @@
         }
     });
     const emit = defineEmits(['select-image']);
+
+    watch(
+        () => props.gallerySelectDialog.visible,
+        (newValue) => {
+            if (newValue) {
+                refreshTable();
+            }
+        }
+    );
+
+    function refreshTable() {
+        if (props.gallerySelectDialog.isIconGallerySelectDialog) {
+            refreshVRCPlusIconsTable();
+            return;
+        }
+        refreshGalleryTable();
+    }
+    const imageTable = computed(() => {
+        if (props.gallerySelectDialog.isIconGallerySelectDialog) {
+            return VRCPlusIconsTable.value;
+        }
+        return galleryTable.value;
+    });
+    const imageLimit = computed(() => {
+        if (props.gallerySelectDialog.isIconGallerySelectDialog) {
+            return cachedPermissions.value.maxUserIcons;
+        }
+        return cachedPermissions.value.maxUserGallery;
+    });
 
     /**
      *

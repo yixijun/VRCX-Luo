@@ -3,6 +3,19 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { createNowPlayingTicker } from '../gameLog/nowPlayingTicker.js';
 
 describe('createNowPlayingTicker', () => {
+    test('holds paused progress and applies playback speed without clearing protocol media', () => {
+        const media = { playing: true, paused: true, spec: true, elapsed: 5, startTime: 0, speed: 2, length: 20 };
+        const clearNowPlaying = vi.fn();
+        const schedule = vi.fn();
+        const ticker = createNowPlayingTicker({ getNowPlaying: () => media, clearNowPlaying, formatSeconds: String, updateView: vi.fn(), schedule, now: () => 15000 });
+        ticker.updateNowPlaying();
+        expect(media.elapsed).toBe(5);
+        expect(schedule).not.toHaveBeenCalled();
+        media.paused = false;
+        ticker.updateNowPlaying();
+        expect(media.elapsed).toBe(20);
+        expect(clearNowPlaying).not.toHaveBeenCalled();
+    });
     afterEach(() => {
         vi.useRealTimers();
     });

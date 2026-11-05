@@ -244,23 +244,19 @@
     import { TooltipWrapper } from '@/components/ui/tooltip';
     import { Slider } from '@/components/ui/slider';
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-    import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import {
         useAdvancedSettingsStore,
         useNotificationsSettingsStore,
         useVrStore,
         useWristOverlaySettingsStore
     } from '@/stores';
-
     import FeedFiltersDialog from '../../dialogs/FeedFiltersDialog.vue';
     import NotificationPositionDialog from '../../dialogs/NotificationPositionDialog.vue';
     import WristOverlaySettings from '../WristOverlaySettings.vue';
     import SettingsGroup from '../SettingsGroup.vue';
     import SettingsItem from '../SettingsItem.vue';
-
     const { t } = useI18n();
 
     const notificationsSettingsStore = useNotificationsSettingsStore();

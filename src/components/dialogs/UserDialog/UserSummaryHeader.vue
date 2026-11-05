@@ -245,6 +245,32 @@
                     </Badge>
                 </TooltipWrapper>
                 <TooltipWrapper
+                    v-if="userDialog.id === currentUser.id && currentUser.accountStanding"
+                    side="top"
+                    :content="t('dialog.user.tags.account_standing')">
+                    <Badge
+                        variant="outline"
+                        class="h-5 px-1.5 text-[11px] leading-none capitalize"
+                        :class="
+                            currentUser.accountStanding === 'good'
+                                ? 'text-green-500 border-green-500!'
+                                : 'text-red-500 border-red-500!'
+                        ">
+                        <ShieldCheck v-if="currentUser.accountStanding === 'good'" class="h-2.5 w-2.5" /><ShieldAlert
+                            v-else
+                            class="h-2.5 w-2.5" />
+                        {{ currentUser.accountStanding }}
+                    </Badge>
+                </TooltipWrapper>
+                <TooltipWrapper
+                    v-if="userDialog.mutualGroupCount"
+                    side="top"
+                    :content="t('dialog.user.info.mutual_groups')">
+                    <Badge variant="outline" class="h-5 px-1.5 text-[11px] leading-none"
+                        ><Users class="h-2.5 w-2.5" />{{ userDialog.mutualGroupCount }}</Badge
+                    >
+                </TooltipWrapper>
+                <TooltipWrapper
                     v-if="userDialog.ref.discordId"
                     side="top"
                     :content="t('dialog.user.tags.open_in_discord')">
@@ -475,7 +501,10 @@
         Image,
         Info,
         Monitor,
+        Network,
         Shield,
+        ShieldAlert,
+        ShieldCheck,
         Smartphone,
         Hand,
         History,
@@ -489,9 +518,15 @@
     import { computed, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-    import { copyToClipboard, formatDateFilter, languageClass, openDiscordProfile } from '../../../shared/utils';
+    import {
+        convertFileUrlToImageUrl,
+        copyToClipboard,
+        formatDateFilter,
+        languageClass,
+        openDiscordProfile,
+        replaceBioSymbols
+    } from '../../../shared/utils';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
     import { Popover, PopoverContent, PopoverTrigger } from '../../ui/popover';
     import { useGalleryStore, useUserStore } from '../../../stores';
@@ -501,11 +536,9 @@
     import NameplateEffect from '../../NameplateEffect.vue';
     import ProfileEffect from '../../ProfileEffect.vue';
     import { buildTrustLevelTimeline } from './trustLevelHistory';
-
     import UserActionDropdown from './UserActionDropdown.vue';
     import { showGroupDialog } from '@/coordinators/groupCoordinator';
     import { getAvatarName } from '@/coordinators/avatarCoordinator';
-
     const props = defineProps({
         getUserStateText: {
             type: Function,
@@ -537,9 +570,7 @@
     const { userStatusClass } = useUserDisplay();
     const { showEditProfileDialog = () => {} } = useUserStore();
 
-    const trustLevelTimeline = computed(() =>
-        buildTrustLevelTimeline(userDialog.value.trustLevelHistory || [])
-    );
+    const trustLevelTimeline = computed(() => buildTrustLevelTimeline(userDialog.value.trustLevelHistory || []));
 
     const profileImageError = ref(false);
     const userIconError = ref(false);

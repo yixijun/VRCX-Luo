@@ -1,5 +1,4 @@
 import { ref } from 'vue';
-
 import {
     avatarModerationRequest,
     avatarRequest,
@@ -20,7 +19,6 @@ import {
     readFileAsBase64,
     withUploadTimeout
 } from '../../../shared/utils/imageUpload';
-
 /**
  * Composable for AvatarDialog command dispatch.
  * Uses a command map pattern instead of nested switch-case chains.
@@ -235,6 +233,12 @@ export function useAvatarDialogCommands(
             Share: () => {
                 copyAvatarUrl(D().id);
             },
+            'Copy Avatar Name': () => {
+                copyToClipboard(D().ref.name);
+            },
+            'Copy Avatar ID': () => {
+                copyToClipboard(D().id);
+            },
             Rename: () => {
                 promptRenameAvatar(D());
             },
@@ -379,7 +383,7 @@ export function useAvatarDialogCommands(
                         .deleteAvatar({ avatarId: id })
                         .then((args) => {
                             const { json } = args;
-                            removeAvatarFromCache(json._id);
+                            removeAvatarFromCache(json.id);
                             if (userDialog.value.id === json.authorId) {
                                 const map = new Map();
                                 for (const ref of cachedAvatars.values()) {

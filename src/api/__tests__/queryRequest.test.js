@@ -4,6 +4,7 @@ const mockFetchWithEntityPolicy = vi.fn();
 const mockGetUser = vi.fn();
 const mockGetWorlds = vi.fn();
 const mockGetGroupCalendar = vi.fn();
+vi.mock('../instance', () => ({ default: { getInstanceCount: vi.fn() } }));
 
 vi.mock('../../queries', () => ({
     queryClient: {

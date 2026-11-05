@@ -1,9 +1,7 @@
 import { toast } from 'vue-sonner';
-
 import { i18n } from '../plugins/i18n';
 import { request } from '../services/request';
 import { useInstanceStore } from '../stores';
-
 const instanceReq = {
     /**
      * @type {import('../types/api/instance').GetInstance}
@@ -33,9 +31,9 @@ const instanceReq = {
         }).then((json) => {
             const args = {
                 json,
-                params
+                params,
+                ref: instanceStore.applyInstance(json)
             };
-            args.ref = instanceStore.applyInstance(json);
             return args;
         });
     },
@@ -75,9 +73,9 @@ const instanceReq = {
         }).then((json) => {
             const args = {
                 json,
-                params
+                params,
+                ref: instanceStore.applyInstance(json)
             };
-            args.ref = instanceStore.applyInstance(json);
             return args;
         });
     },
@@ -129,6 +127,29 @@ const instanceReq = {
             method: 'POST',
             params
         }).then((json) => ({ json, params }));
+    },
+    getInstanceCount() {
+        return request('instances/count', {
+            method: 'GET'
+        }).then((json) => {
+            return {
+                json
+            };
+        });
+    },
+    updateInstance(params) {
+        const instanceStore = useInstanceStore();
+        const { location, ...body } = params;
+        return request(`instances/${location}`, {
+            method: 'PUT',
+            params: body
+        }).then((json) => {
+            return {
+                json,
+                params,
+                ref: instanceStore.applyInstance(json)
+            };
+        });
     }
 };
 

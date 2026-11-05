@@ -1,7 +1,6 @@
 import { reactive, ref } from 'vue';
 import { defineStore } from 'pinia';
 import { useI18n } from 'vue-i18n';
-
 import {
     getGroupName,
     getLaunchURL,
@@ -25,9 +24,7 @@ import { useGameStore } from '../game';
 import { useLocationStore } from '../location';
 import { useUpdateLoopStore } from '../updateLoop';
 import { useUserStore } from '../user';
-
 import configRepository from '../../services/config';
-
 export const useDiscordPresenceSettingsStore = defineStore(
     'DiscordPresenceSettings',
     () => {
@@ -64,6 +61,7 @@ export const useDiscordPresenceSettingsStore = defineStore(
         const discordShowPlatform = ref(true);
         const discordWorldIntegration = ref(true);
         const discordWorldNameAsDiscordStatus = ref(false);
+        const discordMediaImage = ref(false);
 
         /**
          *
@@ -140,6 +138,13 @@ export const useDiscordPresenceSettingsStore = defineStore(
                 discordWorldNameAsDiscordStatus.value
             );
         }
+        function setDiscordMediaImage() {
+            discordMediaImage.value = !discordMediaImage.value;
+            configRepository.setBool(
+                'discordMediaImage',
+                discordMediaImage.value
+            );
+        }
 
         /**
          *
@@ -153,7 +158,8 @@ export const useDiscordPresenceSettingsStore = defineStore(
                 discordHideImageConfig,
                 discordShowPlatformConfig,
                 discordWorldIntegrationConfig,
-                discordWorldNameAsDiscordStatusConfig
+                discordWorldNameAsDiscordStatusConfig,
+                discordMediaImageConfig
             ] = await Promise.all([
                 configRepository.getBool('discordActive', false),
                 configRepository.getBool('discordInstance', true),
@@ -165,7 +171,8 @@ export const useDiscordPresenceSettingsStore = defineStore(
                 configRepository.getBool(
                     'discordWorldNameAsDiscordStatus',
                     false
-                )
+                ),
+                configRepository.getBool('discordMediaImage', false)
             ]);
 
             discordActive.value = discordActiveConfig;
@@ -177,6 +184,7 @@ export const useDiscordPresenceSettingsStore = defineStore(
             discordWorldIntegration.value = discordWorldIntegrationConfig;
             discordWorldNameAsDiscordStatus.value =
                 discordWorldNameAsDiscordStatusConfig;
+            discordMediaImage.value = discordMediaImageConfig;
         }
 
         initDiscordPresenceSettings();
@@ -346,39 +354,51 @@ export const useDiscordPresenceSettingsStore = defineStore(
                 buttonUrl = '';
             }
 
-            const rpcConfig =
-                isRpcWorld(state.lastLocationDetails.tag) &&
-                discordWorldIntegration.value
-                    ? getRpcWorldConfig(state.lastLocationDetails.worldId)
-                    : null;
-
-            if (rpcConfig) {
-                activityType = rpcConfig.activityType;
-                statusDisplayType = rpcConfig.statusDisplayType;
-                appId = rpcConfig.appId;
-                bigIcon = rpcConfig.bigIcon;
-                if (
-                    isPopcornPalaceWorld(state.lastLocationDetails.worldId) &&
-                    !discordHideImage.value &&
-                    gameLogStore.nowPlaying.thumbnailUrl
-                ) {
-                    bigIcon = gameLogStore.nowPlaying.thumbnailUrl;
-                }
-                if (gameLogStore.nowPlaying.name) {
-                    details = gameLogStore.nowPlaying.name;
-                }
-                if (gameLogStore.nowPlaying.playing) {
-                    startTime = gameLogStore.nowPlaying.startTime * 1000;
-                    endTime =
-                        (gameLogStore.nowPlaying.startTime +
-                            gameLogStore.nowPlaying.length) *
-                        1000;
-                }
-            } else if (
+            if (
                 !discordHideImage.value &&
                 state.lastLocationDetails.thumbnailImageUrl
             ) {
                 bigIcon = state.lastLocationDetails.thumbnailImageUrl;
+            }
+
+            const np = gameLogStore.nowPlaying;
+            if (
+                discordWorldIntegration.value &&
+                np.playing &&
+                !np.paused &&
+                np.videoName
+            ) {
+                activityType = ActivityType.Watching;
+
+                const rpcConfig = isRpcWorld(state.lastLocationDetails.tag)
+                    ? getRpcWorldConfig(state.lastLocationDetails.worldId)
+                    : null;
+                if (rpcConfig) {
+                    activityType = rpcConfig.activityType;
+                    statusDisplayType = rpcConfig.statusDisplayType;
+                    appId = rpcConfig.appId;
+                    bigIcon = rpcConfig.bigIcon;
+                    details = np.videoName;
+                    if (
+                        isPopcornPalaceWorld(
+                            state.lastLocationDetails.worldId
+                        ) &&
+                        !discordHideImage.value &&
+                        np.thumbnailUrl
+                    ) {
+                        bigIcon = np.thumbnailUrl;
+                    }
+                }
+
+                if (np.length > 0) {
+                    startTime = np.startTime * 1000;
+                    endTime = (np.startTime + np.length / np.speed) * 1000;
+                }
+
+                const mediaImage = getMediaImage();
+                if (mediaImage) {
+                    bigIcon = mediaImage;
+                }
             }
 
             if (hidePrivate) {
@@ -426,6 +446,17 @@ export const useDiscordPresenceSettingsStore = defineStore(
             );
         }
 
+        function getMediaImage() {
+            if (!discordMediaImage.value || discordHideImage.value) {
+                return '';
+            }
+            const url = gameLogStore.nowPlaying.thumbnailUrl;
+            if (!url || !url.startsWith('https://') || url.length > 256) {
+                return '';
+            }
+            return url;
+        }
+
         /**
          *
          * @param active
@@ -457,6 +488,7 @@ export const useDiscordPresenceSettingsStore = defineStore(
             discordShowPlatform,
             discordWorldIntegration,
             discordWorldNameAsDiscordStatus,
+            discordMediaImage,
 
             setDiscordActive,
             setDiscordInstance,
@@ -465,6 +497,7 @@ export const useDiscordPresenceSettingsStore = defineStore(
             setDiscordHideImage,
             setDiscordShowPlatform,
             setDiscordWorldIntegration,
+            setDiscordMediaImage,
             setDiscordWorldNameAsDiscordStatus,
             updateDiscord,
             saveDiscordOption

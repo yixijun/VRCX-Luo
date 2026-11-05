@@ -51,6 +51,19 @@
                     <Megaphone class="h-4 w-4" />
                 </Button>
             </TooltipWrapper>
+            <TooltipWrapper
+                v-if="instanceInfoState.canLinkCalendarEvent"
+                side="top"
+                :content="t('dialog.user.info.instance_calendar_link_tooltip')">
+                <Button
+                    class="rounded-full h-6 w-6 text-xs text-muted-foreground hover:text-foreground"
+                    size="icon-sm"
+                    variant="outline"
+                    :ariaLabel="t('dialog.user.info.instance_calendar_link_tooltip')"
+                    @click="instanceCalendarLinkDialogVisible = true">
+                    <CalendarPlus class="h-4 w-4" />
+                </Button>
+            </TooltipWrapper>
             <TooltipWrapper v-if="showRefreshButton" side="top" :content="refreshTooltip">
                 <Button
                     class="rounded-full w-6 h-6 text-xs text-muted-foreground hover:text-foreground"
@@ -90,6 +103,15 @@
                             </span>
                         </div>
 
+                        <div v-if="instanceLanguages.length" class="flex flex-col gap-1">
+                            <span>{{ t('dialog.user.info.instance_languages') }}</span>
+                            <span v-for="lang in instanceLanguages" :key="lang.key" class="flex items-center gap-1.5">
+                                <span :class="['flags', 'inline-block', languageClass(lang.flagKey)]"></span>
+                                {{ lang.name }}
+                                <span class="text-muted-foreground">{{ lang.percent }}%</span>
+                            </span>
+                        </div>
+
                         <span>
                             {{ t('dialog.user.info.instance_game_version') }} {{ instance?.gameServerVersion }}
                         </span>
@@ -103,18 +125,28 @@
                             {{ instanceInfoState.disabledContentSettings }}
                         </span>
 
-                        <TooltipWrapper
-                            v-if="instanceInfoState.canCloseInstance && !instance?.closedAt"
-                            side="top"
-                            :content="t('dialog.user.info.close_instance')">
+                        <div class="flex gap-2">
                             <Button
+                                v-if="!instance?.closedAt && instanceInfoState.canCloseInstance"
                                 class="w-12 h-6 text-xs hover:text-muted-foreground"
                                 size="icon-sm"
                                 variant="destructive"
+                                :title="t('dialog.user.info.close_instance')"
+                                :ariaLabel="t('dialog.user.info.close_instance')"
                                 @click="closeInstance(resolvedInstanceLocation)">
                                 <PowerIcon class="h-4 w-4" />
                             </Button>
-                        </TooltipWrapper>
+                            <Button
+                                v-if="instanceInfoState.canRenameInstance"
+                                class="w-12 h-6 text-xs hover:text-muted-foreground"
+                                size="icon-sm"
+                                variant="secondary"
+                                :title="t('dialog.user.info.rename_instance')"
+                                :ariaLabel="t('dialog.user.info.rename_instance')"
+                                @click="renameInstance(resolvedInstanceLocation)">
+                                <Pencil class="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </template>
                 <div :class="cn('flex items-center gap-0.5', !instance?.hasCapacityForYou ? 'text-red-500' : null)">
@@ -182,6 +214,11 @@
             v-if="instanceAnnouncementDialogVisible"
             v-model:open="instanceAnnouncementDialogVisible"
             :location="resolvedInstanceLocation" />
+        <InstanceCalendarLinkDialog
+            v-if="instanceCalendarLinkDialogVisible"
+            v-model:open="instanceCalendarLinkDialogVisible"
+            :location="resolvedInstanceLocation"
+            :current-event-id="instance?.calendarEntryId ?? ''" />
     </div>
 </template>
 
@@ -222,27 +259,32 @@
 
 <script lang="ts" setup>
     import {
+        CalendarDays,
+        CalendarPlus,
         History,
         Loader2,
         LogIn,
         Mail,
         MapPin,
         Megaphone,
+        Pencil,
         PowerIcon,
         RefreshCw,
         UsersRound,
         SquareStack,
         IdCard,
+        TrainFront,
         UserLock,
         UserPlus2
     } from 'lucide-vue-next';
     import { computed, reactive, ref, watch } from 'vue';
+    import { useIntervalFn } from '@vueuse/core';
     import { Button } from '@/components/ui/button';
+    import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
     import { cn } from '@/lib/utils';
-
     import {
         useGroupStore,
         useInstanceStore,
@@ -252,11 +294,12 @@
         useModalStore,
         useUserStore
     } from '../stores';
-    import { hasGroupPermission, parseLocation } from '../shared/utils';
+    import { formatSeconds, hasGroupPermission, languageClass, parseLocation } from '../shared/utils';
     import { useInviteChecks } from '../composables/useInviteChecks';
-    import { instanceRequest, miscRequest } from '../api';
+    import { instanceRequest, miscRequest, queryRequest } from '../api';
     import InstanceAnnouncementDialog from './dialogs/InstanceAnnouncementDialog.vue';
-
+    import InstanceCalendarLinkDialog from './dialogs/InstanceCalendarLinkDialog.vue';
+    import GroupCalendarEventDetails from '../views/Tools/components/GroupCalendarEventDetails.vue';
     defineOptions({
         inheritAttrs: false
     });
@@ -372,12 +415,15 @@
 
     const lastJoin = ref(null);
     const instanceAnnouncementDialogVisible = ref(false);
+    const instanceCalendarLinkDialogVisible = ref(false);
     const showLastJoinIndicator = computed(() => props.showLastJoin && lastJoin.value);
     const hasInstanceMetadata = computed(() => {
         return !!(
             props.instance?.queueSize ||
             instanceInfoState.isAgeGated ||
             instanceInfoState.isRoleRestricted ||
+            props.instance?.calendarEntryId ||
+            props.instance?.hypeTrain?.current ||
             (props.instance.minimumAvatarPerformance && props.instance.minimumAvatarPerformance !== 'None')
         );
     });
@@ -391,10 +437,52 @@
     const instanceInfoState = reactive({
         isValidInstance: false,
         canCloseInstance: false,
+        canRenameInstance: false,
         canSendAnnouncement: false,
+        canLinkCalendarEvent: false,
         isAgeGated: false,
         isRoleRestricted: false,
         disabledContentSettings: ''
+    });
+
+    const instanceLanguages = computed(() => {
+        const languages = props.instance?.languages;
+        if (!Array.isArray(languages)) return [];
+        const iso639 = props.instance?.languagesIso639 ?? [];
+        const ratio = props.instance?.languageRatio ?? {};
+        const baseOf = (code) => code.split('-')[0];
+        const uniqueBases = [...new Set(languages.map(baseOf))];
+        const iso639ByBase = Object.fromEntries(uniqueBases.map((base, i) => [base, iso639[i]]));
+        return languages
+            .map((code) => {
+                const key = iso639ByBase[baseOf(code)] ?? code;
+                const region = code.split('-')[1];
+                const name = userStore.subsetOfLanguages?.[key] ?? code;
+                return {
+                    key: code,
+                    flagKey: key,
+                    name: region ? `${name} (${region.toUpperCase()})` : name,
+                    percent: Math.round((ratio[code] ?? 0) * 100)
+                };
+            })
+            .sort((a, b) => b.percent - a.percent);
+    });
+
+    const currentHypeTrain = computed(() => props.instance?.hypeTrain?.current ?? null);
+    const hypeTrainStartEpoch = computed(() => {
+        const startDate = currentHypeTrain.value?.startDate;
+        return startDate ? Date.parse(startDate) || 0 : 0;
+    });
+    const now = ref(Date.now());
+    const { pause: pauseNow, resume: resumeNow } = useIntervalFn(() => (now.value = Date.now()), 1000, {
+        immediate: false,
+        immediateCallback: true
+    });
+    watch(currentHypeTrain, (train) => (train ? resumeNow() : pauseNow()), { immediate: true });
+    const hypeTrainTimeRemaining = computed(() => {
+        const endEpoch = Date.parse(currentHypeTrain.value?.endDate);
+        if (!endEpoch) return '';
+        return formatSeconds(Math.max(0, (endEpoch - now.value) / 1000));
     });
 
     const handleRefresh = () => {
@@ -451,7 +539,9 @@
         Object.assign(instanceInfoState, {
             isValidInstance: false,
             canCloseInstance: false,
+            canRenameInstance: false,
             canSendAnnouncement: false,
+            canLinkCalendarEvent: false,
             isAgeGated: false,
             isRoleRestricted: false,
             disabledContentSettings: ''
@@ -462,12 +552,17 @@
         instanceInfoState.isValidInstance = true;
         if (props.instance.ownerId === userStore.currentUser.id) {
             instanceInfoState.canCloseInstance = true;
+            instanceInfoState.canRenameInstance = userStore.isLocalUserVrcPlusSupporter;
         } else if (props.instance.ownerId?.startsWith('grp_')) {
             const group = groupStore.cachedGroups.get(props.instance.ownerId);
             instanceInfoState.canCloseInstance = hasGroupPermission(group, 'group-instance-moderate');
+            instanceInfoState.canRenameInstance = hasGroupPermission(group, 'group-instance-manage');
             instanceInfoState.canSendAnnouncement =
                 hasGroupPermission(group, 'group-instance-announcement-create') &&
                 resolvedInstanceLocation.value === locationStore.lastLocation.location;
+            instanceInfoState.canLinkCalendarEvent =
+                hasGroupPermission(group, 'group-instance-manage') &&
+                hasGroupPermission(group, 'group-instance-calendar-link');
         }
         instanceInfoState.isAgeGated = props.instance.ageGate === true;
         if (resolvedInstanceLocation.value?.includes('~ageGate')) instanceInfoState.isAgeGated = true;
@@ -475,6 +570,11 @@
         if (props.instance.$disabledContentSettings?.length) {
             instanceInfoState.disabledContentSettings = props.instance.$disabledContentSettings.join(', ');
         }
+    };
+
+    const refreshInstance = (location) => {
+        const L = parseLocation(location);
+        return instanceRequest.getInstance({ worldId: L.worldId, instanceId: L.instanceId });
     };
 
     const closeInstance = (location) => {
@@ -489,10 +589,72 @@
                 if (args.json) {
                     toast.success(t('message.instance.closed'));
                     instanceStore.applyInstance(args.json);
+                    await refreshInstance(location);
                 }
             })
             .catch(() => {});
     };
+
+    const renameInstance = (location) => {
+        modalStore
+            .prompt({
+                title: t('prompt.rename_instance.header'),
+                description: t('prompt.rename_instance.description'),
+                inputValue: props.instance?.displayName ?? ''
+            })
+            .then(async ({ ok, value }) => {
+                if (!ok) return;
+                const displayName = value.trim() || null;
+                if (displayName === (props.instance?.displayName ?? null)) return;
+                await instanceRequest.updateInstance({ location, displayName });
+                toast.success(t('message.instance.renamed'));
+                await refreshInstance(location);
+            })
+            .catch(() => {});
+    };
+
+    const calendarPopoverOpen = ref(false);
+    const calendarEvent = ref(null);
+    const calendarEventFailed = ref(false);
+    let calendarPopoverCloseTimer = null;
+
+    const isInGroup = computed(() => groupStore.currentUserGroups.has(props.instance?.ownerId));
+
+    const fetchCalendarEvent = async () => {
+        const groupId = props.instance?.ownerId;
+        const eventId = props.instance?.calendarEntryId;
+        if (!groupId || !eventId || !isInGroup.value || calendarEvent.value?.id === eventId) return;
+        try {
+            const args = await queryRequest.fetch('groupCalendarEvent', { groupId, eventId });
+            if (props.instance?.calendarEntryId === eventId) {
+                calendarEvent.value = groupStore.applyGroupEvent(args.json);
+            }
+        } catch (error) {
+            console.error('Failed to load calendar event:', error);
+            calendarEventFailed.value = true;
+        }
+    };
+
+    const openCalendarPopover = () => {
+        clearTimeout(calendarPopoverCloseTimer);
+        calendarPopoverOpen.value = true;
+        fetchCalendarEvent();
+    };
+
+    const scheduleCloseCalendarPopover = () => {
+        clearTimeout(calendarPopoverCloseTimer);
+        calendarPopoverCloseTimer = setTimeout(() => {
+            calendarPopoverOpen.value = false;
+        }, 100);
+    };
+
+    watch(
+        () => props.instance?.calendarEntryId,
+        () => {
+            calendarEvent.value = null;
+            calendarEventFailed.value = false;
+        }
+    );
 
     watch(() => resolvedLastJoinLocation.value, parseLastJoin, { immediate: true });
     watch(() => props.currentlocation, parseLastJoin);

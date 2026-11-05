@@ -1,6 +1,5 @@
-// requires binding of LogWatcher
-
 import { parseRawGameLog } from './gameLogParser';
+// requires binding of LogWatcher
 
 class GameLogService {
     parseRawGameLog(dt, type, args) {

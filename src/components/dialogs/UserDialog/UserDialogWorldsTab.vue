@@ -68,7 +68,9 @@
             </template>
             <template #empty>
                 <Search v-if="searchQuery.trim()" class="size-5" aria-hidden="true" />
-                <span>{{ t(searchQuery.trim() && userDialog.worlds.length ? 'common.no_matching_records' : 'common.no_data') }}</span>
+                <span>{{
+                    t(searchQuery.trim() && userDialog.worlds.length ? 'common.no_matching_records' : 'common.no_data')
+                }}</span>
             </template>
         </UserDialogResourceGrid>
     </div>
@@ -82,7 +84,6 @@
     import { computed, ref, watch } from 'vue';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { useUserStore, useWorldStore } from '../../../stores';
     import { applyWorld, showWorldDialog } from '../../../coordinators/worldCoordinator';
     import { userDialogWorldOrderOptions, userDialogWorldSortingOptions } from '../../../shared/constants/';
@@ -91,7 +92,6 @@
     import UserDialogResourceGrid from './UserDialogResourceGrid.vue';
     import UserDialogResourceSearch from './UserDialogResourceSearch.vue';
     import UserDialogResourceToolbar from './UserDialogResourceToolbar.vue';
-
     const { t } = useI18n();
 
     const userStore = useUserStore();

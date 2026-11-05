@@ -1,8 +1,7 @@
+import { queryClient, queryCache, queryKeys } from '../queries';
 import { useUserStore } from '../stores';
 import { applyGroup } from '../coordinators/groupCoordinator';
-import { queryCache, queryKeys } from '../queries';
 import { request } from '../services/request';
-
 /**
  *
  */
@@ -18,11 +17,9 @@ function refetchActiveGroupScope(groupId) {
     if (!groupId) {
         return;
     }
-    queryCache
-        .invalidateActive(queryKeys.groupScope(groupId))
-        .catch((err) => {
-            console.error('Failed to refresh scoped group queries:', err);
-        });
+    queryCache.invalidateActive(queryKeys.groupScope(groupId)).catch((err) => {
+        console.error('Failed to refresh scoped group queries:', err);
+    });
 }
 const groupReq = {
     /**
@@ -78,7 +75,8 @@ const groupReq = {
         });
     },
     /**
-     * @type {import('../types/api/group').GetGroup}
+     * @param {{groupId: string, includeRoles?: boolean}} params
+     * @returns {Promise<{json: any, params: any, ref: any}>}
      */
     getGroup(params) {
         return request(`groups/${params.groupId}`, {
@@ -89,9 +87,9 @@ const groupReq = {
         }).then((json) => {
             const args = {
                 json,
-                params
+                params,
+                ref: applyGroup(json)
             };
-            args.ref = applyGroup(json);
             return args;
         });
     },
@@ -727,14 +725,16 @@ const groupReq = {
      * @returns { Promise<{json: any, params}> }
      */
     createGroupRole(params) {
-        return request(`groups/${params.groupId}/roles`, {
+        const { groupId, ...body } = params;
+        return request(`groups/${groupId}/roles`, {
             method: 'POST',
-            params
+            params: body
         }).then((json) => {
             const args = {
                 json,
                 params
             };
+            refetchActiveGroupScope(groupId);
             return args;
         });
     },
@@ -754,14 +754,16 @@ const groupReq = {
      * @returns { Promise<{json: any, params}> }
      */
     editGroupRole(params) {
-        return request(`groups/${params.groupId}/roles/${params.roleId}`, {
+        const { groupId, roleId, ...body } = params;
+        return request(`groups/${groupId}/roles/${roleId}`, {
             method: 'PUT',
-            params
+            params: body
         }).then((json) => {
             const args = {
                 json,
                 params
             };
+            refetchActiveGroupScope(groupId);
             return args;
         });
     },
@@ -869,9 +871,10 @@ const groupReq = {
         });
     },
 
-    getGroupCalendar(groupId) {
+    getGroupCalendar(groupId, query) {
         return request(`calendar/${groupId}`, {
-            method: 'GET'
+            method: 'GET',
+            params: query
         }).then((json) => {
             const args = {
                 json,
@@ -1158,6 +1161,102 @@ const groupReq = {
     //         return args;
     //     });
     // };
+
+    getMyGroupsByStatus(params) {
+        return request(
+            `users/${getCurrentUserId()}/groups/${params.membershipStatus}`,
+            {
+                method: 'GET'
+            }
+        ).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            return args;
+        });
+    },
+    declineGroupInvite(params) {
+        return request(
+            `groups/${params.groupId}/members/${getCurrentUserId()}`,
+            {
+                method: 'DELETE'
+            }
+        ).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            return args;
+        });
+    },
+    deleteGroupRole(params) {
+        return request(`groups/${params.groupId}/roles/${params.roleId}`, {
+            method: 'DELETE'
+        }).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            refetchActiveGroupScope(params.groupId);
+            return args;
+        });
+    },
+    getGroupPermissionList(params) {
+        return request(`groups/${params.groupId}/permissions`, {
+            method: 'GET'
+        }).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            return args;
+        });
+    },
+    deleteGroupGallery(params) {
+        return request(
+            `groups/${params.groupId}/galleries/${params.galleryId}`,
+            {
+                method: 'DELETE'
+            }
+        ).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            refetchActiveGroupScope(params.groupId);
+            return args;
+        });
+    },
+    editGroupGallery(params) {
+        const { groupId, galleryId, ...body } = params;
+        return request(`groups/${groupId}/galleries/${galleryId}`, {
+            method: 'PUT',
+            params: body
+        }).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            refetchActiveGroupScope(groupId);
+            return args;
+        });
+    },
+    deleteGroupGalleryImage(params) {
+        return request(
+            `groups/${params.groupId}/galleries/${params.galleryId}/images/${params.imageId}`,
+            {
+                method: 'DELETE'
+            }
+        ).then((json) => {
+            const args = {
+                json,
+                params
+            };
+            refetchActiveGroupScope(params.groupId);
+            return args;
+        });
+    }
 };
 
 export default groupReq;

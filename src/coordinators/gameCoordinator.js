@@ -1,5 +1,4 @@
 import { toast } from '../services/toastAdapter';
-
 import {
     deleteVRChatCache as _deleteVRChatCache,
     isRealInstance
@@ -25,11 +24,8 @@ import { useUpdateLoopStore } from '../stores/updateLoop';
 import { useUserStore } from '../stores/user';
 import { useVrStore } from '../stores/vr';
 import { useWorldStore } from '../stores/world';
-
 import configRepository from '../services/config';
-
 import * as workerTimers from 'worker-timers';
-
 /**
  * Runs shared side effects when game running state changes.
  * @param {boolean} isGameRunning Whether VRChat is running.
@@ -45,7 +41,11 @@ export async function runGameRunningChangedFlow(isGameRunning) {
     if (isGameRunning) {
         const now = Date.now();
         let sessionStart = Number(await AppApi.GetGameProcessStartTime());
-        if (!Number.isFinite(sessionStart) || sessionStart <= 0 || sessionStart > now) {
+        if (
+            !Number.isFinite(sessionStart) ||
+            sessionStart <= 0 ||
+            sessionStart > now
+        ) {
             sessionStart = now;
         }
         userStore.markCurrentUserGameStarted(sessionStart);
@@ -77,8 +77,9 @@ export async function runGameRunningChangedFlow(isGameRunning) {
         addAvatarWearTime(userStore.currentUser.currentAvatar);
     }
 
-    runLastLocationResetFlow();
+    await runLastLocationResetFlow();
     gameLogStore.clearNowPlaying();
+    gameLogStore.resetNowPlayingProducers();
     vrStore.updateVRLastLocation();
     workerTimers.setTimeout(() => runCheckVRChatDebugLoggingFlow(), 60000);
     updateLoopStore.setNextDiscordUpdate(0);
@@ -251,7 +252,7 @@ export function runCheckIfGameCrashedFlow() {
  * Restarts VRChat after a crash.
  * @param {string} location Last known location to relaunch.
  */
-function runRestartCrashedGameFlow(location) {
+async function runRestartCrashedGameFlow(location) {
     const gameStore = useGameStore();
     const notificationStore = useNotificationStore();
     const gameLogStore = useGameLogStore();
@@ -269,9 +270,11 @@ function runRestartCrashedGameFlow(location) {
         type: 'Event',
         data: message
     };
-    database.addGamelogEventToDatabase(entry);
     notificationStore.queueGameLogNoty(entry);
-    gameLogStore.addGameLog(entry);
+    const persistedEntry = await database.addGamelogEventToDatabase(entry);
+    if (persistedEntry) {
+        gameLogStore.addGameLog(persistedEntry);
+    }
     launchStore.launchGame(location, '', gameStore.isGameNoVR);
 }
 

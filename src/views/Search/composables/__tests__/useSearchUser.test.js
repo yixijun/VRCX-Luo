@@ -33,7 +33,7 @@ describe('useSearchUser', () => {
         await api.searchUser();
 
         expect(mocks.moreSearchUser).toHaveBeenCalledWith(null, {
-            n: 10,
+            n: 60,
             offset: 0,
             search: 'Alice',
             customFields: 'bio',

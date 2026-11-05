@@ -1,6 +1,5 @@
 import { ArrowUpDown, EyeOff, User, UserMinus } from 'lucide-vue-next';
 import UserIdentityInline from '../../components/UserIdentityInline.vue';
-
 import { Button } from '../../components/ui/button';
 import { Checkbox } from '../../components/ui/checkbox';
 import { TooltipWrapper } from '../../components/ui/tooltip';
@@ -14,7 +13,6 @@ import {
     statusClass,
     timeToText
 } from '../../shared/utils';
-
 const { t } = i18n.global;
 
 const sortButton = ({ column, label, descFirst = false }) => {
@@ -97,7 +95,8 @@ export const createColumns = ({
     selectedFriends,
     onToggleFriendSelection,
     onConfirmDeleteFriend,
-    userImage
+    userImage,
+    friendProfiles
 }) => {
     const cols = [];
 
@@ -281,7 +280,10 @@ export const createColumns = ({
             meta: { label: () => t('table.friendList.bioLink') },
             cell: ({ row }) => (
                 <div class="flex items-center">
-                    {(row.original?.bioLinks ?? [])
+                    {(
+                        friendProfiles.value.get(row.original?.id)?.bioLinks ??
+                        []
+                    )
                         .filter(Boolean)
                         .map((link, index) => (
                             <TooltipWrapper key={index} content={String(link)}>

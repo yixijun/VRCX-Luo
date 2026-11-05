@@ -78,12 +78,14 @@
     import { TAG_COLORS, getTagColor } from '@/shared/constants';
     import { Button } from '@/components/ui/button';
     import { useI18n } from 'vue-i18n';
-
     const props = defineProps({
         open: { type: Boolean, default: false },
         avatarName: { type: String, default: '' },
         avatarId: { type: String, default: '' },
-        initialTags: { type: Array, default: () => [] }
+        initialTags: {
+            type: Array,
+            default: () => []
+        }
     });
 
     const emit = defineEmits(['update:open', 'save']);

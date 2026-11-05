@@ -1,7 +1,15 @@
 import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
-
 import { useSearchStore } from '../../../stores';
+function createDefaultSearchUserParams() {
+    return {
+        n: 60,
+        offset: 0,
+        search: '',
+        customFields: 'displayName',
+        sort: 'relevance'
+    };
+}
 
 /**
  * User search composable for Search view.
@@ -21,8 +29,7 @@ export function useSearchUser() {
      */
     async function searchUser() {
         searchUserParams.value = {
-            n: 10,
-            offset: 0,
+            ...createDefaultSearchUserParams(),
             search: searchText.value,
             customFields: searchUserByBio.value ? 'bio' : 'displayName',
             sort: searchUserSortByLastLoggedIn.value
@@ -46,7 +53,7 @@ export function useSearchUser() {
      *
      */
     function clearUserSearch() {
-        searchUserParams.value = {};
+        searchUserParams.value = createDefaultSearchUserParams();
     }
 
     return {

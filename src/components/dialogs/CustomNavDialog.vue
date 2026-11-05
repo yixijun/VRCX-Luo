@@ -16,7 +16,7 @@
                         @update:expanded="(val) => (expandedKeys = val)">
                         <template #default="{ flattenItems }">
                             <template v-for="(item, idx) in flattenItems" :key="item._id">
-                                <template v-if="item.value?._placeholder">
+                                <template v-if="isPlaceholder(item)">
                                     <div
                                         class="rounded-md border border-dashed border-muted-foreground/25 p-1.5 text-sm text-muted-foreground/50 mt-1">
                                         {{ t('nav_menu.custom_nav.folder_drop_here') }}
@@ -162,20 +162,28 @@
     import { DragDropProvider } from '@dnd-kit/vue';
     import { isSortable } from '@dnd-kit/vue/sortable';
     import { openExternalLink } from '@/shared/utils/common';
-    import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import dayjs from 'dayjs';
-
     import { InputGroupButton, InputGroupField } from '../ui/input-group';
     import { Separator } from '../ui/separator';
     import { Tree } from '../ui/tree';
     import { isToolNavKey } from '../../shared/constants';
     import { navDefinitions } from '../../shared/constants/ui.js';
     import { DASHBOARD_NAV_KEY_PREFIX, DEFAULT_DASHBOARD_ICON } from '../../shared/constants/dashboard';
-    import { useDashboardStore, useModalStore, useNotificationsSettingsStore } from '../../stores';
-
+    import { useDashboardStore, useModalStore } from '../../stores';
     import SortableTreeNode from './SortableTreeNode.vue';
+    /**
+     * @typedef {{
+     *     type: string;
+     *     key?: string;
+     *     id?: string;
+     *     name?: string;
+     *     nameKey?: string | null;
+     *     icon?: string;
+     *     items?: string[];
+     * }} NavLayoutEntry
+     */
+    /** @typedef {{ key: string; icon?: string; labelKey?: string; isDashboard?: boolean }} NavDefinition */
 
     const props = defineProps({
         visible: {
@@ -208,8 +216,11 @@
     const { t } = useI18n();
     const dashboardStore = useDashboardStore();
     const modalStore = useModalStore();
-    const { notificationLayout } = storeToRefs(useNotificationsSettingsStore());
 
+    /**
+     * @param {NavLayoutEntry[]} source
+     * @returns {NavLayoutEntry[]}
+     */
     const cloneLayout = (source) => {
         if (!Array.isArray(source)) return [];
         return source.map((entry) => {
@@ -270,6 +281,7 @@
 
     const definitionsMap = computed(() => {
         const map = new Map();
+
         const source = props.definitions?.length ? props.definitions : navDefinitions;
         source.forEach((def) => {
             if (def?.key) {
@@ -322,10 +334,12 @@
             }))
     );
 
+    const isPlaceholder = (item) => Boolean(item?.value?._placeholder);
+
     const getSortableIndex = (originalIdx, flattenItems) => {
         let sortableIdx = 0;
         for (let i = 0; i < originalIdx; i++) {
-            if (!flattenItems[i]?.value?._placeholder) sortableIdx += 1;
+            if (!isPlaceholder(flattenItems[i])) sortableIdx += 1;
         }
         return sortableIdx;
     };

@@ -1,6 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import { mount } from '@vue/test-utils';
 import { markRaw, ref } from 'vue';
+vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key) => key }) }));
+vi.mock('../../../components/dialogs/InventoryBundleDialog.vue', () => ({ default: { template: '<div />' } }));
+vi.mock('../../../components/dialogs/FreeStoreItemDialog.vue', () => ({ default: { template: '<div />' } }));
+vi.mock('../../../components/dialogs/ModerationReportDialog.vue', () => ({ default: { template: '<div />' } }));
 
 const mocks = vi.hoisted(() => ({
     replace: vi.fn(),

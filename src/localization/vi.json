@@ -659,7 +659,8 @@
                 "platform": "Nền tảng",
                 "last_visited": "Lần cuối ghé thăm",
                 "visit_count": "Số lần vào",
-                "time_spent": "Thời gian đã ở"
+                "time_spent": "Thời gian đã ở",
+                "created": "Tạo lúc"
             },
             "json": {
                 "header": "JSON"
@@ -777,7 +778,8 @@
                 "role_updated_at": "Cập nhật lúc:",
                 "role_created_at": "Tạo lúc:",
                 "role_permissions": "Quyền:",
-                "last_visited": "Lần truy cập cuối"
+                "last_visited": "Lần truy cập cuối",
+                "created": "Tạo lúc"
             },
             "posts": {
                 "header": "Posts",

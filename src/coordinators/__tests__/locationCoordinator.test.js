@@ -46,6 +46,7 @@ vi.mock('../../stores/gameLog', () => ({ useGameLogStore: () => ({}) }));
 vi.mock('../../stores/game', () => ({
     useGameStore: () => mocks.gameStore
 }));
+vi.mock('../../stores/friend', () => ({ useFriendStore: () => ({ updateFriendLastSeen: vi.fn() }) }));
 vi.mock('../../stores/instance', () => ({
     useInstanceStore: () => mocks.instanceStore
 }));

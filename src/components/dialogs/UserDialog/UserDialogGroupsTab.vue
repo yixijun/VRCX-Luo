@@ -367,7 +367,6 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import UserDialogGroupCard from './UserDialogGroupCard.vue';
     import { useAuthStore, useGroupStore, useUiStore, useUserStore } from '../../../stores';
     import {
@@ -384,7 +383,6 @@
     import { groupRequest } from '../../../api';
     import { useOptionKeySelect } from '../../../composables/useOptionKeySelect';
     import { userDialogGroupSortingOptions } from '../../../shared/constants';
-
     const { t } = useI18n();
 
     const { userDialog, currentUser, isLocalUserVrcPlusSupporter } = storeToRefs(useUserStore());
@@ -519,6 +517,7 @@
      */
     async function sortCurrentUserGroups() {
         const D = userDialog.value;
+
         let sortMethod = () => 0;
 
         switch (D.groupSorting.value) {

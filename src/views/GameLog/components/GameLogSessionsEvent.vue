@@ -166,7 +166,7 @@
                         {{ t('common.actions.open_link') }}
                     </ContextMenuItem>
                     <ContextMenuSeparator v-if="showLink" />
-                    <ContextMenuItem @click="copyToClipboard(event.videoUrl)">
+                    <ContextMenuItem @click="copyToClipboard(event.videoUrl || event.videoName)">
                         <Copy class="size-4" />
                         {{ t('common.actions.copy') }}
                     </ContextMenuItem>
@@ -180,7 +180,6 @@
     import { computed, ref } from 'vue';
     import { ChevronRight, Copy, ExternalLink, Play, LogIn, LogOut } from 'lucide-vue-next';
     import { useI18n } from 'vue-i18n';
-
     import { Badge } from '../../../components/ui/badge';
     import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '../../../components/ui/collapsible';
     import {
@@ -194,7 +193,6 @@
     import { lookupUser } from '../../../coordinators/userCoordinator';
     import { useFriendStore, useUserStore } from '../../../stores';
     import UserIdentityInline from '../../../components/UserIdentityInline.vue';
-
     const { t } = useI18n();
     const friendStore = useFriendStore();
     const userStore = useUserStore();
@@ -210,7 +208,7 @@
 
     const showLink = computed(() => {
         if (props.event.type !== 'VideoPlay') return false;
-        return props.event.videoId !== 'LSMedia' && props.event.videoId !== 'PopcornPalace';
+        return props.event.videoId !== 'PopcornPalace' && !!props.event.videoUrl;
     });
 
     const videoLabel = computed(() => {

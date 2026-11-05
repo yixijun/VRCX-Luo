@@ -114,10 +114,12 @@
     import { InputGroupSearch } from '@/components/ui/input-group';
     import { Slider } from '@/components/ui/slider';
     import { useI18n } from 'vue-i18n';
-
     defineProps({
         sortValue: { type: String, default: 'name' },
-        extraSortOptions: { type: Array, default: () => [] },
+        extraSortOptions: {
+            type: Array,
+            default: () => []
+        },
         searchQuery: { type: String, default: '' },
         searchPlaceholder: { type: String, default: '' },
         searchMode: { type: String, default: 'name' },

@@ -158,17 +158,14 @@
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
     import { useVirtualizer } from '@tanstack/vue-virtual';
-
     import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
     import { useAppearanceSettingsStore, useFavoriteStore, useFriendStore, useLocationStore } from '../../stores';
     import { Slider } from '../../components/ui/slider';
     import { Switch } from '../../components/ui/switch';
     import { getFriendsLocations } from '../../shared/utils/location.js';
     import { debounce, getFriendsSortFunction } from '../../shared/utils';
-
     import FriendLocationCard from './components/FriendsLocationsCard.vue';
     import configRepository from '../../services/config.js';
-
     const { t } = useI18n();
 
     const friendStore = useFriendStore();
@@ -679,6 +676,7 @@
         }
         const { columns } = computeGridLayout(safeItems.length, { matchMaxColumnWidth: true });
         const safeColumns = Math.max(1, columns || 1);
+
         const rows = [];
 
         for (let index = 0; index < safeItems.length; index += safeColumns) {
@@ -695,6 +693,13 @@
     const isFavoriteDivideByGroup = computed(
         () => isSidebarDivideByFriendGroup.value && activeSegment.value === 'favorite' && !normalizedSearchTerm.value
     );
+
+    /**
+     * @typedef {{ type: 'cards'; key: string; items: any[] }
+     *     | { type: 'header'; key: string; instanceId: string; count: number }
+     *     | { type: 'divider'; key: string }
+     *     | { type: 'group-header'; key: string; label: string; count: number; groupKey: string; collapsed: boolean }} VirtualRow
+     */
 
     const virtualRows = computed(() => {
         const rows = [];

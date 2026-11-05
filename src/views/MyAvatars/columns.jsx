@@ -29,7 +29,6 @@ import {
     timeToText
 } from '../../shared/utils';
 import { i18n } from '../../plugins';
-
 const { t } = i18n.global;
 
 const sortButton = ({ column, label, descFirst = false }) => {
@@ -100,8 +99,9 @@ export function getColumns({
                             loading="lazy"
                             onClick={() => onShowAvatarDialog(ref.id)}
                             onError={(e) => {
-                                e.target.style.display = 'none';
-                                e.target.nextElementSibling.style.display = '';
+                                const img = e.target;
+                                img.style.display = 'none';
+                                img.nextElementSibling.style.display = '';
                             }}
                         />
                         <div

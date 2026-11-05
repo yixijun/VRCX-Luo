@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 import { watch } from 'vue';
-
 import { database } from '../services/database';
 import { groupRequest } from '../api';
 import { runRefreshFriendsListFlow } from '../coordinators/friendSyncCoordinator';
@@ -17,12 +16,12 @@ import {
     getCurrentUser,
     updateAutoStateChange
 } from '../coordinators/userCoordinator';
+import { useNotificationStore } from './notification';
 import { useUserStore } from './user';
 import { useVRCXUpdaterStore } from './vrcxUpdater';
 import { useVrStore } from './vr';
 import { useVrcxStore } from './vrcx';
 import { watchState } from '../services/watchState';
-
 import * as workerTimers from 'worker-timers';
 import { createCurrentUserTask } from './updateLoopTasks/currentUserTask';
 import { createFriendSyncTask } from './updateLoopTasks/friendSyncTask';
@@ -36,7 +35,7 @@ import { createCacheCleanupTask } from './updateLoopTasks/cacheCleanupTask';
 import { createAutoStateTask } from './updateLoopTasks/autoStateTask';
 import { createDatabaseOptimizeTask } from './updateLoopTasks/databaseOptimizeTask';
 import { createUpdateLoopScheduler } from './updateLoopTasks/updateLoopScheduler';
-
+import { createInventoryNotificationTask } from './updateLoopTasks/inventoryNotificationTask';
 export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const authStore = useAuthStore();
     const userStore = useUserStore();
@@ -45,6 +44,11 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
     const discordPresenceSettingsStore = useDiscordPresenceSettingsStore();
     const vrcxUpdaterStore = useVRCXUpdaterStore();
     const vrStore = useVrStore();
+    const notificationStore = useNotificationStore();
+    const inventoryNotificationTask = createInventoryNotificationTask({
+        checkInventoryBundles: () => notificationStore.checkInventoryBundles(),
+        checkFreeStoreItems: () => notificationStore.checkFreeStoreItems()
+    });
     const currentUserTask = createCurrentUserTask({ getCurrentUser });
     const friendSyncTask = createFriendSyncTask({
         refreshFriends: runRefreshFriendsListFlow,
@@ -106,7 +110,8 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
         discordTask,
         autoStateTask,
         gameStateTask,
-        databaseOptimizeTask
+        databaseOptimizeTask,
+        inventoryNotificationTask
     ];
     const scheduler = createUpdateLoopScheduler({
         tasks,
@@ -126,6 +131,7 @@ export const useUpdateLoopStore = defineStore('UpdateLoop', () => {
             friendSyncTask.reset();
             nonFriendSyncTask.reset();
             groupInstanceTask.reset();
+            inventoryNotificationTask.reset();
         },
         { flush: 'sync' }
     );

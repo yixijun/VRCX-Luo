@@ -41,6 +41,7 @@ vi.mock('@/components/ui/dialog', () => ({
     DialogContent: { template: '<div><slot /></div>' },
     DialogHeader: { template: '<div><slot /></div>' },
     DialogTitle: { template: '<div><slot /></div>' },
+    DialogDescription: { template: '<p><slot /></p>' },
     DialogFooter: { template: '<div><slot /></div>' }
 }));
 vi.mock('@/components/ui/button', () => ({

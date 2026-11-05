@@ -40,6 +40,12 @@ export function createDefaultWorldRef(json) {
         featured: false,
         organization: '',
         previewYoutubeId: '',
+        isHypeTrainEligible: false,
+        namespace: '',
+        slimInstances: [],
+        storeId: '',
+        udonProducts: [],
+        urlList: [],
         // VRCX
         $isLabs: false,
         //

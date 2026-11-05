@@ -1,14 +1,7 @@
-/**
- * API requests
- * Export all API requests from here
- */
-
 import { request } from '../services/request';
-
 import authRequest from './auth';
 import avatarModerationRequest from './avatarModeration';
 import avatarRequest from './avatar';
-import cosmeticsRequest from './cosmetics';
 import favoriteRequest from './favorite';
 import friendRequest from './friend';
 import groupRequest from './group';
@@ -17,6 +10,7 @@ import instanceRequest from './instance';
 import inventoryRequest from './inventory';
 import inviteMessagesRequest from './inviteMessages';
 import miscRequest from './misc';
+import moderationReportRequest from './moderationReport';
 import notificationRequest from './notification';
 import playerModerationRequest from './playerModeration';
 import propRequest from './prop';
@@ -25,6 +19,12 @@ import userRequest from './user';
 import vrcPlusIconRequest from './vrcPlusIcon';
 import vrcPlusImageRequest from './vrcPlusImage';
 import worldRequest from './world';
+import cosmeticsRequest from './cosmetics';
+import marketplaceRequest from './marketplace';
+/**
+ * API requests
+ * Export all API requests from here
+ */
 
 window.request = {
     request,
@@ -47,9 +47,10 @@ window.request = {
     propRequest,
     imageRequest,
     queryRequest,
-    cosmeticsRequest
+    cosmeticsRequest,
+    marketplaceRequest,
+    moderationReportRequest
 };
-
 export {
     request,
     userRequest,
@@ -71,5 +72,7 @@ export {
     propRequest,
     imageRequest,
     queryRequest,
-    cosmeticsRequest
+    cosmeticsRequest,
+    marketplaceRequest,
+    moderationReportRequest
 };

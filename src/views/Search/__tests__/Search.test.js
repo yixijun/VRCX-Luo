@@ -103,6 +103,8 @@ vi.mock('@vueuse/core', async (importOriginal) => {
 });
 
 vi.mock('../../../stores', () => ({
+    useGalleryStore: () => ({ showFullscreenImageDialog: vi.fn() }),
+    useUserStore: () => ({ currentUserCredits: ref(0) }),
     useAppearanceSettingsStore: () => ({
         randomUserColours: mocks.randomUserColours
     }),
@@ -125,6 +127,12 @@ vi.mock('../../../stores', () => ({
         cachedConfig: mocks.cachedConfig
     })
 }));
+vi.mock('../composables/useSearchMarketplace', () => ({ useSearchMarketplace: () => ({
+    searchMarketplaceParams: ref({offset: 0}), searchMarketplaceResults: ref([]), searchMarketplaceHasNext: ref(false), isSearchMarketplaceLoading: ref(false), searchMarketplace: vi.fn(), moreSearchMarketplace: vi.fn(), clearMarketplaceSearch: vi.fn()
+}) }));
+vi.mock('../composables/useSearchStoreShelves', () => ({ useSearchStoreShelves: () => ({
+    filteredStoreShelves: ref([]), isStoreShelvesLoading: ref(false), purchasingListingId: ref(''), getStoreShelves: vi.fn(), isListingOwned: vi.fn(), canPurchaseListing: vi.fn(), purchaseListing: vi.fn()
+}) }));
 vi.mock('../../../composables/useUserDisplay', () => ({
     useUserDisplay: () => ({userImage: () => ''})
 }));
@@ -165,6 +173,8 @@ vi.mock('../../../coordinators/worldCoordinator', () => ({
 }));
 
 vi.mock('../../../shared/utils', () => ({
+    commaNumber: (value) => String(value),
+    replaceBioSymbols: (value) => value,
     convertFileUrlToImageUrl: (url) => url,
     languageClass: (lang) => `lang-${lang}`,
     userImage: () => 'https://example.com/u.png'
@@ -263,6 +273,7 @@ vi.mock('@/components/ui/tooltip', () => ({
 }));
 
 vi.mock('lucide-vue-next', () => ({
+    RefreshCw: { template: '<i />' },
     Settings: { template: '<i />' },
     Trash2: { template: '<i />' },
     User: { template: '<i />' },

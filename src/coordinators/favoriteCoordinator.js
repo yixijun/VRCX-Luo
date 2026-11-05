@@ -25,7 +25,6 @@ import {
     removeFromArray,
     replaceReactiveObject
 } from '../shared/utils';
-
 // --- handleFavorite / handleFavoriteAtDelete / handleFavoriteAdd ---
 
 /**
@@ -214,7 +213,7 @@ export function applyFavoriteCached(json) {
     const favoriteStore = useFavoriteStore();
     const friendStore = useFriendStore();
     const generalSettingsStore = useGeneralSettingsStore();
-
+    const groups = generalSettingsStore.localFavoriteFriendsGroups;
     let ref = favoriteStore.cachedFavorites.get(json.id);
     if (typeof ref === 'undefined') {
         ref = createDefaultFavoriteCachedRef(json);
@@ -222,12 +221,7 @@ export function applyFavoriteCached(json) {
         favoriteStore.cachedFavoritesByObjectId.set(ref.favoriteId, ref);
         if (
             ref.type === 'friend' &&
-            (!generalSettingsStore.localFavoriteFriendsGroups.some(
-                (key) => !key.startsWith('local:')
-            ) ||
-                generalSettingsStore.localFavoriteFriendsGroups.includes(
-                    ref.$groupKey
-                ))
+            (groups.length === 0 || groups.includes(ref.$groupKey))
         ) {
             friendStore.localFavoriteFriends.add(ref.favoriteId);
             friendStore.updateSidebarFavorites();
@@ -1039,7 +1033,10 @@ export async function checkInvalidLocalAvatars(
                     result.invalidIds.push(favorite.id);
                 } else {
                     result.skipped++;
-                    console.warn(`Could not verify avatar ${favorite.id}:`, err);
+                    console.warn(
+                        `Could not verify avatar ${favorite.id}:`,
+                        err
+                    );
                 }
             }
         }
@@ -1059,7 +1056,9 @@ export async function checkInvalidRemoteFavoriteAvatars(
     favorites,
     onProgress = null
 ) {
-    const ids = [...new Set(favorites.map((favorite) => favorite.id).filter(Boolean))];
+    const ids = [
+        ...new Set(favorites.map((favorite) => favorite.id).filter(Boolean))
+    ];
     const result = {
         total: ids.length,
         invalid: 0,
@@ -1202,9 +1201,18 @@ export function removeLocalFriendFavorite(userId, group) {
 export function deleteLocalFriendFavoriteGroup(group) {
     const favoriteStore = useFavoriteStore();
     const friendStore = useFriendStore();
+    const generalSettingsStore = useGeneralSettingsStore();
 
     delete favoriteStore.localFriendFavorites[group];
     database.deleteFriendFavoriteGroup(group);
+    const key = `local:${group}`;
+    if (generalSettingsStore.localFavoriteFriendsGroups.includes(key)) {
+        generalSettingsStore.setLocalFavoriteFriendsGroups(
+            generalSettingsStore.localFavoriteFriendsGroups.filter(
+                (k) => k !== key
+            )
+        );
+    }
     friendStore.updateLocalFavoriteFriends();
 }
 

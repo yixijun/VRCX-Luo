@@ -435,9 +435,7 @@
     import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import VueJsonPretty from 'vue-json-pretty';
-
     import {
         useAdvancedSettingsStore,
         useAppearanceSettingsStore,
@@ -457,12 +455,10 @@
     import { clearVRCXCache } from '@/coordinators/vrcxCoordinator';
     import { openExternalLink } from '@/shared/utils';
     import { CRASH_RECOVERY_POLICY } from '@/shared/crashRecovery';
-
     import PhotonSettings from '../PhotonSettings.vue';
     import RegistryBackupDialog from '../../../Tools/dialogs/RegistryBackupDialog.vue';
     import SettingsGroup from '../SettingsGroup.vue';
     import SettingsItem from '../SettingsItem.vue';
-
     const { t } = useI18n();
 
     const advancedSettingsStore = useAdvancedSettingsStore();
@@ -531,6 +527,7 @@
 
     const configTreeData = ref({});
     const visits = ref(null);
+    const instanceCount = ref(null);
     const selectedPurgePeriod = ref('180');
     const isPurgeDialogVisible = ref(false);
 
@@ -599,6 +596,9 @@
     function getVisits() {
         queryRequest.fetch('visits').then((args) => {
             visits.value = args.json;
+        });
+        queryRequest.fetch('instanceCount').then((args) => {
+            instanceCount.value = args.json.instances;
         });
     }
 </script>

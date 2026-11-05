@@ -1,7 +1,6 @@
 import { patchAndRefetchActiveQuery, queryKeys } from '../queries';
 import { request } from '../services/request';
 import { applyWorld } from '../coordinators/worldCoordinator';
-
 const worldReq = {
     /**
      * @type {import('../types/api/world').GetWorld}
@@ -68,9 +67,9 @@ const worldReq = {
         }).then((json) => {
             const args = {
                 json,
-                params
+                params,
+                ref: applyWorld(json)
             };
-            args.ref = applyWorld(json);
             patchAndRefetchActiveQuery({
                 queryKey: queryKeys.world(args.ref.id),
                 nextData: args
@@ -95,9 +94,9 @@ const worldReq = {
         }).then((json) => {
             const args = {
                 json,
-                params
+                params,
+                ref: applyWorld(json)
             };
-            args.ref = applyWorld(json);
             patchAndRefetchActiveQuery({
                 queryKey: queryKeys.world(args.ref.id),
                 nextData: args
@@ -122,9 +121,9 @@ const worldReq = {
         }).then((json) => {
             const args = {
                 json,
-                params
+                params,
+                ref: applyWorld(json)
             };
-            args.ref = applyWorld(json);
             patchAndRefetchActiveQuery({
                 queryKey: queryKeys.world(args.ref.id),
                 nextData: args

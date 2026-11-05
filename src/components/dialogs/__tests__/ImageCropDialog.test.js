@@ -10,6 +10,7 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (k) => k }) }));
+vi.mock('../../../services/config', () => ({ default: { getBool: vi.fn().mockResolvedValue(false), setBool: vi.fn() } }));
 vi.mock('../../composables/useImageCropper', () => ({
     useImageCropper: () => ({
         cropperRef: mocks.cropperRef,

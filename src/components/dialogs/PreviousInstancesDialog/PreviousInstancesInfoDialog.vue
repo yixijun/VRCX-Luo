@@ -38,10 +38,7 @@
                                 :content="t('dialog.previous_instances.chart_view')"
                                 side="bottom"
                                 :delay-duration="300">
-                                <ToggleGroupItem
-                                    value="chart"
-                                    class="px-2"
-                                    :class="viewMode === 'chart' && 'bg-accent text-accent-foreground'">
+                                <ToggleGroupItem value="chart" class="px-2">
                                     <BarChart3 class="size-4" />
                                 </ToggleGroupItem>
                             </TooltipWrapper>
@@ -69,10 +66,7 @@
                             :content="t('dialog.previous_instances.table_view')"
                             side="bottom"
                             :delay-duration="300">
-                            <ToggleGroupItem
-                                value="table"
-                                class="px-2"
-                                :class="viewMode === 'table' && 'bg-accent text-accent-foreground'">
+                            <ToggleGroupItem value="table" class="px-2">
                                 <List class="size-4" />
                             </ToggleGroupItem>
                         </TooltipWrapper>
@@ -132,14 +126,11 @@
 </template>
 
 <script setup>
-    defineOptions({ name: 'PreviousInstancesInfoDialog' });
-
     import { computed, nextTick, ref, watch } from 'vue';
     import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
     import { BarChart3, List, Plus, Search } from 'lucide-vue-next';
-
     import {
         useGameLogStore,
         useInstanceStore,
@@ -158,10 +149,10 @@
     import { database } from '../../../services/database';
     import { useVrcxVueTable } from '../../../lib/table/useVrcxVueTable';
     import { lookupUser } from '../../../coordinators/userCoordinator';
-
     import PreviousInstancesInfoChart from './PreviousInstancesInfoChart.vue';
     import { VirtualCombobox } from '../../../components/ui/virtual-combobox';
     import { Button } from '../../../components/ui/button';
+    defineOptions({ name: 'PreviousInstancesInfoDialog' });
 
     const { previousInstancesInfoDialog, previousInstancesInfoState } = storeToRefs(useInstanceStore());
     const { gameLogIsFriend, gameLogIsFavorite } = useGameLogStore();

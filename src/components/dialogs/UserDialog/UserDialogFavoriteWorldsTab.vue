@@ -74,10 +74,7 @@
             </template>
         </TabsUnderline>
 
-        <UserDialogResourceGrid
-            v-else
-            :items="[]"
-            :loading="userDialog.isFavoriteWorldsLoading">
+        <UserDialogResourceGrid v-else :items="[]" :loading="userDialog.isFavoriteWorldsLoading">
             <template #empty>
                 <Search v-if="searchQuery.trim()" class="size-5" aria-hidden="true" />
                 <span>{{ t(searchQuery.trim() ? 'common.no_matching_records' : 'common.no_data') }}</span>
@@ -94,7 +91,6 @@
     import { TabsUnderline } from '@/components/ui/tabs';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { useFavoriteStore, useUserStore } from '../../../stores';
     import { showWorldDialog } from '../../../coordinators/worldCoordinator';
     import { handleFavoriteWorldList } from '../../../coordinators/favoriteCoordinator';
@@ -102,7 +98,6 @@
     import UserDialogResourceGrid from './UserDialogResourceGrid.vue';
     import UserDialogResourceSearch from './UserDialogResourceSearch.vue';
     import UserDialogResourceToolbar from './UserDialogResourceToolbar.vue';
-
     const { t } = useI18n();
 
     const { userDialog } = storeToRefs(useUserStore());

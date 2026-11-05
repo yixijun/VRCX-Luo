@@ -1,10 +1,9 @@
 import { reactive } from 'vue';
+import { useGroupStore } from '../stores/group';
 import { toast } from 'vue-sonner';
-
 import {
     useFriendStore,
     useGalleryStore,
-    useGroupStore,
     useInstanceStore,
     useLocationStore,
     useNotificationStore,
@@ -16,14 +15,13 @@ import { applyUser, applyCurrentUser } from '../coordinators/userCoordinator';
 import {
     onGroupLeft,
     applyGroup,
-    getGroupDialogGroup,
     handleGroupMember
 } from '../coordinators/groupCoordinator';
 import {
     handleFriendAdd,
     handleFriendDelete
 } from '../coordinators/friendRelationshipCoordinator';
-import { parseLocation } from '../shared/utils';
+import { debounce, parseLocation } from '../shared/utils';
 import { AppDebug } from './appConfig';
 import { groupRequest } from '../api';
 import { request } from './request';
@@ -32,12 +30,22 @@ import { runSetCurrentUserLocationFlow } from '../coordinators/locationCoordinat
 import { createFriendLocationPayload } from './websocketFriendLocation';
 import { scheduleWebSocketReconnect } from './websocketReconnect';
 import { watchState } from './watchState';
-
+import { isPrimaryMarketplaceAccount } from './marketplaceAccount';
 import * as workerTimers from 'worker-timers';
-
 let webSocket = null;
 let lastWebSocketMessage = '';
 let webSocketClosedGracefully = true;
+
+let refreshOwnedItemsDebounced;
+function refreshOwnedItems() {
+    // Resolve the utility after module initialization: stores and coordinators
+    // also import this service while building their dependency graph.
+    refreshOwnedItemsDebounced ??= debounce(
+        () => useUserStore().getAllProductPurchases(),
+        5000
+    );
+    refreshOwnedItemsDebounced();
+}
 
 /**
  * Reactive WebSocket state for status bar telemetry.
@@ -87,7 +95,11 @@ function connectWebSocket(token) {
     const socket = new WebSocket(`${AppDebug.websocketDomain}/?auth=${token}`);
     socket.onopen = () => {
         wsState.connected = true;
-        if (!webSocketClosedGracefully && watchState.isLoggedIn && watchState.isFriendsLoaded) {
+        if (
+            !webSocketClosedGracefully &&
+            watchState.isLoggedIn &&
+            watchState.isFriendsLoaded
+        ) {
             webSocketClosedGracefully = true;
             notificationStore.refreshNotifications();
             friendStore.refreshFriends();
@@ -384,6 +396,7 @@ function handlePipeline(args) {
             );
             if (!hasUser) {
                 console.error('friend-location missing user id', content);
+                break;
             }
             applyUser(locationJson);
             break;
@@ -447,17 +460,10 @@ function handlePipeline(args) {
                 console.error('group-member-updated missing member', content);
                 break;
             }
-            const groupId1 = member.groupId;
-            if (
-                groupStore.groupDialog.visible &&
-                groupStore.groupDialog.id === groupId1
-            ) {
-                getGroupDialogGroup(groupId1);
-            }
             handleGroupMember({
                 json: member,
                 params: {
-                    groupId: groupId1
+                    groupId: member.groupId
                 }
             });
             console.log('group-member-updated', member);
@@ -535,6 +541,7 @@ function handlePipeline(args) {
                 ) {
                     galleryStore.getInventory();
                 }
+                refreshOwnedItems();
                 // on consuming a bundle
                 // {contentType: 'inventory', itemId: 'inv_', itemType: 'prop', actionType: 'add'}
             } else if (!contentType) {
@@ -567,6 +574,12 @@ function handlePipeline(args) {
             notificationStore.queueNotificationNoty(noty);
             notificationStore.appendNotificationTableEntry(noty);
             sharedFeedStore.addEntry(noty);
+            break;
+
+        case 'economy-update':
+            if (isPrimaryMarketplaceAccount(userStore.currentUser.id)) {
+                userStore.setCurrentUserCredits(content?.walletBalance ?? null);
+            }
             break;
 
         default:

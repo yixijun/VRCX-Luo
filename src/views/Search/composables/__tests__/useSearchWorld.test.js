@@ -96,7 +96,7 @@ describe('useSearchWorld', () => {
                 n: 10,
                 offset: 0,
                 sort: 'order',
-                featured: 'true',
+                featured: true,
                 order: 'ascending',
                 tag: 'party',
                 notag: 'system_labs'

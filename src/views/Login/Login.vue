@@ -1,6 +1,6 @@
 <template>
-    <div class="x-login-container">
-        <div class="m-1.5" style="position: absolute; top: 0; left: 0">
+    <div class="absolute inset-0 flex flex-col items-center overflow-y-auto px-4 pt-12">
+        <div class="absolute top-0 left-0 m-1.5">
             <LoginSettingsDialog />
             <TooltipWrapper v-if="!noUpdater" side="top" :content="t('view.login.updater')">
                 <Button class="rounded-full mr-2 text-xs" size="icon-sm" variant="ghost" @click="showVRCXUpdateDialog">
@@ -31,7 +31,7 @@
                 </DropdownMenuContent>
             </DropdownMenu>
         </div>
-        <div class="x-login">
+        <div class="my-auto flex w-full max-w-sm flex-col" :class="{ 'sm:max-w-3xl': hasSavedCredentials }">
             <Alert
                 v-if="vrcStatusStore.hasIssue"
                 :variant="vrcStatusStore.isMajor ? 'destructive' : 'warning'"
@@ -43,75 +43,82 @@
                     {{ vrcStatusStore.statusText }}
                 </AlertDescription>
             </Alert>
-            <div class="x-login-form-container">
-                <div>
-                    <h2 class="m-0" style="font-weight: bold; text-align: center">{{ t('view.login.login') }}</h2>
-                    <form id="login-form" @submit.prevent="onSubmit">
-                        <FieldGroup class="gap-3">
-                            <VeeField v-slot="{ field, errors }" name="username">
-                                <Field :data-invalid="!!errors.length">
-                                    <FieldLabel for="login-form-username" class="text-foreground">
-                                        {{ t('view.login.field.username') }}
-                                    </FieldLabel>
-                                    <FieldContent>
-                                        <InputGroupField
-                                            id="login-form-username"
-                                            :model-value="field.value"
-                                            autocomplete="off"
-                                            name="username"
-                                            :placeholder="t('view.login.field.username')"
-                                            :aria-invalid="!!errors.length"
-                                            @update:modelValue="field.onChange"
-                                            @blur="field.onBlur" />
-                                        <FieldError v-if="errors.length" :errors="errors" />
-                                    </FieldContent>
-                                </Field>
-                            </VeeField>
-                            <VeeField v-slot="{ field, errors, handleChange }" name="password">
-                                <Field :data-invalid="!!errors.length">
-                                    <FieldLabel for="login-form-password" class="text-foreground">
-                                        {{ t('view.login.field.password') }}
-                                    </FieldLabel>
-                                    <FieldContent>
-                                        <InputGroupField
-                                            id="login-form-password"
-                                            :model-value="field.value"
-                                            type="password"
-                                            autocomplete="off"
-                                            name="password"
-                                            :placeholder="t('view.login.field.password')"
-                                            :aria-invalid="!!errors.length"
-                                            show-password
-                                            @keydown.delete="handleChange('', false)"
-                                            @update:modelValue="field.onChange"
-                                            @blur="field.onBlur" />
-                                        <FieldError v-if="errors.length" :errors="errors" />
-                                    </FieldContent>
-                                </Field>
-                            </VeeField>
-                        </FieldGroup>
-                        <label class="inline-flex items-center gap-2 mr-2 mt-3 text-sm">
-                            <Checkbox v-model="loginForm.saveCredentials" />
-                            <span>{{ t('view.login.field.saveCredentials') }}</span>
-                        </label>
+            <div class="flex flex-col gap-2 sm:flex-row">
+                <div class="flex min-w-0 flex-col p-4 sm:flex-1">
+                    <h2 class="mb-4 text-center text-lg font-semibold">{{ t('view.login.login') }}</h2>
+                    <QrLogin v-model:active="qrActive">
+                        <form id="login-form" @submit.prevent="onSubmit">
+                            <FieldGroup v-show="!qrActive" class="gap-3">
+                                <VeeField v-slot="{ field, errors }" name="username">
+                                    <Field :data-invalid="!!errors.length">
+                                        <FieldLabel for="login-form-username" class="text-foreground">
+                                            {{ t('view.login.field.username') }}
+                                        </FieldLabel>
+                                        <FieldContent>
+                                            <InputGroupField
+                                                id="login-form-username"
+                                                input-class="text-sm"
+                                                :model-value="field.value"
+                                                autocomplete="off"
+                                                name="username"
+                                                :placeholder="t('view.login.field.username')"
+                                                :aria-invalid="!!errors.length"
+                                                @update:modelValue="field.onChange"
+                                                @blur="field.onBlur" />
+                                            <FieldError v-if="errors.length" :errors="errors" />
+                                        </FieldContent>
+                                    </Field>
+                                </VeeField>
+                                <VeeField v-slot="{ field, errors, handleChange }" name="password">
+                                    <Field :data-invalid="!!errors.length">
+                                        <FieldLabel for="login-form-password" class="text-foreground">
+                                            {{ t('view.login.field.password') }}
+                                        </FieldLabel>
+                                        <FieldContent>
+                                            <InputGroupField
+                                                id="login-form-password"
+                                                input-class="text-sm"
+                                                :model-value="field.value"
+                                                type="password"
+                                                autocomplete="off"
+                                                name="password"
+                                                :placeholder="t('view.login.field.password')"
+                                                :aria-invalid="!!errors.length"
+                                                show-password
+                                                @keydown.delete="handleChange('', false)"
+                                                @update:modelValue="field.onChange"
+                                                @blur="field.onBlur" />
+                                            <FieldError v-if="errors.length" :errors="errors" />
+                                        </FieldContent>
+                                    </Field>
+                                </VeeField>
+                            </FieldGroup>
+                            <div class="mt-3 flex items-center justify-between gap-2 text-sm">
+                                <label class="flex w-fit items-center gap-2">
+                                    <Checkbox v-model="loginForm.saveCredentials" />
+                                    <span>{{ t('view.login.field.saveCredentials') }}</span>
+                                </label>
+                                <ResetPasswordDialog />
+                            </div>
 
-                        <Field class="mt-4">
-                            <Button type="submit" size="lg" style="width: 100%">{{ t('view.login.login') }}</Button>
-                        </Field>
-                    </form>
+                            <Button v-show="!qrActive" type="submit" size="lg" class="mt-4 w-full">{{
+                                t('view.login.login')
+                            }}</Button>
+                        </form>
+                    </QrLogin>
                     <Button
-                        variant="Secondary"
+                        variant="outline"
                         size="lg"
-                        style="width: 100%"
-                        @click="openExternalLink('https://vrchat.com/register')"
+                        class="mt-2 w-full"
+                        @click="openExternalLink('https://vrchat.com/home/register')"
                         >{{ t('view.login.register') }}</Button
                     >
                 </div>
 
-                <hr v-if="Object.keys(savedCredentials).length !== 0" class="x-vertical-divider" />
+                <div v-if="hasSavedCredentials" class="shrink-0 border-t sm:border-t-0 sm:border-l" />
 
-                <div v-if="Object.keys(savedCredentials).length !== 0">
-                    <h2 class="m-0" style="font-weight: bold; text-align: center">
+                <div v-if="hasSavedCredentials" class="flex min-w-0 flex-col p-4 sm:flex-1">
+                    <h2 class="mb-4 text-center text-lg font-semibold">
                         {{ t('view.login.savedAccounts') }}
                     </h2>
                     <div class="x-scroll-wrapper mt-2">
@@ -125,12 +132,16 @@
                                     <div class="flex items-center cursor-pointer" @click.stop>
                                         <button
                                             class="relative flex items-center justify-center size-5 mr-2 rounded-full border text-[10px] font-bold transition-all shrink-0"
-                                            :class="getAccountOrderIndex(user.user.id) >= 0
-                                                ? 'border-transparent text-white'
-                                                : 'border-muted-foreground/40 text-muted-foreground hover:border-foreground'"
-                                            :style="getAccountOrderIndex(user.user.id) >= 0
-                                                ? { background: getAccountBadgeColor(user.user.id) }
-                                                : {}"
+                                            :class="
+                                                getAccountOrderIndex(user.user.id) >= 0
+                                                    ? 'border-transparent text-white'
+                                                    : 'border-muted-foreground/40 text-muted-foreground hover:border-foreground'
+                                            "
+                                            :style="
+                                                getAccountOrderIndex(user.user.id) >= 0
+                                                    ? { background: getAccountBadgeColor(user.user.id) }
+                                                    : {}
+                                            "
                                             @click="toggleAccountSelection(user.user.id)">
                                             {{ getAccountBadgeLabel(user.user.id) }}
                                         </button>
@@ -174,29 +185,32 @@
                     </Button>
                 </div>
             </div>
+        </div>
 
-            <div class="x-legal-notice-container">
-                <div class="text-center text-xs">
-                    <p>
-                        <a class="cursor-pointer" @click="openExternalLink('https://vrchat.com/home/password')">{{
-                            t('view.login.forgotPassword')
-                        }}</a>
-                    </p>
-                    <p>
-                        &copy; 2019-2026
-                        <a class="cursor-pointer" @click="openExternalLink('https://github.com/pypy-vrc')">pypy</a>
-                        &amp;
-                        <a class="cursor-pointer" @click="openExternalLink('https://github.com/Natsumi-sama')"
-                            >Natsumi</a
-                        >
-                        &amp;
-                        <a class="cursor-pointer" @click="openExternalLink('https://github.com/Map1en')">Map1en</a>
-                    </p>
-                    <p>{{ t('view.settings.general.legal_notice.info') }}</p>
-                    <p>{{ t('view.settings.general.legal_notice.disclaimer1') }}</p>
-                    <p>{{ t('view.settings.general.legal_notice.disclaimer2') }}</p>
-                </div>
-            </div>
+        <div class="x-legal-notice-container flex max-w-3xl flex-col gap-1 pt-12 pb-8 text-center text-xs text-muted-foreground">
+            <p>
+                &copy; 2019-2026
+                <a
+                    class="cursor-pointer text-foreground hover:underline"
+                    @click="openExternalLink('https://github.com/pypy-vrc')"
+                    >pypy</a
+                >
+                &amp;
+                <a
+                    class="cursor-pointer text-foreground hover:underline"
+                    @click="openExternalLink('https://github.com/Natsumi-sama')"
+                    >Natsumi</a
+                >
+                &amp;
+                <a
+                    class="cursor-pointer text-foreground hover:underline"
+                    @click="openExternalLink('https://github.com/Map1en')"
+                    >Map1en</a
+                >
+            </p>
+            <p>{{ t('view.settings.general.legal_notice.info') }}</p>
+            <p>{{ t('view.settings.general.legal_notice.disclaimer1') }}</p>
+            <p>{{ t('view.settings.general.legal_notice.disclaimer2') }}</p>
         </div>
     </div>
 </template>
@@ -210,7 +224,7 @@
         DropdownMenuContent,
         DropdownMenuTrigger
     } from '@/components/ui/dropdown-menu';
-    import { onBeforeMount, onBeforeUnmount, reactive, ref, watch } from 'vue';
+    import { onBeforeMount, onBeforeUnmount, reactive, ref, watch, computed } from 'vue';
     import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
     import { Item, ItemActions, ItemContent, ItemDescription, ItemMedia, ItemTitle } from '@/components/ui/item';
     import { ArrowBigDownDash, Languages, Trash2, TriangleAlert, User } from 'lucide-vue-next';
@@ -223,7 +237,6 @@
     import { toTypedSchema } from '@vee-validate/zod';
     import { useI18n } from 'vue-i18n';
     import { z } from 'zod';
-
     import {
         useAppearanceSettingsStore,
         useAuthStore,
@@ -234,14 +247,13 @@
     import { getLanguageName, languageCodes, resolveSystemLanguage } from '../../localization';
     import { tForLocale } from '../../plugins';
     import { openExternalLink } from '../../shared/utils';
-
     import configRepository from '../../services/config';
     import { useUserDisplay } from '../../composables/useUserDisplay';
     import { watchState } from '../../services/watchState';
     import { accountHub } from '../../services/accountHub.js';
-
     import LoginSettingsDialog from './Dialog/LoginSettingsDialog.vue';
-
+    import ResetPasswordDialog from './Dialog/ResetPasswordDialog.vue';
+    import QrLogin from './components/QrLogin.vue';
     const { userImage } = useUserDisplay();
     const { showVRCXUpdateDialog } = useVRCXUpdaterStore();
     const router = useRouter();
@@ -260,6 +272,8 @@
     const { t } = useI18n();
 
     const savedCredentials = ref({});
+    const hasSavedCredentials = computed(() => Object.keys(savedCredentials.value).length !== 0);
+    const qrActive = ref(false);
     const requiredMessage = 'Required';
     /** Ordered list of selected account user IDs. Index 0 = primary. */
     const selectedAccountOrder = ref([]);
@@ -277,6 +291,12 @@
         initialValues: {
             username: loginForm.value.username,
             password: loginForm.value.password
+        }
+    });
+
+    watch(qrActive, (active) => {
+        if (active) {
+            resetForm({ values: { username: '', password: '' } });
         }
     });
 
@@ -304,10 +324,7 @@
 
     // ── Multi-account ordered selection ──────────────────────────────────────────
 
-    const BADGE_COLOURS = [
-        '#4ade80', '#60a5fa', '#fb923c', '#f472b6',
-        '#a78bfa', '#34d399', '#fbbf24', '#f87171'
-    ];
+    const BADGE_COLOURS = ['#4ade80', '#60a5fa', '#fb923c', '#f472b6', '#a78bfa', '#34d399', '#fbbf24', '#f87171'];
 
     /**
      * Toggle selection of an account for multi-login.
@@ -517,64 +534,3 @@
         { deep: true }
     );
 </script>
-
-<style scoped>
-    .x-login-container {
-        position: absolute;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-    }
-
-    .x-login {
-        display: grid;
-        grid-template-rows: repeat(2, auto);
-        align-items: center;
-        max-width: clamp(600px, 60svw, 800px);
-    }
-
-    .x-login-form-container {
-        display: grid;
-        gap: 8px;
-        height: 380px;
-    }
-
-    .x-login-form-container:has(> div:nth-child(3)) {
-        grid-template-columns: 1fr 1px 1fr;
-    }
-
-    .x-login-form-container > div {
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-        padding: 16px;
-        overflow-y: auto;
-    }
-
-    .x-scroll-wrapper {
-        width: 100%;
-        height: 100%;
-        overflow-y: auto;
-    }
-
-    hr.x-vertical-divider {
-        height: 100%;
-        width: 100%;
-        margin: 0;
-        border: 0;
-    }
-
-    .x-saved-account-list {
-        display: grid;
-    }
-
-    .x-saved-account-list > div {
-        width: 100%;
-    }
-
-    .x-legal-notice-container {
-        margin-top: 8px;
-    }
-</style>

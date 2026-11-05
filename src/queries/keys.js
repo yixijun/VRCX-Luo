@@ -1,4 +1,6 @@
 export const queryKeys = Object.freeze({
+    profile: (userId) => ['profile', userId],
+    instanceCount: () => ['instances', 'count'],
     favoriteScope: () => ['favorite'],
     friendScope: () => ['friends'],
     groupScope: (groupId) => ['group', groupId],

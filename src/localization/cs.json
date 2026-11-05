@@ -729,7 +729,8 @@
                 "platform": "Platform",
                 "last_visited": "Last Visited",
                 "visit_count": "Visit Count",
-                "time_spent": "Time Spent"
+                "time_spent": "Time Spent",
+                "created": "Created"
             },
             "json": {
                 "header": "JSON"
@@ -846,7 +847,10 @@
                 "role_updated_at": "Updated At:",
                 "role_created_at": "Created At:",
                 "role_permissions": "Permissions:",
-                "last_visited": "Last Visited"
+                "last_visited": "Last Visited",
+                "created": "Created",
+                "copy_id": "Copy ID",
+                "copy_url": "Copy URL"
             },
             "posts": {
                 "header": "Posts",

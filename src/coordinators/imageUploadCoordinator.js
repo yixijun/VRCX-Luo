@@ -1,11 +1,9 @@
 import { toast } from '../services/toastAdapter';
-
 import { $throw } from '../services/request';
 import { AppDebug } from '../services/appConfig.js';
 import { resolveInputElement } from '../services/domInputAdapter';
 import { extractFileId } from '../shared/utils';
 import { imageRequest } from '../api';
-
 function resolveMessage(message) {
     if (typeof message === 'function') {
         return message();

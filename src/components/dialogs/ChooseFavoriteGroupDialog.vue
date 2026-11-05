@@ -73,7 +73,9 @@
                 </template>
             </div>
             <div v-if="favoriteDialog.type === 'avatar'" style="margin-top: 20px">
-                <span style="text-align: center">{{ t('dialog.favorite.local_avatar_favorites') }}</span>
+                <span style="display: block; text-align: center">{{
+                    t('dialog.favorite.local_avatar_favorites')
+                }}</span>
                 <template v-for="group in localAvatarFavoriteGroups" :key="group">
                     <Button
                         variant="outline"
@@ -106,7 +108,6 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { useFavoriteStore, useUserStore } from '../../stores';
     import {
         addLocalWorldFavorite,
@@ -117,7 +118,6 @@
         removeLocalFriendFavorite
     } from '../../coordinators/favoriteCoordinator';
     import { favoriteRequest } from '../../api';
-
     const { t } = useI18n();
 
     const favoriteStore = useFavoriteStore();

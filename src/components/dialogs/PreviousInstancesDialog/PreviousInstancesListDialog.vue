@@ -1,7 +1,11 @@
 <template>
     <div class="flex min-h-0 flex-1 flex-col">
         <DialogHeader>
-            <DialogTitle>{{ variant === 'user-created' ? t('dialog.previous_instances.header_created_by_user') : t('dialog.previous_instances.header') }}</DialogTitle>
+            <DialogTitle>{{
+                variant === 'user-created'
+                    ? t('dialog.previous_instances.header_created_by_user')
+                    : t('dialog.previous_instances.header')
+            }}</DialogTitle>
         </DialogHeader>
 
         <DataTableLayout
@@ -30,14 +34,11 @@
 </template>
 
 <script setup>
-    defineOptions({ name: 'PreviousInstancesListDialog' });
-
     import { computed, ref, watch } from 'vue';
     import { DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import { InputGroupField } from '@/components/ui/input-group';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import {
         useInstanceStore,
         useLaunchStore,
@@ -59,6 +60,7 @@
     import { database } from '../../../services/database';
     import { queryRequest } from '../../../api';
     import { useVrcxVueTable } from '../../../lib/table/useVrcxVueTable';
+    defineOptions({ name: 'PreviousInstancesListDialog' });
 
     const props = defineProps({
         variant: {
@@ -121,15 +123,13 @@
 
     const headerText = computed(() => {
         const state = dialogState.value;
-        if (props.variant === 'user' || props.variant === 'user-created')
-            return state?.userRef?.displayName ?? '';
+        if (props.variant === 'user' || props.variant === 'user-created') return state?.userRef?.displayName ?? '';
         if (props.variant === 'world') return state?.worldRef?.name ?? '';
         return state?.groupRef?.name ?? '';
     });
 
     const currentId = computed(() => {
-        if (props.variant === 'user' || props.variant === 'user-created')
-            return dialogState.value?.userRef?.id ?? '';
+        if (props.variant === 'user' || props.variant === 'user-created') return dialogState.value?.userRef?.id ?? '';
         if (props.variant === 'world') return dialogState.value?.worldRef?.id ?? '';
         return dialogState.value?.groupRef?.id ?? '';
     });
@@ -205,7 +205,6 @@
         createPreviousInstancesColumns(props.variant, {
             shiftHeld,
             currentUserId: currentUser.value?.id,
-            forceUpdateKey: previousInstancesListDialog.value?.forceUpdate,
             onLaunch: showLaunchDialog,
             onShowInfo: handleShowInfo,
             onDelete: deleteGameLogInstance,

@@ -1044,7 +1044,8 @@
                 "platform": "Platforma",
                 "last_visited": "Ostatnia wizyta",
                 "visit_count": "Liczba odwiedzin",
-                "time_spent": "Spędzony czas"
+                "time_spent": "Spędzony czas",
+                "created": "Data utworzenia"
             },
             "json": {
                 "header": "JSON"
@@ -1172,7 +1173,8 @@
                 "role_permissions": "Uprawnienia:",
                 "last_visited": "Ostatnia wizyta",
                 "past_events": "Poprzednie wydarzenia",
-                "upcoming_events": "Nadchodzące wydarzenia"
+                "upcoming_events": "Nadchodzące wydarzenia",
+                "created": "Data utworzenia"
             },
             "posts": {
                 "header": "Posty",

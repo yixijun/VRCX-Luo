@@ -136,9 +136,7 @@
     import { getLocalTimeZone, today } from '@internationalized/date';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import dayjs from 'dayjs';
-
     import { Popover, PopoverContent, PopoverTrigger } from '../../components/ui/popover';
     import { useAppearanceSettingsStore, useFeedStore, useGalleryStore, useVrcxStore } from '../../stores';
     import { ToggleGroup, ToggleGroupItem } from '../../components/ui/toggle-group';
@@ -151,7 +149,6 @@
     import { TooltipWrapper } from '../../components/ui/tooltip';
     import { columns as baseColumns } from './columns.jsx';
     import { useVrcxVueTable } from '../../lib/table/useVrcxVueTable';
-
     const { feedTable, feedTableData } = storeToRefs(useFeedStore());
     const { feedTableLookup } = useFeedStore();
     const appearanceSettingsStore = useAppearanceSettingsStore();
@@ -288,7 +285,7 @@
      */
     function getFeedRowId(row) {
         if (row?.id != null) return `id:${row.id}`;
-        if (row?.rowId != null) return `row:${row.rowId}`;
+        if (row?.rowId != null) return `row:${row.rowId}:${row.type}`;
 
         const type = row?.type ?? '';
         const createdAt = row?.created_at ?? row?.createdAt ?? '';

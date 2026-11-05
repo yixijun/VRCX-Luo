@@ -90,7 +90,7 @@
                                             >{{ item.videoId }}:</span
                                         >
                                         <span
-                                            v-if="item.videoId !== 'LSMedia' && item.videoId !== 'PopcornPalace'"
+                                            v-if="item.videoId !== 'PopcornPalace' && !!item.videoUrl"
                                             class="cursor-pointer text-muted-foreground hover:underline"
                                             @click="openExternalLink(item.videoUrl)"
                                             >{{ item.videoName || item.videoUrl }}</span
@@ -156,13 +156,11 @@
     import { computed, onMounted, shallowRef, watch } from 'vue';
     import { useI18n } from 'vue-i18n';
     import { LogIn, LogOut, MapPin, Settings, Play, Waypoints } from 'lucide-vue-next';
-
     import { database } from '@/services/database';
     import { showUserDialog } from '@/coordinators/userCoordinator';
     import { useFriendStore, useGameLogStore } from '@/stores';
     import { formatDateFilter, openExternalLink } from '@/shared/utils';
     import { watchState } from '@/services/watchState';
-
     import { Button } from '@/components/ui/button';
     import {
         DropdownMenu,
@@ -176,7 +174,6 @@
     import { TooltipWrapper } from '@/components/ui/tooltip';
     import WidgetHeader from './WidgetHeader.vue';
     import { Table, TableBody, TableRow, TableCell } from '@/components/ui/table';
-
     const GAMELOG_TYPES = [
         'Location',
         'OnPlayerJoined',

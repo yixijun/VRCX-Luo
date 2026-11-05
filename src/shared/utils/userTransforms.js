@@ -1,5 +1,4 @@
 import { removeEmojis, replaceBioSymbols } from './base/string';
-
 /**
  * Sanitize user JSON fields before applying to cache.
  * Applies replaceBioSymbols to statusDescription, bio, note;
@@ -178,10 +177,18 @@ export function diffObjectProps(ref, json, arraysMatchFn) {
  */
 export function createDefaultUserRef(json) {
     return {
+        acceptedPrivacyVersion: 0,
+        acceptedTOSVersion: 0,
+        accountDeletionDate: null,
+        accountDeletionLog: null,
         ageVerificationStatus: '',
         ageVerified: false,
         allowAvatarCopying: false,
+        appleDetails: {},
         badges: [],
+        bannerColor: '',
+        bannerType: '',
+        bannerUrl: '',
         bio: '',
         bioLinks: [],
         iconUrl: '',
@@ -194,16 +201,20 @@ export function createDefaultUserRef(json) {
         displayName: '',
         friendKey: '',
         friendRequestStatus: '',
+        iconFrame: '',
         id: '',
         instanceId: '',
+        isEconomyCreator: false,
         isFriend: false,
         last_activity: '',
         last_login: '',
         last_mobile: null,
         last_platform: '',
         location: '',
+        nameplateEffect: '',
         platform: '',
         note: null,
+        profileEffect: '',
         profilePicOverride: '',
         profilePicOverrideThumbnail: '',
         pronouns: '',
@@ -240,6 +251,7 @@ export function createDefaultUserRef(json) {
         $mutualCount: 0,
         $mutualOptedOut: false,
         $nickName: '',
+        $memo: '',
         $previousLocation: '',
         $customTag: '',
         $customTagColour: '',

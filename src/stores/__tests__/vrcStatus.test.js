@@ -5,6 +5,7 @@ const mocks = vi.hoisted(() => ({
     execute: vi.fn(),
     openExternalLink: vi.fn()
 }));
+vi.mock('../vrcx', () => ({ useVrcxStore: () => ({ isAppFocus: true }) }));
 
 vi.mock('../../services/webapi', () => ({
     default: {

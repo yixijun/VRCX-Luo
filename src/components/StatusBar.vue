@@ -245,18 +245,26 @@
                             :style="statusBarItemStyle('nowPlaying')">
                             <i v-if="!isYouTubeNowPlaying" class="ri-play-fill text-[10px] shrink-0" />
                             <i v-if="isYouTubeNowPlaying" class="ri-youtube-fill text-[#FF0000] shrink-0 text-[12px]" />
-                            <TooltipWrapper v-else :content="nowPlaying.url" side="top">
-                                <span
-                                    class="text-[10px] shrink-0 truncate max-w-[180px] cursor-pointer hover:text-foreground"
-                                    @click="handleNowPlayingClick"
-                                    >{{ nowPlaying.url }}</span
-                                >
-                            </TooltipWrapper>
-                            <TooltipWrapper :content="nowPlaying.name" side="top">
+                            <TooltipWrapper side="top" content-class="p-2">
+                                <template #content>
+                                    <div class="flex flex-col gap-1.5 max-w-[320px]">
+                                        <img
+                                            v-if="nowPlaying.thumbnailUrl"
+                                            :src="nowPlaying.thumbnailUrl"
+                                            class="w-full max-h-[180px] object-contain rounded"
+                                            loading="lazy" />
+                                        <span v-if="nowPlaying.name" class="whitespace-pre-wrap">{{
+                                            nowPlaying.name
+                                        }}</span>
+                                        <span v-if="!nowPlaying.urlHidden" class="break-all text-muted-foreground">{{
+                                            nowPlaying.url
+                                        }}</span>
+                                    </div>
+                                </template>
                                 <span
                                     class="text-[11px] text-foreground truncate cursor-pointer"
                                     @click="handleNowPlayingClick"
-                                    >{{ nowPlaying.name }}</span
+                                    >{{ nowPlaying.name || nowPlaying.url }}</span
                                 >
                             </TooltipWrapper>
                             <template v-if="nowPlaying.playing">
@@ -582,11 +590,9 @@
     import { openExternalLink } from '@/shared/utils/appActions';
     import { wsState } from '@/services/websocket';
     import { infoFetchState, retryFailedInfoFetch, runSilentInfoFetch } from '@/coordinators/infoFetchCoordinator';
-
     import dayjs from 'dayjs';
     import timezone from 'dayjs/plugin/timezone';
     import utc from 'dayjs/plugin/utc';
-
     import {
         defaultVisibility,
         defaultOrder,
@@ -599,10 +605,8 @@
         zoomLevelToPercent,
         zoomPercentToLevel
     } from './statusBarUtils';
-
     import configRepository from '../services/config';
     import { accountHub } from '../services/accountHub.js';
-
     dayjs.extend(utc);
     dayjs.extend(timezone);
 
@@ -673,7 +677,7 @@
 
     function handleNowPlayingClick() {
         const url = nowPlaying.value.url;
-        if (url) {
+        if (url && !nowPlaying.value.urlHidden) {
             openExternalLink(url);
         }
     }
@@ -685,7 +689,7 @@
 
     const gameSessionText = computed(() => {
         if (!gameStore.isGameRunning || !userStore.currentUser.$online_for) return '';
-        const elapsed = now.value - userStore.currentUser.$online_for;
+        const elapsed = now.value.getTime() - userStore.currentUser.$online_for;
         return elapsed > 0 ? timeToText(elapsed) : '';
     });
 
@@ -696,7 +700,7 @@
 
     const gameSessionDetailText = computed(() => {
         if (!gameStore.isGameRunning || !userStore.currentUser.$online_for) return '-';
-        const elapsed = now.value - userStore.currentUser.$online_for;
+        const elapsed = now.value.getTime() - userStore.currentUser.$online_for;
         return elapsed > 0 ? timeToText(elapsed, true) : '-';
     });
 
@@ -837,7 +841,7 @@
     let lastMsgCount = wsState.messageCount;
 
     const wsCanvasRef = ref(null);
-    const now = useNow({ interval: 1000 });
+    const now = useNow({ scheduler: (cb) => useIntervalFn(cb, 1000) });
 
     useIntervalFn(() => {
         const delta = wsState.messageCount - lastMsgCount;
@@ -964,7 +968,7 @@
     }
 
     const appUptimeText = computed(() => {
-        const elapsedSeconds = Math.floor((now.value - vrcxStore.appStartAt) / 1000);
+        const elapsedSeconds = Math.floor((now.value.getTime() - vrcxStore.appStartAt) / 1000);
         return formatAppUptime(elapsedSeconds);
     });
 

@@ -34,11 +34,9 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { instanceRequest, notificationRequest } from '../../../api';
     import { useGalleryStore, useUserStore } from '../../../stores';
     import { parseLocation } from '../../../shared/utils';
-
     const { t } = useI18n();
 
     const { uploadImage } = storeToRefs(useGalleryStore());
@@ -128,22 +126,22 @@
             if (uploadImage.value) {
                 notificationRequest
                     .sendInvitePhoto(D.params, D.userId)
-                    .catch((err) => {
-                        throw err;
-                    })
                     .then((args) => {
                         toast.success(t('message.invite.photo_message_sent'));
                         return args;
+                    })
+                    .catch((err) => {
+                        console.error(err);
                     });
             } else {
                 notificationRequest
                     .sendInvite(D.params, D.userId)
-                    .catch((err) => {
-                        throw err;
-                    })
                     .then((args) => {
                         toast.success(t('message.invite.message_sent'));
                         return args;
+                    })
+                    .catch((err) => {
+                        console.error(err);
                     });
             }
         } else if (messageType === 'request') {
@@ -151,23 +149,23 @@
             if (uploadImage.value) {
                 notificationRequest
                     .sendRequestInvitePhoto(D.params, D.userId)
-                    .catch((err) => {
-                        clearInviteImageUpload();
-                        throw err;
-                    })
                     .then((args) => {
                         toast.success(t('message.invite.request_photo_message_sent'));
                         return args;
+                    })
+                    .catch((err) => {
+                        clearInviteImageUpload();
+                        console.error(err);
                     });
             } else {
                 notificationRequest
                     .sendRequestInvite(D.params, D.userId)
-                    .catch((err) => {
-                        throw err;
-                    })
                     .then((args) => {
                         toast.success(t('message.invite.request_message_sent'));
                         return args;
+                    })
+                    .catch((err) => {
+                        console.error(err);
                     });
             }
         }

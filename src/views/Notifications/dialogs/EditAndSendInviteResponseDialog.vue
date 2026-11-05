@@ -37,10 +37,8 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { inviteMessagesRequest, notificationRequest } from '../../../api';
     import { useGalleryStore, useNotificationStore } from '../../../stores';
-
     const { t } = useI18n();
     const galleryStore = useGalleryStore();
     const { uploadImage } = storeToRefs(galleryStore);
@@ -72,22 +70,19 @@
             const params = {
                 message: D.newMessage
             };
-            await inviteMessagesRequest
-                .editInviteMessage(params, messageType, slot)
-                .catch((err) => {
-                    console.error('Invite response message update failed', err);
-                    toast.error(t('message.error'));
-                })
-                .then((args) => {
-                    if (args.json[slot].message === I.messageSlot.message) {
-                        const errorMessage = t('message.invite.message_update_failed');
-                        toast.error(errorMessage);
-                        throw new Error(errorMessage);
-                    } else {
-                        toast(t('message.invite.message_updated'));
-                    }
-                    return args;
-                });
+            let args;
+            try {
+                args = await inviteMessagesRequest.editInviteMessage(params, messageType, slot);
+            } catch (err) {
+                console.error('Invite response message update failed', err);
+                toast.error(t('message.error'));
+                return;
+            }
+            if (args.json[slot].message === I.messageSlot.message) {
+                toast.error(t('message.invite.message_update_failed'));
+                return;
+            }
+            toast(t('message.invite.message_updated'));
         }
         const params = {
             responseSlot: slot,
@@ -96,10 +91,6 @@
         if (uploadImage.value) {
             notificationRequest
                 .sendInviteResponsePhoto(params, I.invite.id)
-                .catch((err) => {
-                    console.error('Invite response photo failed', err);
-                    toast.error(t('message.error'));
-                })
                 .then((args) => {
                     notificationRequest
                         .hideNotification({
@@ -110,6 +101,10 @@
                         });
                     toast.success(t('message.invite.response_sent'));
                     return args;
+                })
+                .catch((err) => {
+                    console.error('Invite response photo failed', err);
+                    toast.error(t('message.error'));
                 })
                 .finally(() => {
                     emit('closeInviteDialog');
@@ -117,10 +112,6 @@
         } else {
             notificationRequest
                 .sendInviteResponse(params, I.invite.id)
-                .catch((err) => {
-                    console.error('Invite response failed', err);
-                    toast.error(t('message.error'));
-                })
                 .then((args) => {
                     notificationRequest
                         .hideNotification({
@@ -131,6 +122,10 @@
                         });
                     toast.success(t('message.invite.response_sent'));
                     return args;
+                })
+                .catch((err) => {
+                    console.error('Invite response failed', err);
+                    toast.error(t('message.error'));
                 })
                 .finally(() => {
                     emit('closeInviteDialog');

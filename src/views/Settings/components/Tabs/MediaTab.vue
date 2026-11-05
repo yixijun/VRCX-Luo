@@ -96,12 +96,9 @@
     import { Switch } from '@/components/ui/switch';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { useAdvancedSettingsStore } from '@/stores';
-
     import SettingsGroup from '../SettingsGroup.vue';
     import SettingsItem from '../SettingsItem.vue';
-
     const { t } = useI18n();
 
     const advancedSettingsStore = useAdvancedSettingsStore();

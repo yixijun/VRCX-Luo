@@ -1,7 +1,6 @@
 import { ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { useFavoriteStore } from './favorite';
-
 export const useSearchIndexStore = defineStore('SearchIndex', () => {
     const favoriteStore = useFavoriteStore();
     const friends = new Map();
@@ -23,7 +22,7 @@ export const useSearchIndexStore = defineStore('SearchIndex', () => {
         const entry = {
             id: ctx.id,
             name: ctx.name || '',
-            memo: ctx.memo || '',
+            memo: ctx.ref?.$memo || '',
             note: ctx.ref?.note || '',
             bio: ctx.ref?.bio || '',
             imageUrl: ctx.ref?.currentAvatarThumbnailImageUrl || ''
@@ -268,7 +267,10 @@ export const useSearchIndexStore = defineStore('SearchIndex', () => {
     }
 
     watch(
-        [() => favoriteStore.localAvatarFavorites, () => favoriteStore.localWorldFavorites],
+        [
+            () => favoriteStore.localAvatarFavorites,
+            () => favoriteStore.localWorldFavorites
+        ],
         rebuildFavoritesFromStore,
         { deep: true, immediate: true }
     );

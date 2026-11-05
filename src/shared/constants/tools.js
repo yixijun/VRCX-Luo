@@ -198,6 +198,26 @@ const toolDefinitions = [
         action: { type: 'dialog', dialogKey: 'batch-add-friends' }
     },
     {
+        key: 'blocked-groups',
+        category: 'group',
+        iconKey: 'ban',
+        navIcon: 'ri-forbid-line',
+        titleKey: 'view.tools.group.blocked_groups',
+        descriptionKey: 'view.tools.group.blocked_groups_description',
+        navEligible: true,
+        action: { type: 'dialog', dialogKey: 'blocked-groups' }
+    },
+    {
+        key: 'group-invites',
+        category: 'group',
+        iconKey: 'mail',
+        navIcon: 'ri-mail-line',
+        titleKey: 'view.tools.group.group_invites',
+        descriptionKey: 'view.tools.group.group_invites_description',
+        navEligible: true,
+        action: { type: 'dialog', dialogKey: 'group-invites' }
+    },
+    {
         key: 'discord-names',
         category: 'user',
         iconKey: 'users',
@@ -246,6 +266,36 @@ const toolDefinitions = [
         descriptionKey: 'view.tools.other.edit_invite_message_description',
         navEligible: true,
         action: { type: 'dialog', dialogKey: 'edit-invite-messages' }
+    },
+    {
+        key: 'moderation-reports',
+        category: 'other',
+        iconKey: 'flag',
+        navIcon: 'ri-flag-line',
+        titleKey: 'view.tools.other.moderation_reports',
+        descriptionKey: 'view.tools.other.moderation_reports_description',
+        navEligible: true,
+        action: { type: 'dialog', dialogKey: 'moderation-reports' }
+    },
+    {
+        key: 'purchase-history',
+        category: 'other',
+        iconKey: 'shopping-bag',
+        navIcon: 'ri-shopping-bag-line',
+        titleKey: 'view.tools.other.purchase_history',
+        descriptionKey: 'view.tools.other.purchase_history_description',
+        navEligible: true,
+        action: { type: 'dialog', dialogKey: 'purchase-history' }
+    },
+    {
+        key: 'info-push',
+        category: 'other',
+        iconKey: 'megaphone',
+        navIcon: 'ri-megaphone-line',
+        titleKey: 'view.tools.other.info_push',
+        descriptionKey: 'view.tools.other.info_push_description',
+        navEligible: true,
+        action: { type: 'dialog', dialogKey: 'info-push' }
     }
 ];
 

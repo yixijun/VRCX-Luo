@@ -1,5 +1,4 @@
 import { computed, ref } from 'vue';
-
 import {
     groupDialogFilterOptions,
     groupDialogSortingOptions,
@@ -7,10 +6,8 @@ import {
     FILTER_NO_ROLE
 } from '../../../shared/constants';
 import { groupRequest, queryRequest } from '../../../api';
-import { debounce } from '../../../shared/utils';
-
+import { debounce, mergeGroupMemberSearchResults } from '../../../shared/utils';
 import * as workerTimers from 'worker-timers';
-
 /**
  * Composable for managing group member loading, searching, sorting, and filtering.
  * @param {import('vue').Ref} groupDialog - reactive ref to the group dialog state
@@ -120,49 +117,116 @@ export function useGroupMembers(
     /**
      *
      */
+    let memberSearchRequestId = 0;
+    const groupMembersSearchDebounced = debounce(
+        groupMembersSearchRequest,
+        200
+    );
+    const groupMembersSearchMaxPages = 10;
+
     function groupMembersSearch() {
+        memberSearchRequestId += 1;
         if (groupDialog.value.memberSearch.length < 3) {
             groupDialog.value.memberSearchResults = [];
             isGroupMembersLoading.value = false;
             return;
         }
-        debounce(groupMembersSearchDebounced, 200)();
+        groupMembersSearchDebounced();
     }
 
     /**
      *
      */
-    function groupMembersSearchDebounced() {
+    async function groupMembersSearchRequest() {
         const D = groupDialog.value;
         const search = D.memberSearch;
+        const requestId = memberSearchRequestId;
         D.memberSearchResults = [];
         if (!search || search.length < 3) {
+            isGroupMembersLoading.value = false;
             return;
         }
         isGroupMembersLoading.value = true;
-        groupRequest
-            .getGroupMembersSearch({
+        try {
+            const args = await groupRequest.getGroupMembersSearch({
                 groupId: D.id,
                 query: search,
                 n: 100,
                 offset: 0
-            })
-            .then((args) => {
-                for (const json of args.json.results) {
-                    handleGroupMember({
-                        json,
-                        params: {
-                            groupId: args.params.groupId
-                        }
-                    });
-                }
-                if (D.id === args.params.groupId) {
-                    D.memberSearchResults = args.json.results;
-                }
-            })
-            .finally(() => {
-                isGroupMembersLoading.value = false;
             });
+            for (const json of args.json.results) {
+                handleGroupMember({
+                    json,
+                    params: {
+                        groupId: args.params.groupId
+                    }
+                });
+            }
+            if (
+                requestId !== memberSearchRequestId ||
+                D.id !== args.params.groupId ||
+                search !== D.memberSearch
+            ) {
+                return;
+            }
+            D.memberSearchResults = mergeGroupMemberSearchResults(
+                args.json.results,
+                D.members,
+                search
+            );
+            await groupMembersSearchLoadRemaining(requestId, search);
+        } catch {
+            // ignore search errors, they are reported by the request layer
+        } finally {
+            if (requestId === memberSearchRequestId) {
+                isGroupMembersLoading.value = false;
+            }
+        }
+    }
+
+    async function groupMembersSearchLoadRemaining(requestId, search) {
+        const D = groupDialog.value;
+        for (let page = 0; page < groupMembersSearchMaxPages; ++page) {
+            if (
+                D.memberSearchResults.length ||
+                !D.visible ||
+                loadMoreGroupMembersParams.value.groupId !== D.id ||
+                requestId !== memberSearchRequestId ||
+                search !== D.memberSearch ||
+                isGroupMembersDone.value
+            ) {
+                return;
+            }
+            isGroupMembersLoading.value = true;
+            await new Promise((resolve) => {
+                workerTimers.setTimeout(resolve, 1000);
+            });
+            isGroupMembersLoading.value = false;
+            if (
+                !D.visible ||
+                requestId !== memberSearchRequestId ||
+                search !== D.memberSearch ||
+                isGroupMembersDone.value
+            ) {
+                return;
+            }
+            try {
+                await loadMoreGroupMembers({ preserveSearch: true });
+            } catch {
+                return;
+            }
+            if (
+                requestId !== memberSearchRequestId ||
+                search !== D.memberSearch
+            ) {
+                return;
+            }
+            D.memberSearchResults = mergeGroupMemberSearchResults(
+                D.memberSearchResults,
+                D.members,
+                search
+            );
+        }
     }
 
     /**
@@ -209,7 +273,7 @@ export function useGroupMembers(
     /**
      *
      */
-    async function loadMoreGroupMembers() {
+    async function loadMoreGroupMembers(options = {}) {
         if (isGroupMembersDone.value || isGroupMembersLoading.value) {
             return;
         }
@@ -218,7 +282,9 @@ export function useGroupMembers(
         if (params.roleId === '') {
             delete params.roleId;
         }
-        D.memberSearch = '';
+        if (!options.preserveSearch) {
+            D.memberSearch = '';
+        }
         isGroupMembersLoading.value = true;
         await queryRequest
             .fetch('groupMembers', params)

@@ -1,5 +1,4 @@
 import { copyToClipboard } from '../../../shared/utils';
-
 /**
  * Composable for GroupDialog command dispatch.
  * Uses a command map pattern consistent with Avatar/World/User dialogs.
@@ -14,6 +13,7 @@ import { copyToClipboard } from '../../../shared/utils';
  * @param deps.setGroupSubscription
  * @param deps.setGroupEventAnnouncements
  * @param deps.showGroupMemberModerationDialog
+ * @param deps.showGroupRolesDialog
  * @param deps.showInviteGroupDialog
  * @param deps.showGroupTransferDialog
  * @param deps.showEditGroupDialog
@@ -33,6 +33,7 @@ export function useGroupDialogCommands(
         setGroupSubscription,
         setGroupEventAnnouncements,
         showGroupMemberModerationDialog,
+        showGroupRolesDialog,
         showInviteGroupDialog,
         showGroupTransferDialog,
         showEditGroupDialog,
@@ -53,7 +54,11 @@ export function useGroupDialogCommands(
         return {
             // --- Direct commands ---
             Share: () => {
-                copyToClipboard(D().ref.$url);
+                copyToClipboard(
+                    D().ref.shortCode && D().ref.discriminator
+                        ? `https://vrc.group/${D().ref.shortCode}.${D().ref.discriminator}`
+                        : `https://vrchat.com/home/group/${D().id}`
+                );
             },
             'Create Post': () => {
                 showGroupPostEditDialog(D().id, null);
@@ -63,6 +68,9 @@ export function useGroupDialogCommands(
             },
             'Moderation Tools': () => {
                 showGroupMemberModerationDialog(D().id);
+            },
+            'Manage Roles': () => {
+                showGroupRolesDialog(D().id);
             },
             'Invite To Group': () => {
                 showInviteGroupDialog(D().id, '');

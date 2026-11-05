@@ -2,7 +2,6 @@ import { reactive, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
-
 import { logWebRequest } from '../../services/appConfig';
 import { database } from '../../services/database';
 import { languageCodes } from '../../localization';
@@ -16,11 +15,9 @@ import { useUpdateLoopStore } from '../updateLoop';
 import { useVRCXUpdaterStore } from '../vrcxUpdater';
 import { useVrcxStore } from '../vrcx';
 import { watchState } from '../../services/watchState';
-
 import configRepository from '../../services/config';
 import webApiService from '../../services/webapi';
 import { openDirectoryDialog } from '../../services/fileDialogAdapter';
-
 export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const gameStore = useGameStore();
     const vrcxStore = useVrcxStore();
@@ -38,10 +35,14 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const bioLanguage = ref('en');
     const relaunchVRChatAfterCrash = ref(false);
     const crashRecoveryDesktopMode = ref(
-        /** @type {'ask' | 'restart' | 'ignore'} */ (CRASH_RECOVERY_POLICY.IGNORE)
+        /** @type {'ask' | 'restart' | 'ignore'} */ (
+            CRASH_RECOVERY_POLICY.IGNORE
+        )
     );
     const crashRecoveryVRMode = ref(
-        /** @type {'ask' | 'restart' | 'ignore'} */ (CRASH_RECOVERY_POLICY.IGNORE)
+        /** @type {'ask' | 'restart' | 'ignore'} */ (
+            CRASH_RECOVERY_POLICY.IGNORE
+        )
     );
     const vrcQuitFix = ref(true);
     const autoSweepVRChatCache = ref(false);
@@ -70,7 +71,21 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
     const progressPieFilter = ref(true);
     const showConfirmationOnSwitchAvatar = ref(false);
     const gameLogDisabled = ref(false);
-    const sqliteTableSizes = ref({});
+    const sqliteTableSizes = ref({
+        gps: 0,
+        status: 0,
+        bio: 0,
+        avatar: 0,
+        onlineOffline: 0,
+        friendLogHistory: 0,
+        notification: 0,
+        location: 0,
+        joinLeave: 0,
+        portalSpawn: 0,
+        videoPlay: 0,
+        event: 0,
+        external: 0
+    });
     const avatarAutoCleanup = ref('Off');
     const purgeInProgress = ref(false);
     const ugcFolderPath = ref('');
@@ -278,14 +293,8 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         relaunchVRChatAfterCrash.value = nextValue;
         crashRecoveryDesktopMode.value = nextPolicy;
         crashRecoveryVRMode.value = nextPolicy;
-        configRepository.setBool(
-            'VRCX_relaunchVRChatAfterCrash',
-            nextValue
-        );
-        configRepository.setString(
-            'VRCX_crashRecoveryDesktopMode',
-            nextPolicy
-        );
+        configRepository.setBool('VRCX_relaunchVRChatAfterCrash', nextValue);
+        configRepository.setString('VRCX_crashRecoveryDesktopMode', nextPolicy);
         configRepository.setString('VRCX_crashRecoveryVRMode', nextPolicy);
     }
 
@@ -669,8 +678,7 @@ export const useAdvancedSettingsStore = defineStore('AdvancedSettings', () => {
         if (lastCleanupStr) {
             const lastCleanup = new Date(lastCleanupStr);
             const daysSinceLastCleanup =
-                (now.getTime() - lastCleanup.getTime()) /
-                (1000 * 60 * 60 * 24);
+                (now.getTime() - lastCleanup.getTime()) / (1000 * 60 * 60 * 24);
             if (daysSinceLastCleanup < 7) return;
         }
 

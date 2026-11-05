@@ -10,7 +10,6 @@ import { useUserStore } from '../stores/user';
 import { userRequest } from '../api';
 import { watchState } from '../services/watchState';
 import { createFriendPresenceFeed } from './friendPresenceFeed';
-
 /**
  * @param {object} ctx
  * @param {string} newState

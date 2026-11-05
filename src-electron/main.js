@@ -9,7 +9,8 @@ const {
     Menu,
     dialog,
     Notification,
-    nativeImage
+    nativeImage,
+    nativeTheme
 } = require('electron');
 const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
@@ -146,8 +147,23 @@ initializeDotnet({ interopApi, version, args });
 
 /** @type {Electron.CrossProcessExports.BrowserWindow} */
 let mainWindow = undefined;
-const {createVrWorkspaceCapture} = require('./vrWorkspaceCapture.cjs');
-const vrWorkspaceCapture = createVrWorkspaceCapture({getWindow: () => mainWindow, publish: (json) => interopApi.callMethod('AppApiElectron', 'ExecuteVrOverlayFunction', ['dashboardWorkspaceFrame', json])});
+nativeTheme.on('updated', () => {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send(
+            'systemThemeChanged',
+            nativeTheme.shouldUseDarkColors
+        );
+    }
+});
+const { createVrWorkspaceCapture } = require('./vrWorkspaceCapture.cjs');
+const vrWorkspaceCapture = createVrWorkspaceCapture({
+    getWindow: () => mainWindow,
+    publish: (json) =>
+        interopApi.callMethod('AppApiElectron', 'ExecuteVrOverlayFunction', [
+            'dashboardWorkspaceFrame',
+            json
+        ])
+});
 
 const VRCXStorage = interopApi.getDotNetObject('VRCXStorage');
 const hasAskedToMoveAppImage =
@@ -240,6 +256,16 @@ registerIpcHandlers({
         allowDevServer: debug
     }),
     handlers: {
+        setThemeSource: (_event, source) => {
+            if (!['system', 'dark', 'light'].includes(source)) {
+                throw new TypeError('Invalid theme source');
+            }
+            nativeTheme.themeSource = source;
+            mainWindow?.webContents.send(
+                'systemThemeChanged',
+                nativeTheme.shouldUseDarkColors
+            );
+        },
         callDotNetMethod: (event, className, methodName, args) => {
             assertAllowedDotNetCall(className, methodName, args);
             return interopApi.callMethod(className, methodName, args);
@@ -321,8 +347,10 @@ registerIpcHandlers({
                 }
             }
         },
-        setVrWorkspaceCapture: (_event, enabled) => vrWorkspaceCapture.setEnabled(enabled),
-        sendVrWorkspaceInput: (_event, input) => vrWorkspaceCapture.input(input),
+        setVrWorkspaceCapture: (_event, enabled) =>
+            vrWorkspaceCapture.setEnabled(enabled),
+        sendVrWorkspaceInput: (_event, input) =>
+            vrWorkspaceCapture.input(input),
         getArch: () => {
             return process.arch.toString();
         },
@@ -356,7 +384,9 @@ registerIpcHandlers({
             const normalizedUntil = Number(silentUntil);
             VRCXStorage.Set(
                 'VRCX_traySilentUntil',
-                next && Number.isFinite(normalizedUntil) && normalizedUntil > Date.now()
+                next &&
+                    Number.isFinite(normalizedUntil) &&
+                    normalizedUntil > Date.now()
                     ? String(Math.trunc(normalizedUntil))
                     : ''
             );
@@ -475,7 +505,6 @@ function createWindow() {
         },
         setStorageValue: (key, value) => VRCXStorage.Set(key, value)
     });
-
 }
 
 let overlayWindow = undefined;
@@ -859,10 +888,9 @@ function getHomePath() {
 
 function getVersion() {
     try {
-        const { sourceVersion: versionFile, isNightly } =
-            readVersionMetadata({
-                versionFilePath: path.join(rootDir, 'Version')
-            });
+        const { sourceVersion: versionFile, isNightly } = readVersionMetadata({
+            versionFilePath: path.join(rootDir, 'Version')
+        });
 
         // look for trailing git hash "-22bcd96" to indicate nightly build
         console.log('Version:', versionFile);

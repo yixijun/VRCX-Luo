@@ -2,7 +2,6 @@ import { patchAndRefetchActiveQuery, queryKeys } from '../queries';
 import { request } from '../services/request';
 import { useUserStore } from '../stores';
 import { applyCurrentUser } from '../coordinators/userCoordinator';
-
 const avatarReq = {
     /**
      * @type {import('../types/api/avatar').GetAvatar}
@@ -254,9 +253,10 @@ const avatarReq = {
      * @param {string[]} order
      * @returns {Promise<{json: any, params}>}
      */
-    setAvatarGalleryOrder(order) {
+    setAvatarGalleryOrder(order, galleryId) {
         const params = {
-            ids: order
+            ids: order,
+            galleryId
         };
         return request('files/order', {
             method: 'PUT',

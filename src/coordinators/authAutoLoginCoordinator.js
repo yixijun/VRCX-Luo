@@ -1,10 +1,8 @@
 import { toast } from '../services/toastAdapter';
 import { i18n } from '../plugins/i18n';
-
 import { AppDebug } from '../services/appConfig';
 import { useAdvancedSettingsStore } from '../stores/settings/advanced';
 import { useAuthStore } from '../stores/auth';
-
 /**
  * Runs the full auto-login orchestration flow.
  * @param {object} [options] Test seams.
@@ -30,7 +28,10 @@ export async function runHandleAutoLoginFlow({
         authStore.setAttemptingAutoLogin(false);
         return;
     }
-    if (advancedSettingsStore.enablePrimaryPassword) {
+    if (
+        advancedSettingsStore.enablePrimaryPassword &&
+        user.loginParams.password
+    ) {
         console.error('Primary password is enabled, this disables auto login.');
         authStore.setAttemptingAutoLogin(false);
         await authStore.handleLogoutEvent();

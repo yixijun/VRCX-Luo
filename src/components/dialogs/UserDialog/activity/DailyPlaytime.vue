@@ -20,12 +20,13 @@
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
     import * as echarts from 'echarts';
-
     import { useAppearanceSettingsStore } from '@/stores';
     import { buildDailySummary } from '@/shared/utils/activityEngine';
-
     const props = defineProps({
-        sessions: { type: Array, default: () => [] },
+        sessions: {
+            type: Array,
+            default: () => []
+        },
         rangeDays: { type: Number, default: 30 }
     });
 

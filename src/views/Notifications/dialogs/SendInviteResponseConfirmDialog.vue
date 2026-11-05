@@ -25,10 +25,8 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { useGalleryStore, useNotificationStore } from '../../../stores';
     import { notificationRequest } from '../../../api';
-
     const { t } = useI18n();
 
     const galleryStore = useGalleryStore();
@@ -60,10 +58,6 @@
         if (uploadImage.value) {
             notificationRequest
                 .sendInviteResponsePhoto(params, D.invite.id)
-                .catch((err) => {
-                    console.error('Invite response photo failed', err);
-                    toast.error(t('message.error'));
-                })
                 .then((args) => {
                     notificationRequest
                         .hideNotification({
@@ -75,16 +69,16 @@
                     toast.success(t('message.invite.response_photo_sent'));
                     return args;
                 })
+                .catch((err) => {
+                    console.error('Invite response photo failed', err);
+                    toast.error(t('message.error'));
+                })
                 .finally(() => {
                     emit('closeInviteDialog');
                 });
         } else {
             notificationRequest
                 .sendInviteResponse(params, D.invite.id)
-                .catch((err) => {
-                    console.error('Invite response failed', err);
-                    toast.error(t('message.error'));
-                })
                 .then((args) => {
                     notificationRequest
                         .hideNotification({
@@ -95,6 +89,10 @@
                         });
                     toast.success(t('message.invite.response_sent'));
                     return args;
+                })
+                .catch((err) => {
+                    console.error('Invite response failed', err);
+                    toast.error(t('message.error'));
                 })
                 .finally(() => {
                     emit('closeInviteDialog');

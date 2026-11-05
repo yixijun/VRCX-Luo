@@ -16,6 +16,7 @@ export function createQueryResourceRegistry({ requests, queryKeys, policies }) {
         favoriteRequest,
         groupRequest,
         inventoryRequest,
+        instanceRequest,
         miscRequest,
         userRequest,
         worldRequest
@@ -51,6 +52,16 @@ export function createQueryResourceRegistry({ requests, queryKeys, policies }) {
     });
 
     return Object.freeze({
+        profile: {
+            key: (params) => queryKeys.profile(params.userId),
+            policy: policies.profile,
+            queryFn: (params) => userRequest.getPublicProfile(params)
+        },
+        instanceCount: {
+            key: () => queryKeys.instanceCount(),
+            policy: policies.instanceCount,
+            queryFn: () => instanceRequest.getInstanceCount()
+        },
         user: {
             key: (params) => queryKeys.user(params.userId),
             policy: policies.user,

@@ -46,6 +46,9 @@
                                     type="datetime-local"
                                     size="sm"
                                     :disabled="groupEventEditDialog.loading" />
+                                <p v-if="hasPastStartDate" class="mt-1 text-xs text-destructive">
+                                    {{ t('dialog.group_event_edit.start_in_past') }}
+                                </p>
                             </FieldContent>
                         </Field>
                         <Field>
@@ -498,18 +501,15 @@
     import { Repeat, Trash2 } from 'lucide-vue-next';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import { Button } from '@/components/ui/button';
     import { Checkbox } from '@/components/ui/checkbox';
     import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
     import { Field, FieldContent, FieldGroup, FieldLabel } from '@/components/ui/field';
     import { InputGroupField, InputGroupTextareaField } from '@/components/ui/input-group';
     import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
     import { groupRequest, queryRequest } from '../../../api';
     import { useGroupStore, useModalStore, useUserStore } from '../../../stores';
     import GallerySelectDialog from './GallerySelectDialog.vue';
-
     const categoryOptions = [
         'arts',
         'avatars',
@@ -610,6 +610,10 @@
         const endsAt = Date.parse(groupEventEditDialog.value.endsAt);
         return Number.isFinite(startsAt) && Number.isFinite(endsAt) && endsAt <= startsAt;
     });
+    const hasPastStartDate = computed(() => {
+        const startsAt = Date.parse(groupEventEditDialog.value.startsAt);
+        return !isEditMode.value && Number.isFinite(startsAt) && startsAt <= Date.now();
+    });
     const repeatFrequencySelection = computed(() => groupEventEditDialog.value.recurrence?.frequency ?? 'none');
     const recurrenceEndType = computed({
         get: () => groupEventEditDialog.value.recurrence?.end?.type ?? 'never',
@@ -660,6 +664,7 @@
             Number.isFinite(Date.parse(D.startsAt)) &&
             Number.isFinite(Date.parse(D.endsAt)) &&
             !hasInvalidDateRange.value &&
+            !hasPastStartDate.value &&
             [D.hostEarlyJoinMinutes, D.guestEarlyJoinMinutes, D.closeInstanceAfterEndMinutes].every(
                 (value) => Number.isInteger(Number(value)) && Number(value) >= 0
             )

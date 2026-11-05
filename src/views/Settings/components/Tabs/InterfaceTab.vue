@@ -188,6 +188,12 @@
                 <Switch :model-value="isAgeGatedInstancesVisible" @update:modelValue="setIsAgeGatedInstancesVisible" />
             </SettingsItem>
 
+            <SettingsItem
+                :label="t('view.settings.appearance.appearance.closed_instances')"
+                :description="t('view.settings.appearance.appearance.closed_instances_description')">
+                <Switch :model-value="isClosedInstancesVisible" @update:modelValue="setIsClosedInstancesVisible" />
+            </SettingsItem>
+
             <SettingsItem :label="t('view.settings.appearance.appearance.striped_data_table_mode')">
                 <Switch :model-value="isDataTableStriped" @update:modelValue="toggleStripedDataTable" />
             </SettingsItem>
@@ -465,11 +471,9 @@
     } from '@/components/ui/dialog';
     import { Input } from '@/components/ui/input';
     import { Popover, PopoverAnchor, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
     import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
     import { CheckIcon, ChevronDown } from 'lucide-vue-next';
     import { useAppearanceSettingsStore, useGeneralSettingsStore, useVrStore } from '@/stores';
-
     import { Switch } from '@/components/ui/switch';
     import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
     import { getLanguageName, languageCodes } from '@/localization';
@@ -479,14 +483,11 @@
     import { storeToRefs } from 'pinia';
     import { toast } from 'vue-sonner';
     import { useI18n } from 'vue-i18n';
-
     import PresetColorPicker from '@/components/PresetColorPicker.vue';
     import TableLimitsDialog from '@/components/dialogs/TableLimitsDialog.vue';
     import { saveSortFavoritesOption } from '@/coordinators/favoriteCoordinator';
-
     import SettingsGroup from '../SettingsGroup.vue';
     import SettingsItem from '../SettingsItem.vue';
-
     const { t } = useI18n();
 
     const appearanceSettingsStore = useAppearanceSettingsStore();
@@ -506,6 +507,7 @@
         hideNicknames,
         showInstanceIdInLocation,
         isAgeGatedInstancesVisible,
+        isClosedInstancesVisible,
         sortFavorites,
         instanceUsersSortAlphabetical,
         inactiveFriendDays,
@@ -537,6 +539,7 @@
         setHideNicknames,
         setShowInstanceIdInLocation,
         setIsAgeGatedInstancesVisible,
+        setIsClosedInstancesVisible,
         setInstanceUsersSortAlphabetical,
         setInactiveFriendDays,
         setDtHour12,

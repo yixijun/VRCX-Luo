@@ -121,7 +121,6 @@
     import { Spinner } from '@/components/ui/spinner';
     import { storeToRefs } from 'pinia';
     import { useI18n } from 'vue-i18n';
-
     import { refreshInstancePlayerCount } from '../../../coordinators/instanceCoordinator';
     import { useUserDisplay } from '../../../composables/useUserDisplay';
     import {
@@ -131,14 +130,20 @@
         useUserStore,
         useWorldStore
     } from '../../../stores';
-
     import InstanceActionBar from '../../InstanceActionBar.vue';
     import { showUserDialog } from '../../../coordinators/userCoordinator';
-
+    import { ref } from 'vue';
     const { t } = useI18n();
     const { userImage, userStatusClass } = useUserDisplay();
 
-    const { isAgeGatedInstancesVisible } = storeToRefs(useAppearanceSettingsStore());
+    const { isAgeGatedInstancesVisible, isClosedInstancesVisible } = storeToRefs(useAppearanceSettingsStore());
+
+    function isRoomVisible(room) {
+        const isAgeGated = room.ageGate || room.location?.includes('~ageGate');
+        if (!isAgeGatedInstancesVisible.value && isAgeGated) return false;
+        if (!isClosedInstancesVisible.value && room.ref?.closedAt) return false;
+        return true;
+    }
 
     const { currentUser } = storeToRefs(useUserStore());
     const { worldDialog } = storeToRefs(useWorldStore());

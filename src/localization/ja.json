@@ -17,7 +17,10 @@
             "reset": "リセット",
             "view_details": "詳細を表示",
             "configure": "設定",
-            "refresh": "更新"
+            "refresh": "更新",
+            "cancel": "キャンセル",
+            "copy": "コピー",
+            "open_link": "リンクを開く"
         },
         "sort_by": "並び替え:",
         "time_units": {
@@ -25,7 +28,19 @@
             "d": "日",
             "h": "時間",
             "m": "分",
-            "s": "秒"
+            "s": "秒",
+            "year": "年",
+            "month": "か月",
+            "day": "日",
+            "hour": "時間",
+            "min": "分",
+            "sec": "秒",
+            "years": "年",
+            "months": "か月",
+            "days": "日",
+            "hours": "時間",
+            "mins": "分",
+            "secs": "秒"
         },
         "days": {
             "sunday": "日曜日",
@@ -35,7 +50,11 @@
             "thursday": "木曜日",
             "friday": "金曜日",
             "saturday": "土曜日"
-        }
+        },
+        "duration": "期間",
+        "load_more": "さらに読み込む",
+        "no_more": "これ以上ありません",
+        "current_session": "現在"
     },
     "nav_tooltip": {
         "friends_locations": "フレンドの現在地",
@@ -276,6 +295,15 @@
                 "External": "外部",
                 "StringLoad": "URI の読み込み",
                 "ImageLoad": "画像の読み込み"
+            },
+            "sessions": {
+                "switch_to_table": "テーブル表示",
+                "switch_to_sessions": "セッション表示",
+                "date_range": "日付範囲",
+                "players_joined": "{count}人が参加",
+                "players_left": "{count}人が退出",
+                "play_count": "×{count}",
+                "no_data": "ゲームログデータがありません"
             }
         },
         "player_list": {
@@ -461,7 +489,8 @@
                     "transfer": "移動",
                     "queueReady": "キューの準備が完了",
                     "event": {
-                        "created": "グループイベントの作成"
+                        "created": "グループイベントの作成",
+                        "starting": "イベント開始"
                     }
                 },
                 "moderation": {
@@ -502,7 +531,8 @@
             "favorites_only_tooltip": "お気に入りのみ",
             "search_placeholder": "検索...",
             "filter_placeholder": "フィルター",
-            "load_mutual_friends": "共通のフレンドを読み込む"
+            "load_mutual_friends": "共通のフレンドを読み込む",
+            "mutual_loading_hint": "進捗は共通のフレンドグラフページで確認できます"
         },
         "charts": {
             "instance_activity": {
@@ -576,6 +606,17 @@
                     "exclude_friends": "フレンドを除外",
                     "exclude_friends_placeholder": "除外するフレンドを選択",
                     "exclude_friends_help": "選択したフレンドはグラフから非表示になります。"
+                },
+                "context_menu": {
+                    "view_details": "詳細を表示",
+                    "hide_friend": "グラフから非表示",
+                    "refresh_mutuals": "共通のフレンドを更新",
+                    "confirm_non_friend_title": "フレンドではありません",
+                    "confirm_non_friend_message": "このユーザーはもうフレンドではありません。それでも共通のフレンド情報を取得しますか？",
+                    "refresh_success": "{name} の共通のフレンド情報を更新しました",
+                    "user_opted_out": "このユーザーは共通のフレンド共有を無効にしています。既存データを表示しています。",
+                    "refresh_error": "共通のフレンド情報の更新に失敗しました",
+                    "last_fetched": "最終取得"
                 }
             },
             "hot_worlds": {
@@ -610,6 +651,14 @@
                 },
                 "no_friend_data": "フレンドの訪問データがありません",
                 "friend_visits": "{count} 回の訪問"
+            },
+            "playtime_trend": {
+                "header": "日別プレイ時間",
+                "online_hours": "時間",
+                "daily_avg": "1日平均",
+                "total": "合計",
+                "waiting": "プレイ時間データを作成中です。しばらくしてから戻ってきてください！",
+                "no_data": "プレイ時間データがありません"
             }
         },
         "tools": {
@@ -817,7 +866,8 @@
                     "auto_change_status_groups": "フレンドをカウントするグループ",
                     "auto_change_status_groups_placeholder": "グループを選択",
                     "auto_accept_invite_groups": "招待を受け入れるグループ",
-                    "auto_accept_invite_groups_placeholder": "グループを選択"
+                    "auto_accept_invite_groups_placeholder": "グループを選択",
+                    "auto_invite_request_accept_favs_hint": "ローカルのフレンドお気に入りグループも含みます"
                 },
                 "legal_notice": {
                     "header": "法律上の注意事項",
@@ -894,7 +944,10 @@
                     "table_density_comfortable": "やや低め",
                     "table_density_compact": "低め",
                     "table_entries_settings": "最大読み込み件数",
-                    "table_entries_settings_description": "表示や検索で読み込む、最大エントリ数を設定します"
+                    "table_entries_settings_description": "表示や検索で読み込む、最大エントリ数を設定します",
+                    "vrc_profile_themes": "VRChat プロフィールテーマ",
+                    "vrc_profile_backgrounds": "VRChat プロフィール背景",
+                    "vrc_profile_backgrounds_opacity": "プロフィール背景の不透明度"
                 },
                 "display": {
                     "header": "表示"
@@ -1138,7 +1191,7 @@
                         "header": "YouTube API",
                         "enable": "有効化する",
                         "youtube_api_key": "YouTube API キー",
-                        "enable_tooltip": "ゲームログに動画のタイトルと、動画の長さを取得し表示しするます。"
+                        "enable_tooltip": "ゲームログに動画のタイトルと、動画の長さを取得し表示します"
                     },
                     "translation_api": {
                         "header": "プロフィールの翻訳 API",
@@ -1339,7 +1392,9 @@
                 "unfriend_success_msg": "フレンドを解除しました。",
                 "logout": "ログアウト",
                 "edit_note_memo": "ノートとメモを編集",
-                "reset_home": "ホームをリセット"
+                "reset_home": "ホームをリセット",
+                "favorites_tooltip": "お気に入り",
+                "edit_profile": "プロフィールを編集"
             },
             "info": {
                 "header": "情報",
@@ -1394,7 +1449,13 @@
                 "instance_age_gated": "年齢制限あり",
                 "open_previous_instance": "前回のインスタンスを開く",
                 "show_mutual_friends": "共通のフレンドを公開",
-                "show_discord_connections": "連携した Discord を公開"
+                "show_discord_connections": "連携した Discord を公開",
+                "vrcx_info": "VRCX 情報",
+                "vrcx_info_tooltip": "VRCX の情報は正確でない可能性があります",
+                "instance_closed_at": "インスタンスが閉じた日時",
+                "instance_minimum_avatar_performance": "最低アバターパフォーマンスランク",
+                "instance_role_restricted": "ロール制限",
+                "current_instance": "現在のインスタンス"
             },
             "groups": {
                 "header": "グループ",
@@ -1500,7 +1561,11 @@
                 },
                 "preparing_data": "アクティビティデータを準備しています...",
                 "preparing_data_hint": "初回ロード時は時間がかかる場合があります。",
-                "data_ready": "アクティビティデータが準備できました"
+                "data_ready": "アクティビティデータが準備できました",
+                "period_180": "過去6か月",
+                "period_365": "過去1年",
+                "period_all": "全期間",
+                "building_cache": "長期間のアクティビティデータを計算中です..."
             },
             "note_memo": {
                 "header": "ノートとメモを編集",
@@ -1582,7 +1647,8 @@
                 "platform": "プラットフォーム",
                 "last_visited": "最後に参加した日時",
                 "visit_count": "参加回数",
-                "time_spent": "過ごした時間"
+                "time_spent": "過ごした時間",
+                "created": "作成日時"
             },
             "json": {
                 "header": "JSON"
@@ -1705,7 +1771,9 @@
                 "moderation_tools": "管理用ツール",
                 "leave": "グループから抜ける",
                 "block": "グループをブロック",
-                "unblock": "グループのブロックを解除"
+                "unblock": "グループのブロックを解除",
+                "unsubscribe_event": "イベントお知らせの受信を停止",
+                "subscribe_event": "イベントお知らせを受け取る"
             },
             "info": {
                 "header": "情報",
@@ -1728,7 +1796,10 @@
                 "role_permissions": "権限:",
                 "last_visited": "最後に訪問した日時",
                 "past_events": "過去のイベント",
-                "upcoming_events": "今後のイベント"
+                "upcoming_events": "今後のイベント",
+                "created": "作成日時",
+                "copy_id": "IDをコピー",
+                "copy_url": "URLをコピー"
             },
             "posts": {
                 "header": "投稿",
@@ -1848,7 +1919,9 @@
             "legacy": "レガシー",
             "roles": "ロール",
             "open_ingame": "ゲーム内で開く",
-            "display_name": "インスタンス名 (VRC+)"
+            "display_name": "インスタンス名 (VRC+)",
+            "content_prop_movement": "プレイヤーの動きを変更する小道具",
+            "minimum_avatar_performance": "最低アバターパフォーマンスランク"
         },
         "launch": {
             "header": "起動",
@@ -2346,7 +2419,8 @@
                 "description": "このイベントについて",
                 "export_to_calendar": "カレンダーにエクスポート",
                 "download_ics": ".ics ファイルをダウンロード",
-                "copied_event_link": "イベント URL をクリップボードにコピー"
+                "copied_event_link": "イベント URL をクリップボードにコピー",
+                "repeating_event_tooltip": "繰り返しイベント"
             },
             "featured_events": "注目のイベント"
         },
@@ -2428,6 +2502,24 @@
         "avatar_database_provider": {
             "header": "アバターデータベースプロバイダー",
             "add_provider": "プロバイダーを追加"
+        },
+        "edit_profile": {
+            "banner": "バナー",
+            "banner_color": "バナーカラー",
+            "banner_type_color": "カラー",
+            "banner_type_avatar_banner": "アバター画像",
+            "banner_type_custom_image": "カスタム画像",
+            "icon": "アイコン",
+            "profile_theme": "プロフィールテーマ",
+            "theme_name_placeholder": "テーマ名",
+            "create_theme": "テーマを作成",
+            "delete_theme": "テーマを削除",
+            "profile_background": "プロフィール背景",
+            "profile_background_type_none": "なし",
+            "profile_background_type_image": "画像",
+            "profile_background_type_gradient": "グラデーション",
+            "gradient_top": "グラデーション (上)",
+            "gradient_bottom": "グラデーション (下)"
         }
     },
     "confirm": {
@@ -2737,7 +2829,8 @@
             "joined": "グループに参加しました",
             "join_request_sent": "グループ参加リクエストが送信されました",
             "visibility_updated": "グループの可視性が更新されました",
-            "subscription_updated": "グループの購読が更新されました"
+            "subscription_updated": "グループの購読が更新されました",
+            "event_announcement_updated": "グループイベントの通知設定を更新しました"
         },
         "invite": {
             "self_sent": "自分を招待しました",
@@ -2854,7 +2947,9 @@
         "blocked": "にブロックされました",
         "unblocked": "によるブロックが解除されました",
         "muted": "にミュートされました",
-        "unmuted": "によるミュートが解除されました"
+        "unmuted": "によるミュートが解除されました",
+        "group_event_created_title": "グループイベントが作成されました",
+        "group_event_starting_title": "グループイベントが開始されます"
     },
     "status": {
         "title": "VRChat の障害情報"
@@ -2945,7 +3040,8 @@
             "lastLogin": "最後のログイン",
             "dateJoined": "参加日時",
             "unfriend": "フレンド解除",
-            "mutualFriends": "共通のフレンド"
+            "mutualFriends": "共通のフレンド",
+            "mutualOptedOut": "このユーザーは共通のフレンド共有を無効にしています。キャッシュされたデータを表示しています。"
         },
         "profile": {
             "invite_messages": {
@@ -3131,6 +3227,28 @@
                             "description": "より少ない手間でアバターを参照・管理できます。"
                         }
                     }
+                },
+                "2026_05_03": {
+                    "title": "VRCX の新機能",
+                    "subtitle": "今回のアップデートの変更点をご紹介します",
+                    "items": {
+                        "quick_search": {
+                            "title": "クイック検索",
+                            "description": "ユーザー、ワールド、およびアバターをすぐに検索できます。"
+                        },
+                        "local_favorite_groups": {
+                            "title": "ローカルお気に入り",
+                            "description": "VRChat の制限を超えて、無制限のカスタムフレンドグループを作成できます。"
+                        },
+                        "auto_status": {
+                            "title": "自動ステータス変更",
+                            "description": "フレンドのいる状況に基づいて、グループでフィルタリングしてステータスを自動切り替え。"
+                        },
+                        "right_click_menus": {
+                            "title": "コンテキストメニュー",
+                            "description": "フレンド、テーブル、ヘッダーを右クリックしてクイックアクションを実行。"
+                        }
+                    }
                 }
             }
         }
@@ -3161,6 +3279,7 @@
         "clock": "Clock",
         "clocks_label": "時計",
         "clocks_none": "なし",
-        "timezone": "タイムゾーン"
+        "timezone": "タイムゾーン",
+        "now_playing": "再生中"
     }
 }

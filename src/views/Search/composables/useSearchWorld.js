@@ -1,9 +1,15 @@
 import { ref } from 'vue';
 import { storeToRefs } from 'pinia';
-
 import { replaceBioSymbols } from '../../../shared/utils';
 import { useAuthStore, useSearchStore, useWorldStore } from '../../../stores';
 import { worldRequest } from '../../../api';
+/** @returns {any} */
+function createDefaultSearchWorldParams() {
+    return {
+        n: 60,
+        offset: 0
+    };
+}
 
 /**
  * World search composable for Search view.
@@ -46,11 +52,11 @@ export function useSearchWorld() {
         switch (ref.sortHeading) {
             case 'featured':
                 params.sort = 'order';
-                params.featured = 'true';
+                params.featured = true;
                 break;
             case 'trending':
                 params.sort = 'popularity';
-                params.featured = 'false';
+                params.featured = false;
                 break;
             case 'updated':
                 params.sort = 'updated';
@@ -78,7 +84,7 @@ export function useSearchWorld() {
                 break;
             case 'heat':
                 params.sort = 'heat';
-                params.featured = 'false';
+                params.featured = false;
                 break;
             default:
                 params.sort = 'relevance';

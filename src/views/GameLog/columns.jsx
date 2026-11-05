@@ -19,17 +19,20 @@ import {
     X
 } from 'lucide-vue-next';
 import { storeToRefs } from 'pinia';
-
 import {
     copyToClipboard,
     formatDateFilter,
     openExternalLink
 } from '../../shared/utils';
 import { i18n } from '../../plugins';
-import { useFriendStore, useInstanceStore, useUiStore, useUserStore } from '../../stores';
+import {
+    useFriendStore,
+    useInstanceStore,
+    useUiStore,
+    useUserStore
+} from '../../stores';
 import { lookupUser } from '../../coordinators/userCoordinator';
 import { showWorldDialog } from '../../coordinators/worldCoordinator';
-
 const { t } = i18n.global;
 
 const UNACTIONABLE_TYPES = new Set([
@@ -52,7 +55,11 @@ const resolveCachedUser = (userId) => {
     if (!userStore) {
         userStore = useUserStore();
     }
-    return userStore.cachedUsers.get(userId) || friendStore.friends.get(userId)?.ref || null;
+    return (
+        userStore.cachedUsers.get(userId) ||
+        friendStore.friends.get(userId)?.ref ||
+        null
+    );
 };
 
 export const createColumns = ({ getCreatedAt, onDelete, onDeletePrompt }) => {
@@ -234,8 +241,8 @@ export const createColumns = ({ getCreatedAt, onDelete, onDeletePrompt }) => {
 
                 if (original.type === 'VideoPlay') {
                     const showLink =
-                        original.videoId !== 'LSMedia' &&
-                        original.videoId !== 'PopcornPalace';
+                        original.videoId !== 'PopcornPalace' &&
+                        !!original.videoUrl;
                     const label = original.videoName || original.videoUrl;
                     const tooltipText = original.videoId
                         ? `${original.videoId}: ${label}`
@@ -288,7 +295,10 @@ export const createColumns = ({ getCreatedAt, onDelete, onDeletePrompt }) => {
                                 ) : null}
                                 <ContextMenuItem
                                     onClick={() =>
-                                        copyToClipboard(original.videoUrl)
+                                        copyToClipboard(
+                                            original.videoUrl ||
+                                                original.videoName
+                                        )
                                     }
                                 >
                                     <Copy class="size-4" />
