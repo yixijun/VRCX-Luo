@@ -466,6 +466,14 @@ export function addGameLogEntry(gameLog, location) {
             database.addGamelogEventToDatabase(entry);
             break;
         case 'vrc-quit':
+            // Use the logged end before process polling or a later startup can
+            // extend this visit. Ignore stale quits predating the current room.
+            if (
+                locationStore.lastLocation.date > 0 &&
+                locationStore.lastLocation.date <= Date.parse(gameLog.dt)
+            ) {
+                runLastLocationResetFlow(gameLog.dt);
+            }
             if (!gameStore.isGameRunning) {
                 break;
             }

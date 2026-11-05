@@ -1,6 +1,5 @@
 export const ONLINE_SESSION_MERGE_GAP_MS = 5 * 60 * 1000;
 export const DEFAULT_MAX_SESSION_MS = 8 * 60 * 60 * 1000;
-const ONE_HOUR_MS = 60 * 60 * 1000;
 
 export function buildSessionsFromEvents(events, initialStart = null) {
     const sessions = [];
@@ -28,7 +27,8 @@ export function buildSessionsFromEvents(events, initialStart = null) {
 export function buildSessionsFromGamelog(
     rows,
     mergeGapMs = ONLINE_SESSION_MERGE_GAP_MS,
-    nowMs = Date.now()
+    nowMs = Date.now(),
+    activeLocationStartMs = null
 ) {
     if (rows.length === 0) {
         return [];
@@ -37,17 +37,16 @@ export function buildSessionsFromGamelog(
     const rawSessions = [];
     for (let i = 0; i < rows.length; i++) {
         const start = new Date(rows[i].created_at).getTime();
-        let duration = rows[i].time || 0;
-        if (duration === 0) {
-            if (i < rows.length - 1) {
-                duration = new Date(rows[i + 1].created_at).getTime() - start;
-            } else {
-                duration = nowMs - start;
-            }
-            duration = Math.min(duration, 24 * 60 * 60 * 1000);
+        let duration = Number(rows[i].time) || 0;
+        if (duration === 0 && start === activeLocationStartMs) {
+            duration = nowMs - start;
         }
-        if (duration > 0) {
-            rawSessions.push({ start, end: start + duration });
+        // Missing history is not evidence of continuous play until the next login.
+        const nextStart =
+            i + 1 < rows.length ? Date.parse(rows[i + 1].created_at) : nowMs;
+        const end = Math.min(start + duration, nextStart, nowMs);
+        if (Number.isFinite(start) && duration > 0 && end > start) {
+            rawSessions.push({ start, end });
         }
     }
 
@@ -431,28 +430,36 @@ export function buildDailySummary(
     rangeEndMs = Date.now()
 ) {
     const dayMap = new Map();
-    const clipped = clipSessionsToRange(sessions, rangeStartMs, rangeEndMs);
-    const ONE_DAY_MS = 86400000;
-    let lastDayStart = -1;
-    let lastDayKey = '';
+    if (
+        !Number.isFinite(rangeStartMs) ||
+        !Number.isFinite(rangeEndMs) ||
+        rangeEndMs <= rangeStartMs
+    ) {
+        return [];
+    }
+    // A union prevents duplicate records inflating daily time. Do not merge gaps.
+    const clipped = mergeSessions(
+        [],
+        clipSessionsToRange(sessions, rangeStartMs, rangeEndMs),
+        0
+    );
+    const date = new Date(rangeStartMs);
+    date.setHours(0, 0, 0, 0);
+    while (date.getTime() < rangeEndMs) {
+        dayMap.set(formatTimestampKey(date.getTime()), 0);
+        date.setDate(date.getDate() + 1);
+    }
 
     for (const session of clipped) {
         let cursor = session.start;
         while (cursor < session.end) {
-            const dayStart = Math.floor(cursor / ONE_DAY_MS) * ONE_DAY_MS;
-            let dayKey;
-            if (dayStart === lastDayStart) {
-                dayKey = lastDayKey;
-            } else {
-                dayKey = formatTimestampKey(dayStart);
-                lastDayStart = dayStart;
-                lastDayKey = dayKey;
-            }
-            const nextDayStart = dayStart + ONE_DAY_MS;
-            const segmentEnd = Math.min(session.end, nextDayStart);
-            const duration = segmentEnd - cursor;
-            dayMap.set(dayKey, (dayMap.get(dayKey) || 0) + duration);
-            cursor = nextDayStart;
+            const day = new Date(cursor);
+            day.setHours(0, 0, 0, 0);
+            const dayKey = formatTimestampKey(day.getTime());
+            day.setDate(day.getDate() + 1);
+            const segmentEnd = Math.min(session.end, day.getTime());
+            dayMap.set(dayKey, dayMap.get(dayKey) + segmentEnd - cursor);
+            cursor = segmentEnd;
         }
     }
 
@@ -466,9 +473,9 @@ export function buildDailySummary(
 
 export function formatTimestampKey(timestamp) {
     const date = new Date(timestamp);
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 }
 

@@ -22,7 +22,7 @@
     import * as echarts from 'echarts';
 
     import { useAppearanceSettingsStore } from '@/stores';
-    import { formatTimestampKey } from '@/shared/utils/activityEngine';
+    import { buildDailySummary } from '@/shared/utils/activityEngine';
 
     const props = defineProps({
         sessions: { type: Array, default: () => [] },
@@ -99,39 +99,7 @@
         const now = Date.now();
         const rangeDays = props.rangeDays;
         const rangeStart = rangeDays > 0 ? now - rangeDays * 86400000 : sessions[0].start;
-        const dayMap = new Map();
-        const ONE_DAY_MS = 86400000;
-        let lastDayStart = -1;
-        let lastDayKey = '';
-
-        for (const session of sessions) {
-            if (session.end <= rangeStart || session.start >= now) continue;
-            const clippedStart = Math.max(session.start, rangeStart);
-            const clippedEnd = Math.min(session.end, now);
-
-            let cursor = clippedStart;
-            while (cursor < clippedEnd) {
-                const dayStart = Math.floor(cursor / ONE_DAY_MS) * ONE_DAY_MS;
-                let dayKey;
-                if (dayStart === lastDayStart) {
-                    dayKey = lastDayKey;
-                } else {
-                    dayKey = formatTimestampKey(dayStart);
-                    lastDayStart = dayStart;
-                    lastDayKey = dayKey;
-                }
-                const nextDayStart = dayStart + ONE_DAY_MS;
-                const segmentEnd = Math.min(clippedEnd, nextDayStart);
-                dayMap.set(dayKey, (dayMap.get(dayKey) || 0) + (segmentEnd - cursor));
-                cursor = nextDayStart;
-            }
-        }
-
-        const result = [];
-        for (const [date, totalMs] of dayMap) {
-            result.push({ date, totalMs });
-        }
-        result.sort((a, b) => a.date.localeCompare(b.date));
+        const result = buildDailySummary(sessions, rangeStart, now);
         dailySummary.value = result;
 
         if (result.length > 0) {
@@ -164,9 +132,9 @@
                 trigger: 'axis',
                 formatter(params) {
                     const p = params[0];
-                    const h = p.value;
-                    const hrs = Math.floor(h);
-                    const mins = Math.round((h - hrs) * 60);
+                    const totalMinutes = Math.round(dailySummary.value[p.dataIndex].totalMs / 60000);
+                    const hrs = Math.floor(totalMinutes / 60);
+                    const mins = totalMinutes % 60;
                     return `<strong>${p.axisValue}</strong><br/>${hrs}h ${mins}m`;
                 }
             },
@@ -220,7 +188,7 @@
                     name: 'Playtime',
                     type: 'line',
                     data: hours,
-                    smooth: true,
+                    smooth: false,
                     symbol: 'none',
                     lineStyle: { width: 2 },
                     areaStyle: { opacity: 0.3 },

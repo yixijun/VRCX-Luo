@@ -145,30 +145,34 @@ const activityV2 = {
         const rows = [];
         await sqliteService.execute(
             (dbRow) => {
-                rows.push({ created_at: dbRow[0], time: dbRow[1] || 0 });
+                rows.push({
+                    created_at: dbRow[0],
+                    time: dbRow[1] || 0,
+                    location: dbRow[2]
+                });
             },
             `
-                SELECT created_at, time
+                SELECT created_at, time, location
                 FROM (
-                    SELECT created_at, time, 0 AS sort_group
+                    SELECT created_at, time, location, 0 AS sort_group
                     FROM (
-                        SELECT created_at, time
+                        SELECT created_at, time, location
                         FROM gamelog_location
                         WHERE created_at < @fromDateIso
                         ORDER BY created_at DESC
                         LIMIT 1
                     )
                     UNION ALL
-                    SELECT created_at, time, 1 AS sort_group
+                    SELECT created_at, time, location, 1 AS sort_group
                     FROM gamelog_location
                     WHERE created_at >= @fromDateIso
                       ${toDateIso ? 'AND created_at < @toDateIso' : ''}
                     ${
                         toDateIso
                             ? `UNION ALL
-                    SELECT created_at, time, 2 AS sort_group
+                    SELECT created_at, time, location, 2 AS sort_group
                     FROM (
-                        SELECT created_at, time
+                        SELECT created_at, time, location
                         FROM gamelog_location
                         WHERE created_at >= @toDateIso
                         ORDER BY created_at
@@ -184,7 +188,7 @@ const activityV2 = {
                 '@toDateIso': toDateIso
             }
         );
-        return rows;
+        return recoverRecordedLocationEnds(rows);
     },
 
     async getCurrentUserLocationAfterV2(afterCreatedAt, inclusive = false) {
@@ -192,15 +196,19 @@ const activityV2 = {
         const operator = inclusive ? '>=' : '>';
         await sqliteService.execute(
             (dbRow) => {
-                rows.push({ created_at: dbRow[0], time: dbRow[1] || 0 });
+                rows.push({
+                    created_at: dbRow[0],
+                    time: dbRow[1] || 0,
+                    location: dbRow[2]
+                });
             },
-            `SELECT created_at, time
+            `SELECT created_at, time, location
              FROM gamelog_location
              WHERE created_at ${operator} @afterCreatedAt
              ORDER BY created_at`,
             { '@afterCreatedAt': afterCreatedAt }
         );
-        return rows;
+        return recoverRecordedLocationEnds(rows);
     },
 
     async getActivitySyncStateV2(userId) {
@@ -362,6 +370,59 @@ const activityV2 = {
         );
     }
 };
+
+/**
+ * Older clients extended completed visits when restoring lastLocation. Project
+ * a shorter end from a final synthetic departure batch while preserving raw
+ * history. runLastLocationResetFlow writes batches with millisecond precision;
+ * native VRChat log lines have second precision. Individual departures and
+ * resets followed by more room activity are not evidence of a local exit.
+ */
+async function recoverRecordedLocationEnds(rows) {
+    if (rows.length === 0) return rows;
+    const eventsByLocation = new Map();
+    await sqliteService.execute(
+        (dbRow) => {
+            const [location, createdAt, isReset] = dbRow;
+            if (!eventsByLocation.has(location))
+                eventsByLocation.set(location, []);
+            eventsByLocation.get(location).push({ createdAt, isReset });
+        },
+        `SELECT location, created_at,
+                COUNT(*) > 1 AND MIN(type = 'OnPlayerLeft')
+                AND substr(created_at, 20, 1) = '.'
+                AND substr(created_at, 21, 3) != '000' AS is_reset
+         FROM gamelog_join_leave
+         WHERE created_at >= @fromDate AND created_at <= @nowDate
+         GROUP BY location, created_at
+         ORDER BY created_at DESC`,
+        {
+            '@fromDate': rows[0].created_at,
+            '@nowDate': new Date().toISOString()
+        }
+    );
+    return rows.map((row, index) => {
+        const nextDate = rows[index + 1]?.created_at;
+        const lastEvent = eventsByLocation
+            .get(row.location)
+            ?.find(
+                (event) =>
+                    event.createdAt >= row.created_at &&
+                    (!nextDate || event.createdAt < nextDate)
+            );
+        if (lastEvent?.isReset) {
+            const observedTime =
+                Date.parse(lastEvent.createdAt) - Date.parse(row.created_at);
+            if (observedTime > 0) {
+                return {
+                    ...row,
+                    time: Math.min(row.time || Infinity, observedTime)
+                };
+            }
+        }
+        return row;
+    });
+}
 
 async function insertSessions(userId, sessions = []) {
     if (sessions.length === 0) {

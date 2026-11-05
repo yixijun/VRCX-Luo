@@ -115,28 +115,24 @@ describe('buildSessionsFromGamelog', () => {
         ]);
     });
 
-    test('estimates duration from next row when time=0', () => {
+    test('does not count missing history until the next login', () => {
         const rows = [
             { created_at: utc('2025-01-06T10:00:00Z'), time: 0 },
             { created_at: utc('2025-01-06T12:00:00Z'), time: 3600000 }
         ];
         const result = buildSessionsFromGamelog(rows);
-        // First session: estimated end = next row start (12:00)
-        // Second session: 12:00 + 1h = 13:00
-        // Gap between them is 0ms, so they merge
+        // Only the second row has a recorded duration.
         expect(result).toHaveLength(1);
-        expect(result[0].start).toBe(ts('2025-01-06T10:00:00Z'));
+        expect(result[0].start).toBe(ts('2025-01-06T12:00:00Z'));
         expect(result[0].end).toBe(ts('2025-01-06T13:00:00Z'));
     });
 
-    test('caps duration at 24h for last row with time=0', () => {
+    test('does not invent 24 hours for an unclosed historical visit', () => {
         const now = Date.now();
         const longAgo = new Date(now - 48 * 3600000).toISOString(); // 48h ago
         const rows = [{ created_at: longAgo, time: 0 }];
         const result = buildSessionsFromGamelog(rows);
-        expect(result).toHaveLength(1);
-        const duration = result[0].end - result[0].start;
-        expect(duration).toBe(24 * 3600000);
+        expect(result).toEqual([]);
     });
 
     test('merges adjacent sessions within default gap (5min)', () => {

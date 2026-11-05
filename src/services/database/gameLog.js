@@ -135,8 +135,10 @@ const gameLog = {
     },
 
     updateGamelogLocationTimeToDatabase(entry) {
-        sqliteService.executeNonQuery(
-            `UPDATE gamelog_location SET time = @time WHERE created_at = @created_at`,
+        return sqliteService.executeNonQuery(
+            `UPDATE gamelog_location SET time = @time
+             WHERE created_at = @created_at AND @time > 0
+               AND (time IS NULL OR time = 0 OR @time < time)`,
             {
                 '@created_at': entry.created_at,
                 '@time': entry.time

@@ -29,7 +29,8 @@ self.addEventListener('message', (event) => {
                     sessions: buildSessionsFromGamelog(
                         payload.rows || [],
                         payload.mergeGapMs,
-                        payload.nowMs
+                        payload.nowMs,
+                        payload.activeLocationStartMs
                     )
                 };
                 break;
@@ -104,11 +105,15 @@ function computeSessionsSnapshot(payload) {
         const sessions = buildSessionsFromGamelog(
             payload.rows,
             payload.mergeGapMs,
-            payload.nowMs
+            payload.nowMs,
+            payload.activeLocationStartMs
         ).map((session, index, list) => ({
             ...session,
             isOpenTail:
-                index === list.length - 1 && payload.mayHaveOpenTail === true,
+                index === list.length - 1 &&
+                payload.mayHaveOpenTail === true &&
+                payload.activeLocationStartMs != null &&
+                session.end === payload.nowMs,
             sourceRevision
         }));
         return {

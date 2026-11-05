@@ -6,6 +6,8 @@ import { mergeSessions } from '../shared/utils/activityEngine.js';
 import { runActivityWorkerTask } from '../workers/activityWorkerRunner.js';
 import { accountHub } from '../services/accountHub';
 import { watchState } from '../services/watchState';
+import { useGameStore } from './game';
+import { useLocationStore } from './location';
 
 const snapshotMap = new Map();
 
@@ -180,7 +182,7 @@ export const useActivityStore = defineStore('Activity', () => {
             return buildActivityResponse(snapshot, view);
         }
 
-        if (!forceRefresh) {
+        if (!forceRefresh && !isSelf) {
             const persisted = await database.getActivityBucketCacheV2({
                 ownerUserId: userId,
                 rangeDays,
@@ -203,7 +205,8 @@ export const useActivityStore = defineStore('Activity', () => {
             sessions: snapshot.sessions,
             dayLabels,
             rangeDays,
-            normalizeConfig
+            normalizeConfig,
+            ...(isSelf ? { maxSessionMs: Infinity } : {})
         });
         view = {
             ...computed,
@@ -507,7 +510,10 @@ export const useActivityStore = defineStore('Activity', () => {
      * @returns {Promise<Array<{date: string, totalMs: number}>>}
      */
     async function getDailySummary(userId) {
-        const snapshot = await hydrateSnapshot(userId, true);
+        const snapshot = await ensureSnapshot(userId, {
+            isSelf: true,
+            rangeDays: getCachedDays(userId) || 90
+        });
         if (snapshot.sessions.length === 0) {
             return [];
         }
@@ -593,6 +599,15 @@ async function ensureSnapshot(
 
     const job = (async () => {
         const snapshot = await hydrateSnapshot(userId, isSelf);
+        // A duration may be corrected without a new created_at cursor. Rebuild
+        // self sessions so cached merged tails can shrink as well as grow.
+        if (isSelf) {
+            await fullRefresh(
+                snapshot,
+                Math.max(rangeDays, snapshot.sync.cachedRangeDays)
+            );
+            return snapshot;
+        }
         if (
             forceRefresh ||
             !snapshot.sync.updatedAt ||
@@ -630,6 +645,11 @@ async function fullRefresh(snapshot, rangeDays) {
         events: snapshot.isSelf ? undefined : sourceItems,
         initialStart: null,
         nowMs: Date.now(),
+        activeLocationStartMs:
+            snapshot.isSelf && useGameStore().isGameRunning
+                ? useLocationStore().lastLocation.date
+                : null,
+        ...(snapshot.isSelf ? { mergeGapMs: 0 } : {}),
         mayHaveOpenTail: snapshot.isSelf,
         sourceRevision: sourceLastCreatedAt
     });
