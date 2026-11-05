@@ -664,10 +664,16 @@
 
     watch([currentPage, pageSizeProxy], async () => {
         await nextTick();
+        scrollToTop();
+    });
+
+    function scrollToTop() {
         if (tableScrollRef.value) {
             tableScrollRef.value.scrollTop = 0;
         }
-    });
+    }
+
+    defineExpose({ scrollToTop });
 
     const handleRowClick = (row) => {
         if (!props.onRowClick) return;

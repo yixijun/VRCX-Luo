@@ -15,20 +15,27 @@
                     :key="zone.tab"
                     :data-tab="zone.tab"
                     class="feed-zone-element flex flex-col items-center justify-center p-6 w-[28%] aspect-square rounded-2xl border-2 border-dashed border-primary/40 bg-card/80 text-foreground transition-all duration-300 pointer-events-none"
-                    :class="{ 'border-primary border-solid bg-primary/20 text-primary scale-[1.05] shadow-[0_12px_30px_-10px_rgba(var(--primary-rgb),0.5)]': hoveredZone === zone.tab }">
+                    :class="{
+                        'border-primary border-solid bg-primary/20 text-primary scale-[1.05] shadow-[0_12px_30px_-10px_rgba(var(--primary-rgb),0.5)]':
+                            hoveredZone === zone.tab
+                    }">
                     <Upload class="size-8 mb-2" />
                     <span class="text-sm font-semibold text-center">{{ zone.label }}</span>
-                    <span class="text-xs opacity-70 mt-1 text-center">{{ t('dialog.gallery_icons.drop_to_upload') }}</span>
+                    <span class="text-xs opacity-70 mt-1 text-center">{{
+                        t('dialog.gallery_icons.drop_to_upload')
+                    }}</span>
                 </div>
             </div>
         </div>
         <DataTableLayout
-
+            ref="feedLayoutRef"
             :table="table"
             :loading="feedTable.loading"
             auto-height
             :page-sizes="pageSizes"
             :total-items="totalItems"
+            :on-page-change="handlePageChange"
+            :on-sort-change="handleSortChange"
             :on-page-size-change="handlePageSizeChange">
             <template #toolbar>
                 <div class="mt-0 mx-0 mb-2" style="display: flex; align-items: center">
@@ -95,6 +102,20 @@
                             {{ t('view.feed.filters.' + type) }}
                         </ToggleGroupItem>
                     </ToggleGroup>
+                    <TooltipWrapper side="bottom" :content="t('view.feed.live_updates_tooltip')">
+                        <Toggle
+                            v-model="followLatest"
+                            variant="outline"
+                            size="sm"
+                            class="ml-2 shrink-0 gap-1.5"
+                            data-testid="feed-live-updates">
+                            <span
+                                class="size-1.5 rounded-full"
+                                :class="followLatest ? 'bg-green-500' : 'bg-muted-foreground'"
+                                aria-hidden="true" />
+                            {{ t('view.feed.live_updates') }}
+                        </Toggle>
+                    </TooltipWrapper>
                     <InputGroupField
                         class="ml-2"
                         v-model="feedTable.search"
@@ -110,7 +131,7 @@
 </template>
 
 <script setup>
-    import { computed, ref } from 'vue';
+    import { computed, nextTick, ref, watch } from 'vue';
     import { ListFilter, Star, Upload } from 'lucide-vue-next';
     import { getLocalTimeZone, today } from '@internationalized/date';
     import { storeToRefs } from 'pinia';
@@ -181,7 +202,12 @@
         let found = '';
         for (const el of elements) {
             const rect = el.getBoundingClientRect();
-            if (e.clientX >= rect.left && e.clientX <= rect.right && e.clientY >= rect.top && e.clientY <= rect.bottom) {
+            if (
+                e.clientX >= rect.left &&
+                e.clientX <= rect.right &&
+                e.clientY >= rect.top &&
+                e.clientY <= rect.bottom
+            ) {
                 found = el.getAttribute('data-tab');
                 break;
             }
@@ -251,6 +277,8 @@
     }
 
     const feedRef = ref(null);
+    const feedLayoutRef = ref(null);
+    const followLatest = ref(true);
 
     const pageSizes = computed(() => appearanceSettingsStore.tablePageSizes);
 
@@ -280,7 +308,7 @@
         getRowId: getFeedRowId,
         enableExpanded: true,
         getRowCanExpand: () => true,
-        initialSorting: [],
+        initialSorting: [{ id: 'created_at', desc: true }],
         initialExpanded: {},
         initialPagination: {
             pageIndex: 0,
@@ -291,6 +319,40 @@
             autoResetPageIndex: false
         }
     });
+
+    async function showLatest() {
+        table.setSorting([{ id: 'created_at', desc: true }]);
+        table.setPageIndex(0);
+        await nextTick();
+        feedLayoutRef.value?.scrollToTop();
+    }
+
+    watch(
+        followLatest,
+        (enabled) => {
+            if (enabled) void showLatest();
+        },
+        { immediate: true }
+    );
+
+    watch(
+        () => feedTableData.value[0],
+        (entry, previousEntry) => {
+            if (followLatest.value && entry && getFeedRowId(entry) !== (previousEntry && getFeedRowId(previousEntry))) {
+                void showLatest();
+            }
+        }
+    );
+
+    function handlePageChange(page) {
+        if (page > 1) followLatest.value = false;
+    }
+
+    function handleSortChange(sorting) {
+        if (sorting.length !== 1 || sorting[0].id !== 'created_at' || !sorting[0].desc) {
+            followLatest.value = false;
+        }
+    }
 
     const totalItems = computed(() => {
         const length = table.getFilteredRowModel().rows.length;
@@ -355,4 +417,3 @@
         pointer-events: none;
     }
 </style>
-

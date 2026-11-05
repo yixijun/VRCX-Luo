@@ -304,6 +304,8 @@
         },
         "feed": {
             "favorites_only_tooltip": "仅显示星标好友",
+            "live_updates": "实时刷新",
+            "live_updates_tooltip": "新动态自动置顶；翻页或更改排序后暂停跟随。",
             "search_placeholder": "搜索",
             "filters": {
                 "GPS": "位置变动",

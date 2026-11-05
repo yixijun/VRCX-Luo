@@ -1,11 +1,14 @@
-import { beforeEach, describe, expect, test, vi } from 'vitest';
-import { mount } from '@vue/test-utils';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { enableAutoUnmount, mount } from '@vue/test-utils';
+import { nextTick, ref } from 'vue';
 
 const mocks = vi.hoisted(() => ({
-    makeRef: (value) => ({ value, __v_isRef: true }),
     feedTable: null,
     feedTableData: null,
     feedTableLookup: vi.fn(),
+    setPageIndex: vi.fn(),
+    setSorting: vi.fn(),
+    scrollToTop: vi.fn(),
     pagination: null,
     filteredRows: [{ id: 'r1' }],
     tablePageSizes: [10, 25, 50],
@@ -13,7 +16,7 @@ const mocks = vi.hoisted(() => ({
     maxTableSize: 100
 }));
 
-mocks.feedTable = mocks.makeRef({
+mocks.feedTable = ref({
     loading: false,
     vip: false,
     filter: [],
@@ -21,8 +24,8 @@ mocks.feedTable = mocks.makeRef({
     dateFrom: '',
     dateTo: ''
 });
-mocks.feedTableData = mocks.makeRef([]);
-mocks.pagination = mocks.makeRef({
+mocks.feedTableData = ref([]);
+mocks.pagination = ref({
     pageIndex: 2,
     pageSize: 10
 });
@@ -50,17 +53,23 @@ vi.mock('../../../stores', () => ({
         feedTableLookup: mocks.feedTableLookup
     }),
     useAppearanceSettingsStore: () => ({
+        weekStartsOn: ref(0),
         tablePageSizes: mocks.tablePageSizes,
         tablePageSize: mocks.tablePageSize
     }),
     useVrcxStore: () => ({
         maxTableSize: mocks.maxTableSize
+    }),
+    useGalleryStore: () => ({
+        showGalleryPage: vi.fn()
     })
 }));
 
 vi.mock('../../../lib/table/useVrcxVueTable', () => ({
     useVrcxVueTable: () => ({
         table: {
+            setPageIndex: mocks.setPageIndex,
+            setSorting: mocks.setSorting,
             getFilteredRowModel: () => ({ rows: mocks.filteredRows })
         },
         pagination: mocks.pagination
@@ -73,11 +82,19 @@ vi.mock('../columns.jsx', () => ({
 
 vi.mock('../../../components/ui/data-table', () => ({
     DataTableLayout: {
-        props: ['totalItems', 'onPageSizeChange'],
+        props: [
+            'totalItems',
+            'onPageSizeChange',
+            'onPageChange',
+            'onSortChange'
+        ],
+        methods: { scrollToTop: mocks.scrollToTop },
         template:
             '<div data-testid="data-table-layout">' +
             '<slot name="toolbar" />' +
             '<button data-testid="set-page-size" @click="onPageSizeChange?.(50)">set-page-size</button>' +
+            '<button data-testid="next-page" @click="onPageChange?.(2)">next-page</button>' +
+            '<button data-testid="sort-oldest" @click="onSortChange?.([{ id: \'created_at\', desc: false }])">sort-oldest</button>' +
             '<span data-testid="total-items">{{ totalItems }}</span>' +
             '</div>'
     }
@@ -121,7 +138,7 @@ vi.mock('../../../components/ui/toggle', () => ({
         props: ['modelValue'],
         emits: ['update:modelValue'],
         template:
-            '<button data-testid="vip-toggle" @click="$emit(\'update:modelValue\', !modelValue)"><slot /></button>'
+            '<button :data-testid="$attrs[\'data-testid\'] || \'vip-toggle\'" :aria-pressed="modelValue" @click="$emit(\'update:modelValue\', !modelValue)"><slot /></button>'
     }
 }));
 
@@ -152,10 +169,13 @@ vi.mock('../../../components/ui/tooltip', () => ({
 
 vi.mock('lucide-vue-next', () => ({
     ListFilter: { template: '<span />' },
+    Upload: { template: '<span />' },
     Star: { template: '<span />' }
 }));
 
 import Feed from '../Feed.vue';
+
+enableAutoUnmount(afterEach);
 
 function clickButtonByText(wrapper, text) {
     const button = wrapper
@@ -179,6 +199,9 @@ describe('Feed.vue', () => {
         };
         mocks.feedTableData.value = [];
         mocks.feedTableLookup.mockReset();
+        mocks.setPageIndex.mockReset();
+        mocks.setSorting.mockReset();
+        mocks.scrollToTop.mockReset();
         mocks.pagination.value = { pageIndex: 2, pageSize: 10 };
         mocks.filteredRows = [{ id: 'r1' }];
         mocks.maxTableSize = 100;
@@ -254,5 +277,101 @@ describe('Feed.vue', () => {
         expect(key).toBe(
             'Online:2026-03-01T00:00:00.000Z:usr_123:wrld_abc:hello'
         );
+    });
+
+    test('follows incoming activity at the top without a manual lookup', async () => {
+        const wrapper = mount(Feed);
+        await nextTick();
+        expect(
+            wrapper
+                .get('[data-testid="feed-live-updates"]')
+                .attributes('aria-pressed')
+        ).toBe('true');
+        mocks.scrollToTop.mockClear();
+        mocks.setPageIndex.mockClear();
+        mocks.setSorting.mockClear();
+
+        mocks.feedTableData.value = [
+            {
+                type: 'Online',
+                created_at: '2026-11-05T11:00:00.000Z',
+                userId: 'usr_1'
+            }
+        ];
+        await nextTick();
+        await nextTick();
+
+        expect(mocks.setPageIndex).toHaveBeenCalledWith(0);
+        expect(mocks.setSorting).toHaveBeenCalledWith([
+            { id: 'created_at', desc: true }
+        ]);
+        expect(mocks.scrollToTop).toHaveBeenCalledOnce();
+        expect(mocks.feedTableLookup).not.toHaveBeenCalled();
+        wrapper.unmount();
+    });
+
+    test('keeps the browsing position when live following is turned off', async () => {
+        const wrapper = mount(Feed);
+        await nextTick();
+        await wrapper.get('[data-testid="feed-live-updates"]').trigger('click');
+        mocks.scrollToTop.mockClear();
+        mocks.setPageIndex.mockClear();
+
+        mocks.feedTableData.value = [{ id: 'new-activity' }];
+        await nextTick();
+        await nextTick();
+
+        expect(mocks.scrollToTop).not.toHaveBeenCalled();
+        expect(mocks.setPageIndex).not.toHaveBeenCalled();
+        wrapper.unmount();
+    });
+
+    test('pauses following while browsing older pages and resumes at the latest activity', async () => {
+        const wrapper = mount(Feed);
+        await nextTick();
+        await wrapper.get('[data-testid="next-page"]').trigger('click');
+        expect(
+            wrapper
+                .get('[data-testid="feed-live-updates"]')
+                .attributes('aria-pressed')
+        ).toBe('false');
+        mocks.setPageIndex.mockClear();
+        mocks.scrollToTop.mockClear();
+
+        mocks.feedTableData.value = [{ id: 'new-activity' }];
+        await nextTick();
+        expect(mocks.setPageIndex).not.toHaveBeenCalled();
+
+        await wrapper.get('[data-testid="feed-live-updates"]').trigger('click');
+        await nextTick();
+        expect(mocks.setPageIndex).toHaveBeenCalledWith(0);
+        expect(mocks.scrollToTop).toHaveBeenCalledOnce();
+        wrapper.unmount();
+    });
+
+    test('pauses following when the user changes the time sort order', async () => {
+        const wrapper = mount(Feed);
+        await nextTick();
+        await wrapper.get('[data-testid="sort-oldest"]').trigger('click');
+        expect(
+            wrapper
+                .get('[data-testid="feed-live-updates"]')
+                .attributes('aria-pressed')
+        ).toBe('false');
+        wrapper.unmount();
+    });
+
+    test('does not scroll again when a lookup returns the same newest activity', async () => {
+        mocks.feedTableData.value = [{ id: 'latest' }];
+        const wrapper = mount(Feed);
+        await nextTick();
+        mocks.scrollToTop.mockClear();
+
+        mocks.feedTableData.value = [{ id: 'latest' }];
+        await nextTick();
+        await nextTick();
+
+        expect(mocks.scrollToTop).not.toHaveBeenCalled();
+        wrapper.unmount();
     });
 });

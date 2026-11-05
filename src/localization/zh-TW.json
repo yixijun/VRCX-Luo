@@ -243,6 +243,8 @@
         },
         "feed": {
             "favorites_only_tooltip": "僅篩選收藏",
+            "live_updates": "即時更新",
+            "live_updates_tooltip": "新動態自動置頂；翻頁或變更排序後暫停跟隨。",
             "search_placeholder": "搜尋動態",
             "filters": {
                 "GPS": "位置",

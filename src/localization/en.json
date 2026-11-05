@@ -297,6 +297,8 @@
         },
         "feed": {
             "favorites_only_tooltip": "Filter favorites only",
+            "live_updates": "Live updates",
+            "live_updates_tooltip": "Show new activity at the top automatically. Changing pages or sorting pauses following.",
             "search_placeholder": "Search",
             "filters": {
                 "GPS": "GPS",
