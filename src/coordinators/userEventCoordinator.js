@@ -19,6 +19,7 @@ import { useWorldStore } from '../stores/world';
  * @param {object} [options] Test seams.
  * @param {function} [options.now] Timestamp provider.
  * @param {function} [options.nowIso] ISO timestamp provider.
+ * @param {boolean} [options.skipBioDatabase] Whether the profile snapshot already saved the Bio.
  * @returns {Promise<void>}
  */
 export async function runHandleUserUpdateFlow(
@@ -239,9 +240,14 @@ export async function runHandleUserUpdateFlowWithDependencies(
                 avatarName: avatarInfo.avatarName,
                 previousAvatarName: previousAvatarInfo.avatarName,
                 currentAvatarImageUrl: avatarInfo.ownerId ? currentIconUrl : '',
-                currentAvatarThumbnailImageUrl: avatarInfo.ownerId ? currentIconUrl : '',
-                previousCurrentAvatarImageUrl: previousAvatarInfo.ownerId ? previousIconUrl : '',
-                previousCurrentAvatarThumbnailImageUrl: previousAvatarInfo.ownerId ? previousIconUrl : ''
+                currentAvatarThumbnailImageUrl: avatarInfo.ownerId
+                    ? currentIconUrl
+                    : '',
+                previousCurrentAvatarImageUrl: previousAvatarInfo.ownerId
+                    ? previousIconUrl
+                    : '',
+                previousCurrentAvatarThumbnailImageUrl:
+                    previousAvatarInfo.ownerId ? previousIconUrl : ''
             };
             notificationStore.queueFeedNoty(feed);
             sharedFeedStore.addEntry(feed);
@@ -397,15 +403,13 @@ export async function runHandleUserUpdateFlowWithDependencies(
         feedStore.addFeedEntry(feed);
         databaseApi.addStatusToDatabase(feed);
     }
-    if (props.bio && props.bio[0] && props.bio[1]) {
-        let bio = '';
-        let previousBio = '';
-        if (props.bio[0]) {
-            bio = props.bio[0];
-        }
-        if (props.bio[1]) {
-            previousBio = props.bio[1];
-        }
+    if (
+        Array.isArray(props.bio) &&
+        typeof props.bio[0] === 'string' &&
+        typeof props.bio[1] === 'string' &&
+        props.bio[0] !== props.bio[1]
+    ) {
+        const [bio, previousBio] = props.bio;
         feed = {
             created_at: nowIso(),
             type: 'Bio',

@@ -189,4 +189,38 @@ describe('runHandleUserUpdateFlow', () => {
         expect(mocks.database.addBioToDatabase).toHaveBeenCalledOnce();
         expect(mocks.feedStore.addFeedEntry).toHaveBeenCalledOnce();
     });
+
+    it.each([
+        ['', 'old bio'],
+        ['new bio', '']
+    ])('records an explicit Bio transition %j', async (bio, previousBio) => {
+        const dependencies = createDependencies();
+        await runHandleUserUpdateFlowWithDependencies(
+            { id: 'usr-friend', displayName: 'Friend' },
+            { bio: [bio, previousBio] },
+            dependencies
+        );
+        expect(dependencies.database.addBioToDatabase).toHaveBeenCalledWith(
+            expect.objectContaining({ bio, previousBio })
+        );
+    });
+
+    it.each([
+        [null, 'old bio'],
+        [42, 'old bio'],
+        ['same', 'same']
+    ])(
+        'rejects an invalid or unchanged Bio transition %j',
+        async (bio, previousBio) => {
+            const dependencies = createDependencies();
+            await runHandleUserUpdateFlowWithDependencies(
+                { id: 'usr-friend', displayName: 'Friend' },
+                { bio: [bio, previousBio] },
+                dependencies
+            );
+            expect(
+                dependencies.database.addBioToDatabase
+            ).not.toHaveBeenCalled();
+        }
+    );
 });

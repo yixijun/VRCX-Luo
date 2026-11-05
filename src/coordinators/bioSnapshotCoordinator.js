@@ -40,11 +40,11 @@ async function persistBioSnapshotForUser({
     userId,
     currentUserId,
     currentBio,
-    previousBio,
-    isFriend,
+    previousBio = undefined,
+    isFriend = false,
     displayName,
     createdAt = new Date().toJSON(),
-    onRecorded
+    onRecorded = undefined
 }) {
     if (
         !database ||
@@ -57,9 +57,7 @@ async function persistBioSnapshotForUser({
 
     const eventFlowWillRecord =
         isFriend &&
-        previousBio !== undefined &&
-        Boolean(previousBio) &&
-        Boolean(currentBio) &&
+        typeof previousBio === 'string' &&
         previousBio !== currentBio;
     if (eventFlowWillRecord) {
         return false;

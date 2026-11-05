@@ -51,6 +51,28 @@ describe('sanitizeUserJson', () => {
         const json = { id: 'usr_123' };
         expect(() => sanitizeUserJson(json, '')).not.toThrow();
     });
+
+    it.each([null, undefined, 42, false])(
+        'ignores non-string Bio observations: %s',
+        (bio) => {
+            const json = { bio };
+            sanitizeUserJson(json, '');
+            expect(json).not.toHaveProperty('bio');
+            expect(
+                diffObjectProps({ bio: 'known bio' }, json, Object.is)
+                    .changedProps
+            ).not.toHaveProperty('bio');
+        }
+    );
+
+    it('preserves an explicitly cleared Bio', () => {
+        const json = { bio: '' };
+        sanitizeUserJson(json, '');
+        expect(
+            diffObjectProps({ bio: 'known bio' }, json, Object.is).changedProps
+                .bio
+        ).toEqual(['', 'known bio']);
+    });
 });
 
 describe('computeTrustLevel', () => {
