@@ -20,6 +20,9 @@ const mocks = vi.hoisted(() => {
         showUserDialog: vi.fn(),
         showWorldDialog: vi.fn(),
         toastWarning: vi.fn(),
+        checkFreeStoreItems: vi.fn(),
+        isFreeStoreItemsLoading: ref(false),
+        isPrimaryAccount: ref(true),
         useSearchUserApi: null,
         useSearchAvatarApi: null,
         useSearchWorldApi: null,
@@ -104,6 +107,10 @@ vi.mock('@vueuse/core', async (importOriginal) => {
 
 vi.mock('../../../stores', () => ({
     useGalleryStore: () => ({ showFullscreenImageDialog: vi.fn() }),
+    useNotificationStore: () => ({
+        checkFreeStoreItems: mocks.checkFreeStoreItems,
+        isFreeStoreItemsLoading: mocks.isFreeStoreItemsLoading
+    }),
     useUserStore: () => ({ currentUserCredits: ref(0) }),
     useAppearanceSettingsStore: () => ({
         randomUserColours: mocks.randomUserColours
@@ -127,17 +134,37 @@ vi.mock('../../../stores', () => ({
         cachedConfig: mocks.cachedConfig
     })
 }));
-vi.mock('../composables/useSearchMarketplace', () => ({ useSearchMarketplace: () => ({
-    searchMarketplaceParams: ref({offset: 0}), searchMarketplaceResults: ref([]), searchMarketplaceHasNext: ref(false), isSearchMarketplaceLoading: ref(false), searchMarketplace: vi.fn(), moreSearchMarketplace: vi.fn(), clearMarketplaceSearch: vi.fn()
-}) }));
-vi.mock('../composables/useSearchStoreShelves', () => ({ useSearchStoreShelves: () => ({
-    filteredStoreShelves: ref([]), isStoreShelvesLoading: ref(false), purchasingListingId: ref(''), getStoreShelves: vi.fn(), isListingOwned: vi.fn(), canPurchaseListing: vi.fn(), purchaseListing: vi.fn()
-}) }));
+vi.mock('../composables/useSearchMarketplace', () => ({
+    useSearchMarketplace: () => ({
+        searchMarketplaceParams: ref({ offset: 0 }),
+        searchMarketplaceResults: ref([]),
+        searchMarketplaceHasNext: ref(false),
+        isSearchMarketplaceLoading: ref(false),
+        searchMarketplace: vi.fn(),
+        moreSearchMarketplace: vi.fn(),
+        clearMarketplaceSearch: vi.fn()
+    })
+}));
+vi.mock('../composables/useSearchStoreShelves', () => ({
+    useSearchStoreShelves: () => ({
+        filteredStoreShelves: ref([]),
+        isStoreShelvesLoading: ref(false),
+        purchasingListingId: ref(''),
+        isPrimaryAccount: mocks.isPrimaryAccount,
+        getStoreShelves: vi.fn(),
+        isListingOwned: vi.fn(),
+        canPurchaseListing: vi.fn(),
+        purchaseListing: vi.fn()
+    })
+}));
 vi.mock('../../../composables/useUserDisplay', () => ({
-    useUserDisplay: () => ({userImage: () => ''})
+    useUserDisplay: () => ({ userImage: () => '' })
 }));
 vi.mock('../../../components/UserIdentityInline.vue', () => ({
-    default: {props:['user'],template:'<span>{{ user.displayName }}</span>'}
+    default: {
+        props: ['user'],
+        template: '<span>{{ user.displayName }}</span>'
+    }
 }));
 
 vi.mock('../composables/useSearchUser', () => ({
@@ -305,6 +332,9 @@ describe('Search.vue', () => {
         mocks.searchText.value = '';
         mocks.searchUserResults.value = [];
         mocks.randomUserColours.value = false;
+        mocks.isFreeStoreItemsLoading.value = false;
+        mocks.isPrimaryAccount.value = true;
+        mocks.checkFreeStoreItems.mockReset();
 
         mocks.useSearchUserApi.searchUserParams.value = { offset: 0 };
         mocks.useSearchUserApi.searchUserByBio.value = false;
@@ -359,6 +389,33 @@ describe('Search.vue', () => {
         expect(mocks.clearSearch).toHaveBeenCalledTimes(1);
     });
 
+    it('opens the built-in free item menu in manual mode from the store toolbar', async () => {
+        const wrapper = mountSearch();
+        const button = wrapper.get(
+            '[data-testid="content-store"] button[aria-busy]'
+        );
+        expect(button.text()).toBe('view.search.store.claim_free_items');
+        await button.trigger('click');
+        expect(mocks.checkFreeStoreItems).toHaveBeenCalledExactlyOnceWith({
+            manual: true
+        });
+    });
+
+    it.each(['loading', 'secondary account'])(
+        'disables the free item menu entry during %s',
+        async (state) => {
+            mocks.isFreeStoreItemsLoading.value = state === 'loading';
+            mocks.isPrimaryAccount.value = state !== 'secondary account';
+            const wrapper = mountSearch();
+            const button = wrapper.get(
+                '[data-testid="content-store"] button[aria-busy]'
+            );
+            expect(button.attributes('disabled')).toBeDefined();
+            await button.trigger('click');
+            expect(mocks.checkFreeStoreItems).not.toHaveBeenCalled();
+        }
+    );
+
     it('runs user search on Enter when active tab is user', async () => {
         const wrapper = mountSearch();
 
@@ -374,11 +431,21 @@ describe('Search.vue', () => {
         const wrapper = mountSearch();
         await wrapper.get('[data-testid="set-tab-world"]').trigger('click');
         const world = wrapper.get('[data-testid="content-world"]');
-        await world.findAll('button').find(button => button.text() === 'view.search.world.tags_label').trigger('click');
-        const preset = world.findAll('button').find(button => button.text() === 'view.search.world.tag_presets.game');
+        await world
+            .findAll('button')
+            .find((button) => button.text() === 'view.search.world.tags_label')
+            .trigger('click');
+        const preset = world
+            .findAll('button')
+            .find(
+                (button) =>
+                    button.text() === 'view.search.world.tag_presets.game'
+            );
         await preset.trigger('click');
         expect(mocks.useSearchWorldApi.searchWorldTags.value).toBe('game');
-        expect(mocks.useSearchWorldApi.applyWorldTagSearch).toHaveBeenCalledTimes(1);
+        expect(
+            mocks.useSearchWorldApi.applyWorldTagSearch
+        ).toHaveBeenCalledTimes(1);
         expect(mocks.useSearchUserApi.searchUser).not.toHaveBeenCalled();
     });
 

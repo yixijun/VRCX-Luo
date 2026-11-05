@@ -7,6 +7,9 @@
             </DialogHeader>
 
             <div class="flex max-h-[50vh] flex-col gap-2 overflow-y-auto">
+                <p v-if="!freeStoreItemDialog.listings.length" class="py-6 text-center text-sm text-muted-foreground">
+                    {{ t('dialog.free_store_item_dialog.empty') }}
+                </p>
                 <div v-for="listing in freeStoreItemDialog.listings" :key="listing.id" class="flex items-center gap-3">
                     <img
                         :src="listing.imageUrl || getFileImageUrl(listing.imageId)"
@@ -33,9 +36,12 @@
                 <Button size="sm" variant="secondary" @click="closeDialog">{{
                     t('dialog.free_store_item_dialog.close')
                 }}</Button>
-                <Button size="sm" :disabled="isClaiming || !isPrimaryAccount" @click="claimListings">{{
-                    t('dialog.free_store_item_dialog.claim')
-                }}</Button>
+                <Button
+                    size="sm"
+                    :disabled="isClaiming || !isPrimaryAccount || !freeStoreItemDialog.listings.length"
+                    @click="claimListings"
+                    >{{ t('dialog.free_store_item_dialog.claim') }}</Button
+                >
             </DialogFooter>
         </DialogContent>
     </Dialog>
@@ -87,7 +93,8 @@
     }
 
     async function claimListings() {
-        if (disposed || isClaiming.value || !isPrimaryAccount.value) return;
+        if (disposed || isClaiming.value || !isPrimaryAccount.value || !freeStoreItemDialog.value.listings.length)
+            return;
         const account = captureMarketplaceAccount(() => userStore.currentUser.id);
         const isCurrent = () => !disposed && account.isCurrent();
         const listings = [...freeStoreItemDialog.value.listings];

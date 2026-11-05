@@ -480,6 +480,8 @@
             "store": {
                 "header": "VRChat Store",
                 "refresh_tooltip": "Refresh store",
+                "claim_free_items": "Claim free items",
+                "free_items_load_failed": "Failed to load free items. Please try again.",
                 "free": "Free",
                 "vrc_plus_price": "{price} with VRC+",
                 "credits": "{credits}V",
@@ -3455,6 +3457,7 @@
         },
         "free_store_item_dialog": {
             "header": "Free Store Items",
+            "empty": "No free items are currently available to claim.",
             "description": "These free items are available in the VRChat store.",
             "dont_show_again": "Don't show this again",
             "close": "Close",

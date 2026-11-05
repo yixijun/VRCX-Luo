@@ -80,6 +80,10 @@ import { useWristOverlaySettingsStore } from '../settings/wristOverlay';
 import { watchState } from '../../services/watchState';
 import { useLaunchStore } from '../launch';
 import configRepository from '../../services/config';
+import {
+    captureMarketplaceAccount,
+    isPrimaryMarketplaceAccount
+} from '../../services/marketplaceAccount';
 export const useNotificationStore = defineStore('Notification', () => {
     const { t } = useI18n();
     const appearanceSettingsStore = useAppearanceSettingsStore();
@@ -140,6 +144,7 @@ export const useNotificationStore = defineStore('Notification', () => {
         listings: []
     });
     const shownFreeListingIds = new Set();
+    const isFreeStoreItemsLoading = ref(false);
 
     const friendNotifications = computed(() =>
         filterNotificationsByCategory(notificationTable.value.data, 'friend')
@@ -1538,15 +1543,18 @@ export const useNotificationStore = defineStore('Notification', () => {
         return false;
     }
 
-    async function checkFreeStoreItems() {
-        const currentUserId = userStore.currentUser.id;
+    async function checkFreeStoreItems({ manual = false } = {}) {
         if (
-            !watchState.isLoggedIn ||
-            !notificationsSettingsStore.freeStoreItemNotifications
+            isFreeStoreItemsLoading.value ||
+            !isPrimaryMarketplaceAccount(userStore.currentUser.id) ||
+            (!manual && !notificationsSettingsStore.freeStoreItemNotifications)
         ) {
             return;
         }
-        let shelves;
+        const account = captureMarketplaceAccount(
+            () => userStore.currentUser.id
+        );
+        isFreeStoreItemsLoading.value = true;
         try {
             const [results] = await Promise.all([
                 Promise.all(
@@ -1560,49 +1568,55 @@ export const useNotificationStore = defineStore('Notification', () => {
                 ),
                 userStore.getAllProductPurchases()
             ]);
-            shelves = results.flatMap((args) => args.json ?? []);
-        } catch (err) {
-            console.error('Failed to check free store items:', err);
-            return;
-        }
-        if (
-            !watchState.isLoggedIn ||
-            currentUserId !== userStore.currentUser.id ||
-            !notificationsSettingsStore.freeStoreItemNotifications
-        )
-            return;
-        const freeListings = new Map();
-        for (const shelf of shelves) {
-            for (const listing of shelf.listings ?? []) {
-                if (
-                    listing.active &&
-                    !getEffectiveListingPrice(listing) &&
-                    !isListingOwned(listing) &&
-                    !shownFreeListingIds.has(listing.id)
-                ) {
-                    freeListings.set(listing.id, {
-                        ...listing,
-                        displayName: replaceBioSymbols(listing.displayName)
-                    });
+            if (
+                !account.isCurrent() ||
+                (!manual &&
+                    !notificationsSettingsStore.freeStoreItemNotifications)
+            ) {
+                return;
+            }
+            const shelves = results.flatMap((args) => args.json ?? []);
+            const freeListings = new Map();
+            for (const shelf of shelves) {
+                for (const listing of shelf.listings ?? []) {
+                    if (
+                        listing.active &&
+                        getEffectiveListingPrice(listing) === 0 &&
+                        !isListingOwned(listing) &&
+                        (manual || !shownFreeListingIds.has(listing.id))
+                    ) {
+                        freeListings.set(listing.id, {
+                            ...listing,
+                            displayName: replaceBioSymbols(listing.displayName)
+                        });
+                    }
                 }
             }
+            for (const listing of freeListings.values()) {
+                shownFreeListingIds.add(listing.id);
+            }
+            const newListings = Array.from(freeListings.values()).filter(
+                (listing) => !isListingInBundle(listing, freeListings)
+            );
+            if (!manual && newListings.length === 0) {
+                return;
+            }
+            const dialog = freeStoreItemDialog.value;
+            if (manual || !dialog.visible) {
+                dialog.listings = newListings;
+            } else {
+                dialog.listings.push(...newListings);
+            }
+            dialog.visible = true;
+        } catch (err) {
+            console.error('Failed to check free store items:', err);
+            if (manual && account.isCurrent()) {
+                toast.error(t('view.search.store.free_items_load_failed'));
+            }
+        } finally {
+            account.dispose();
+            isFreeStoreItemsLoading.value = false;
         }
-        for (const listing of freeListings.values()) {
-            shownFreeListingIds.add(listing.id);
-        }
-        const newListings = Array.from(freeListings.values()).filter(
-            (listing) => !isListingInBundle(listing, freeListings)
-        );
-        if (newListings.length === 0) {
-            return;
-        }
-        const dialog = freeStoreItemDialog.value;
-        if (dialog.visible) {
-            dialog.listings.push(...newListings);
-        } else {
-            dialog.listings = newListings;
-        }
-        dialog.visible = true;
     }
 
     function testNotification() {
@@ -2215,6 +2229,7 @@ export const useNotificationStore = defineStore('Notification', () => {
         isNotificationsLoading,
         inventoryBundleDialog,
         freeStoreItemDialog,
+        isFreeStoreItemsLoading,
 
         initNotifications,
         expireNotification,

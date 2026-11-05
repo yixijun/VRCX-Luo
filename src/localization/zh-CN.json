@@ -487,6 +487,8 @@
             "store": {
                 "header": "VRChat 商店",
                 "refresh_tooltip": "刷新商店",
+                "claim_free_items": "一键领取免费物品",
+                "free_items_load_failed": "免费物品加载失败，请重试。",
                 "free": "免费",
                 "vrc_plus_price": "VRC+ 会员价：{price}",
                 "credits": "{credits}V",
@@ -3407,6 +3409,7 @@
         "refresh": "刷新",
         "free_store_item_dialog": {
             "header": "免费商城物品",
+            "empty": "暂无可领取的免费物品。",
             "description": "以下物品可在 VRChat 商城免费领取。",
             "dont_show_again": "不再提醒",
             "close": "关闭",

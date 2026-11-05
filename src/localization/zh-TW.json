@@ -401,6 +401,8 @@
             "store": {
                 "header": "VRChat 商店",
                 "refresh_tooltip": "重新整理商店",
+                "claim_free_items": "一鍵領取免費物品",
+                "free_items_load_failed": "免費物品載入失敗，請重試。",
                 "free": "免費",
                 "vrc_plus_price": "VRC+ 會員價：{price}",
                 "credits": "{credits}V",
@@ -2899,6 +2901,7 @@
         },
         "free_store_item_dialog": {
             "header": "免費商城物品",
+            "empty": "目前沒有可領取的免費物品。",
             "description": "以下物品可在 VRChat 商城免費領取。",
             "dont_show_again": "不再提醒",
             "close": "關閉",

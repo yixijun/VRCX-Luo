@@ -96,6 +96,10 @@ beforeAll(async () => {
     vi.doMock('../../../services/watchState', () => ({
         watchState: { isLoggedIn: false }
     }));
+    vi.doMock('../../../services/marketplaceAccount', () => ({
+        isPrimaryMarketplaceAccount: vi.fn(() => false),
+        captureMarketplaceAccount: vi.fn()
+    }));
     vi.doMock('../../../plugins/router', () => ({
         router: { currentRoute: ref({}) }
     }));

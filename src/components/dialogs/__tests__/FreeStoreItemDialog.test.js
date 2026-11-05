@@ -104,6 +104,15 @@ describe('free store claims account lifecycle', () => {
         expect(mocks.notifications.freeStoreItemDialog.visible).toBe(false);
         expect(state.isClaiming).toBe(false);
     });
+    test('shows an empty menu and blocks claims when nothing is available', async () => {
+        mocks.notifications.freeStoreItemDialog.listings = [];
+        const state = mountDialog();
+        expect(wrapper.text()).toContain('dialog.free_store_item_dialog.empty');
+        await state.claimListings();
+        expect(mocks.purchase).not.toHaveBeenCalled();
+        expect(mocks.user.getAllProductPurchases).not.toHaveBeenCalled();
+        expect(mocks.notifications.freeStoreItemDialog.visible).toBe(true);
+    });
     test('stops the batch after switching away and back without affecting the next account view', async () => {
         const first = deferred();
         mocks.purchase.mockReturnValueOnce(first.promise);

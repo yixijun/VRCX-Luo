@@ -335,44 +335,69 @@
                     {{ t('message.marketplace.primary_account_only') }}
                 </p>
                 <div class="shrink-0 mb-3 flex items-center justify-end gap-2">
-                    <span v-if="currentUserCredits !== null" class="text-sm text-muted-foreground">
-                        {{ t('view.search.store.credits', { credits: commaNumber(currentUserCredits) }) }}
-                    </span>
-                    <TooltipWrapper side="bottom" :content="t('view.search.store.refresh_tooltip')">
-                        <Button
-                            class="rounded-full"
-                            size="icon-sm"
-                            variant="ghost"
-                            :disabled="isStoreShelvesLoading"
-                            @click="getStoreShelves">
-                            <Spinner v-if="isStoreShelvesLoading" />
-                            <RefreshCw v-else />
-                        </Button>
-                    </TooltipWrapper>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        :disabled="isFreeStoreItemsLoading || !isPrimaryAccount"
+                        :aria-busy="isFreeStoreItemsLoading"
+                        @click="checkFreeStoreItems({ manual: true })">
+                        <Spinner v-if="isFreeStoreItemsLoading" />
+                        {{ t('view.search.store.claim_free_items') }}
+                    </Button>
+                    <div
+                        class="inline-flex items-center gap-2 rounded-lg border border-border bg-[var(--surface-panel)] py-1 pl-3 pr-1">
+                        <span v-if="currentUserCredits !== null" class="text-sm font-medium tabular-nums">
+                            {{ t('view.search.store.credits', { credits: commaNumber(currentUserCredits) }) }}
+                        </span>
+                        <TooltipWrapper side="bottom" :content="t('view.search.store.refresh_tooltip')">
+                            <Button
+                                class="rounded-md"
+                                size="icon-sm"
+                                variant="ghost"
+                                :disabled="isStoreShelvesLoading"
+                                @click="getStoreShelves">
+                                <Spinner v-if="isStoreShelvesLoading" />
+                                <RefreshCw v-else />
+                            </Button>
+                        </TooltipWrapper>
+                    </div>
                 </div>
-                <div class="flex-1 overflow-y-auto min-h-0">
+                <div class="flex-1 overflow-y-auto min-h-0 pb-4 pr-2">
                     <div
                         v-if="isStoreShelvesLoading && !filteredStoreShelves.length"
                         class="flex items-center justify-center h-full">
                         <Spinner class="text-2xl" />
                     </div>
-                    <template v-else-if="filteredStoreShelves.length > 0">
-                        <div v-for="shelf in filteredStoreShelves" :key="shelf.id" class="mb-6">
-                            <img
-                                v-if="shelf.shelfClientBannerImageId"
-                                :src="getFileImageUrl(shelf.shelfClientBannerImageId)"
-                                loading="lazy"
-                                class="mb-3 w-full rounded-lg object-cover" />
-                            <div v-if="shelf.shelfTitle" class="mb-2 font-medium" v-text="shelf.shelfTitle" />
+                    <div v-else-if="filteredStoreShelves.length > 0" class="space-y-5">
+                        <section
+                            v-for="shelf in filteredStoreShelves"
+                            :key="shelf.id"
+                            class="store-shelf min-w-0 overflow-hidden rounded-xl border border-border bg-[var(--surface-panel)]">
+                            <header
+                                v-if="shelf.shelfTitle || shelf.shelfClientBannerImageId"
+                                class="bg-muted/50"
+                                :class="{ 'border-b border-border': shelf.listings.length > 0 }">
+                                <img
+                                    v-if="shelf.shelfClientBannerImageId"
+                                    :src="getFileImageUrl(shelf.shelfClientBannerImageId)"
+                                    alt=""
+                                    loading="lazy"
+                                    class="w-full object-cover" />
+                                <div v-if="shelf.shelfTitle" class="flex items-center gap-3 px-4 py-3.5">
+                                    <span class="h-5 w-1 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                                    <h2 class="min-w-0 text-base font-semibold break-words" v-text="shelf.shelfTitle" />
+                                </div>
+                            </header>
                             <ItemGroup
-                                class="grid gap-3"
-                                style="grid-template-columns: repeat(auto-fill, minmax(180px, 1fr))">
+                                v-if="shelf.listings.length > 0"
+                                class="grid gap-3 p-3 sm:p-4"
+                                style="grid-template-columns: repeat(auto-fill, minmax(min(180px, 100%), 1fr))">
                                 <Item
                                     v-for="listing in shelf.listings"
                                     :key="listing.id"
                                     variant="outline"
                                     size="sm"
-                                    class="p-3"
+                                    class="rounded-lg bg-background/80 p-3 hover:border-ring/50 focus-within:border-ring/50"
                                     as-child>
                                     <div class="overflow-hidden">
                                         <ItemHeader>
@@ -415,8 +440,8 @@
                                     </div>
                                 </Item>
                             </ItemGroup>
-                        </div>
-                    </template>
+                        </section>
+                    </div>
                     <DataTableEmpty v-else type="nodata" />
                 </div>
             </TabsContent>
@@ -500,6 +525,7 @@
         useAuthStore,
         useAvatarProviderStore,
         useGalleryStore,
+        useNotificationStore,
         useSearchStore,
         useUserStore
     } from '../../stores';
@@ -527,6 +553,9 @@
     const { clearSearch } = useSearchStore();
     const { cachedConfig } = storeToRefs(useAuthStore());
     const { currentUserCredits } = storeToRefs(useUserStore());
+    const notificationStore = useNotificationStore();
+    const { isFreeStoreItemsLoading } = storeToRefs(notificationStore);
+    const { checkFreeStoreItems } = notificationStore;
 
     const { t } = useI18n();
     const { userImage } = useUserDisplay();
