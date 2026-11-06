@@ -163,11 +163,6 @@
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions @click.stop>
-                                    <TotpSettingsDialog
-                                        v-if="user.loginParams.username"
-                                        :username="user.loginParams.username"
-                                        :endpoint="user.loginParams.endpoint || AppDebug.endpointDomainVrchat"
-                                        :account-label="user.user.displayName" />
                                     <Button
                                         size="icon-sm"
                                         variant="ghost"
@@ -259,8 +254,6 @@
     import { accountHub } from '../../services/accountHub.js';
     import LoginSettingsDialog from './Dialog/LoginSettingsDialog.vue';
     import ResetPasswordDialog from './Dialog/ResetPasswordDialog.vue';
-    import TotpSettingsDialog from './Dialog/TotpSettingsDialog.vue';
-    import { AppDebug } from '../../services/appConfig';
     import QrLogin from './components/QrLogin.vue';
     const { userImage } = useUserDisplay();
     const { showVRCXUpdateDialog } = useVRCXUpdaterStore();
