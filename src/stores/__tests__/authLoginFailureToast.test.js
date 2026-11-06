@@ -110,6 +110,9 @@ vi.mock('vue-i18n', () => ({
         t: (key) => key
     })
 }));
+vi.mock('../../plugins/i18n', () => ({
+    i18n: { global: { t: (key) => key } }
+}));
 
 vi.mock('../../services/request', () => ({
     request: (...args) => mocks.request(...args)
@@ -479,6 +482,136 @@ describe('useAuthStore login failure toast policy', () => {
             'login-network-issue-toast'
         );
         expect(mocks.toast.warning).toHaveBeenCalledTimes(1);
+    });
+
+    describe('automatic login completion toast', () => {
+        test('announces success after TOTP verification fetches the authenticated account', async () => {
+            const store = await createAuthStore();
+            const saved = {
+                user: { id: 'usr_saved', displayName: 'Saved User' },
+                loginParams: { username: 'alice', password: 'password' }
+            };
+            vi.spyOn(store, 'getSavedCredentials').mockResolvedValue(saved);
+            mocks.request.mockResolvedValueOnce({
+                requiresTwoFactorAuth: ['totp']
+            });
+            mocks.modalStore.otpPrompt
+                .mockResolvedValueOnce({ ok: true, value: 'totp' })
+                .mockResolvedValueOnce({ ok: true, value: '123456' });
+            mocks.getCurrentUser.mockImplementationOnce(async () => {
+                await store.handleCurrentUserUpdate(saved.user);
+                return { json: saved.user };
+            });
+            const { runHandleAutoLoginFlow } = await vi.importActual(
+                '../../coordinators/authAutoLoginCoordinator'
+            );
+            await runHandleAutoLoginFlow({ isOnline: () => true });
+            expect(mocks.authRequest.verifyTOTP).toHaveBeenCalledWith({
+                code: '123456'
+            });
+            expect(store.authenticatedUserId).toBe('usr_saved');
+            expect(mocks.toast.success).toHaveBeenCalledExactlyOnceWith(
+                'message.auth.auto_login_success'
+            );
+        });
+
+        test('announces success after this attempt receives an authenticated user, before background initialization finishes', async () => {
+            const store = await createAuthStore();
+            const saved = {
+                user: { id: 'usr_saved', displayName: 'Saved User' },
+                loginParams: { username: 'alice', password: 'password' }
+            };
+            vi.spyOn(store, 'getSavedCredentials').mockResolvedValue(saved);
+            mocks.request.mockResolvedValueOnce(saved.user);
+            const { runHandleAutoLoginFlow } = await vi.importActual(
+                '../../coordinators/authAutoLoginCoordinator'
+            );
+            await runHandleAutoLoginFlow({ isOnline: () => true });
+            expect(mockWatchState.isLoggedIn).toBe(false);
+            expect(store.authenticatedUserId).toBe('usr_saved');
+            expect(mocks.toast.success).toHaveBeenCalledExactlyOnceWith(
+                'message.auth.auto_login_success'
+            );
+        });
+
+        test('clears the previous success before a cancelled new attempt', async () => {
+            const store = await createAuthStore();
+            await store.handleCurrentUserUpdate({ id: 'usr_saved' });
+            expect(store.authenticatedUserId).toBe('usr_saved');
+            const saved = {
+                user: { id: 'usr_saved', displayName: 'Saved User' },
+                loginParams: { username: 'alice', password: 'password' }
+            };
+            vi.spyOn(store, 'getSavedCredentials').mockResolvedValue(saved);
+            mocks.request.mockResolvedValueOnce({
+                requiresTwoFactorAuth: ['totp']
+            });
+            mocks.modalStore.otpPrompt.mockResolvedValueOnce({
+                ok: false,
+                reason: 'cancel',
+                value: ''
+            });
+            const { runHandleAutoLoginFlow } = await vi.importActual(
+                '../../coordinators/authAutoLoginCoordinator'
+            );
+            await runHandleAutoLoginFlow({ isOnline: () => true });
+            expect(store.authenticatedUserId).toBe('');
+            expect(mocks.toast.success).not.toHaveBeenCalled();
+        });
+
+        test('still reports an API failure as a failure', async () => {
+            const store = await createAuthStore();
+            const saved = {
+                user: { id: 'usr_saved', displayName: 'Saved User' },
+                loginParams: { username: 'alice', password: 'password' }
+            };
+            vi.spyOn(store, 'getSavedCredentials').mockResolvedValue(saved);
+            mocks.request.mockRejectedValueOnce(
+                new Error('Network unavailable')
+            );
+            const { runHandleAutoLoginFlow } = await vi.importActual(
+                '../../coordinators/authAutoLoginCoordinator'
+            );
+            await runHandleAutoLoginFlow({ isOnline: () => true });
+            expect(mocks.toast.success).not.toHaveBeenCalled();
+            expect(mocks.toast.error).toHaveBeenCalledWith(
+                'message.auth.auto_login_failed'
+            );
+            expect(store.attemptingAutoLogin).toBe(false);
+        });
+
+        test.each(['cancel', 'dismiss', 'replaced'])(
+            'does not announce success after verification choice is %s',
+            async (reason) => {
+                const store = await createAuthStore();
+                const saved = {
+                    user: { id: 'usr_saved', displayName: 'Saved User' },
+                    loginParams: { username: 'alice', password: 'password' }
+                };
+                vi.spyOn(store, 'getSavedCredentials').mockResolvedValue(saved);
+                mocks.request.mockResolvedValueOnce({
+                    requiresTwoFactorAuth: ['totp', 'emailOtp']
+                });
+                mocks.modalStore.otpPrompt.mockResolvedValueOnce({
+                    ok: false,
+                    reason,
+                    value: ''
+                });
+                const { runHandleAutoLoginFlow } = await vi.importActual(
+                    '../../coordinators/authAutoLoginCoordinator'
+                );
+                await runHandleAutoLoginFlow({ isOnline: () => true });
+                expect(mocks.modalStore.otpPrompt).toHaveBeenCalledWith(
+                    expect.objectContaining({ mode: 'choice' })
+                );
+                expect(mockWatchState.isLoggedIn).toBe(false);
+                expect(mocks.getCurrentUser).not.toHaveBeenCalled();
+                expect(mocks.toast.success).not.toHaveBeenCalled();
+                expect(mocks.toast.error).not.toHaveBeenCalled();
+                expect(store.attemptingAutoLogin).toBe(false);
+                expect(store.loginForm.loading).toBe(false);
+            }
+        );
     });
 
     describe('interactive TOTP login', () => {

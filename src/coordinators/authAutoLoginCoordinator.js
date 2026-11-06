@@ -55,6 +55,9 @@ export async function runHandleAutoLoginFlow({
     console.log('Attempting automatic login...');
     try {
         await authStore.relogin(user);
+        // Cancelling a verification prompt resolves normally. Only a confirmed
+        // auth/user response for this attempt makes auto-login successful.
+        if (authStore.authenticatedUserId !== user.user.id) return;
         if (AppDebug.errorNoty) {
             toast.dismiss(AppDebug.errorNoty);
         }

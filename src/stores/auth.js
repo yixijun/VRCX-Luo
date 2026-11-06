@@ -69,6 +69,9 @@ export const useAuthStore = defineStore('Auth', () => {
     const credentialsToSave = ref(null);
 
     const twoFactorAuthDialogVisible = ref(false);
+    // A completed request or a dismissed prompt alone is not authentication.
+    // Reset this per attempt, independently of background login initialization.
+    const authenticatedUserId = ref('');
     /** @type {import('vue').Ref<import('../services/totpSecrets').TotpIdentity | null>} */
     const activeTotpIdentity = ref(null);
     let totpChallengeVersion = 0;
@@ -81,6 +84,7 @@ export const useAuthStore = defineStore('Auth', () => {
 
     function setTotpIdentity(params) {
         totpChallengeVersion++;
+        authenticatedUserId.value = '';
         totpAccountId.value = '';
         if (twoFactorAuthDialogVisible.value) modalStore.handleOtpDismiss?.('');
         twoFactorAuthDialogVisible.value = false;
@@ -1081,6 +1085,7 @@ export const useAuthStore = defineStore('Auth', () => {
             return;
         }
         runLoginSuccessFlow(json);
+        authenticatedUserId.value = json.id || '';
     }
 
     /**
@@ -1188,6 +1193,7 @@ export const useAuthStore = defineStore('Auth', () => {
         loginForm,
         enablePrimaryPasswordDialog,
         credentialsToSave,
+        authenticatedUserId,
         currentTotpIdentity,
         twoFactorAuthDialogVisible,
         cachedConfig,
