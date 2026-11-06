@@ -1,10 +1,20 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { createI18n } from 'vue-i18n';
 import { createTestingPinia } from '@pinia/testing';
-import { mount } from '@vue/test-utils';
+import { flushPromises, mount } from '@vue/test-utils';
 import { ref } from 'vue';
 
 import en from '../../localization/en.json';
+const vault = vi.hoisted(() => ({
+    has: vi.fn(),
+    get: vi.fn(),
+    generate: vi.fn()
+}));
+vi.mock('../../services/totpSecrets', () => ({
+    hasTotpSecret: vault.has,
+    getTotpSecret: vault.get
+}));
+vi.mock('../../services/totp', () => ({ generateTotp: vault.generate }));
 
 vi.mock('../../views/Feed/Feed.vue', () => ({
     default: { template: '<div />' }
@@ -129,6 +139,9 @@ describe('OtpDialogModal.vue', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        vault.has.mockResolvedValue(false);
+        vault.get.mockResolvedValue('test-key');
+        vault.generate.mockResolvedValue('654321');
     });
 
     describe('visibility', () => {
@@ -281,7 +294,7 @@ describe('OtpDialogModal.vue', () => {
     });
 
     describe('complete event', () => {
-        test('calls handleOtpOk when InputOTP emits complete', async () => {
+        test('keeps a completed TOTP in the input until Verify is clicked', async () => {
             const wrapper = mountOtpDialog({
                 otpOpen: true,
                 otpMode: 'totp'
@@ -293,7 +306,111 @@ describe('OtpDialogModal.vue', () => {
             otpInput.vm.$emit('complete', '123456');
             await wrapper.vm.$nextTick();
 
+            expect(spy).not.toHaveBeenCalled();
+            await wrapper.find('form').trigger('submit');
             expect(spy).toHaveBeenCalledWith('123456');
+        });
+    });
+
+    describe('saved key fill and method selection', () => {
+        const identity = {
+            username: 'alice',
+            endpoint: 'https://api.vrchat.cloud/api/1'
+        };
+        test('starts empty and generates only after clicking Fill, without submitting', async () => {
+            vault.has.mockResolvedValue(true);
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'totp',
+                otpTotpIdentity: identity
+            });
+            store = useModalStore();
+            const spy = vi.spyOn(store, 'handleOtpOk');
+            await flushPromises();
+            expect(vault.get).not.toHaveBeenCalled();
+            expect(
+                wrapper.findComponent({ name: 'InputOTP' }).props('modelValue')
+            ).toBe('');
+            const fill = wrapper
+                .findAll('button')
+                .find((b) => b.text() === en.totp.fill_code);
+            await fill.trigger('click');
+            await flushPromises();
+            expect(vault.get).toHaveBeenCalledWith(identity);
+            expect(
+                wrapper.findComponent({ name: 'InputOTP' }).props('modelValue')
+            ).toBe('654321');
+            expect(spy).not.toHaveBeenCalled();
+            await wrapper.find('form').trigger('submit');
+            expect(spy).toHaveBeenCalledWith('654321');
+            wrapper.unmount();
+        });
+        test('hides fill for unsaved keys and for email/recovery codes', async () => {
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'totp',
+                otpTotpIdentity: identity
+            });
+            await flushPromises();
+            expect(wrapper.text()).not.toContain(en.totp.fill_code);
+            store = useModalStore();
+            vault.has.mockResolvedValue(true);
+            store.otpMode = 'emailOtp';
+            await flushPromises();
+            expect(wrapper.text()).not.toContain(en.totp.fill_code);
+            expect(vault.get).not.toHaveBeenCalled();
+            wrapper.unmount();
+        });
+        test('discards a fill result after switching the challenge', async () => {
+            vault.has.mockResolvedValue(true);
+            let complete;
+            vault.generate.mockImplementationOnce(
+                () =>
+                    new Promise((r) => {
+                        complete = r;
+                    })
+            );
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'totp',
+                otpTotpIdentity: identity
+            });
+            store = useModalStore();
+            await flushPromises();
+            await wrapper
+                .findAll('button')
+                .find((b) => b.text() === en.totp.fill_code)
+                .trigger('click');
+            await flushPromises();
+            store.otpTotpIdentity = { ...identity, username: 'bob' };
+            await flushPromises();
+            complete('123456');
+            await flushPromises();
+            expect(
+                wrapper.findComponent({ name: 'InputOTP' }).props('modelValue')
+            ).toBe('');
+            wrapper.unmount();
+        });
+        test('shows email and TOTP choices but disables methods not offered', async () => {
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'choice',
+                otpMethods: ['totp']
+            });
+            store = useModalStore();
+            const spy = vi.spyOn(store, 'handleOtpOk');
+            const buttons = wrapper.findAll('button');
+            expect(
+                buttons
+                    .find((b) => b.text() === en.totp.email_method)
+                    .attributes('disabled')
+            ).toBeDefined();
+            await buttons
+                .find((b) => b.text() === en.totp.totp_method)
+                .trigger('click');
+            expect(spy).toHaveBeenCalledWith('totp');
+            expect(wrapper.find('.input-otp-stub').exists()).toBe(false);
+            wrapper.unmount();
         });
     });
 

@@ -26,6 +26,7 @@ import { useVrcxStore } from './vrcx';
 import { watchState } from '../services/watchState';
 import configRepository from '../services/config';
 import security from '../services/security';
+import { removeTotpSecret } from '../services/totpSecrets';
 import webApiService from '../services/webapi';
 import * as workerTimers from 'worker-timers';
 import { useActivityStore } from './activity';
@@ -68,6 +69,33 @@ export const useAuthStore = defineStore('Auth', () => {
     const credentialsToSave = ref(null);
 
     const twoFactorAuthDialogVisible = ref(false);
+    /** @type {import('vue').Ref<import('../services/totpSecrets').TotpIdentity | null>} */
+    const activeTotpIdentity = ref(null);
+    let totpChallengeVersion = 0;
+    const totpAccountId = ref('');
+    const currentTotpIdentity = computed(() =>
+        totpAccountId.value === userStore.currentUser.id
+            ? activeTotpIdentity.value
+            : null
+    );
+
+    function setTotpIdentity(params) {
+        totpChallengeVersion++;
+        totpAccountId.value = '';
+        if (twoFactorAuthDialogVisible.value) modalStore.handleOtpDismiss?.('');
+        twoFactorAuthDialogVisible.value = false;
+        activeTotpIdentity.value = params?.username
+            ? {
+                  username: params.username,
+                  endpoint: params.endpoint || AppDebug.endpointDomainVrchat
+              }
+            : null;
+    }
+
+    watch(
+        () => loginForm.value.username,
+        () => setTotpIdentity(null)
+    );
 
     const cachedConfig = ref({});
 
@@ -113,6 +141,7 @@ export const useAuthStore = defineStore('Auth', () => {
                     return;
                 }
 
+                totpAccountId.value = currentUser.id;
                 resetLoginNetworkIssueHintState();
                 updateStoredUser(currentUser);
 
@@ -213,6 +242,7 @@ export const useAuthStore = defineStore('Auth', () => {
      *
      */
     async function handleLogoutEvent() {
+        setTotpIdentity(null);
         await runLogoutFlow();
     }
 
@@ -235,6 +265,7 @@ export const useAuthStore = defineStore('Auth', () => {
             const user = await getSavedCredentials(
                 loginForm.value.lastUserLoggedIn
             );
+            setTotpIdentity(user?.loginParams);
             if (user?.loginParams?.endpoint) {
                 AppDebug.endpointDomain = user.loginParams.endpoint;
                 AppDebug.websocketDomain = user.loginParams.websocket;
@@ -636,6 +667,7 @@ export const useAuthStore = defineStore('Auth', () => {
         user,
         { shouldTrackLoginNetworkIssueHint = !attemptingAutoLogin.value } = {}
     ) {
+        setTotpIdentity(user.loginParams);
         await webApiService.clearCookies();
         const { loginParams } = user;
         if (user.cookies) {
@@ -737,6 +769,13 @@ export const useAuthStore = defineStore('Auth', () => {
      */
     async function deleteSavedLogin(userId) {
         const savedCredentials = await getAllSavedCredentials();
+        const params = savedCredentials[userId]?.loginParams;
+        if (params?.username) {
+            await removeTotpSecret({
+                username: params.username,
+                endpoint: params.endpoint || AppDebug.endpointDomainVrchat
+            });
+        }
         delete savedCredentials[userId];
         // Disable primary password when no account is available.
         if (Object.keys(savedCredentials).length === 0) {
@@ -859,58 +898,59 @@ export const useAuthStore = defineStore('Auth', () => {
     /**
      *
      */
-    function promptTOTP() {
+    async function promptTOTP() {
         if (twoFactorAuthDialogVisible.value) {
             return;
         }
-        AppApi.FlashWindow();
         twoFactorAuthDialogVisible.value = true;
-        modalStore
-            .otpPrompt({
+        const version = totpChallengeVersion;
+        const identity = activeTotpIdentity.value;
+        const isCurrent = () =>
+            version === totpChallengeVersion &&
+            twoFactorAuthDialogVisible.value;
+        AppApi.FlashWindow();
+        try {
+            const { ok, reason, value } = await modalStore.otpPrompt({
                 title: twoFactorAccountLabel.value
                     ? `${t('prompt.totp.header')} - ${twoFactorAccountLabel.value}`
                     : t('prompt.totp.header'),
                 description: t('prompt.totp.description'),
                 mode: 'totp',
+                totpIdentity: identity || undefined,
                 cancelText: t('prompt.totp.use_otp'),
                 confirmText: t('prompt.totp.verify')
-            })
-            .then(({ ok, reason, value }) => {
-                twoFactorAuthDialogVisible.value = false;
-
-                if (reason === 'cancel') {
-                    promptOTP();
-                    return;
-                }
-                if (!ok) return;
-
-                authRequest
-                    .verifyTOTP({
-                        code: value.trim()
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                        clearCookiesTryLogin();
-                    })
-                    .then(() => {
-                        getCurrentUser();
-                    });
-            })
-            .catch(() => {
-                twoFactorAuthDialogVisible.value = false;
             });
+            if (!isCurrent()) return;
+            twoFactorAuthDialogVisible.value = false;
+            if (reason === 'cancel') return promptOTP();
+            if (!ok) return;
+            try {
+                const { json } = await authRequest.verifyTOTP({
+                    code: value.trim()
+                });
+                if (version !== totpChallengeVersion) return;
+                if (json?.verified !== true) {
+                    return promptTOTP();
+                }
+                await getCurrentUser();
+            } catch {
+                if (version === totpChallengeVersion) return promptTOTP();
+            }
+        } catch {
+            if (version === totpChallengeVersion)
+                twoFactorAuthDialogVisible.value = false;
+        }
     }
 
     /**
      *
      */
-    function promptOTP() {
-        if (twoFactorAuthDialogVisible.value) {
-            return;
-        }
+    async function promptOTP() {
+        if (twoFactorAuthDialogVisible.value) return;
+        const version = totpChallengeVersion;
         twoFactorAuthDialogVisible.value = true;
-        modalStore
-            .otpPrompt({
+        try {
+            const { ok, reason, value } = await modalStore.otpPrompt({
                 title: twoFactorAccountLabel.value
                     ? `${t('prompt.otp.header')} - ${twoFactorAccountLabel.value}`
                     : t('prompt.otp.header'),
@@ -918,44 +958,32 @@ export const useAuthStore = defineStore('Auth', () => {
                 mode: 'otp',
                 cancelText: t('prompt.otp.use_totp'),
                 confirmText: t('prompt.otp.verify')
-            })
-            .then(({ ok, reason, value }) => {
-                twoFactorAuthDialogVisible.value = false;
-
-                if (reason === 'cancel') {
-                    promptTOTP();
-                    return;
-                }
-                if (!ok) return;
-
-                authRequest
-                    .verifyOTP({
-                        code: `${value.slice(0, 4)}-${value.slice(4)}`
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                        clearCookiesTryLogin();
-                    })
-                    .then(() => {
-                        getCurrentUser();
-                    });
-            })
-            .catch(() => {
-                twoFactorAuthDialogVisible.value = false;
             });
+            if (version !== totpChallengeVersion) return;
+            twoFactorAuthDialogVisible.value = false;
+            if (reason === 'cancel') return promptTOTP();
+            if (!ok) return;
+            const { json } = await authRequest.verifyOTP({
+                code: `${value.slice(0, 4)}-${value.slice(4)}`
+            });
+            if (version !== totpChallengeVersion) return;
+            if (json?.verified !== true) return promptOTP();
+            return getCurrentUser();
+        } catch {
+            if (version === totpChallengeVersion) {
+                twoFactorAuthDialogVisible.value = false;
+                return promptOTP();
+            }
+        }
     }
 
-    /**
-     *
-     */
-    function promptEmailOTP() {
-        if (twoFactorAuthDialogVisible.value) {
-            return;
-        }
+    async function promptEmailOTP() {
+        if (twoFactorAuthDialogVisible.value) return;
+        const version = totpChallengeVersion;
         AppApi.FlashWindow();
         twoFactorAuthDialogVisible.value = true;
-        modalStore
-            .otpPrompt({
+        try {
+            const { ok, reason, value } = await modalStore.otpPrompt({
                 title: twoFactorAccountLabel.value
                     ? `${t('prompt.email_otp.header')} - ${twoFactorAccountLabel.value}`
                     : t('prompt.email_otp.header'),
@@ -963,31 +991,23 @@ export const useAuthStore = defineStore('Auth', () => {
                 mode: 'emailOtp',
                 cancelText: t('prompt.email_otp.resend'),
                 confirmText: t('prompt.email_otp.verify')
-            })
-            .then(({ ok, reason, value }) => {
-                twoFactorAuthDialogVisible.value = false;
-
-                if (reason === 'cancel') {
-                    resendEmail2fa();
-                    return;
-                }
-                if (!ok) return;
-
-                authRequest
-                    .verifyEmailOTP({
-                        code: value.trim()
-                    })
-                    .catch((err) => {
-                        console.error(err);
-                        promptEmailOTP();
-                    })
-                    .then(() => {
-                        getCurrentUser();
-                    });
-            })
-            .catch(() => {
-                twoFactorAuthDialogVisible.value = false;
             });
+            if (version !== totpChallengeVersion) return;
+            twoFactorAuthDialogVisible.value = false;
+            if (reason === 'cancel') return resendEmail2fa();
+            if (!ok) return;
+            const { json } = await authRequest.verifyEmailOTP({
+                code: value.trim()
+            });
+            if (version !== totpChallengeVersion) return;
+            if (json?.verified !== true) return promptEmailOTP();
+            return getCurrentUser();
+        } catch {
+            if (version === totpChallengeVersion) {
+                twoFactorAuthDialogVisible.value = false;
+                return promptEmailOTP();
+            }
+        }
     }
 
     /**
@@ -995,6 +1015,7 @@ export const useAuthStore = defineStore('Auth', () => {
      * @returns {Promise<{origin: boolean, json: any}>}
      */
     function authLogin(params) {
+        setTotpIdentity(params);
         let {
             username,
             password,
@@ -1023,12 +1044,12 @@ export const useAuthStore = defineStore('Auth', () => {
             headers: {
                 Authorization: `Basic ${auth}`
             }
-        }).then((json) => {
+        }).then(async (json) => {
             const args = {
                 json,
                 origin: true
             };
-            handleCurrentUserUpdate(json);
+            await handleCurrentUserUpdate(json);
             return args;
         });
     }
@@ -1037,17 +1058,29 @@ export const useAuthStore = defineStore('Auth', () => {
      *
      * @param json
      */
-    function handleCurrentUserUpdate(json) {
-        if (
-            json.requiresTwoFactorAuth &&
-            json.requiresTwoFactorAuth.includes('emailOtp')
-        ) {
-            promptEmailOTP();
-        } else if (json.requiresTwoFactorAuth) {
-            promptTOTP();
-        } else {
-            runLoginSuccessFlow(json);
+    async function handleCurrentUserUpdate(json) {
+        if (json.requiresTwoFactorAuth) {
+            if (twoFactorAuthDialogVisible.value) return;
+            const version = totpChallengeVersion;
+            twoFactorAuthDialogVisible.value = true;
+            const methods = Array.isArray(json.requiresTwoFactorAuth)
+                ? json.requiresTwoFactorAuth
+                : [];
+            const result = await modalStore.otpPrompt({
+                mode: 'choice',
+                title: t('totp.choose_method'),
+                description: t('totp.available_methods'),
+                methods,
+                cancelText: t('dialog.alertdialog.cancel')
+            });
+            if (version !== totpChallengeVersion) return;
+            twoFactorAuthDialogVisible.value = false;
+            if (!result.ok || !methods.includes(result.value)) return;
+            if (result.value === 'emailOtp') return promptEmailOTP();
+            if (result.value === 'totp') return promptTOTP();
+            return;
         }
+        runLoginSuccessFlow(json);
     }
 
     /**
@@ -1155,6 +1188,7 @@ export const useAuthStore = defineStore('Auth', () => {
         loginForm,
         enablePrimaryPasswordDialog,
         credentialsToSave,
+        currentTotpIdentity,
         twoFactorAuthDialogVisible,
         cachedConfig,
         cachedPermissions,

@@ -45,6 +45,10 @@ contextBridge.exposeInMainWorld('interopApi', {
 const validChannels = ['launch-command'];
 
 contextBridge.exposeInMainWorld('electron', {
+    protectLocalSecret: (value) =>
+        ipcRenderer.invoke('app:protectLocalSecret', value),
+    unprotectLocalSecret: (value) =>
+        ipcRenderer.invoke('app:unprotectLocalSecret', value),
     setVrWorkspaceCapture: (enabled) =>
         ipcRenderer.invoke('app:setVrWorkspaceCapture', enabled),
     sendVrWorkspaceInput: (input) =>

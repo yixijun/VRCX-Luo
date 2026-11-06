@@ -1,5 +1,6 @@
 <template>
     <div class="flex flex-col gap-10 py-2">
+        <TotpAccountSettings />
         <SettingsGroup :title="t('view.settings.general.general.header')">
             <div class="flex flex-col gap-0.5 px-1 py-1">
                 <div class="flex-1">
@@ -159,6 +160,7 @@
     import { openExternalLink } from '@/shared/utils';
     import SettingsGroup from '../SettingsGroup.vue';
     import SettingsItem from '../SettingsItem.vue';
+    import TotpAccountSettings from '../TotpAccountSettings.vue';
     const { t } = useI18n();
 
     const generalSettingsStore = useGeneralSettingsStore();

@@ -14,6 +14,8 @@ const handlerContracts = [
     ['app:updateVr', 'updateVr'],
     ['app:getArch', 'getArch'],
     ['app:setThemeSource', 'setThemeSource'],
+    ['app:protectLocalSecret', 'protectLocalSecret'],
+    ['app:unprotectLocalSecret', 'unprotectLocalSecret'],
     ['app:getClipboardText', 'getClipboardText'],
     ['app:getNoUpdater', 'getNoUpdater'],
     ['app:setTrayIconNotification', 'setTrayIconNotification'],

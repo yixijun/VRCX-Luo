@@ -80,6 +80,7 @@ export class AccountSession {
      * @param {{ user: object, loginParams: { username: string, password: string, endpoint?: string, websocket?: string }, cookies?: string }} savedEntry
      */
     async login(savedEntry) {
+        this._apiEndpoint = savedEntry.loginParams?.endpoint || AppDebug.endpointDomainVrchat;
         webApiService.createSecondaryClient(this.userId);
 
         // Apply saved cookies first (fast-path: skip full login)
@@ -102,7 +103,7 @@ export class AccountSession {
                 // We should clear the bad cookies from the secondary client
                 try {
                     webApiService.setSecondaryCookies(this.userId, '');
-                } catch {}
+                } catch { /* Invalid saved cookies are retried with credentials. */ }
             }
         } catch {
             currentUser = null;
@@ -223,7 +224,26 @@ export class AccountSession {
             savedEntry?.loginParams?.username ||
             this.userId;
 
-        if (methods.includes('emailOtp')) {
+        const identity = savedEntry?.loginParams?.username
+            ? {
+                  username: savedEntry.loginParams.username,
+                  endpoint:
+                      this._apiEndpoint ||
+                      savedEntry.loginParams.endpoint ||
+                      AppDebug.endpointDomainVrchat
+              }
+            : null;
+        if (this._destroyed) throw new Error('Account session closed');
+        const { ok, value: method } = await useModalStore().otpPrompt({
+            mode: 'choice',
+            methods,
+            title: accountName,
+            description: ''
+        });
+        if (this._destroyed) throw new Error('Account session closed');
+        if (!ok || !methods.includes(method))
+            throw new Error('Two-factor authentication cancelled');
+        if (method === 'emailOtp') {
             await this._promptAndVerifyTwoFactor({
                 mode: 'emailOtp',
                 title: `Email 2FA - ${accountName}`,
@@ -233,6 +253,7 @@ export class AccountSession {
         } else {
             await this._promptAndVerifyTwoFactor({
                 mode: 'totp',
+                totpIdentity: identity || undefined,
                 title: `Two-factor code - ${accountName}`,
                 description: `Enter the two-factor code for ${accountName}.`,
                 endpoint: 'auth/twofactorauth/totp/verify',
@@ -256,6 +277,7 @@ export class AccountSession {
             title: options.title,
             description: options.description,
             mode: options.mode,
+            totpIdentity: options.totpIdentity,
             cancelText: options.cancelText || 'Cancel',
             confirmText: 'Verify'
         });
@@ -267,16 +289,22 @@ export class AccountSession {
             });
         }
         if (!ok) {
-            throw new Error(`Secondary account ${this.userId}: two-factor authentication cancelled`);
+            throw new Error(
+                `Secondary account ${this.userId}: two-factor authentication cancelled`
+            );
         }
 
-        const code = options.mode === 'otp'
-            ? `${value.slice(0, 4)}-${value.slice(4)}`
-            : value.trim();
-        await this._requestRaw(options.endpoint, {
+        const code =
+            options.mode === 'otp'
+                ? `${value.slice(0, 4)}-${value.slice(4)}`
+                : value.trim();
+        if (this._destroyed) throw new Error('Account session closed');
+        const verification = await this._requestRaw(options.endpoint, {
             method: 'POST',
             params: { code }
         });
+        if (verification?.verified !== true)
+            throw new Error('Two-factor verification failed');
     }
 
     // ── DB helpers ────────────────────────────────────────────────────────────

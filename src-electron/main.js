@@ -10,7 +10,8 @@ const {
     dialog,
     Notification,
     nativeImage,
-    nativeTheme
+    nativeTheme,
+    safeStorage
 } = require('electron');
 const { spawn, spawnSync } = require('child_process');
 const fs = require('fs');
@@ -121,6 +122,7 @@ const InteropApi = require('./InteropApi');
 const { assertAllowedDotNetCall } = require('./dotnetCapabilityManifest.cjs');
 const { initializeDotnet } = require('./dotnetBootstrap.cjs');
 const { registerIpcHandlers } = require('./ipcHandlers.cjs');
+const { createLocalSecretHandlers } = require('./localSecrets.cjs');
 const { createTrustedRendererGuard } = require('./rendererSourcePolicy.cjs');
 const interopApi = new InteropApi();
 
@@ -256,6 +258,7 @@ registerIpcHandlers({
         allowDevServer: debug
     }),
     handlers: {
+        ...createLocalSecretHandlers({ safeStorage }),
         setThemeSource: (_event, source) => {
             if (!['system', 'dark', 'light'].includes(source)) {
                 throw new TypeError('Invalid theme source');

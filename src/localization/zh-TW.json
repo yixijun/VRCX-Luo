@@ -3816,5 +3816,24 @@
         "clocks_label": "時鐘",
         "clocks_none": "無",
         "timezone": "時區"
+    },
+    "totp": {
+        "manage": "TOTP 金鑰",
+        "secret": "TOTP 金鑰",
+        "placeholder": "Base32 金鑰或 otpauth://totp/…",
+        "local_storage": "金鑰在本機加密並依帳號儲存。備份中的金鑰無法在其他系統使用者下解密。",
+        "saved": "已儲存金鑰。留空可保留，輸入新金鑰可替換。",
+        "remove": "移除已儲存的金鑰",
+        "save": "儲存金鑰",
+        "invalid": "請輸入有效的 Base32 金鑰，或使用 SHA1、6 位數字、30 秒週期的 TOTP 連結。",
+        "storage_unavailable": "無法使用已加密的金鑰。請手動輸入驗證碼，或重新設定金鑰。",
+        "current_code": "目前一次性驗證碼",
+        "expires_in": "{seconds} 秒後更新",
+        "choose_method": "選擇驗證方式",
+        "available_methods": "請選擇電子郵件或 TOTP。僅支援伺服器允許的驗證方式。",
+        "email_method": "電子郵件驗證碼",
+        "totp_method": "TOTP 驗證器",
+        "fill_code": "填入驗證碼",
+        "missing_identity": "請使用使用者名稱或已儲存帳號登入後，設定該帳號的 TOTP 金鑰。"
     }
 }

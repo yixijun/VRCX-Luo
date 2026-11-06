@@ -15,7 +15,10 @@ declare global {
         $debug: AppDebug;
         __VRCX_WRIST_POINTER_DESKTOP_TEST__?: boolean;
         closeVrWorkspace?: () => void;
-        chooseVrUploadFiles?: (mode: string, options?: any) => Promise<string[]>;
+        chooseVrUploadFiles?: (
+            mode: string,
+            options?: any
+        ) => Promise<string[]>;
         AppApi: AppApi;
         AppApiVr: AppApiVr;
         WebApi: WebApi;
@@ -41,11 +44,17 @@ declare global {
             ) => Promise<any>;
         };
         electron: {
+            protectLocalSecret: (value: string) => Promise<string>;
+            unprotectLocalSecret: (value: string) => Promise<string>;
             setVrWorkspaceCapture: (enabled: boolean) => Promise<boolean>;
             sendVrWorkspaceInput: (input: any) => Promise<boolean>;
             getArch: () => Promise<string>;
-            setThemeSource: (source: 'system' | 'dark' | 'light') => Promise<void>;
-            onSystemThemeChanged: (callback: (event: any, isDark: boolean) => void) => () => void;
+            setThemeSource: (
+                source: 'system' | 'dark' | 'light'
+            ) => Promise<void>;
+            onSystemThemeChanged: (
+                callback: (event: any, isDark: boolean) => void
+            ) => () => void;
             onBrowserBlur: (callback: (event: any) => void) => () => void;
             getClipboardText: () => Promise<string>;
             getNoUpdater: () => Promise<boolean>;
@@ -196,6 +205,8 @@ declare global {
     const AppApi: {
         GetGameProcessStartTime(): Promise<number>;
         OpenSteamStorePage(appId: number): Promise<void>;
+        ProtectLocalSecret(value: string): Promise<string>;
+        UnprotectLocalSecret(value: string): Promise<string>;
         // Basic App Functions
         ShowDevTools(): Promise<void>;
         SetVR(

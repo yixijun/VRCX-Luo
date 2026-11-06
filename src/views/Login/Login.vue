@@ -163,6 +163,11 @@
                                     </ItemDescription>
                                 </ItemContent>
                                 <ItemActions @click.stop>
+                                    <TotpSettingsDialog
+                                        v-if="user.loginParams.username"
+                                        :username="user.loginParams.username"
+                                        :endpoint="user.loginParams.endpoint || AppDebug.endpointDomainVrchat"
+                                        :account-label="user.user.displayName" />
                                     <Button
                                         size="icon-sm"
                                         variant="ghost"
@@ -187,7 +192,8 @@
             </div>
         </div>
 
-        <div class="x-legal-notice-container flex max-w-3xl flex-col gap-1 pt-12 pb-8 text-center text-xs text-muted-foreground">
+        <div
+            class="x-legal-notice-container flex max-w-3xl flex-col gap-1 pt-12 pb-8 text-center text-xs text-muted-foreground">
             <p>
                 &copy; 2019-2026
                 <a
@@ -253,6 +259,8 @@
     import { accountHub } from '../../services/accountHub.js';
     import LoginSettingsDialog from './Dialog/LoginSettingsDialog.vue';
     import ResetPasswordDialog from './Dialog/ResetPasswordDialog.vue';
+    import TotpSettingsDialog from './Dialog/TotpSettingsDialog.vue';
+    import { AppDebug } from '../../services/appConfig';
     import QrLogin from './components/QrLogin.vue';
     const { userImage } = useUserDisplay();
     const { showVRCXUpdateDialog } = useVRCXUpdaterStore();
@@ -384,6 +392,7 @@
 
             // Login primary account the normal way
             await relogin(primaryEntry);
+            if (!watchState.isLoggedIn) return;
 
             // Login secondary accounts via accountHub
             for (const secId of secondaryIds) {

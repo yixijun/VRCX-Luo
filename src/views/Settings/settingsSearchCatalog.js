@@ -4,6 +4,13 @@
  */
 export const settingsSearchCatalog = Object.freeze([
     {
+        id: 'totp-key',
+        tab: 'system',
+        labelKey: 'totp.manage',
+        groupKey: 'totp.manage',
+        aliases: ['totp', 'authenticator', '2fa', '验证码', '密钥', '验证器']
+    },
+    {
         id: 'font-family',
         tab: 'interface',
         labelKey: 'view.settings.appearance.appearance.font_family',

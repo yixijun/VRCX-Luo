@@ -4403,5 +4403,24 @@
         "view_mode": "账号视图",
         "view_merged": "合并视图",
         "view_primary": "主账号"
+    },
+    "totp": {
+        "manage": "TOTP 密钥",
+        "secret": "TOTP 密钥",
+        "placeholder": "Base32 密钥或 otpauth://totp/…",
+        "local_storage": "密钥在本机加密并按账号保存。备份中的密钥无法在其他系统用户下解密。",
+        "saved": "已保存密钥。留空可保留，输入新密钥可替换。",
+        "remove": "移除已保存的密钥",
+        "save": "保存密钥",
+        "invalid": "请输入有效的 Base32 密钥，或使用 SHA1、6 位数字、30 秒周期的 TOTP 链接。",
+        "storage_unavailable": "无法使用已加密的密钥。请手动输入验证码，或重新配置密钥。",
+        "current_code": "当前一次性验证码",
+        "expires_in": "{seconds} 秒后刷新",
+        "choose_method": "选择验证方式",
+        "available_methods": "请选择邮箱或 TOTP。仅支持服务器允许的验证方式。",
+        "email_method": "邮箱验证码",
+        "totp_method": "TOTP 验证器",
+        "fill_code": "填充验证码",
+        "missing_identity": "请使用用户名或已保存账号登录后，配置该账号的 TOTP 密钥。"
     }
 }

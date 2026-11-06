@@ -1,3 +1,4 @@
+/* global module */
 /**
  * Registers the Electron main-process IPC handler contract.
  *
@@ -17,6 +18,8 @@ const IPC_HANDLER_CONTRACT = Object.freeze([
     Object.freeze(['app:updateVr', 'updateVr']),
     Object.freeze(['app:getArch', 'getArch']),
     Object.freeze(['app:setThemeSource', 'setThemeSource']),
+    Object.freeze(['app:protectLocalSecret', 'protectLocalSecret']),
+    Object.freeze(['app:unprotectLocalSecret', 'unprotectLocalSecret']),
     Object.freeze(['app:getClipboardText', 'getClipboardText']),
     Object.freeze(['app:getNoUpdater', 'getNoUpdater']),
     Object.freeze(['app:setTrayIconNotification', 'setTrayIconNotification']),

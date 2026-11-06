@@ -4339,5 +4339,24 @@
         "view_mode": "View Mode",
         "view_merged": "Merged View",
         "view_primary": "Primary Account"
+    },
+    "totp": {
+        "manage": "TOTP key",
+        "secret": "TOTP key",
+        "placeholder": "Base32 key or otpauth://totp/…",
+        "local_storage": "Keys are encrypted on this device and scoped to each account. Backups cannot be decrypted by a different system user.",
+        "saved": "Key saved. Leave blank to keep it, or enter a new key to replace it.",
+        "remove": "Remove saved key",
+        "save": "Save key",
+        "invalid": "Enter a valid Base32 key or a TOTP URI using SHA1, 6 digits and a 30-second period.",
+        "storage_unavailable": "Unable to use the protected key. Enter a verification code manually or configure the key again.",
+        "current_code": "Current one-time code",
+        "expires_in": "Refreshes in {seconds}s",
+        "choose_method": "Choose verification method",
+        "available_methods": "Choose email or TOTP. Only methods offered by the server are available.",
+        "email_method": "Email verification code",
+        "totp_method": "TOTP authenticator",
+        "fill_code": "Fill verification code",
+        "missing_identity": "Sign in with your username or a saved account to configure its TOTP key."
     }
 }

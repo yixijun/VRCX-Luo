@@ -50,9 +50,11 @@ import { useI18n } from 'vue-i18n';
 
 /**
  * @typedef {object} OtpPromptOptions
+ * @property {import('../services/totpSecrets').TotpIdentity=} totpIdentity
  * @property {string} title
  * @property {string} description
- * @property {'totp' | 'emailOtp' | 'otp'} mode
+ * @property {'totp' | 'emailOtp' | 'otp' | 'choice'} mode
+ * @property {string[]=} methods
  * @property {string=} confirmText
  * @property {string=} cancelText
  * @property {boolean=} dismissible
@@ -90,6 +92,8 @@ export const useModalStore = defineStore('Modal', () => {
     const otpCancelText = ref('');
     const otpDismissible = ref(true);
     const otpMode = ref('totp'); // 'totp' | 'emailOtp' | 'otp'
+    const otpTotpIdentity = ref(null);
+    const otpMethods = ref([]);
 
     /** @type {{ resolve: ((result: ConfirmResult) => void) | null } | null} */
     let pending = null;
@@ -314,6 +318,8 @@ export const useModalStore = defineStore('Modal', () => {
 
     function closeOtpDialog() {
         otpOpen.value = false;
+        otpTotpIdentity.value = null;
+        otpMethods.value = [];
     }
 
     /**
@@ -350,6 +356,9 @@ export const useModalStore = defineStore('Modal', () => {
         otpDescription.value = options.description;
         otpDismissible.value = options.dismissible !== false;
         otpMode.value = options.mode || 'totp';
+        otpMethods.value = options.methods || [];
+        otpTotpIdentity.value =
+            options.mode === 'totp' ? options.totpIdentity || null : null;
 
         otpOkText.value =
             options.confirmText || t('dialog.alertdialog.confirm');
@@ -420,6 +429,8 @@ export const useModalStore = defineStore('Modal', () => {
         otpCancelText,
         otpDismissible,
         otpMode,
+        otpTotpIdentity,
+        otpMethods,
 
         confirm,
         alert,

@@ -14,6 +14,7 @@
     </PackageReference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="..\Dotnet\AppApi\Cef\LocalSecrets.cs" Link="LocalSecrets.cs" />
     <Compile Include="..\Dotnet\Cef\CloseToTrayDecision.cs" Link="CloseToTrayDecision.cs" />
     <Compile Include="..\Dotnet\Cef\VrWorkspaceFileFilters.cs" Link="VrWorkspaceFileFilters.cs" />
     <Compile Include="..\Dotnet\Cef\CloseToTrayPrompt.cs" Link="CloseToTrayPrompt.cs" />

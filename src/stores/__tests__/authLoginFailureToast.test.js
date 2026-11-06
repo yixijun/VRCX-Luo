@@ -20,7 +20,9 @@ const mocks = vi.hoisted(() => ({
     },
     request: vi.fn(),
     authRequest: {
-        getConfig: vi.fn()
+        getConfig: vi.fn(),
+        verifyTOTP: vi.fn(),
+        verifyEmailOTP: vi.fn()
     },
     runLoginSuccessFlow: vi.fn(),
     runLogoutFlow: vi.fn(),
@@ -86,6 +88,16 @@ const mocks = vi.hoisted(() => ({
 vi.mock('vue-sonner', () => ({
     toast: mocks.toast
 }));
+vi.mock('../../services/totpSecrets', () => ({
+    removeTotpSecret: vi.fn()
+}));
+vi.mock('../manualRelations', () => ({
+    useManualRelationsStore: () => ({ clearCurrentUserRelations: vi.fn() })
+}));
+vi.mock('../trackedNonFriends', () => ({
+    useTrackedNonFriendsStore: () => ({ clearTrackedNonFriends: vi.fn() })
+}));
+vi.mock('../activity', () => ({ useActivityStore: () => ({}) }));
 
 vi.mock('noty', () => ({
     default: vi.fn().mockImplementation(function NotyMock() {
@@ -251,6 +263,9 @@ describe('useAuthStore login failure toast policy', () => {
         vi.useFakeTimers();
         vi.setSystemTime(new Date('2026-03-23T00:00:00.000Z'));
         vi.clearAllMocks();
+        mocks.authRequest.verifyTOTP.mockResolvedValue({
+            json: { verified: true }
+        });
 
         mocks.configRepository.getString.mockImplementation(
             (_key, defaultValue = '') => Promise.resolve(defaultValue)
@@ -268,7 +283,7 @@ describe('useAuthStore login failure toast policy', () => {
         mocks.runLoginSuccessFlow.mockReset();
         mocks.runLogoutFlow.mockReset();
         mocks.runHandleAutoLoginFlow.mockReset();
-        mocks.getCurrentUser.mockReset();
+        mocks.getCurrentUser.mockReset().mockResolvedValue({});
         mocks.initWebsocket.mockReset();
         mocks.notyShow.mockReset();
         mocks.toast.warning.mockReset();
@@ -464,5 +479,121 @@ describe('useAuthStore login failure toast policy', () => {
             'login-network-issue-toast'
         );
         expect(mocks.toast.warning).toHaveBeenCalledTimes(1);
+    });
+
+    describe('interactive TOTP login', () => {
+        async function startChallenge(store, methods = ['totp', 'emailOtp']) {
+            store.loginForm.username = 'alice';
+            store.loginForm.password = 'password';
+            await nextTick();
+            mocks.request.mockResolvedValueOnce({
+                requiresTwoFactorAuth: methods
+            });
+            const pending = store.login();
+            for (let i = 0; i < 10; i++) await flushPromises();
+            return { pending };
+        }
+        test('waits for a method choice and explicit code entry before verifying', async () => {
+            const store = await createAuthStore();
+            let choose, enter;
+            mocks.modalStore.otpPrompt
+                .mockImplementationOnce(
+                    () =>
+                        new Promise((r) => {
+                            choose = r;
+                        })
+                )
+                .mockImplementationOnce(
+                    () =>
+                        new Promise((r) => {
+                            enter = r;
+                        })
+                );
+            const { pending } = await startChallenge(store);
+            let finished = false;
+            pending.then(() => {
+                finished = true;
+            });
+            expect(mocks.modalStore.otpPrompt).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    mode: 'choice',
+                    methods: ['totp', 'emailOtp']
+                })
+            );
+            expect(mocks.authRequest.verifyTOTP).not.toHaveBeenCalled();
+            choose({ ok: true, value: 'totp' });
+            await flushPromises();
+            expect(finished).toBe(false);
+            expect(mocks.modalStore.otpPrompt).toHaveBeenLastCalledWith(
+                expect.objectContaining({
+                    mode: 'totp',
+                    totpIdentity: {
+                        username: 'alice',
+                        endpoint: mocks.appDebug.endpointDomainVrchat
+                    }
+                })
+            );
+            enter({ ok: true, value: '123456' });
+            await pending;
+            expect(mocks.authRequest.verifyTOTP).toHaveBeenCalledWith({
+                code: '123456'
+            });
+            expect(mocks.getCurrentUser).toHaveBeenCalledTimes(1);
+        });
+        test('uses email verification when chosen', async () => {
+            const store = await createAuthStore();
+            mocks.authRequest.verifyEmailOTP.mockResolvedValue({
+                json: { verified: true }
+            });
+            mocks.modalStore.otpPrompt
+                .mockResolvedValueOnce({ ok: true, value: 'emailOtp' })
+                .mockResolvedValueOnce({ ok: true, value: '654321' });
+            const { pending } = await startChallenge(store);
+            await pending;
+            expect(mocks.authRequest.verifyEmailOTP).toHaveBeenCalledWith({
+                code: '654321'
+            });
+            expect(mocks.authRequest.verifyTOTP).not.toHaveBeenCalled();
+        });
+        test('rejects a method not offered by the server', async () => {
+            const store = await createAuthStore();
+            mocks.modalStore.otpPrompt.mockResolvedValueOnce({
+                ok: true,
+                value: 'emailOtp'
+            });
+            const { pending } = await startChallenge(store, ['totp']);
+            await pending;
+            expect(mocks.modalStore.otpPrompt).toHaveBeenCalledTimes(1);
+            expect(mocks.authRequest.verifyTOTP).not.toHaveBeenCalled();
+            expect(mocks.authRequest.verifyEmailOTP).not.toHaveBeenCalled();
+        });
+        test('does not verify after cancelling the chooser', async () => {
+            const store = await createAuthStore();
+            mocks.modalStore.otpPrompt.mockResolvedValueOnce({
+                ok: false,
+                reason: 'dismiss',
+                value: ''
+            });
+            const { pending } = await startChallenge(store);
+            await pending;
+            expect(mocks.authRequest.verifyTOTP).not.toHaveBeenCalled();
+            expect(mocks.getCurrentUser).not.toHaveBeenCalled();
+        });
+        test('discards a method choice after logout', async () => {
+            const store = await createAuthStore();
+            let choose;
+            mocks.modalStore.otpPrompt.mockImplementationOnce(
+                () =>
+                    new Promise((r) => {
+                        choose = r;
+                    })
+            );
+            const { pending } = await startChallenge(store);
+            await store.handleLogoutEvent();
+            choose({ ok: true, value: 'totp' });
+            await pending;
+            expect(mocks.modalStore.otpPrompt).toHaveBeenCalledTimes(1);
+            expect(mocks.authRequest.verifyTOTP).not.toHaveBeenCalled();
+        });
     });
 });
