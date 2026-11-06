@@ -123,6 +123,9 @@ export function request(endpoint, options) {
     }
     let req;
     const init = buildRequestInit(endpoint, options);
+    // auth/user depends on mutable cookies and per-attempt Authorization.
+    // Sharing it by URL can give one account another account's 2FA challenge.
+    const canMergeGet = init.method === 'GET' && endpoint !== 'auth/user';
     if (init.method === 'GET') {
         // don't retry recent 404/403
         if (failedGetRequests.has(endpoint)) {
@@ -137,14 +140,15 @@ export function request(endpoint, options) {
             }
             failedGetRequests.delete(endpoint);
         }
-        // merge requests
-        req = pendingGetRequests.get(init.url);
-        if (typeof req !== 'undefined') {
-            if (req.time >= Date.now() - 10000) {
-                // 10s
-                return req.req;
+        if (canMergeGet) {
+            req = pendingGetRequests.get(init.url);
+            if (typeof req !== 'undefined') {
+                if (req.time >= Date.now() - 10000) {
+                    // 10s
+                    return req.req;
+                }
+                pendingGetRequests.delete(init.url);
             }
-            pendingGetRequests.delete(init.url);
         }
     }
     req = webApiService
@@ -293,7 +297,7 @@ export function request(endpoint, options) {
             }
             $throw(status, data, endpoint);
         });
-    if (init.method === 'GET') {
+    if (canMergeGet) {
         req.finally(() => {
             pendingGetRequests.delete(init.url);
         });

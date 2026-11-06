@@ -484,6 +484,104 @@ describe('useAuthStore login failure toast policy', () => {
         expect(mocks.toast.warning).toHaveBeenCalledTimes(1);
     });
 
+    describe('login challenge account isolation', () => {
+        test('does not start an old credential login when its config request finishes late', async () => {
+            const store = await createAuthStore();
+            let completeConfig;
+            mocks.authRequest.getConfig.mockImplementationOnce(
+                () =>
+                    new Promise((r) => {
+                        completeConfig = r;
+                    })
+            );
+            mocks.request.mockResolvedValue({
+                requiresTwoFactorAuth: ['totp']
+            });
+            mocks.modalStore.otpPrompt.mockResolvedValue({
+                ok: false,
+                reason: 'dismiss',
+                value: ''
+            });
+            const saved = (username) => ({
+                user: { id: `usr_${username}` },
+                loginParams: { username, password: 'test-only' }
+            });
+            const first = store.relogin(saved('alice'));
+            for (let i = 0; i < 10; i++) await flushPromises();
+            const second = store.relogin(saved('bob'));
+            await second;
+            completeConfig({ json: {} });
+            await first;
+            expect(mocks.request).toHaveBeenCalledTimes(1);
+            expect(mocks.modalStore.otpPrompt).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({ methods: ['totp'] })
+            );
+        });
+
+        test('ignores a late challenge after logout', async () => {
+            const store = await createAuthStore();
+            let complete;
+            mocks.request.mockImplementationOnce(
+                () =>
+                    new Promise((r) => {
+                        complete = r;
+                    })
+            );
+            const pending = store.relogin({
+                user: { id: 'usr_alice' },
+                loginParams: { username: 'alice', password: 'test-only' }
+            });
+            for (let i = 0; i < 10; i++) await flushPromises();
+            await store.handleLogoutEvent();
+            complete({ requiresTwoFactorAuth: ['emailOtp'] });
+            await pending;
+            expect(mocks.modalStore.otpPrompt).not.toHaveBeenCalled();
+            expect(store.loginForm.loading).toBe(false);
+        });
+
+        test('ignores an old account response after a newer login has started', async () => {
+            const store = await createAuthStore();
+            let oldResponse, newResponse;
+            mocks.request
+                .mockImplementationOnce(
+                    () =>
+                        new Promise((r) => {
+                            oldResponse = r;
+                        })
+                )
+                .mockImplementationOnce(
+                    () =>
+                        new Promise((r) => {
+                            newResponse = r;
+                        })
+                );
+            mocks.modalStore.otpPrompt.mockResolvedValue({
+                ok: false,
+                reason: 'dismiss',
+                value: ''
+            });
+            const saved = (username) => ({
+                user: { id: `usr_${username}` },
+                loginParams: { username, password: 'test-only' }
+            });
+            const first = store.relogin(saved('alice'));
+            for (let i = 0; i < 10; i++) await flushPromises();
+            const second = store.relogin(saved('bob'));
+            for (let i = 0; i < 10; i++) await flushPromises();
+            oldResponse({ requiresTwoFactorAuth: ['emailOtp'] });
+            for (let i = 0; i < 10; i++) await flushPromises();
+            expect(mocks.modalStore.otpPrompt).not.toHaveBeenCalled();
+            newResponse({ requiresTwoFactorAuth: ['totp', 'otp'] });
+            await Promise.all([first, second]);
+            expect(mocks.modalStore.otpPrompt).toHaveBeenCalledExactlyOnceWith(
+                expect.objectContaining({
+                    mode: 'choice',
+                    methods: ['totp', 'otp']
+                })
+            );
+        });
+    });
+
     describe('automatic login completion toast', () => {
         test('announces success after TOTP verification fetches the authenticated account', async () => {
             const store = await createAuthStore();

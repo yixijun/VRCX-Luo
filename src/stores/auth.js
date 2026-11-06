@@ -94,11 +94,16 @@ export const useAuthStore = defineStore('Auth', () => {
                   endpoint: params.endpoint || AppDebug.endpointDomainVrchat
               }
             : null;
+        return totpChallengeVersion;
     }
 
     watch(
         () => loginForm.value.username,
-        () => setTotpIdentity(null)
+        () => {
+            setTotpIdentity(null);
+            loginForm.value.loading = false;
+        },
+        { flush: 'sync' }
     );
 
     const cachedConfig = ref({});
@@ -126,7 +131,10 @@ export const useAuthStore = defineStore('Auth', () => {
 
     const twoFactorAccountLabel = computed(() => {
         return (
-            loginForm.value.username || loginForm.value.lastUserLoggedIn || ''
+            activeTotpIdentity.value?.username ||
+            loginForm.value.username ||
+            loginForm.value.lastUserLoggedIn ||
+            ''
         );
     });
 
@@ -247,6 +255,7 @@ export const useAuthStore = defineStore('Auth', () => {
      */
     async function handleLogoutEvent() {
         setTotpIdentity(null);
+        loginForm.value.loading = false;
         await runLogoutFlow();
     }
 
@@ -671,13 +680,16 @@ export const useAuthStore = defineStore('Auth', () => {
         user,
         { shouldTrackLoginNetworkIssueHint = !attemptingAutoLogin.value } = {}
     ) {
-        setTotpIdentity(user.loginParams);
+        const version = setTotpIdentity(user.loginParams);
         await webApiService.clearCookies();
+        if (version !== totpChallengeVersion) return;
         const { loginParams } = user;
         if (user.cookies) {
             await webApiService.setCookies(user.cookies);
+            if (version !== totpChallengeVersion) return;
             try {
                 const checkUser = await request('auth/user');
+                if (version !== totpChallengeVersion) return;
                 if (
                     checkUser &&
                     !checkUser.error &&
@@ -692,6 +704,7 @@ export const useAuthStore = defineStore('Auth', () => {
                 // Assume expired or network issue, authLogin will handle it
             }
         }
+        if (version !== totpChallengeVersion) return;
         loginForm.value.lastUserLoggedIn = user.user.id; // for resend email 2fa
         if (loginParams.endpoint) {
             AppDebug.endpointDomain = loginParams.endpoint;
@@ -702,6 +715,7 @@ export const useAuthStore = defineStore('Auth', () => {
         }
 
         loginForm.value.loading = true;
+        let completionVersion = version;
         try {
             let password = loginParams.password;
             if (shouldTrackLoginNetworkIssueHint) {
@@ -715,31 +729,41 @@ export const useAuthStore = defineStore('Auth', () => {
             if (advancedSettingsStore.enablePrimaryPassword && password) {
                 try {
                     password = await checkPrimaryPassword(loginParams);
+                    if (version !== totpChallengeVersion) return;
                 } catch (err) {
+                    if (version !== totpChallengeVersion) return;
                     toast.error(t('message.auth.incorrect_primary_password'));
                     throw err;
                 }
             }
 
             await authRequest.getConfig();
+            if (version !== totpChallengeVersion) return;
             try {
                 if (password) {
-                    await authLogin({
-                        username: loginParams.username,
-                        password,
-                        endpoint: loginParams.endpoint,
-                        websocket: loginParams.websocket
-                    });
+                    await authLogin(
+                        {
+                            username: loginParams.username,
+                            password,
+                            endpoint: loginParams.endpoint,
+                            websocket: loginParams.websocket
+                        },
+                        version
+                    );
                 } else {
                     // stops the 401 from starting a second auto login
                     attemptingAutoLogin.value = true;
                     try {
-                        await getCurrentUser();
+                        const json = await request('auth/user');
+                        if (version !== totpChallengeVersion) return;
+                        await handleCurrentUserUpdate(json);
                     } finally {
-                        attemptingAutoLogin.value = false;
+                        if (version === totpChallengeVersion)
+                            attemptingAutoLogin.value = false;
                     }
                 }
             } catch (err) {
+                if (version !== totpChallengeVersion) return;
                 if (
                     shouldTrackLoginNetworkIssueHint &&
                     shouldCountLoginFailureForNetworkHint(err)
@@ -749,10 +773,13 @@ export const useAuthStore = defineStore('Auth', () => {
                 if (err.message.includes('Check your email')) {
                     toast.error(t('message.auth.check_your_email'));
                 }
-                await handleLogoutEvent();
+                const logout = handleLogoutEvent();
+                completionVersion = totpChallengeVersion;
+                await logout;
                 throw err;
             }
         } catch (err) {
+            if (completionVersion !== totpChallengeVersion) return;
             const sessionExpired = !loginParams.password && err.status === 401;
             if (
                 sessionExpired ||
@@ -763,7 +790,8 @@ export const useAuthStore = defineStore('Auth', () => {
             }
             throw err;
         } finally {
-            loginForm.value.loading = false;
+            if (completionVersion === totpChallengeVersion)
+                loginForm.value.loading = false;
         }
     }
 
@@ -800,7 +828,8 @@ export const useAuthStore = defineStore('Auth', () => {
      */
     async function login() {
         // TODO: remove/refactor saveCredentials & primaryPassword (security)
-        await webApiService.clearCookies();
+        if (loginForm.value.loading) return;
+        const version = setTotpIdentity(loginForm.value);
         if (!loginForm.value.loading) {
             loginForm.value.loading = true;
             resetLoginNetworkIssueHintStateIfCredentialsChanged({
@@ -817,7 +846,10 @@ export const useAuthStore = defineStore('Auth', () => {
                 AppDebug.websocketDomain = AppDebug.websocketDomainVrchat;
             }
             try {
+                await webApiService.clearCookies();
+                if (version !== totpChallengeVersion) return;
                 await authRequest.getConfig();
+                if (version !== totpChallengeVersion) return;
                 if (
                     loginForm.value.saveCredentials &&
                     advancedSettingsStore.enablePrimaryPassword
@@ -831,6 +863,7 @@ export const useAuthStore = defineStore('Auth', () => {
                             inputType: 'password',
                             pattern: /[\s\S]{1,32}/
                         });
+                        if (version !== totpChallengeVersion) return;
                         if (ok) {
                             const savedCredentials = JSON.parse(
                                 await configRepository.getString(
@@ -852,16 +885,20 @@ export const useAuthStore = defineStore('Auth', () => {
                                 loginForm.value.password,
                                 value
                             );
+                            if (version !== totpChallengeVersion) return;
                             try {
-                                await authLogin({
-                                    username: loginForm.value.username,
-                                    password: loginForm.value.password,
-                                    endpoint: loginForm.value.endpoint,
-                                    websocket: loginForm.value.websocket,
-                                    saveCredentials:
-                                        loginForm.value.saveCredentials,
-                                    cipher: pwd
-                                });
+                                await authLogin(
+                                    {
+                                        username: loginForm.value.username,
+                                        password: loginForm.value.password,
+                                        endpoint: loginForm.value.endpoint,
+                                        websocket: loginForm.value.websocket,
+                                        saveCredentials:
+                                            loginForm.value.saveCredentials,
+                                        cipher: pwd
+                                    },
+                                    version
+                                );
                             } catch (err) {
                                 if (
                                     shouldCountLoginFailureForNetworkHint(err)
@@ -876,13 +913,16 @@ export const useAuthStore = defineStore('Auth', () => {
                     }
                 } else {
                     try {
-                        await authLogin({
-                            username: loginForm.value.username,
-                            password: loginForm.value.password,
-                            endpoint: loginForm.value.endpoint,
-                            websocket: loginForm.value.websocket,
-                            saveCredentials: loginForm.value.saveCredentials
-                        });
+                        await authLogin(
+                            {
+                                username: loginForm.value.username,
+                                password: loginForm.value.password,
+                                endpoint: loginForm.value.endpoint,
+                                websocket: loginForm.value.websocket,
+                                saveCredentials: loginForm.value.saveCredentials
+                            },
+                            version
+                        );
                     } catch (err) {
                         if (shouldCountLoginFailureForNetworkHint(err)) {
                             maybeShowLoginNetworkIssueHint();
@@ -894,7 +934,8 @@ export const useAuthStore = defineStore('Auth', () => {
                     }
                 }
             } finally {
-                loginForm.value.loading = false;
+                if (version === totpChallengeVersion)
+                    loginForm.value.loading = false;
             }
         }
     }
@@ -1016,10 +1057,10 @@ export const useAuthStore = defineStore('Auth', () => {
 
     /**
      * @param {{ username: string, password: string, endpoint: string, websocket: string, saveCredentials?: any, cipher?: string }} params credential to login
+     * @param {number} [version] Owning login attempt.
      * @returns {Promise<{origin: boolean, json: any}>}
      */
-    function authLogin(params) {
-        setTotpIdentity(params);
+    function authLogin(params, version = setTotpIdentity(params)) {
         let {
             username,
             password,
@@ -1053,6 +1094,7 @@ export const useAuthStore = defineStore('Auth', () => {
                 json,
                 origin: true
             };
+            if (version !== totpChallengeVersion) return args;
             await handleCurrentUserUpdate(json);
             return args;
         });
@@ -1070,6 +1112,16 @@ export const useAuthStore = defineStore('Auth', () => {
             const methods = Array.isArray(json.requiresTwoFactorAuth)
                 ? json.requiresTwoFactorAuth
                 : [];
+            console.info(
+                '[auth] verification challenge ' +
+                    JSON.stringify({
+                        attempt: version,
+                        accountId: loginForm.value.lastUserLoggedIn || 'manual',
+                        methods: methods.filter((method) =>
+                            ['totp', 'emailOtp', 'otp'].includes(method)
+                        )
+                    })
+            );
             const result = await modalStore.otpPrompt({
                 mode: 'choice',
                 title: t('totp.choose_method'),
