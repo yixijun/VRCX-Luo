@@ -185,7 +185,7 @@
                     </InputOTP>
                 </div>
 
-                <div v-if="otpMode === 'totp'" class="mt-3 space-y-3">
+                <div v-if="otpMode === 'totp' && (saved || fillError)" class="mt-3 flex flex-col items-center gap-2">
                     <Button
                         v-if="saved"
                         type="button"
