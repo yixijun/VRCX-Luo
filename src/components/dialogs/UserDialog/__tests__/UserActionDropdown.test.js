@@ -42,11 +42,6 @@ vi.mock('../../../ui/dropdown-menu', () => ({
     DropdownMenuContent: { template: '<div><slot /></div>' },
     DropdownMenuSeparator: { template: '<hr />' },
     DropdownMenuShortcut: { template: '<span><slot /></span>' },
-    DropdownMenuSub: { template: '<div><slot /></div>' },
-    DropdownMenuSubTrigger: {
-        template: '<button data-testid="moderation-trigger"><slot /></button>'
-    },
-    DropdownMenuSubContent: { template: '<div><slot /></div>' },
     DropdownMenuItem: {
         emits: ['click'],
         template:
@@ -93,14 +88,35 @@ vi.mock('lucide-vue-next', () => ({
 import UserActionDropdown from '../UserActionDropdown.vue';
 
 describe('UserActionDropdown.vue', () => {
-    it('renders player management with the registered submenu trigger', () => {
+    it('offers each moderation action once without a player management submenu', async () => {
+        const userDialogCommand = vi.fn();
         const wrapper = mount(UserActionDropdown, {
-            props: { userDialogCommand: vi.fn() }
+            props: { userDialogCommand },
+            global: {
+                stubs: { TooltipWrapper: { template: '<div><slot /></div>' } }
+            }
         });
-        expect(wrapper.get('[data-testid="moderation-trigger"]').text()).toContain(
-            'nav_tooltip.moderation'
-        );
-        expect(wrapper.find('dropdownmenusubtrigger').exists()).toBe(false);
+        expect(wrapper.text()).not.toContain('nav_tooltip.moderation');
+        const actions = [
+            ['moderation_block', 'Moderation Block'],
+            ['moderation_mute', 'Moderation Mute'],
+            ['moderation_disable_chatbox', 'Moderation Disable Chatbox'],
+            ['moderation_show_avatar', 'Show Avatar'],
+            ['moderation_hide_avatar', 'Hide Avatar'],
+            [
+                'moderation_disable_avatar_interaction',
+                'Moderation Disable Avatar Interaction'
+            ],
+            ['report_user', 'Report User']
+        ];
+        for (const [key, command] of actions) {
+            const items = wrapper
+                .findAll('[data-testid="dd-item"]')
+                .filter((item) => item.text() === `dialog.user.actions.${key}`);
+            expect(items).toHaveLength(1);
+            await items[0].trigger('click');
+            expect(userDialogCommand).toHaveBeenLastCalledWith(command);
+        }
         wrapper.unmount();
     });
     it('forwards command callback from dropdown item', async () => {

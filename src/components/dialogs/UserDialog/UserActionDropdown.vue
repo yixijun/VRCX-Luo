@@ -138,79 +138,6 @@
                         <Pencil class="size-4" />
                         {{ t('dialog.user.actions.edit_note_memo') }}
                     </DropdownMenuItem>
-                    <DropdownMenuSub>
-                        <DropdownMenuSubTrigger class="gap-1.5">
-                            <XCircle class="size-4 shrink-0" />
-                            <span class="flex-1">{{ t('nav_tooltip.moderation') }}</span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent side="right" align="start" class="w-56">
-                            <DropdownMenuItem :disabled="userDialog.ref.$isModerator" @click="onCommand('Report User')">
-                                <Flag class="size-4" />
-                                {{ t('dialog.user.actions.report_user') }}
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                v-if="userDialog.isBlock"
-                                variant="destructive"
-                                @click="onCommand('Moderation Unblock')">
-                                <CheckCircle class="size-4" />
-                                {{ t('dialog.user.actions.moderation_unblock') }}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                v-else
-                                :disabled="userDialog.ref.$isModerator"
-                                @click="onCommand('Moderation Block')">
-                                <XCircle class="size-4" />
-                                {{ t('dialog.user.actions.moderation_block') }}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                v-if="userDialog.isMute"
-                                variant="destructive"
-                                @click="onCommand('Moderation Unmute')">
-                                <Mic class="size-4" />
-                                {{ t('dialog.user.actions.moderation_unmute') }}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                v-else
-                                :disabled="userDialog.ref.$isModerator"
-                                @click="onCommand('Moderation Mute')">
-                                <VolumeX class="size-4" />
-                                {{ t('dialog.user.actions.moderation_mute') }}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                v-if="userDialog.isMuteChat"
-                                variant="destructive"
-                                @click="onCommand('Moderation Enable Chatbox')">
-                                <MessageCircle class="size-4" />
-                                {{ t('dialog.user.actions.moderation_enable_chatbox') }}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem v-else @click="onCommand('Moderation Disable Chatbox')">
-                                <MessageCircle class="size-4" />
-                                {{ t('dialog.user.actions.moderation_disable_chatbox') }}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem @click="onCommand('Show Avatar')">
-                                <User class="size-4" />
-                                <Check v-if="userDialog.isShowAvatar" class="size-4" />
-                                <span>{{ t('dialog.user.actions.moderation_show_avatar') }}</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem @click="onCommand('Hide Avatar')">
-                                <User class="size-4" />
-                                <Check v-if="userDialog.isHideAvatar" class="size-4" />
-                                <span>{{ t('dialog.user.actions.moderation_hide_avatar') }}</span>
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                v-if="userDialog.isInteractOff"
-                                variant="destructive"
-                                @click="onCommand('Moderation Enable Avatar Interaction')">
-                                <Hand class="size-4" />
-                                {{ t('dialog.user.actions.moderation_enable_avatar_interaction') }}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem v-else @click="onCommand('Moderation Disable Avatar Interaction')">
-                                <XCircle class="size-4" />
-                                {{ t('dialog.user.actions.moderation_disable_avatar_interaction') }}
-                            </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                    </DropdownMenuSub>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem @click="onCommand('Invite To Group')">
                         <MessageSquare class="size-4" />
@@ -302,6 +229,10 @@
                         <XCircle class="size-4" />
                         {{ t('dialog.user.actions.moderation_disable_avatar_interaction') }}
                     </DropdownMenuItem>
+                    <DropdownMenuItem :disabled="userDialog.ref.$isModerator" @click="onCommand('Report User')">
+                        <Flag class="size-4" />
+                        {{ t('dialog.user.actions.report_user') }}
+                    </DropdownMenuItem>
                     <DropdownMenuItem :disabled="userDialog.ref.$isModerator" @click="onCommand('Report Hacking')">
                         <Flag class="size-4" />
                         {{ t('dialog.user.actions.report_hacking') }}
@@ -365,9 +296,6 @@
         DropdownMenuItem,
         DropdownMenuSeparator,
         DropdownMenuShortcut,
-        DropdownMenuSub,
-        DropdownMenuSubContent,
-        DropdownMenuSubTrigger,
         DropdownMenuTrigger
     } from '../../ui/dropdown-menu';
     import { useGameStore, useLocationStore, useUserStore } from '../../../stores';
