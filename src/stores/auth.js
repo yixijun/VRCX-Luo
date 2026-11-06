@@ -1131,7 +1131,11 @@ export const useAuthStore = defineStore('Auth', () => {
             });
             if (version !== totpChallengeVersion) return;
             twoFactorAuthDialogVisible.value = false;
-            if (!result.ok || !methods.includes(result.value)) return;
+            if (
+                !result.ok ||
+                (result.value !== 'totp' && !methods.includes(result.value))
+            )
+                return;
             if (result.value === 'emailOtp') return promptEmailOTP();
             if (result.value === 'totp') return promptTOTP();
             return;

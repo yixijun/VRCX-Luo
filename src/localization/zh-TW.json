@@ -3830,10 +3830,11 @@
         "current_code": "目前一次性驗證碼",
         "expires_in": "{seconds} 秒後更新",
         "choose_method": "選擇驗證方式",
-        "available_methods": "請選擇電子郵件或 TOTP。僅支援伺服器允許的驗證方式。",
+        "available_methods": "請選擇目前帳號使用的驗證方式。",
         "email_method": "電子郵件驗證碼",
         "totp_method": "TOTP 驗證器",
         "fill_code": "填入驗證碼",
-        "missing_identity": "請使用使用者名稱或已儲存帳號登入後，設定該帳號的 TOTP 金鑰。"
+        "missing_identity": "請使用使用者名稱或已儲存帳號登入後，設定該帳號的 TOTP 金鑰。",
+        "manual_totp_hint": "本次登入要求電子郵件驗證。如果你已在 VRChat 官網啟用 TOTP，也可以嘗試驗證器。"
     }
 }

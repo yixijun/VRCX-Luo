@@ -4353,10 +4353,11 @@
         "current_code": "Current one-time code",
         "expires_in": "Refreshes in {seconds}s",
         "choose_method": "Choose verification method",
-        "available_methods": "Choose email or TOTP. Only methods offered by the server are available.",
+        "available_methods": "Choose the verification method used by this account.",
         "email_method": "Email verification code",
         "totp_method": "TOTP authenticator",
         "fill_code": "Fill verification code",
-        "missing_identity": "Sign in with your username or a saved account to configure its TOTP key."
+        "missing_identity": "Sign in with your username or a saved account to configure its TOTP key.",
+        "manual_totp_hint": "Email verification was requested. If you enabled TOTP on the VRChat website, you can try the authenticator instead."
     }
 }

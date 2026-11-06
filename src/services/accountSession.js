@@ -241,7 +241,7 @@ export class AccountSession {
             description: ''
         });
         if (this._destroyed) throw new Error('Account session closed');
-        if (!ok || !methods.includes(method))
+        if (!ok || (method !== 'totp' && !methods.includes(method)))
             throw new Error('Two-factor authentication cancelled');
         if (method === 'emailOtp') {
             await this._promptAndVerifyTwoFactor({

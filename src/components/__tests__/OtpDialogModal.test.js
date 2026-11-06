@@ -313,6 +313,23 @@ describe('OtpDialogModal.vue', () => {
     });
 
     describe('saved key fill and method selection', () => {
+        test('allows manually choosing TOTP when the server only advertises email', async () => {
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'choice',
+                otpMethods: ['emailOtp']
+            });
+            store = useModalStore();
+            const spy = vi.spyOn(store, 'handleOtpOk');
+            const button = wrapper
+                .findAll('button')
+                .find((b) => b.text() === en.totp.totp_method);
+            expect(button.attributes('disabled')).toBeUndefined();
+            await button.trigger('click');
+            expect(spy).toHaveBeenCalledWith('totp');
+            expect(wrapper.text()).toContain(en.totp.manual_totp_hint);
+            wrapper.unmount();
+        });
         const identity = {
             username: 'alice',
             endpoint: 'https://api.vrchat.cloud/api/1'

@@ -148,10 +148,13 @@
                         </Button>
                         <Button
                             type="button"
-                            :disabled="!otpMethods.includes('totp')"
+                            :variant="otpMethods.includes('totp') ? 'default' : 'outline'"
                             @click="modalStore.handleOtpOk('totp')">
                             {{ t('totp.totp_method') }}
                         </Button>
+                        <p v-if="!otpMethods.includes('totp')" class="text-xs text-muted-foreground">
+                            {{ t('totp.manual_totp_hint') }}
+                        </p>
                     </div>
                     <!-- TOTP / EmailOTP: 6 numeric digits -->
                     <InputOTP
