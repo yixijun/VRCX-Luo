@@ -18,24 +18,43 @@
             :placeholder="t('totp.placeholder')"
             :disabled="busy" />
         <p v-if="error" role="alert" class="text-sm text-destructive">{{ error }}</p>
-        <div class="flex justify-end gap-2">
-            <Button v-if="saved && identity" type="button" variant="outline" :disabled="busy" @click="remove">
-                {{ t('totp.remove') }}
-            </Button>
-            <Button type="button" :disabled="busy || !identity || !secret.trim()" @click="submit">
-                {{ t('totp.save') }}
-            </Button>
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center gap-2">
+                <Switch
+                    :id="toggleId"
+                    :model-value="allowLoginFill"
+                    :disabled="busy || !permissionReady || !identity"
+                    @update:model-value="setLoginFill" />
+                <label :for="toggleId" class="text-sm cursor-pointer">{{ t('totp.allow_login_fill') }}</label>
+            </div>
+            <div class="ml-auto flex justify-end gap-2">
+                <Button v-if="saved && identity" type="button" variant="outline" :disabled="busy" @click="remove">
+                    {{ t('totp.remove') }}
+                </Button>
+                <Button type="button" :disabled="busy || !identity || !secret.trim()" @click="submit">
+                    {{ t('totp.save') }}
+                </Button>
+            </div>
         </div>
+        <p class="text-xs text-muted-foreground">{{ t('totp.allow_login_fill_hint') }}</p>
     </div>
 </template>
 
 <script setup>
-    import { onBeforeUnmount, ref, watch } from 'vue';
+    import { onBeforeUnmount, ref, useId, watch } from 'vue';
     import { useI18n } from 'vue-i18n';
     import { Button } from '@/components/ui/button';
+    import { Switch } from '@/components/ui/switch';
     import { InputGroupField } from '@/components/ui/input-group';
     import { generateTotp, parseTotpSecret } from '../services/totp';
-    import { hasTotpSecret, getTotpSecret, saveTotpSecret, removeTotpSecret } from '../services/totpSecrets';
+    import {
+        hasTotpSecret,
+        getTotpSecret,
+        saveTotpSecret,
+        removeTotpSecret,
+        getTotpLoginFillAllowed,
+        setTotpLoginFillAllowed
+    } from '../services/totpSecrets';
 
     const props = defineProps({ identity: { type: Object, default: null } });
     const emit = defineEmits(['done']);
@@ -46,6 +65,9 @@
     const remaining = ref(30);
     const busy = ref(false);
     const error = ref('');
+    const allowLoginFill = ref(false);
+    const permissionReady = ref(false);
+    const toggleId = useId();
     let revision = 0;
     let timer;
     let currentSecret = null;
@@ -104,8 +126,14 @@
             clearCode();
             secret.value = '';
             saved.value = false;
+            allowLoginFill.value = false;
+            permissionReady.value = false;
             error.value = '';
             try {
+                const allowed = props.identity && (await getTotpLoginFillAllowed(props.identity));
+                if (current !== revision) return;
+                allowLoginFill.value = Boolean(allowed);
+                permissionReady.value = Boolean(props.identity);
                 await loadCode(current);
             } catch {
                 if (current === revision) error.value = t('totp.storage_unavailable');
@@ -119,6 +147,25 @@
         clearCode();
         secret.value = '';
     });
+
+    async function setLoginFill(allowed) {
+        if (busy.value || !permissionReady.value || !props.identity) return;
+        busy.value = true;
+        error.value = '';
+        const current = revision;
+        const previous = allowLoginFill.value;
+        allowLoginFill.value = allowed;
+        try {
+            await setTotpLoginFillAllowed(props.identity, allowed);
+        } catch {
+            if (current === revision) {
+                allowLoginFill.value = previous;
+                error.value = t('totp.preference_failed');
+            }
+        } finally {
+            busy.value = false;
+        }
+    }
 
     async function submit() {
         if (busy.value || !props.identity || !secret.value.trim()) return;
@@ -154,6 +201,7 @@
             await removeTotpSecret(props.identity);
             if (current !== revision) return;
             saved.value = false;
+            allowLoginFill.value = false;
             secret.value = '';
             error.value = '';
             emit('done');

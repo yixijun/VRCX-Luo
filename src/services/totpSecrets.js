@@ -38,6 +38,29 @@ export async function hasTotpSecret(identity) {
     );
 }
 
+async function loginFillSettingKey(identity) {
+    return `${await storageKey(scopeFor(identity))}_allow_login_fill`;
+}
+
+export async function getTotpLoginFillAllowed(identity) {
+    return (
+        (await configRepository.getString(
+            await loginFillSettingKey(identity),
+            'false'
+        )) === 'true'
+    );
+}
+
+export async function setTotpLoginFillAllowed(identity, allowed) {
+    if (typeof allowed !== 'boolean')
+        throw new Error('Invalid TOTP fill preference');
+    const key = await loginFillSettingKey(identity);
+    const value = String(allowed);
+    await configRepository.setString(key, value);
+    if ((await configRepository.getString(key, 'false')) !== value)
+        throw new Error('Failed to save TOTP fill preference');
+}
+
 export async function saveTotpSecret(identity, input) {
     const scope = scopeFor(identity);
     const secret = parseTotpSecret(input);
@@ -52,6 +75,10 @@ export async function saveTotpSecret(identity, input) {
 }
 
 export async function removeTotpSecret(identity) {
+    const permissionKey = await loginFillSettingKey(identity);
+    await configRepository.remove(permissionKey);
+    if ((await configRepository.getString(permissionKey, 'false')) === 'true')
+        throw new Error('Failed to clear TOTP fill preference');
     const key = await storageKey(scopeFor(identity));
     await configRepository.remove(key);
     if (await configRepository.getString(key, ''))

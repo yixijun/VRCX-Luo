@@ -4,6 +4,8 @@ const mocks = vi.hoisted(() => ({
     get: vi.fn(),
     save: vi.fn(),
     remove: vi.fn(),
+    getPermission: vi.fn(),
+    setPermission: vi.fn(),
     generate: vi.fn()
 }));
 vi.mock('vue-i18n', () => ({ useI18n: () => ({ t: (key) => key }) }));
@@ -11,7 +13,9 @@ vi.mock('../../services/totpSecrets', () => ({
     hasTotpSecret: async () => true,
     getTotpSecret: mocks.get,
     saveTotpSecret: mocks.save,
-    removeTotpSecret: mocks.remove
+    removeTotpSecret: mocks.remove,
+    getTotpLoginFillAllowed: mocks.getPermission,
+    setTotpLoginFillAllowed: mocks.setPermission
 }));
 vi.mock('../../services/totp', async (original) => ({
     ...(await original()),
@@ -19,6 +23,13 @@ vi.mock('../../services/totp', async (original) => ({
 }));
 vi.mock('@/components/ui/button', () => ({
     Button: { template: '<button><slot /></button>' }
+}));
+vi.mock('@/components/ui/switch', () => ({
+    Switch: {
+        props: ['modelValue', 'disabled', 'id'],
+        emits: ['update:modelValue'],
+        template: `<input type="checkbox" role="switch" :id="id" :checked="modelValue" :disabled="disabled" @change="$emit('update:modelValue', $event.target.checked)" />`
+    }
 }));
 vi.mock('@/components/ui/input-group', () => ({
     InputGroupField: {
@@ -37,10 +48,33 @@ describe('TOTP settings editor', () => {
     beforeEach(() => {
         vi.resetAllMocks();
         mocks.get.mockResolvedValue(null);
+        mocks.getPermission.mockResolvedValue(false);
         mocks.generate.mockResolvedValue('123456');
     });
     afterEach(() => {
         vi.useRealTimers();
+    });
+    test('defaults login fill to off and persists explicit opt-in for this identity', async () => {
+        const wrapper = mount(TotpSecretEditor, { props: { identity } });
+        await flushPromises();
+        expect(wrapper.get('[role=switch]').element.checked).toBe(false);
+        await wrapper.get('[role=switch]').setValue(true);
+        await flushPromises();
+        expect(mocks.setPermission).toHaveBeenCalledWith(identity, true);
+        expect(wrapper.get('[role=switch]').element.checked).toBe(true);
+        wrapper.unmount();
+    });
+    test('keeps login fill off if the opt-in cannot be saved', async () => {
+        mocks.setPermission.mockRejectedValue(new Error('storage unavailable'));
+        const wrapper = mount(TotpSecretEditor, { props: { identity } });
+        await flushPromises();
+        await wrapper.get('[role=switch]').setValue(true);
+        await flushPromises();
+        expect(wrapper.get('[role=switch]').element.checked).toBe(false);
+        expect(wrapper.get('[role=alert]').text()).toBe(
+            'totp.preference_failed'
+        );
+        wrapper.unmount();
     });
     test('saves a key and displays its current code without closing the editor', async () => {
         const wrapper = mount(TotpSecretEditor, { props: { identity } });

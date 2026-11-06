@@ -4421,6 +4421,9 @@
         "email_method": "邮箱验证码",
         "totp_method": "TOTP 验证器",
         "fill_code": "填充验证码",
-        "missing_identity": "请使用用户名或已保存账号登录后，配置该账号的 TOTP 密钥。"
+        "missing_identity": "请使用用户名或已保存账号登录后，配置该账号的 TOTP 密钥。",
+        "allow_login_fill": "允许未登录时填充 TOTP 验证码",
+        "allow_login_fill_hint": "默认关闭。开启后，登录验证弹窗可使用该账号已保存的密钥填充验证码，仍需点击“验证”提交。",
+        "preference_failed": "无法保存此设置，请重试。"
     }
 }

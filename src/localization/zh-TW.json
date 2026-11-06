@@ -3834,6 +3834,9 @@
         "email_method": "電子郵件驗證碼",
         "totp_method": "TOTP 驗證器",
         "fill_code": "填入驗證碼",
-        "missing_identity": "請使用使用者名稱或已儲存帳號登入後，設定該帳號的 TOTP 金鑰。"
+        "missing_identity": "請使用使用者名稱或已儲存帳號登入後，設定該帳號的 TOTP 金鑰。",
+        "allow_login_fill": "允許未登入時填入 TOTP 驗證碼",
+        "allow_login_fill_hint": "預設關閉。啟用後，登入驗證視窗可使用此帳號已儲存的金鑰填入驗證碼，仍須點擊「驗證」提交。",
+        "preference_failed": "無法儲存此設定，請重試。"
     }
 }

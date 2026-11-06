@@ -24,7 +24,9 @@ import {
     getTotpSecret,
     hasTotpSecret,
     removeTotpSecret,
-    saveTotpSecret
+    saveTotpSecret,
+    getTotpLoginFillAllowed,
+    setTotpLoginFillAllowed
 } from '../totpSecrets';
 const key = 'GEZDGNBVGY3TQOJQGEZDGNBVGY3TQOJQ';
 const account = {
@@ -83,6 +85,30 @@ describe('account TOTP keys', () => {
         mocks.protect.mockRejectedValue(new Error('locked'));
         await expect(saveTotpSecret(account, key)).rejects.toThrow();
         expect(mocks.storage.size).toBe(0);
+    });
+    test('login fill is opt-in and scoped to one account and endpoint', async () => {
+        await saveTotpSecret(account, key);
+        expect(await getTotpLoginFillAllowed(account)).toBe(false);
+        await setTotpLoginFillAllowed(account, true);
+        expect(await getTotpLoginFillAllowed(account)).toBe(true);
+        expect(
+            await getTotpLoginFillAllowed({ ...account, username: 'Bob' })
+        ).toBe(false);
+        expect(
+            await getTotpLoginFillAllowed({
+                ...account,
+                endpoint: 'https://example.com/api/1'
+            })
+        ).toBe(false);
+        await setTotpLoginFillAllowed(account, false);
+        expect(await getTotpLoginFillAllowed(account)).toBe(false);
+    });
+    test('removing a key revokes login fill for a future replacement key', async () => {
+        await saveTotpSecret(account, key);
+        await setTotpLoginFillAllowed(account, true);
+        await removeTotpSecret(account);
+        await saveTotpSecret(account, key);
+        expect(await getTotpLoginFillAllowed(account)).toBe(false);
     });
     test('does not return plaintext when decryption fails', async () => {
         await saveTotpSecret(account, key);

@@ -8,11 +8,13 @@ import en from '../../localization/en.json';
 const vault = vi.hoisted(() => ({
     has: vi.fn(),
     get: vi.fn(),
-    generate: vi.fn()
+    generate: vi.fn(),
+    permission: vi.fn()
 }));
 vi.mock('../../services/totpSecrets', () => ({
     hasTotpSecret: vault.has,
-    getTotpSecret: vault.get
+    getTotpSecret: vault.get,
+    getTotpLoginFillAllowed: vault.permission
 }));
 vi.mock('../../services/totp', () => ({ generateTotp: vault.generate }));
 
@@ -78,6 +80,7 @@ vi.mock('../../services/watchState', () => ({
 
 import OtpDialogModal from '../ui/dialog/OtpDialogModal.vue';
 import { useModalStore } from '../../stores/modal';
+import { watchState } from '../../services/watchState';
 
 const i18n = createI18n({
     locale: 'en',
@@ -140,6 +143,8 @@ describe('OtpDialogModal.vue', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         vault.has.mockResolvedValue(false);
+        vault.permission.mockResolvedValue(false);
+        watchState.isLoggedIn = false;
         vault.get.mockResolvedValue('test-key');
         vault.generate.mockResolvedValue('654321');
     });
@@ -317,8 +322,113 @@ describe('OtpDialogModal.vue', () => {
             username: 'alice',
             endpoint: 'https://api.vrchat.cloud/api/1'
         };
+        test('hides fill while logged out by default even if a key exists', async () => {
+            vault.has.mockResolvedValue(true);
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'totp',
+                otpTotpIdentity: identity
+            });
+            await flushPromises();
+            expect(wrapper.text()).not.toContain(en.totp.fill_code);
+            expect(vault.get).not.toHaveBeenCalled();
+            expect(vault.generate).not.toHaveBeenCalled();
+            wrapper.unmount();
+        });
+        test('does not decrypt when permission is revoked before clicking Fill', async () => {
+            vault.has.mockResolvedValue(true);
+            vault.permission.mockResolvedValue(true);
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'totp',
+                otpTotpIdentity: identity
+            });
+            await flushPromises();
+            vault.permission.mockResolvedValue(false);
+            await wrapper
+                .findAll('button')
+                .find((b) => b.text() === en.totp.fill_code)
+                .trigger('click');
+            await flushPromises();
+            expect(vault.get).not.toHaveBeenCalled();
+            expect(wrapper.text()).not.toContain(en.totp.fill_code);
+            wrapper.unmount();
+        });
+        test('discards a generated code if permission is revoked during generation', async () => {
+            vault.has.mockResolvedValue(true);
+            vault.permission.mockResolvedValue(true);
+            let complete;
+            vault.generate.mockImplementationOnce(
+                () =>
+                    new Promise((r) => {
+                        complete = r;
+                    })
+            );
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'totp',
+                otpTotpIdentity: identity
+            });
+            await flushPromises();
+            await wrapper
+                .findAll('button')
+                .find((b) => b.text() === en.totp.fill_code)
+                .trigger('click');
+            await flushPromises();
+            vault.permission.mockResolvedValue(false);
+            complete('123456');
+            await flushPromises();
+            expect(
+                wrapper.findComponent({ name: 'InputOTP' }).props('modelValue')
+            ).toBe('');
+            expect(wrapper.text()).not.toContain(en.totp.fill_code);
+            wrapper.unmount();
+        });
+        test('does not read another account key if the challenge changes while checking permission', async () => {
+            vault.has.mockResolvedValue(true);
+            vault.permission.mockResolvedValue(true);
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'totp',
+                otpTotpIdentity: identity
+            });
+            await flushPromises();
+            let complete;
+            vault.permission.mockImplementationOnce(
+                () =>
+                    new Promise((r) => {
+                        complete = r;
+                    })
+            );
+            await wrapper
+                .findAll('button')
+                .find((b) => b.text() === en.totp.fill_code)
+                .trigger('click');
+            await flushPromises();
+            store = useModalStore();
+            store.otpTotpIdentity = { ...identity, username: 'bob' };
+            await flushPromises();
+            complete(true);
+            await flushPromises();
+            expect(vault.get).not.toHaveBeenCalled();
+            wrapper.unmount();
+        });
+        test('allows logged-in users to fill without enabling logged-out access', async () => {
+            watchState.isLoggedIn = true;
+            vault.has.mockResolvedValue(true);
+            const wrapper = mountOtpDialog({
+                otpOpen: true,
+                otpMode: 'totp',
+                otpTotpIdentity: identity
+            });
+            await flushPromises();
+            expect(wrapper.text()).toContain(en.totp.fill_code);
+            expect(vault.permission).not.toHaveBeenCalled();
+            wrapper.unmount();
+        });
         test('starts empty and generates only after clicking Fill, without submitting', async () => {
             vault.has.mockResolvedValue(true);
+            vault.permission.mockResolvedValue(true);
             const wrapper = mountOtpDialog({
                 otpOpen: true,
                 otpMode: 'totp',
@@ -363,6 +473,7 @@ describe('OtpDialogModal.vue', () => {
         });
         test('discards a fill result after switching the challenge', async () => {
             vault.has.mockResolvedValue(true);
+            vault.permission.mockResolvedValue(true);
             let complete;
             vault.generate.mockImplementationOnce(
                 () =>

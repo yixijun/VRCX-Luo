@@ -4357,6 +4357,9 @@
         "email_method": "Email verification code",
         "totp_method": "TOTP authenticator",
         "fill_code": "Fill verification code",
-        "missing_identity": "Sign in with your username or a saved account to configure its TOTP key."
+        "missing_identity": "Sign in with your username or a saved account to configure its TOTP key.",
+        "allow_login_fill": "Allow filling TOTP codes while logged out",
+        "allow_login_fill_hint": "Off by default. When enabled, the login verification dialog can fill a code generated from this account’s saved key. Verification still requires confirmation.",
+        "preference_failed": "Unable to save this setting. Please try again."
     }
 }

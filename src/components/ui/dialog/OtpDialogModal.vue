@@ -11,7 +11,8 @@
     import { nextTick, onBeforeUnmount, ref, watch } from 'vue';
     import { useI18n } from 'vue-i18n';
     import { generateTotp } from '@/services/totp';
-    import { getTotpSecret, hasTotpSecret } from '@/services/totpSecrets';
+    import { getTotpSecret, hasTotpSecret, getTotpLoginFillAllowed } from '@/services/totpSecrets';
+    import { watchState } from '@/services/watchState';
     import { Button } from '@/components/ui/button';
     import { storeToRefs } from 'pinia';
     import { useModalStore } from '@/stores';
@@ -44,12 +45,24 @@
 
     async function fillCode() {
         const current = revision;
+        const identity = otpTotpIdentity.value;
         filling.value = true;
         fillError.value = '';
         try {
-            const secret = await getTotpSecret(otpTotpIdentity.value);
+            if (!watchState.isLoggedIn && !(await getTotpLoginFillAllowed(identity))) {
+                if (current === revision) saved.value = false;
+                return;
+            }
+            if (current !== revision) return;
+            const secret = await getTotpSecret(identity);
+            if (current !== revision) return;
             if (!secret) throw new Error('Missing key');
             const code = await generateTotp(secret);
+            if (current !== revision) return;
+            if (!watchState.isLoggedIn && !(await getTotpLoginFillAllowed(identity))) {
+                if (current === revision) saved.value = false;
+                return;
+            }
             if (current !== revision) return;
             fillingValue = true;
             otpValue.value = code;
@@ -108,7 +121,7 @@
     }
 
     watch(
-        [otpOpen, otpTotpIdentity, otpTitle, otpMode],
+        [otpOpen, otpTotpIdentity, otpTitle, otpMode, () => watchState.isLoggedIn],
         async ([open]) => {
             const current = ++revision;
             otpValue.value = '';
@@ -116,6 +129,9 @@
             filling.value = false;
             fillError.value = '';
             if (!open || otpMode.value !== 'totp' || !otpTotpIdentity.value) return;
+            const allowed =
+                watchState.isLoggedIn || (await getTotpLoginFillAllowed(otpTotpIdentity.value).catch(() => false));
+            if (!allowed || current !== revision) return;
             const exists = await hasTotpSecret(otpTotpIdentity.value).catch(() => false);
             if (current === revision) saved.value = exists;
         },
