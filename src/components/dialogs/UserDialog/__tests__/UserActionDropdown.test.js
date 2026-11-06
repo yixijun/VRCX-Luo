@@ -42,6 +42,11 @@ vi.mock('../../../ui/dropdown-menu', () => ({
     DropdownMenuContent: { template: '<div><slot /></div>' },
     DropdownMenuSeparator: { template: '<hr />' },
     DropdownMenuShortcut: { template: '<span><slot /></span>' },
+    DropdownMenuSub: { template: '<div><slot /></div>' },
+    DropdownMenuSubTrigger: {
+        template: '<button data-testid="moderation-trigger"><slot /></button>'
+    },
+    DropdownMenuSubContent: { template: '<div><slot /></div>' },
     DropdownMenuItem: {
         emits: ['click'],
         template:
@@ -88,6 +93,16 @@ vi.mock('lucide-vue-next', () => ({
 import UserActionDropdown from '../UserActionDropdown.vue';
 
 describe('UserActionDropdown.vue', () => {
+    it('renders player management with the registered submenu trigger', () => {
+        const wrapper = mount(UserActionDropdown, {
+            props: { userDialogCommand: vi.fn() }
+        });
+        expect(wrapper.get('[data-testid="moderation-trigger"]').text()).toContain(
+            'nav_tooltip.moderation'
+        );
+        expect(wrapper.find('dropdownmenusubtrigger').exists()).toBe(false);
+        wrapper.unmount();
+    });
     it('forwards command callback from dropdown item', async () => {
         const userDialogCommand = vi.fn();
         const wrapper = mount(UserActionDropdown, {

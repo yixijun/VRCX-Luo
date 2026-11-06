@@ -139,9 +139,9 @@
                         {{ t('dialog.user.actions.edit_note_memo') }}
                     </DropdownMenuItem>
                     <DropdownMenuSub>
-                        <DropdownMenuSubTrigger>
-                            <XCircle class="size-4 mr-2" />
-                            <span>{{ t('nav_tooltip.moderation') }}</span>
+                        <DropdownMenuSubTrigger class="gap-1.5">
+                            <XCircle class="size-4 shrink-0" />
+                            <span class="flex-1">{{ t('nav_tooltip.moderation') }}</span>
                         </DropdownMenuSubTrigger>
                         <DropdownMenuSubContent side="right" align="start" class="w-56">
                             <DropdownMenuItem :disabled="userDialog.ref.$isModerator" @click="onCommand('Report User')">
@@ -365,6 +365,9 @@
         DropdownMenuItem,
         DropdownMenuSeparator,
         DropdownMenuShortcut,
+        DropdownMenuSub,
+        DropdownMenuSubContent,
+        DropdownMenuSubTrigger,
         DropdownMenuTrigger
     } from '../../ui/dropdown-menu';
     import { useGameStore, useLocationStore, useUserStore } from '../../../stores';
