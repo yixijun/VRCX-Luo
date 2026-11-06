@@ -4417,11 +4417,10 @@
         "current_code": "当前一次性验证码",
         "expires_in": "{seconds} 秒后刷新",
         "choose_method": "选择验证方式",
-        "available_methods": "请选择当前账号使用的验证方式。",
+        "available_methods": "请选择邮箱或 TOTP。仅支持服务器允许的验证方式。",
         "email_method": "邮箱验证码",
         "totp_method": "TOTP 验证器",
         "fill_code": "填充验证码",
-        "missing_identity": "请使用用户名或已保存账号登录后，配置该账号的 TOTP 密钥。",
-        "manual_totp_hint": "本次登录要求邮箱验证。如果你已在 VRChat 官网开启 TOTP，也可以尝试验证器。"
+        "missing_identity": "请使用用户名或已保存账号登录后，配置该账号的 TOTP 密钥。"
     }
 }

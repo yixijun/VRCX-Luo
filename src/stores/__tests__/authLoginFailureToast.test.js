@@ -713,19 +713,6 @@ describe('useAuthStore login failure toast policy', () => {
     });
 
     describe('interactive TOTP login', () => {
-        test('verifies an explicitly chosen TOTP even when the challenge lists email only', async () => {
-            const store = await createAuthStore();
-            mocks.modalStore.otpPrompt
-                .mockResolvedValueOnce({ ok: true, value: 'totp' })
-                .mockResolvedValueOnce({ ok: true, value: '123456' });
-            const { pending } = await startChallenge(store, ['emailOtp']);
-            await pending;
-            expect(
-                mocks.authRequest.verifyTOTP
-            ).toHaveBeenCalledExactlyOnceWith({ code: '123456' });
-            expect(mocks.getCurrentUser).toHaveBeenCalledTimes(1);
-            expect(mocks.authRequest.verifyEmailOTP).not.toHaveBeenCalled();
-        });
         async function startChallenge(store, methods = ['totp', 'emailOtp']) {
             store.loginForm.username = 'alice';
             store.loginForm.password = 'password';

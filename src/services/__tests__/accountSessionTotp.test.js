@@ -25,19 +25,6 @@ describe('secondary account TOTP login', () => {
         session._apiEndpoint = saved.loginParams.endpoint;
         session._requestRaw = vi.fn().mockResolvedValue({ verified: true });
     });
-    test('allows an explicit TOTP choice when the challenge lists only email', async () => {
-        mocks.prompt
-            .mockResolvedValueOnce({ ok: true, value: 'totp' })
-            .mockResolvedValueOnce({ ok: true, value: '654321' });
-        await session._completeTwoFactorAuth(
-            { requiresTwoFactorAuth: ['emailOtp'] },
-            saved
-        );
-        expect(session._requestRaw).toHaveBeenCalledWith(
-            'auth/twofactorauth/totp/verify',
-            { method: 'POST', params: { code: '654321' } }
-        );
-    });
     test('waits for explicit choice and sends the entered TOTP through the secondary client', async () => {
         mocks.prompt
             .mockResolvedValueOnce({ ok: true, value: 'totp' })
