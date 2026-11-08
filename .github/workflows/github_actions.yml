@@ -445,19 +445,19 @@ jobs:
                   body: |
                       ## VRCX-Luo ${{ needs.set_version.outputs.version }}
 
-                      本版本仅记录相对 `2026.10.27` 的新增功能和修改，不重复历史版本内容。
-                      完整增量日志：[CHANGELOG.md](https://github.com/yixijun/VRCX-Luo/blob/${{ needs.set_version.outputs.version }}/CHANGELOG.md)
+                      本版本相对 `2026.10.29` 更新，保留 Luo 定制。
+                      完整中文日志：[CHANGELOG.md](https://github.com/yixijun/VRCX-Luo/blob/${{ needs.set_version.outputs.version }}/CHANGELOG.md)
 
                       ### 本版本摘要
 
-                      - 修复旧空缓存导致好友活动统计、热力图一直显示无数据的问题。
-                      - 补回好友房间活动历史预览与“查看全部”时间线，支持时间范围、未知/疑似私人房间筛选和分页。
-                      - 修复游戏日志列表较短时无法继续加载旧记录的问题，并增加“加载更多”按钮。
-                      - 原始历史数据保留，无需清空数据库；相关 9 项回归测试通过。
+                      - 新增扫码登录，以及登录后的 TOTP 密钥管理、验证码预览和主动填充；未登录时填充需按账号手动开启，默认关闭。
+                      - 修复取消验证误报登录成功、连续登录及切换账号时的验证请求干扰。
+                      - 好友动态默认实时更新，浏览旧记录时保留阅读位置；房间活动按钮仅在加入房间后显示。
+                      - 修复离线间隔计入每日游玩时长、无效简介误记清空等记录问题，并移除重复的玩家管理二级菜单。
+                      - 同步 Jirai 与原版 VRCX 的群组管理、模型商城、购买历史、免费物品及媒体功能，并补齐新增功能的简体、繁体中文。
+                      - 商店增加“一键领取免费物品”清单入口，改善货架与商品卡片布局；领取仍需用户确认。
 
-                      本次未修改更新安装中断后的自动回滚机制。
-
-                      详细变更、验证结果和构建信息请见上方增量日志。
+                      验证方式以 VRChat 服务器允许的方式为准。Windows、Linux 和 macOS 安装包由本次 GitHub Actions 构建。
                   files: release_assets/*
                   generate_release_notes: false
                   draft: false
